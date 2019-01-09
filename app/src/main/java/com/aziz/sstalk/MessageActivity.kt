@@ -220,7 +220,7 @@ class MessageActivity : AppCompatActivity() {
 
 
                 if(holder is targetViewHolder){
-                     holder.time.text = model.timeInMillis.toString()
+                     holder.time.text = utils.getLocalTime(model.timeInMillis)
                     holder.message.text = model.message
 
 
@@ -247,7 +247,7 @@ class MessageActivity : AppCompatActivity() {
 
                 }
                 else if (holder is myViewHolder){
-                    holder.time.text = model.timeInMillis.toString()
+                    holder.time.text = utils.getLocalTime(model.timeInMillis)
                     holder.message.text = model.message
 
 
@@ -297,6 +297,16 @@ class MessageActivity : AppCompatActivity() {
 
         messagesList.adapter = adapter
 
+
+        adapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
+            override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
+
+                if(adapter.getItem(positionStart).from != myUID)
+                    messagesList.scrollToPosition(adapter.itemCount - 1)
+
+                super.onItemRangeInserted(positionStart, itemCount)
+            }
+        })
 
     }
 

@@ -46,8 +46,11 @@
                     tools:replace="android:resource"/>
         </provider>
 
-        <activity android:name=".ImagePreviewActivity"
-                  android:theme="@style/AppTheme.NoActionBar">
+        <activity
+                android:name=".ImagePreviewActivity"
+                android:theme="@style/AppTheme.NoActionBar">
+        </activity>
+        <activity android:name=".EditProfile">
         </activity>
     </application>
 

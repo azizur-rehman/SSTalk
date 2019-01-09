@@ -1,6 +1,7 @@
 package com.aziz.sstalk.utils
 
 import android.content.Context
+import android.text.Html
 import android.util.Log
 import android.view.View
 import android.widget.TextView
@@ -99,6 +100,10 @@ object FirebaseUtils {
                     if(p0.exists()) {
                         textView.text = messageModel!!.message
                         textView.visibility = View.VISIBLE
+
+                        if(messageModel.isFile && messageModel.fileType == utils.constants.FILE_TYPE_IMAGE){
+                            textView.text = ("\uD83D\uDDBC Image")
+                        }
 
                     }
                     else {

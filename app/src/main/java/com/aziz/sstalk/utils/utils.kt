@@ -91,7 +91,7 @@ object utils {
 
     fun getLocalTime(timeStamp: Long): String{
 
-        val sdf = SimpleDateFormat("HH:mm a")
+        val sdf = SimpleDateFormat("hh:mm aa")
         sdf.timeZone= (Calendar.getInstance().timeZone)
 
         return sdf.format(Date(timeStamp))
