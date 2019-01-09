@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/messagesList"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+
+
+    <com.stfalcon.chatkit.messages.MessageInput
+            android:layout_width="match_parent"
+            android:id="@+id/messageInputField"
+            app:attachmentButtonBackground="?android:selectableItemBackground"
+            app:attachmentButtonDefaultIconColor="@color/green"
+            app:inputButtonBackground="@drawable/bg_custom_layout_send"
+            app:inputButtonDefaultIconColor="@color/white"
+            app:attachmentButtonDefaultIconPressedColor="@color/green_dark"
+
+            app:inputButtonDefaultIconDisabledColor="@color/white60"
+            app:attachmentButtonHeight="27dp"
+            app:attachmentButtonWidth="27dp"
+
+            app:showAttachmentButton="true"
+            app:inputHint="Type your message..."
+            android:layout_height="wrap_content"/>
+
+</LinearLayout>

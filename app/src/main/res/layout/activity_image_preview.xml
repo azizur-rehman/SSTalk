@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="@color/black"
+        tools:context=".ImagePreviewActivity">
+
+
+    <android.support.v7.widget.Toolbar
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/black"
+            android:id="@+id/toolbar"
+    />
+
+
+    <ImageView
+      android:layout_width="match_parent" android:layout_height="0dp"
+    android:layout_weight="1"
+    android:id="@+id/preview"
+    />
+
+
+    <LinearLayout android:layout_width="match_parent"
+                  android:orientation="horizontal"
+                  android:padding="20dp"
+                  android:layout_height="wrap_content">
+
+
+        <EditText android:layout_width="0dp"
+                  android:layout_weight="1"
+                  android:id="@+id/captionEditText"
+                  android:textColor="@color/white"
+                  android:textColorHint="@color/gray_light"
+                  android:hint="Type a Caption..."
+                  android:layout_height="match_parent"/>
+
+        <android.support.design.widget.FloatingActionButton
+                android:layout_width="wrap_content"
+                android:id="@+id/sendBtn"
+                 android:layout_height="wrap_content"
+                android:src="@android:drawable/ic_menu_send"
+
+
+        />
+
+
+    </LinearLayout>
+
+
+</LinearLayout>
