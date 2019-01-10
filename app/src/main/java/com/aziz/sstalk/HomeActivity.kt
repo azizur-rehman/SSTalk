@@ -32,6 +32,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     val context = this@HomeActivity
 
     var hasPermission:Boolean = false
+    val id = R.drawable.contact_placeholder
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -140,7 +141,8 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private fun setAdapter(){
 
         val options = FirebaseRecyclerOptions.Builder<Models.lastMessageDetail>()
-            .setQuery(FirebaseUtils.getLastMessageRef(FirebaseUtils.getUid()).orderByChild(FirebaseUtils.KEY_REVERSE_TIMESTAMP),Models.lastMessageDetail::class.java)
+            .setQuery(FirebaseUtils.ref.getLastMessageRef(FirebaseUtils.getUid())
+                .orderByChild(FirebaseUtils.KEY_REVERSE_TIMESTAMP),Models.lastMessageDetail::class.java)
             .setLifecycleOwner(this)
             .build()
 
@@ -152,6 +154,8 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 val uid = super.getRef(position).key.toString()
 
                 holder.name.text = uid
+
+                FirebaseUtils.loadProfilePic(uid, holder.pic, false)
 
                 FirebaseUtils.setLastMessage(uid, holder.lastMessage)
 

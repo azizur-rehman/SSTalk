@@ -4,10 +4,14 @@ import android.content.Context
 import android.text.Html
 import android.util.Log
 import android.view.View
+import android.widget.ImageView
 import android.widget.TextView
 import com.aziz.sstalk.Models.Models
+import com.aziz.sstalk.utils.FirebaseUtils.ref.getUserRef
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
+import com.squareup.picasso.Picasso
+
 
 object FirebaseUtils {
 
@@ -21,27 +25,65 @@ object FirebaseUtils {
         val KEY_PROFILE_PIC_URL = "profile_pic_url"
         val KEY_NAME = "name"
 
-        private fun getRootRef() : DatabaseReference {
-            return FirebaseDatabase.getInstance().reference
+
+        object ref {
+
+            private fun getRootRef() : DatabaseReference {
+                return FirebaseDatabase.getInstance().reference
+            }
+
+            fun getChatRef( uid :String, targetUID: String) : DatabaseReference{
+                return getRootRef()
+                    .child(NODE_MESSAGES)
+                    .child(uid)
+                    .child(targetUID)
+            }
+
+            fun getLastMessageRef( uid :String) : DatabaseReference{
+                return getRootRef()
+                    .child(NODE_LAST_MESSAGE)
+                    .child(uid)
+            }
+
+
+            fun getUserRef(uid : String): DatabaseReference  = getRootRef().child(NODE_USER).child(uid)
+
+            fun getAllUserRef(): DatabaseReference  = getRootRef().child(NODE_USER)
+
         }
 
-        fun getChatRef( uid :String, targetUID: String) : DatabaseReference{
-            return getRootRef()
-                .child(NODE_MESSAGES)
-                .child(uid)
-                .child(targetUID)
+
+        fun loadProfilePic(uid:String, imageView: ImageView, isLarge: Boolean){
+
+
+            if(uid.isEmpty())
+                return
+            ref.getUserRef(uid)
+                .child(KEY_PROFILE_PIC_URL)
+                .addValueEventListener(object : ValueEventListener {
+
+                    override fun onDataChange(p0: DataSnapshot) {
+                        if (p0.exists()) {
+                            val link: String? = p0.getValue(String::class.java)
+                            if(isLarge)
+                            Picasso.get().load(link)
+                               // .placeholder(R.drawable.contact_placeholder)
+                                .into(imageView)
+                            else{
+                                Picasso.get().load(link)
+                                    .resize(120,120)
+                                    .centerCrop()
+                                 //   .placeholder(R.drawable.contact_placeholder)
+                                    .into(imageView)
+                            }
+                        }
+                    }
+
+                    override fun onCancelled(p0: DatabaseError) {
+
+                    }
+                })
         }
-
-        fun getLastMessageRef( uid :String) : DatabaseReference{
-            return getRootRef()
-                .child(NODE_LAST_MESSAGE)
-                .child(uid)
-        }
-
-
-        fun getUserRef(uid : String): DatabaseReference  = getRootRef().child(NODE_USER).child(uid)
-
-        fun getAllUserRef(): DatabaseReference  = getRootRef().child(NODE_USER)
 
 
         fun isLoggedIn() : Boolean = FirebaseAuth.getInstance().currentUser != null
@@ -98,7 +140,7 @@ object FirebaseUtils {
 
         textView.text  = ""
 
-        getChatRef(getUid(), targetUID)
+        ref.getChatRef(getUid(), targetUID)
             .addValueEventListener(object : ValueEventListener {
                 override fun onCancelled(p0: DatabaseError) {
 

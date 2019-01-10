@@ -190,7 +190,7 @@ class MessageActivity : AppCompatActivity() {
         messagesList.layoutManager = linearLayoutManager
 
         val options = FirebaseRecyclerOptions.Builder<Models.MessageModel>()
-            .setQuery(FirebaseUtils.getChatRef(myUID, targetUid)
+            .setQuery(FirebaseUtils.ref.getChatRef(myUID, targetUid)
                 ,Models.MessageModel::class.java)
             .setLifecycleOwner(this)
             .build()
@@ -334,24 +334,24 @@ class MessageActivity : AppCompatActivity() {
 
     private fun addMessage(messageID: String , messageModel: Models.MessageModel){
         //setting my message
-        FirebaseUtils.getChatRef(myUID, targetUid)
+        FirebaseUtils.ref.getChatRef(myUID, targetUid)
             .child(messageID)
             .setValue(messageModel)
             .addOnSuccessListener {
 
-                FirebaseUtils.getLastMessageRef(myUID)
+                FirebaseUtils.ref.getLastMessageRef(myUID)
                     .child(targetUid)
                     .setValue(Models.lastMessageDetail())
 
                 print("Message sent") }
 
         //setting  message to target
-        FirebaseUtils.getChatRef(targetUid, myUID)
+        FirebaseUtils.ref.getChatRef(targetUid, myUID)
             .child(messageID)
             .setValue(messageModel)
             .addOnSuccessListener {
 
-                FirebaseUtils.getLastMessageRef(targetUid)
+                FirebaseUtils.ref.getLastMessageRef(targetUid)
                     .child(myUID)
                     .setValue(Models.lastMessageDetail())
 

@@ -29,15 +29,18 @@ class EditProfile : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_edit_profile)
 
+
+        FirebaseUtils.loadProfilePic(myUID, profile_circleimageview, false)
+
         profile_pick_btn.setOnClickListener { ImagePicker.pickImage(context) }
 
         updateProfileBtn.setOnClickListener {
             if(isProfileChanged)
             uploadImage(utils.getByteArrayFromBitmap(bitmap))
 
-            FirebaseUtils.getUserRef(myUID)
+            FirebaseUtils.ref.getUserRef(myUID)
                 .child(FirebaseUtils.KEY_NAME)
-                .setValue(profile_name.text)
+                .setValue(profile_name.text.toString())
 
         }
 
@@ -73,9 +76,9 @@ class EditProfile : AppCompatActivity() {
 
                     Log.d("EditProfile", "uploadImage: ")
 
-                    FirebaseUtils.getUserRef(myUID)
+                    FirebaseUtils.ref.getUserRef(myUID)
                         .child(FirebaseUtils.KEY_PROFILE_PIC_URL)
-                        .setValue(link)
+                        .setValue(link.toString())
                         .addOnSuccessListener { 
                             isProfileChanged = false
                             utils.toast(context, "Profile Pic updated") }

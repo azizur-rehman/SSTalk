@@ -80,7 +80,7 @@ class ContactsActivity : AppCompatActivity(){
 
         numberList = utils.getContactList(this)
 
-        FirebaseUtils.getAllUserRef()
+        FirebaseUtils.ref.getAllUserRef()
             .addValueEventListener(object : ValueEventListener{
                 override fun onDataChange(p0: DataSnapshot) {
 
