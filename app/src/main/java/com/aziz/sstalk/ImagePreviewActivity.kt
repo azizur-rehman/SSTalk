@@ -21,7 +21,7 @@ class ImagePreviewActivity : AppCompatActivity() {
 
         val imgBytes = intent.getByteArrayExtra(utils.constants.KEY_IMG_PATH)
 
-        preview.setImageBitmap(BitmapFactory.decodeByteArray(imgBytes,0,imgBytes.size))
+        preview.setImageBitmap(utils.getBitmapFromByteArray(imgBytes))
 
         sendBtn.setOnClickListener {
             setResult(Activity.RESULT_OK, intent.putExtra(utils.constants.KEY_CAPTION, captionEditText.text.toString()))

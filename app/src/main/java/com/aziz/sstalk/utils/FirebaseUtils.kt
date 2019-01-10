@@ -18,6 +18,8 @@ object FirebaseUtils {
         val NODE_LAST_MESSAGE = "LastMessage"
         val KEY_REVERSE_TIMESTAMP = "reverseTimeStamp"
         val KEY_PHONE = "phone"
+        val KEY_PROFILE_PIC_URL = "profile_pic_url"
+        val KEY_NAME = "name"
 
         private fun getRootRef() : DatabaseReference {
             return FirebaseDatabase.getInstance().reference
@@ -44,8 +46,10 @@ object FirebaseUtils {
 
         fun isLoggedIn() : Boolean = FirebaseAuth.getInstance().currentUser != null
 
-        fun getUid() : String = if (isLoggedIn())  FirebaseAuth.getInstance().uid.toString() else "INVALID_USER"
 
+    //todo Remove this else condition when production
+    //below is the id for my mobile number(Shanu)
+        fun getUid() : String = if (isLoggedIn())  FirebaseAuth.getInstance().uid.toString() else "vHv8TSqbS2YBHZJXS5X5Saz4acC2"
 
         fun setUserDetailFromUID(context : Context,
             textView: TextView,
@@ -58,7 +62,16 @@ object FirebaseUtils {
                     override fun onCancelled(p0: DatabaseError) {}
 
                     override fun onDataChange(snapshot: DataSnapshot) {
+
+                        if(!snapshot.exists()){
+                            textView.text = ""
+                            return
+                        }
+
+
                         var phone = snapshot.getValue(String::class.java)
+
+
                         textView.text = phone
 
                         phone = utils.getFormattedTenDigitNumber(phone!!)
@@ -81,7 +94,7 @@ object FirebaseUtils {
         }
 
 
-    fun setLastMessage(targetUID: String, textView: TextView){
+        fun setLastMessage(targetUID: String, textView: TextView){
 
         textView.text  = ""
 
@@ -113,5 +126,8 @@ object FirebaseUtils {
                 }
             })
     }
+
+
+
 
 }

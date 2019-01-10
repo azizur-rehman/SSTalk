@@ -109,13 +109,10 @@ class MessageActivity : AppCompatActivity() {
         if(requestCode == RQ_PICK && resultCode == Activity.RESULT_OK){
             val bitmap = ImagePicker.getImageFromResult(context, requestCode, resultCode,data)
 
-            val bout = ByteArrayOutputStream()
-            bitmap!!.compress(Bitmap.CompressFormat.JPEG, 100, bout)
-            val bytes = bout.toByteArray()
 
-            bitmapBytes = bytes
+            bitmapBytes = utils.getByteArrayFromBitmap(bitmap!!)
 
-            startActivityForResult(Intent(context, ImagePreviewActivity::class.java).putExtra(utils.constants.KEY_IMG_PATH, bytes)
+            startActivityForResult(Intent(context, ImagePreviewActivity::class.java).putExtra(utils.constants.KEY_IMG_PATH, bitmapBytes)
                 , RQ_PREVIEW)
         }
 

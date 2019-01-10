@@ -18,7 +18,7 @@
                   android:gravity="center"
                   android:orientation="vertical"
     ><EditText android:layout_width="match_parent"
-
+               android:id="@+id/profile_name"
               android:layout_margin="30dp"
               android:padding="10dp"
               android:hint="Your name (Optional)"
@@ -28,6 +28,7 @@
     <Button android:layout_width="match_parent"
             style="@style/RoundButton"
             android:text="Update Profile"
+            android:id="@+id/updateProfileBtn"
             android:layout_height="wrap_content"/>
     </LinearLayout>
 

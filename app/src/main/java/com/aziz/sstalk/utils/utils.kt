@@ -1,10 +1,13 @@
 package com.aziz.sstalk.utils
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.provider.ContactsContract
 import android.widget.Toast
 import com.aziz.sstalk.Models.Models
 import com.google.firebase.auth.FirebaseAuth
+import java.io.ByteArrayOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.regex.Pattern
@@ -104,5 +107,14 @@ object utils {
 
         return sdf.format(Date(timeStamp))
     }
+
+
+    fun getByteArrayFromBitmap(bitmap: Bitmap) : ByteArray {
+        val bout = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.PNG,100, bout)
+        return bout.toByteArray()
+    }
+
+    fun getBitmapFromByteArray(byteArray: ByteArray) : Bitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
 
 }
