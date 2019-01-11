@@ -1,7 +1,8 @@
 package com.aziz.sstalk.utils
 
+import android.app.ProgressDialog
 import android.content.Context
-import android.text.Html
+import android.net.Uri
 import android.util.Log
 import android.view.View
 import android.widget.ImageView
@@ -11,6 +12,13 @@ import com.aziz.sstalk.utils.FirebaseUtils.ref.getUserRef
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import com.squareup.picasso.Picasso
+import com.aziz.sstalk.R
+import com.google.android.gms.tasks.Continuation
+import com.google.android.gms.tasks.Task
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageReference
+import com.google.firebase.storage.UploadTask
+import java.io.File
 
 
 object FirebaseUtils {
@@ -50,7 +58,73 @@ object FirebaseUtils {
 
             fun getAllUserRef(): DatabaseReference  = getRootRef().child(NODE_USER)
 
+
+            fun getProfilePicStorageRef(uid: String): StorageReference = FirebaseStorage.getInstance()
+                .reference.child("profile_pics").child(uid)
         }
+
+
+    fun uploadProfilePic(context: Context, file: File, storageRef: StorageReference,
+        dbRef: DatabaseReference,
+        toastAfterUploadIfAny: String){
+
+
+        val dialog = ProgressDialog(context)
+        dialog.setMessage("Wait a moment...")
+        dialog.setCancelable(false)
+        dialog.show()
+
+
+
+        Log.d("FirebaseUtils", "uploadImage: File size = "+file.length()/1024)
+
+
+
+
+        val uploadTask = storageRef.putFile(Uri.fromFile(file))
+
+        uploadTask.continueWithTask(Continuation<UploadTask.TaskSnapshot, Task<Uri>> { task ->
+            if (!task.isSuccessful) {
+                task.exception?.let {
+                    throw it
+                }
+            }
+            Log.d("FirebaseUtils", "uploadedImage: size = "+task.result!!.bytesTransferred/1024)
+            return@Continuation storageRef.downloadUrl
+        })
+            .addOnCompleteListener { task ->
+                dialog.dismiss()
+                if(task.isSuccessful) {
+                    val link = task.result
+
+
+
+                    dbRef.setValue(link)
+                        .addOnSuccessListener {
+                         //   isProfileChanged = false
+                            if(toastAfterUploadIfAny.isNotEmpty())
+                               utils.toast(context, toastAfterUploadIfAny) }
+
+
+
+
+                }
+                else
+                    utils.toast(context, task.exception!!.message.toString())
+            }
+
+            .addOnSuccessListener {
+                dialog.dismiss()
+
+
+            }
+            .addOnFailureListener{
+                dialog.dismiss()
+            }
+
+
+
+    }
 
 
         fun loadProfilePic(uid:String, imageView: ImageView, isLarge: Boolean){
@@ -67,13 +141,13 @@ object FirebaseUtils {
                             val link: String? = p0.getValue(String::class.java)
                             if(isLarge)
                             Picasso.get().load(link)
-                               // .placeholder(R.drawable.contact_placeholder)
+                                .placeholder(R.drawable.contact_placeholder)
                                 .into(imageView)
                             else{
                                 Picasso.get().load(link)
                                     .resize(120,120)
                                     .centerCrop()
-                                 //   .placeholder(R.drawable.contact_placeholder)
+                                    .placeholder(R.drawable.contact_placeholder)
                                     .into(imageView)
                             }
                         }

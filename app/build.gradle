@@ -45,4 +45,7 @@ dependencies {
     implementation 'com.github.Mariovc:ImagePicker:1.2.2'
     implementation 'de.hdodenhof:circleimageview:3.0.0'
     implementation 'com.squareup.picasso:picasso:2.71828'
+
+    //for image compression
+    implementation 'me.shaohui.advancedluban:library:1.3.5'
 }

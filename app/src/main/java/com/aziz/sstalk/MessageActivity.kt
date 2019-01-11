@@ -6,6 +6,7 @@ import android.app.ProgressDialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.drawable.BitmapDrawable
 import android.media.Image
 import android.net.Uri
@@ -32,12 +33,18 @@ import com.google.common.primitives.Bytes
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.UploadTask
 import com.mvc.imagepicker.ImagePicker
+import com.squareup.picasso.MemoryPolicy
+import com.squareup.picasso.NetworkPolicy
 import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.activity_message.*
 import kotlinx.android.synthetic.main.bubble_right.view.*
 import kotlinx.android.synthetic.main.bubble_left.view.*
+import kotlinx.android.synthetic.main.layout_profile_image_picker.*
 import kotlinx.android.synthetic.main.nav_header_home.*
+import me.shaohui.advancedluban.Luban
+import me.shaohui.advancedluban.OnCompressListener
 import java.io.ByteArrayOutputStream
+import java.io.File
 
 class MessageActivity : AppCompatActivity() {
 
@@ -50,9 +57,10 @@ class MessageActivity : AppCompatActivity() {
     var targetUid : String = ""
     var myUID : String = ""
 
-    var bitmapBytes:ByteArray? = null
+    var imageFile:File? = null
 
     val context = this@MessageActivity
+    var loadedPosition:HashMap<Int,Boolean> = HashMap()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -107,22 +115,51 @@ class MessageActivity : AppCompatActivity() {
 
 
         if(requestCode == RQ_PICK && resultCode == Activity.RESULT_OK){
-            val bitmap = ImagePicker.getImageFromResult(context, requestCode, resultCode,data)
+
+            val filePath = ImagePicker.getImagePathFromResult(context, requestCode, resultCode, data)
+
+            Luban.compress(context, File(filePath))
+                .putGear(Luban.THIRD_GEAR)
+                .launch(object : OnCompressListener {
+                    override fun onStart() {
+
+                    }
+
+                    override fun onSuccess(file: File?) {
+
+                        imageFile = file!!
 
 
-            bitmapBytes = utils.getByteArrayFromBitmap(bitmap!!)
 
-            startActivityForResult(Intent(context, ImagePreviewActivity::class.java).putExtra(utils.constants.KEY_IMG_PATH, bitmapBytes)
-                , RQ_PREVIEW)
-        }
+
+                        startActivityForResult(Intent(context, ImagePreviewActivity::class.java)
+                            .putExtra(utils.constants.KEY_IMG_PATH, file.path.toString())
+                            , RQ_PREVIEW)
+
+
+                    }
+
+                    override fun onError(e: Throwable?) {
+                        Log.d("MessageActivity", "onError: "+e!!.message.toString())
+                        utils.longToast(context, e.message.toString())
+                    }
+
+                })
+
+
+         }
 
 
         if(requestCode == RQ_PREVIEW && resultCode == Activity.RESULT_OK){
             val caption = data!!.getStringExtra(utils.constants.KEY_CAPTION)
 
-            if (bitmapBytes != null) {
-                utils.toast(context, "Write code for Uploading... with caption = $caption")
-                uploadImage(bitmapBytes!!, caption)
+            if (imageFile != null) {
+               // utils.toast(context, "Write code for Uploading... with caption = $caption")
+
+                Log.d("MessageActivity", "onActivityResult: Uploading Image")
+                uploadImage(imageFile!!, caption)
+
+              //  FirebaseUtils.uploadPic(context,imageFile,)
             }
 
         }
@@ -131,20 +168,27 @@ class MessageActivity : AppCompatActivity() {
     }
 
 
-    private fun uploadImage(bytes : ByteArray, caption: String){
+    private fun uploadImage(file: File, caption: String){
         val dialog = ProgressDialog(context)
         dialog.setMessage("Uploading...")
         dialog.setCancelable(false)
-        dialog.show()
+       // dialog.show()
 
 
         val messageID = "MSG" +System.currentTimeMillis() + myUID
+
+        //Initial node
+        val messageModel= Models.MessageModel("",
+            myUID, targetUid ,isFile = true, caption = caption, fileType = utils.constants.FILE_TYPE_IMAGE)
+
+        addMessage(messageID, messageModel)
+
 
 
         val ref =  FirebaseStorage.getInstance()
             .reference.child("images").child(messageID)
 
-        val uploadTask = ref.putBytes(bytes)
+        val uploadTask = ref.putFile(Uri.fromFile(file))
 
         uploadTask.continueWithTask(Continuation<UploadTask.TaskSnapshot, Task<Uri>> { task ->
             if (!task.isSuccessful) {
@@ -160,6 +204,9 @@ class MessageActivity : AppCompatActivity() {
                     val link = task.result
                     val messageModel= Models.MessageModel(link.toString() ,
                         myUID, targetUid ,isFile = true, caption = caption, fileType = utils.constants.FILE_TYPE_IMAGE)
+
+                    if(BuildConfig.DEBUG)
+                    utils.toast(context, "Uploaded")
 
                     addMessage(messageID, messageModel)
 
@@ -215,6 +262,9 @@ class MessageActivity : AppCompatActivity() {
                 model: Models.MessageModel) {
 
 
+                var targetHolder:targetViewHolder
+                var myHolder: myViewHolder
+
 
                 if(holder is targetViewHolder){
                      holder.time.text = utils.getLocalTime(model.timeInMillis)
@@ -225,15 +275,21 @@ class MessageActivity : AppCompatActivity() {
 
                         holder.imageView.visibility = View.VISIBLE
 
-                        Picasso.get()
-                            .load(model.message.toString())
-                            //.centerCrop()
-                            .into(holder.imageView)
 
+                        if(model.message.isNotEmpty() ) {
+                            Picasso.get()
+                                .load(model.message.toString())
+                                //.centerCrop()
+                                .into(holder.imageView)
 
-                        holder.message.text = model.caption
+                            loadedPosition[position] = true
 
+                            holder.message.text = model.caption
+                        }
                     }
+
+
+                    //when there is no image
                     else{
                         holder.imageView.visibility = View.GONE
 
@@ -251,12 +307,26 @@ class MessageActivity : AppCompatActivity() {
 
                     if(model.isFile && model.fileType == utils.constants.FILE_TYPE_IMAGE){
 
-                        holder.imageView.visibility = View.VISIBLE
+                        holder.imageLayout.visibility = View.VISIBLE
 
-                        Picasso.get()
-                            .load(model.message.toString())
-                            //.centerCrop()
-                            .into(holder.imageView)
+                        holder.imageView.bringToFront()
+
+                        if(model.message.isNotEmpty() ) {
+                            Picasso.get()
+                                .load(model.message.toString())
+                                //.networkPolicy(NetworkPolicy.OFFLINE)
+                                //.centerCrop()
+                                .tag(model.message.toString())
+                                .into(holder.imageView)
+                            loadedPosition[position] = true
+
+                        }
+                        else {
+                            if (imageFile != null) {
+                                holder.progressBar.bringToFront()
+                                holder.imageView.setImageBitmap(BitmapFactory.decodeFile(imageFile!!.path.toString()))
+                            }
+                        }
 
 
 
@@ -264,13 +334,14 @@ class MessageActivity : AppCompatActivity() {
 
                     }
                     else{
-                        holder.imageView.visibility = View.GONE
+                        holder.imageLayout.visibility = View.GONE
 
                     }
 
 
 
 
+                    //end of my holder
 
                 }
 
@@ -322,7 +393,7 @@ class MessageActivity : AppCompatActivity() {
 
 
             addMessage(messageID, messageModel)
-
+            loadedPosition[messagesList.adapter!!.itemCount ]
 
 
 
@@ -333,17 +404,8 @@ class MessageActivity : AppCompatActivity() {
 
 
     private fun addMessage(messageID: String , messageModel: Models.MessageModel){
-        //setting my message
-        FirebaseUtils.ref.getChatRef(myUID, targetUid)
-            .child(messageID)
-            .setValue(messageModel)
-            .addOnSuccessListener {
 
-                FirebaseUtils.ref.getLastMessageRef(myUID)
-                    .child(targetUid)
-                    .setValue(Models.lastMessageDetail())
 
-                print("Message sent") }
 
         //setting  message to target
         FirebaseUtils.ref.getChatRef(targetUid, myUID)
@@ -357,6 +419,21 @@ class MessageActivity : AppCompatActivity() {
 
                 print("Message sent") }
 
+
+        //setting my message
+
+        messageModel.isRead = true
+        FirebaseUtils.ref.getChatRef(myUID, targetUid)
+            .child(messageID)
+            .setValue(messageModel)
+            .addOnSuccessListener {
+
+                FirebaseUtils.ref.getLastMessageRef(myUID)
+                    .child(targetUid)
+                    .setValue(Models.lastMessageDetail())
+
+                print("Message sent") }
+
     }
 
 
@@ -364,11 +441,14 @@ class MessageActivity : AppCompatActivity() {
         val message = itemView.messageText_left!!
         val time = itemView.time_left!!
         val imageView = itemView.imageview_left!!
+       // val imageLayout = itemView.imageFrameLayout!!
     }
     class myViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
         val message = itemView.messageText_right!!
         val time = itemView.time_right!!
         val imageView = itemView.imageview_right!!
+        val imageLayout = itemView.imageFrameLayoutRight!!
+        val progressBar = itemView.progress_bar_right!!
     }
 
 }

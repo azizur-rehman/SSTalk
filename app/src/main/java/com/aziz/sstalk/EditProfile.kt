@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.ProgressDialog
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
@@ -17,6 +18,9 @@ import com.google.firebase.storage.UploadTask
 import com.mvc.imagepicker.ImagePicker
 import kotlinx.android.synthetic.main.activity_edit_profile.*
 import kotlinx.android.synthetic.main.layout_profile_image_picker.*
+import me.shaohui.advancedluban.Luban
+import me.shaohui.advancedluban.OnCompressListener
+import java.io.File
 
 class EditProfile : AppCompatActivity() {
 
@@ -24,6 +28,7 @@ class EditProfile : AppCompatActivity() {
     val context = this
     var isProfileChanged = false
     lateinit var bitmap:Bitmap
+    lateinit var imageFile:File
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,8 +40,18 @@ class EditProfile : AppCompatActivity() {
         profile_pick_btn.setOnClickListener { ImagePicker.pickImage(context) }
 
         updateProfileBtn.setOnClickListener {
-            if(isProfileChanged)
-            uploadImage(utils.getByteArrayFromBitmap(bitmap))
+            if(isProfileChanged) {
+
+                val storageRef = FirebaseUtils.ref.getProfilePicStorageRef(myUID)
+
+                val dbRef = FirebaseUtils.ref.getUserRef(myUID)
+                    .child(FirebaseUtils.KEY_PROFILE_PIC_URL)
+
+                FirebaseUtils.uploadProfilePic(context, imageFile, storageRef, dbRef, "Profile updated")
+
+               // uploadImage(imageFile)
+                isProfileChanged = false
+            }
 
             FirebaseUtils.ref.getUserRef(myUID)
                 .child(FirebaseUtils.KEY_NAME)
@@ -48,71 +63,40 @@ class EditProfile : AppCompatActivity() {
 
 
 
-    private fun uploadImage(bytes: ByteArray){
-        val dialog = ProgressDialog(context)
-        dialog.setMessage("Uploading...")
-        dialog.setCancelable(false)
-        dialog.show()
-
-
-
-        val ref =  FirebaseStorage.getInstance()
-            .reference.child("profile_pics").child(myUID)
-
-        val uploadTask = ref.putBytes(bytes)
-
-        uploadTask.continueWithTask(Continuation<UploadTask.TaskSnapshot, Task<Uri>> { task ->
-            if (!task.isSuccessful) {
-                task.exception?.let {
-                    throw it
-                }
-            }
-            return@Continuation ref.downloadUrl
-        })
-            .addOnCompleteListener { task ->
-                dialog.dismiss()
-                if(task.isSuccessful) {
-                    val link = task.result
-
-                    Log.d("EditProfile", "uploadImage: ")
-
-                    FirebaseUtils.ref.getUserRef(myUID)
-                        .child(FirebaseUtils.KEY_PROFILE_PIC_URL)
-                        .setValue(link.toString())
-                        .addOnSuccessListener { 
-                            isProfileChanged = false
-                            utils.toast(context, "Profile Pic updated") }
-
-
-
-
-                }
-                else
-                    utils.toast(context, task.exception!!.message.toString())
-            }
-
-            .addOnSuccessListener {
-                dialog.dismiss()
-
-
-            }
-            .addOnFailureListener{
-                dialog.dismiss()
-            }
-
-
-
-    }
-
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
 
         when(resultCode){
             Activity.RESULT_OK -> {
 
-                 bitmap = ImagePicker.getImageFromResult(context, requestCode, resultCode, data!!)!!
-                profile_circleimageview.setImageBitmap(bitmap)
-                isProfileChanged = true
+                 val filePath = ImagePicker.getImagePathFromResult(context, requestCode, resultCode, data)
+
+                Luban.compress(context, File(filePath))
+                    .putGear(Luban.THIRD_GEAR)
+                    .launch(object : OnCompressListener {
+                        override fun onStart() {
+
+                        }
+
+                        override fun onSuccess(file: File?) {
+
+                            imageFile = file!!
+
+                            bitmap = BitmapFactory.decodeFile(file.path)
+
+                            profile_circleimageview.setImageBitmap(bitmap)
+
+                            isProfileChanged = true
+
+                        }
+
+                        override fun onError(e: Throwable?) {
+                            utils.toast(context, e!!.message.toString())
+                        }
+
+                    })
+
+
             }
         }
 

@@ -8,6 +8,7 @@ class Models {
                             var timeInMillis:Long = System.currentTimeMillis(),
                             var reverseTimeStamp: Long = timeInMillis * -1,
                             var isFile:Boolean = false,
+                            var isRead:Boolean = false,
                             var fileType: String = "",
                             var caption:String = "")
 

@@ -5,9 +5,9 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
-import android.support.v7.widget.Toolbar
 import android.util.Log
 import android.view.MenuItem
+import android.widget.Toast
 import com.aziz.sstalk.utils.utils
 import kotlinx.android.synthetic.main.activity_image_preview.*
 
@@ -19,9 +19,17 @@ class ImagePreviewActivity : AppCompatActivity() {
 
         setSupportActionBar(toolbar)
 
-        val imgBytes = intent.getByteArrayExtra(utils.constants.KEY_IMG_PATH)
+        val imgPath = intent.getStringExtra(utils.constants.KEY_IMG_PATH)
 
-        preview.setImageBitmap(utils.getBitmapFromByteArray(imgBytes))
+        Log.d("ImagePreviewActivity", "onCreate: path = $imgPath")
+
+        if(imgPath.isEmpty()){
+            setResult(Activity.RESULT_CANCELED)
+            finish()
+            utils.longToast(this, "Failed to load image")
+        }
+
+        preview.setImageBitmap(BitmapFactory.decodeFile(imgPath.toString()))
 
         sendBtn.setOnClickListener {
             setResult(Activity.RESULT_OK, intent.putExtra(utils.constants.KEY_CAPTION, captionEditText.text.toString()))
