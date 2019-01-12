@@ -33,6 +33,9 @@ object FirebaseUtils {
         val KEY_PROFILE_PIC_URL = "profile_pic_url"
         val KEY_NAME = "name"
 
+        val user_voda = "vHv8TSqbS2YBHZJXS5X5Saz4acC2"
+        val user_jio = "LPVjVKbpTzeUDpank04sxkoparE2"
+
 
         object ref {
 
@@ -127,7 +130,7 @@ object FirebaseUtils {
     }
 
 
-        fun loadProfilePic(uid:String, imageView: ImageView, isLarge: Boolean){
+    fun loadProfilePic(uid:String, imageView: ImageView, isLarge: Boolean){
 
 
             if(uid.isEmpty())
@@ -160,7 +163,7 @@ object FirebaseUtils {
         }
 
 
-        fun isLoggedIn() : Boolean = FirebaseAuth.getInstance().currentUser != null
+    fun isLoggedIn() : Boolean = FirebaseAuth.getInstance().currentUser != null
 
 
     //todo Remove this else condition when production

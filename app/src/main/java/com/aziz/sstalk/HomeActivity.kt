@@ -13,6 +13,7 @@ import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -22,6 +23,7 @@ import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.utils
 import com.firebase.ui.database.FirebaseRecyclerAdapter
 import com.firebase.ui.database.FirebaseRecyclerOptions
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.android.synthetic.main.activity_home.*
 import kotlinx.android.synthetic.main.app_bar_home.*
 import kotlinx.android.synthetic.main.content_home.*
@@ -65,6 +67,28 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             }
             else
             setAdapter()
+
+
+        if(!FirebaseUtils.isLoggedIn()){
+            FirebaseAuth.getInstance().signInAnonymously()
+                .addOnSuccessListener { authResult ->
+
+                    Log.d("HomeActivity", "onCreate: uid "+authResult.user.uid)
+                    utils.longToast(context, "Anonymous logged in")
+
+                }
+                .addOnFailureListener { exception ->
+
+                    Log.d("HomeActivity", "onCreate: "+exception.message.toString())
+                }
+        }
+        else{
+            Log.d("HomeActivity", "onCreate: uid "+FirebaseAuth.getInstance().currentUser!!.uid)
+
+    }
+
+
+
     }
 
 
@@ -103,8 +127,13 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
+
+        startActivity(Intent(context, MessageActivity::class.java))
+
+
         when (item.itemId) {
-            R.id.action_settings -> return true
+            R.id.action_settings ->
+                return true
             else -> return super.onOptionsItemSelected(item)
         }
     }

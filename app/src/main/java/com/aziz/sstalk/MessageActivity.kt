@@ -59,8 +59,12 @@ class MessageActivity : AppCompatActivity() {
 
     var imageFile:File? = null
 
+    var user1 = "user --- 1"
+    var user2 = "user --- 2"
+
     val context = this@MessageActivity
     var loadedPosition:HashMap<Int,Boolean> = HashMap()
+    var myLastMessagePosition = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -71,6 +75,26 @@ class MessageActivity : AppCompatActivity() {
         targetUid = intent.getStringExtra(FirebaseUtils.KEY_UID)
 
         myUID = FirebaseUtils.getUid()
+
+      //  myUID = FirebaseUtils.user_voda
+      //  targetUid = FirebaseUtils.user_jio
+
+
+
+        myUID = user2
+        targetUid = user1
+
+
+//        //todo remove this in production
+//        if(myUID.equals(FirebaseUtils.getUid())) {
+//            myUID = user1
+//            targetUid = user2
+//        }
+//        else{
+//            myUID = user2
+//            targetUid = user1
+//        }
+
 
         Log.d("MessageActivity", "onCreate: myUID = "+myUID)
         Log.d("MessageActivity", "onCreate: target UID = "+targetUid)
@@ -157,7 +181,10 @@ class MessageActivity : AppCompatActivity() {
                // utils.toast(context, "Write code for Uploading... with caption = $caption")
 
                 Log.d("MessageActivity", "onActivityResult: Uploading Image")
-                uploadImage(imageFile!!, caption)
+
+                val messageID = "MSG" +System.currentTimeMillis() + myUID
+
+                uploadImage(messageID, imageFile!!, caption)
 
               //  FirebaseUtils.uploadPic(context,imageFile,)
             }
@@ -168,25 +195,25 @@ class MessageActivity : AppCompatActivity() {
     }
 
 
-    private fun uploadImage(file: File, caption: String){
+    private fun uploadImage(messageID: String, file: File, caption: String){
         val dialog = ProgressDialog(context)
         dialog.setMessage("Uploading...")
         dialog.setCancelable(false)
        // dialog.show()
 
 
-        val messageID = "MSG" +System.currentTimeMillis() + myUID
 
         //Initial node
-        val messageModel= Models.MessageModel("",
+        val messageModel= Models.MessageModel(file.path,
             myUID, targetUid ,isFile = true, caption = caption, fileType = utils.constants.FILE_TYPE_IMAGE)
 
-        addMessage(messageID, messageModel)
+        addMessage(messageID, messageModel, true)
 
 
 
         val ref =  FirebaseStorage.getInstance()
             .reference.child("images").child(messageID)
+
 
         val uploadTask = ref.putFile(Uri.fromFile(file))
 
@@ -208,7 +235,7 @@ class MessageActivity : AppCompatActivity() {
                     if(BuildConfig.DEBUG)
                     utils.toast(context, "Uploaded")
 
-                    addMessage(messageID, messageModel)
+                    addMessage(messageID, messageModel, false)
 
                 }
                 else
@@ -247,6 +274,9 @@ class MessageActivity : AppCompatActivity() {
 
             override fun onCreateViewHolder(p0: ViewGroup, p1: Int): RecyclerView.ViewHolder {
 
+
+                Log.d("MessageActivity", "onCreateViewHolder: viewtype ==== "+getItemViewType(p1))
+
                return if(getItemViewType(p1) == TYPE_MINE)
                      myViewHolder(LayoutInflater.from(this@MessageActivity)
                             .inflate(R.layout.bubble_right, p0 , false))
@@ -279,7 +309,9 @@ class MessageActivity : AppCompatActivity() {
                         if(model.message.isNotEmpty() ) {
                             Picasso.get()
                                 .load(model.message.toString())
+                                .tag(model.message.toString())
                                 //.centerCrop()
+                                //.networkPolicy(NetworkPolicy.OFFLINE)
                                 .into(holder.imageView)
 
                             loadedPosition[position] = true
@@ -312,19 +344,46 @@ class MessageActivity : AppCompatActivity() {
                         holder.imageView.bringToFront()
 
                         if(model.message.isNotEmpty() ) {
-                            Picasso.get()
-                                .load(model.message.toString())
-                                //.networkPolicy(NetworkPolicy.OFFLINE)
-                                //.centerCrop()
-                                .tag(model.message.toString())
-                                .into(holder.imageView)
-                            loadedPosition[position] = true
 
+                            if(model.message.contains("/storage/")){
+
+                                holder.tapToRetry.visibility = View.GONE
+
+                                holder.tapToRetry.bringToFront()
+                                holder.tapToRetry.setOnClickListener {
+                                    it.visibility = View.GONE
+
+                                    holder.progressBar.bringToFront()
+
+                                    if(model.message.contains("/storage/"))
+                                    uploadImage(super.getRef(position).key!!, File(model.message.toString()),
+                                        model.caption)
+                                }
+
+                                Picasso.get()
+                                    .load(File(model.message.toString()))
+                                    //.networkPolicy(NetworkPolicy.OFFLINE)
+                                    //.centerCrop()
+                                    .tag(model.message.toString())
+                                    .into(holder.imageView)
+                                loadedPosition[position] = true
+                            }
+
+                            else {
+                                Picasso.get()
+                                    .load(model.message.toString())
+                                    //.networkPolicy(NetworkPolicy.OFFLINE)
+                                    //.centerCrop()
+                                    .tag(model.message.toString())
+                                    .into(holder.imageView)
+                                loadedPosition[position] = true
+                            }
                         }
                         else {
                             if (imageFile != null) {
                                 holder.progressBar.bringToFront()
                                 holder.imageView.setImageBitmap(BitmapFactory.decodeFile(imageFile!!.path.toString()))
+                                myLastMessagePosition = position
                             }
                         }
 
@@ -355,7 +414,12 @@ class MessageActivity : AppCompatActivity() {
 
             override fun getItemViewType(position: Int): Int {
 
-                return if (super.getSnapshots()[position].from == myUID)
+                Log.d("MessageActivity", "getItemViewType: position $position , from = "+super.getSnapshots()[position].from)
+
+                var model: Models.MessageModel = super.getItem(position)
+
+
+                return if (model.from == myUID)
                     TYPE_MINE
                 else
                     TYPE_TARGET
@@ -392,7 +456,7 @@ class MessageActivity : AppCompatActivity() {
             val messageID = "MSG" +System.currentTimeMillis() + myUID
 
 
-            addMessage(messageID, messageModel)
+            addMessage(messageID, messageModel, false)
             loadedPosition[messagesList.adapter!!.itemCount ]
 
 
@@ -403,21 +467,9 @@ class MessageActivity : AppCompatActivity() {
     }
 
 
-    private fun addMessage(messageID: String , messageModel: Models.MessageModel){
+    private fun addMessage(messageID: String , messageModel: Models.MessageModel, onlyForMe:Boolean){
 
 
-
-        //setting  message to target
-        FirebaseUtils.ref.getChatRef(targetUid, myUID)
-            .child(messageID)
-            .setValue(messageModel)
-            .addOnSuccessListener {
-
-                FirebaseUtils.ref.getLastMessageRef(targetUid)
-                    .child(myUID)
-                    .setValue(Models.lastMessageDetail())
-
-                print("Message sent") }
 
 
         //setting my message
@@ -432,7 +484,26 @@ class MessageActivity : AppCompatActivity() {
                     .child(targetUid)
                     .setValue(Models.lastMessageDetail())
 
-                print("Message sent") }
+                print("Message sent to $targetUid") }
+
+
+        if(onlyForMe)
+            return
+
+
+        //setting  message to target
+        FirebaseUtils.ref.getChatRef(targetUid, myUID)
+            .child(messageID)
+            .setValue(messageModel)
+            .addOnSuccessListener {
+
+                FirebaseUtils.ref.getLastMessageRef(targetUid)
+                    .child(myUID)
+                    .setValue(Models.lastMessageDetail())
+
+                print("Message added to mine") }
+
+
 
     }
 
@@ -449,6 +520,7 @@ class MessageActivity : AppCompatActivity() {
         val imageView = itemView.imageview_right!!
         val imageLayout = itemView.imageFrameLayoutRight!!
         val progressBar = itemView.progress_bar_right!!
+        val tapToRetry = itemView.tap_retry_right
     }
 
 }
