@@ -28,6 +28,7 @@ android {
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    //noinspection GradleCompatible
     implementation 'com.android.support:appcompat-v7:28.0.0'
     implementation 'com.android.support:design:28.0.0'
     implementation 'com.android.support.constraint:constraint-layout:1.1.3'
@@ -48,4 +49,7 @@ dependencies {
 
     //for image compression
     implementation 'me.shaohui.advancedluban:library:1.3.5'
+
+    implementation 'com.nex3z:notification-badge:1.0.2'
+
 }

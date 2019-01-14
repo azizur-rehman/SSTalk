@@ -35,23 +35,26 @@
 
 
 
+
+
+
+
+
+
           <ImageView android:layout_width="200dp"
                      android:layout_height="180dp"
-                     android:scaleType="center"
+                     android:scaleType="centerCrop"
                      android:paddingTop="5dp"
-                     android:background="@drawable/bg_preview"
+                     android:background="@color/white"
+                     android:src="@drawable/placeholder_image"
                      android:id="@+id/imageview_right"
           />
-
-
 
           <ProgressBar android:layout_width="wrap_content"
                        android:layout_gravity="center"
                        android:id="@+id/progress_bar_right"
                        style="@android:style/Widget.DeviceDefault.Light.ProgressBar.Large"
                        android:layout_height="wrap_content"/>
-
-
 
           <TextView android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -63,8 +66,6 @@
                     android:padding="20dp"
                     android:alpha="0.8"
           />
-
-
 
 
 
@@ -89,16 +90,29 @@
     </LinearLayout>
 
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="end"
-        android:text="12:10 PM"
-        android:paddingTop="2dp"
-        android:id="@+id/time_right"
-        android:paddingRight="15dp"
-        android:textColor="@color/warm_grey"
+    <LinearLayout android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+                  android:paddingTop="2dp"
+                  android:orientation="horizontal"
+                  android:layout_gravity="end">
+
+        <ImageView android:layout_width="46dp"
+                   android:id="@+id/delivery_status"
+                   android:layout_gravity="center"
+                   android:layout_marginRight="4dp"
+                   android:layout_height="46dp"/>
+
+        <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_gravity="end"
+                android:text="12:10 PM"
+                android:textSize="10sp"
+                android:id="@+id/time_right"
+                android:paddingRight="15dp"
+                android:textColor="@color/warm_grey"
         />
+    </LinearLayout>
 
 
 </LinearLayout>

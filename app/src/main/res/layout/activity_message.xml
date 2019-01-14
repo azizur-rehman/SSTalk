@@ -1,5 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+
+<FrameLayout android:layout_width="match_parent"
+             xmlns:android="http://schemas.android.com/apk/res/android"
+             android:layout_height="match_parent"
+             xmlns:app="http://schemas.android.com/apk/res-auto">
+
+
+    <ProgressBar android:layout_width="wrap_content"
+                 android:layout_gravity="center"
+                 style="@android:style/Widget.DeviceDefault.Light.ProgressBar.Large"
+                 android:layout_height="wrap_content"/>
+
+
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -26,9 +39,17 @@
             app:inputButtonDefaultIconDisabledColor="@color/white60"
             app:attachmentButtonHeight="27dp"
             app:attachmentButtonWidth="27dp"
-
+            app:inputMaxLines="3"
             app:showAttachmentButton="true"
             app:inputHint="Type your message..."
             android:layout_height="wrap_content"/>
 
 </LinearLayout>
+
+
+
+
+
+
+</FrameLayout>
+

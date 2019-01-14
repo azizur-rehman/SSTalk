@@ -5,12 +5,9 @@ import android.app.Activity
 import android.app.ProgressDialog
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.drawable.BitmapDrawable
-import android.media.Image
+import android.graphics.Color
 import android.net.Uri
-import android.opengl.Visibility
 import android.os.Build
 import android.os.Bundle
 import android.support.v4.app.ActivityCompat
@@ -21,6 +18,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ProgressBar
 import android.widget.TextView
 import com.aziz.sstalk.Models.Models
 import com.aziz.sstalk.utils.FirebaseUtils
@@ -29,22 +27,21 @@ import com.firebase.ui.database.FirebaseRecyclerAdapter
 import com.firebase.ui.database.FirebaseRecyclerOptions
 import com.google.android.gms.tasks.Continuation
 import com.google.android.gms.tasks.Task
-import com.google.common.primitives.Bytes
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.UploadTask
 import com.mvc.imagepicker.ImagePicker
-import com.squareup.picasso.MemoryPolicy
-import com.squareup.picasso.NetworkPolicy
+import com.squareup.picasso.Callback
 import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.activity_message.*
 import kotlinx.android.synthetic.main.bubble_right.view.*
 import kotlinx.android.synthetic.main.bubble_left.view.*
-import kotlinx.android.synthetic.main.layout_profile_image_picker.*
-import kotlinx.android.synthetic.main.nav_header_home.*
 import me.shaohui.advancedluban.Luban
 import me.shaohui.advancedluban.OnCompressListener
-import java.io.ByteArrayOutputStream
 import java.io.File
+import java.lang.Exception
 
 class MessageActivity : AppCompatActivity() {
 
@@ -66,13 +63,16 @@ class MessageActivity : AppCompatActivity() {
     var loadedPosition:HashMap<Int,Boolean> = HashMap()
     var myLastMessagePosition = 0
 
+    var isUploading = false
+    lateinit var adapter:FirebaseRecyclerAdapter<Models.MessageModel, RecyclerView.ViewHolder>
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_message)
 
 
-        targetUid = intent.getStringExtra(FirebaseUtils.KEY_UID)
+      //  targetUid = intent.getStringExtra(FirebaseUtils.KEY_UID)
 
         myUID = FirebaseUtils.getUid()
 
@@ -102,6 +102,8 @@ class MessageActivity : AppCompatActivity() {
         setSendMessageListener()
 
         setRecyclerAdapter()
+
+        setReyclerScroll()
 
 
         messageInputField.setAttachmentsListener {
@@ -184,7 +186,8 @@ class MessageActivity : AppCompatActivity() {
 
                 val messageID = "MSG" +System.currentTimeMillis() + myUID
 
-                uploadImage(messageID, imageFile!!, caption)
+                uploadImage(messageID, imageFile!!, caption,null)
+                isUploading = true
 
               //  FirebaseUtils.uploadPic(context,imageFile,)
             }
@@ -195,12 +198,13 @@ class MessageActivity : AppCompatActivity() {
     }
 
 
-    private fun uploadImage(messageID: String, file: File, caption: String){
+    private fun uploadImage(messageID: String, file: File, caption: String, progressBar: ProgressBar?){
         val dialog = ProgressDialog(context)
         dialog.setMessage("Uploading...")
         dialog.setCancelable(false)
        // dialog.show()
 
+        Log.d("MessageActivity", "uploadImage: dir = "+file.path)
 
 
         //Initial node
@@ -209,6 +213,7 @@ class MessageActivity : AppCompatActivity() {
 
         addMessage(messageID, messageModel, true)
 
+        isUploading = true
 
 
         val ref =  FirebaseStorage.getInstance()
@@ -227,6 +232,7 @@ class MessageActivity : AppCompatActivity() {
         })
             .addOnCompleteListener { task ->
                 dialog.dismiss()
+                isUploading = false
                 if(task.isSuccessful) {
                     val link = task.result
                     val messageModel= Models.MessageModel(link.toString() ,
@@ -234,6 +240,10 @@ class MessageActivity : AppCompatActivity() {
 
                     if(BuildConfig.DEBUG)
                     utils.toast(context, "Uploaded")
+
+                    if (progressBar != null) {
+                        progressBar.visibility = View.GONE
+                    }
 
                     addMessage(messageID, messageModel, false)
 
@@ -244,11 +254,12 @@ class MessageActivity : AppCompatActivity() {
 
             .addOnSuccessListener {
             dialog.dismiss()
-
+            isUploading = false
 
             }
             .addOnFailureListener{
                 dialog.dismiss()
+                isUploading = false
             }
 
 
@@ -263,14 +274,15 @@ class MessageActivity : AppCompatActivity() {
 
         messagesList.layoutManager = linearLayoutManager
 
+
         val options = FirebaseRecyclerOptions.Builder<Models.MessageModel>()
             .setQuery(FirebaseUtils.ref.getChatRef(myUID, targetUid)
                 ,Models.MessageModel::class.java)
-            .setLifecycleOwner(this)
+            //.setLifecycleOwner(this)
             .build()
 
 
-        val adapter = object  : FirebaseRecyclerAdapter<Models.MessageModel, RecyclerView.ViewHolder>(options) {
+         adapter = object  : FirebaseRecyclerAdapter<Models.MessageModel, RecyclerView.ViewHolder>(options) {
 
             override fun onCreateViewHolder(p0: ViewGroup, p1: Int): RecyclerView.ViewHolder {
 
@@ -292,6 +304,9 @@ class MessageActivity : AppCompatActivity() {
                 model: Models.MessageModel) {
 
 
+                messagesList.setBackgroundColor(Color.WHITE)
+
+
                 var targetHolder:targetViewHolder
                 var myHolder: myViewHolder
 
@@ -308,10 +323,10 @@ class MessageActivity : AppCompatActivity() {
 
                         if(model.message.isNotEmpty() ) {
                             Picasso.get()
-                                .load(model.message.toString())
-                                .tag(model.message.toString())
-                                //.centerCrop()
-                                //.networkPolicy(NetworkPolicy.OFFLINE)
+                                .load(model.message.toString()).tag(model.message.toString())
+                                .centerCrop().resize(600,400)
+                                .error(R.drawable.error_placeholder2)
+                                .placeholder(R.drawable.placeholder_image)
                                 .into(holder.imageView)
 
                             loadedPosition[position] = true
@@ -331,6 +346,7 @@ class MessageActivity : AppCompatActivity() {
 
 
                 }
+
                 else if (holder is myViewHolder){
                     holder.time.text = utils.getLocalTime(model.timeInMillis)
                     holder.message.text = model.message
@@ -340,42 +356,101 @@ class MessageActivity : AppCompatActivity() {
                     if(model.isFile && model.fileType == utils.constants.FILE_TYPE_IMAGE){
 
                         holder.imageLayout.visibility = View.VISIBLE
+                        holder.progressBar.visibility = View.VISIBLE
+                        holder.progressBar.bringToFront()
 
-                        holder.imageView.bringToFront()
+
 
                         if(model.message.isNotEmpty() ) {
 
                             if(model.message.contains("/storage/")){
 
-                                holder.tapToRetry.visibility = View.GONE
+                                //when image is not uploaded
 
-                                holder.tapToRetry.bringToFront()
+
                                 holder.tapToRetry.setOnClickListener {
-                                    it.visibility = View.GONE
+                                    holder.progressBar.visibility = View.VISIBLE
 
-                                    holder.progressBar.bringToFront()
+
 
                                     if(model.message.contains("/storage/"))
                                     uploadImage(super.getRef(position).key!!, File(model.message.toString()),
-                                        model.caption)
+                                        model.caption, holder.progressBar)
                                 }
 
                                 Picasso.get()
                                     .load(File(model.message.toString()))
-                                    //.networkPolicy(NetworkPolicy.OFFLINE)
-                                    //.centerCrop()
+                                    .resize(600,500)
+                                    .centerCrop()
+                                    .error(R.drawable.error_placeholder2)
+                                    .placeholder(R.drawable.placeholder_image)
                                     .tag(model.message.toString())
-                                    .into(holder.imageView)
+                                    .into(holder.imageView, object: Callback{
+
+                                        override fun onSuccess() {
+
+                                            Log.d("MessageActivity", "onSuccess: is uploading = $isUploading")
+
+                                            if(isUploading) {
+                                                holder.progressBar.visibility = View.VISIBLE
+                                                holder.tapToRetry.visibility = View.GONE
+                                            }else {
+                                                holder.tapToRetry.visibility = View.VISIBLE
+                                                holder.progressBar.visibility = View.GONE
+
+                                            }
+
+                                        }
+
+                                        override fun onError(e: Exception?) {
+
+                                            holder.tapToRetry.visibility = View.GONE
+                                            holder.progressBar.visibility = View.GONE
+
+
+                                        }
+
+                                    })
                                 loadedPosition[position] = true
                             }
 
                             else {
+                                holder.tapToRetry.visibility = View.GONE
+
                                 Picasso.get()
                                     .load(model.message.toString())
                                     //.networkPolicy(NetworkPolicy.OFFLINE)
-                                    //.centerCrop()
+                                    .centerCrop()
+                                    .resize(600,400)
+                                    .error(R.drawable.error_placeholder2)
+                                    .placeholder(R.drawable.placeholder_image)
                                     .tag(model.message.toString())
-                                    .into(holder.imageView)
+                                    .into(holder.imageView, object: Callback{
+                                        override fun onSuccess() {
+
+                                            holder.tapToRetry.visibility = View.GONE
+                                            holder.progressBar.visibility = View.GONE
+
+
+                                        }
+
+                                        override fun onError(e: Exception?) {
+
+                                            holder.tapToRetry.visibility = View.VISIBLE
+                                            holder.progressBar.visibility = View.GONE
+
+                                            holder.tapToRetry.setOnClickListener {
+                                                it.visibility = View.GONE
+                                                utils.longToast(context, "Image might be deleted.")
+                                            }
+
+
+                                        }
+
+                                    })
+
+
+
                                 loadedPosition[position] = true
                             }
                         }
@@ -398,6 +473,25 @@ class MessageActivity : AppCompatActivity() {
                     }
 
 
+
+                    FirebaseUtils.ref.getChatRef(targetUid, myUID)
+                        .child(super.getRef(position).key!!)
+                        .addValueEventListener(object : ValueEventListener{
+                            override fun onCancelled(p0: DatabaseError) {
+
+                            }
+
+                            override fun onDataChange(p0: DataSnapshot) {
+                                if(p0.exists()){
+                                    holder.messageStatus.setImageResource(R.drawable.ic_delivered_tick)
+                                    if(p0.getValue(Models.MessageModel::class.java)!!.isRead)
+                                        holder.messageStatus.setImageResource(R.drawable.ic_read_status)
+                                }
+                                else{
+                                    holder.messageStatus.setImageDrawable(null)
+                                }
+                            }
+                        })
 
 
                     //end of my holder
@@ -433,7 +527,7 @@ class MessageActivity : AppCompatActivity() {
         adapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
             override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
 
-                if(adapter.getItem(positionStart).from != myUID)
+                if(adapter.getItem(positionStart).from == myUID)
                     messagesList.scrollToPosition(adapter.itemCount - 1)
 
                 super.onItemRangeInserted(positionStart, itemCount)
@@ -467,6 +561,15 @@ class MessageActivity : AppCompatActivity() {
     }
 
 
+    fun sendViewToBack(child: View) {
+        val parent = child.parent as ViewGroup
+        if (null != parent) {
+            parent.removeView(child)
+            parent.addView(child, 0)
+        }
+    }
+
+
     private fun addMessage(messageID: String , messageModel: Models.MessageModel, onlyForMe:Boolean){
 
 
@@ -492,6 +595,7 @@ class MessageActivity : AppCompatActivity() {
 
 
         //setting  message to target
+        messageModel.isRead = false
         FirebaseUtils.ref.getChatRef(targetUid, myUID)
             .child(messageID)
             .setValue(messageModel)
@@ -520,7 +624,38 @@ class MessageActivity : AppCompatActivity() {
         val imageView = itemView.imageview_right!!
         val imageLayout = itemView.imageFrameLayoutRight!!
         val progressBar = itemView.progress_bar_right!!
-        val tapToRetry = itemView.tap_retry_right
+        val tapToRetry = itemView.tap_retry_right!!
+        val messageStatus = itemView.delivery_status!!
     }
 
+
+    override fun onStart() {
+        super.onStart()
+
+        if(adapter!=null)
+            adapter.startListening()
+    }
+
+    override fun onStop() {
+        super.onStop()
+
+
+        if(adapter!=null)
+            adapter.stopListening()
+    }
+
+
+    private fun setReyclerScroll(){
+
+        val viewGroup:ViewGroup  = window.decorView.findViewById(android.R.id.content)
+
+        val textView = TextView(this)
+        textView.layoutParams = RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT)
+
+        textView.text = "Sample text"
+
+      //  messagesList.layoutManager!!.addView(textView, 0)
+
+    }
 }

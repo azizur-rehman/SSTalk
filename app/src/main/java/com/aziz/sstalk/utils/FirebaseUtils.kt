@@ -48,6 +48,8 @@ object FirebaseUtils {
                     .child(NODE_MESSAGES)
                     .child(uid)
                     .child(targetUID)
+                    .orderByChild(KEY_REVERSE_TIMESTAMP)
+                    .ref
             }
 
             fun getLastMessageRef( uid :String) : DatabaseReference{
