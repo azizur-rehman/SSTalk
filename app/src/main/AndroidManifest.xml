@@ -20,7 +20,6 @@
                 android:name=".HomeActivity"
                 android:label="@string/app_name"
                 android:theme="@style/AppTheme.NoActionBar">
-
         </activity>
         <activity android:name=".MessageActivity">
             <intent-filter>
@@ -49,10 +48,13 @@
         </provider>
 
         <activity
-                android:name=".ImagePreviewActivity"
+                android:name=".UploadPreviewActivity"
                 android:theme="@style/AppTheme.NoActionBar">
         </activity>
         <activity android:name=".EditProfile">
+        </activity>
+        <activity android:name=".ImagePreviewActivity"
+                  android:theme="@style/AppTheme.NoActionBar">
         </activity>
     </application>
 

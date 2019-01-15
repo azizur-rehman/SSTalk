@@ -26,12 +26,16 @@ object FirebaseUtils {
 
         val NODE_MESSAGES = "Messages"
         val NODE_USER = "users"
+        val NODE_BLOCKED_LIST = "block_list"
+
         val KEY_UID = "uid"
         val NODE_LAST_MESSAGE = "LastMessage"
         val KEY_REVERSE_TIMESTAMP = "reverseTimeStamp"
+        val KEY_TIME_IN_MILLIS = "timeInMillis"
         val KEY_PHONE = "phone"
         val KEY_PROFILE_PIC_URL = "profile_pic_url"
         val KEY_NAME = "name"
+
 
         val user_voda = "vHv8TSqbS2YBHZJXS5X5Saz4acC2"
         val user_jio = "LPVjVKbpTzeUDpank04sxkoparE2"
@@ -43,12 +47,20 @@ object FirebaseUtils {
                 return FirebaseDatabase.getInstance().reference
             }
 
-            fun getChatRef( uid :String, targetUID: String) : DatabaseReference{
+            fun getChatQuery(uid :String, targetUID: String) : Query{
                 return getRootRef()
                     .child(NODE_MESSAGES)
                     .child(uid)
                     .child(targetUID)
-                    .orderByChild(KEY_REVERSE_TIMESTAMP)
+                    .orderByChild(KEY_TIME_IN_MILLIS)
+            }
+
+            fun getChatRef(uid :String, targetUID: String) : DatabaseReference{
+                return getRootRef()
+                    .child(NODE_MESSAGES)
+                    .child(uid)
+                    .child(targetUID)
+                    .orderByChild(KEY_TIME_IN_MILLIS)
                     .ref
             }
 
@@ -66,6 +78,12 @@ object FirebaseUtils {
 
             fun getProfilePicStorageRef(uid: String): StorageReference = FirebaseStorage.getInstance()
                 .reference.child("profile_pics").child(uid)
+
+
+            fun getBlockedUserRef(uid: String, targetUID: String): DatabaseReference = getRootRef()
+                .child(NODE_BLOCKED_LIST)
+                .child(uid)
+                .child(targetUID)
         }
 
 
@@ -219,7 +237,7 @@ object FirebaseUtils {
 
         textView.text  = ""
 
-        ref.getChatRef(getUid(), targetUID)
+        ref.getChatQuery(getUid(), targetUID)
             .addValueEventListener(object : ValueEventListener {
                 override fun onCancelled(p0: DatabaseError) {
 

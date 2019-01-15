@@ -18,6 +18,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import com.aziz.sstalk.Models.Models
@@ -58,6 +59,9 @@ class MessageActivity : AppCompatActivity() {
 
     var user1 = "user --- 1"
     var user2 = "user --- 2"
+
+    var isBlockedByMe = false
+    var isBlockedByUser = false
 
     val context = this@MessageActivity
     var loadedPosition:HashMap<Int,Boolean> = HashMap()
@@ -104,6 +108,8 @@ class MessageActivity : AppCompatActivity() {
         setRecyclerAdapter()
 
         setReyclerScroll()
+
+        checkIfBlocked(targetUid)
 
 
         messageInputField.setAttachmentsListener {
@@ -158,7 +164,7 @@ class MessageActivity : AppCompatActivity() {
 
 
 
-                        startActivityForResult(Intent(context, ImagePreviewActivity::class.java)
+                        startActivityForResult(Intent(context, UploadPreviewActivity::class.java)
                             .putExtra(utils.constants.KEY_IMG_PATH, file.path.toString())
                             , RQ_PREVIEW)
 
@@ -276,7 +282,7 @@ class MessageActivity : AppCompatActivity() {
 
 
         val options = FirebaseRecyclerOptions.Builder<Models.MessageModel>()
-            .setQuery(FirebaseUtils.ref.getChatRef(myUID, targetUid)
+            .setQuery(FirebaseUtils.ref.getChatQuery(myUID, targetUid)
                 ,Models.MessageModel::class.java)
             //.setLifecycleOwner(this)
             .build()
@@ -310,10 +316,15 @@ class MessageActivity : AppCompatActivity() {
                 var targetHolder:targetViewHolder
                 var myHolder: myViewHolder
 
+                var messageImage:ImageView? = null
+
+
 
                 if(holder is targetViewHolder){
                      holder.time.text = utils.getLocalTime(model.timeInMillis)
                     holder.message.text = model.message
+
+                    messageImage = holder.imageView
 
 
                     if(model.isFile && model.fileType == utils.constants.FILE_TYPE_IMAGE){
@@ -340,6 +351,8 @@ class MessageActivity : AppCompatActivity() {
                     else{
                         holder.imageView.visibility = View.GONE
 
+
+
                     }
 
 
@@ -351,6 +364,8 @@ class MessageActivity : AppCompatActivity() {
                     holder.time.text = utils.getLocalTime(model.timeInMillis)
                     holder.message.text = model.message
 
+
+                    messageImage = holder.imageView
 
 
                     if(model.isFile && model.fileType == utils.constants.FILE_TYPE_IMAGE){
@@ -499,6 +514,13 @@ class MessageActivity : AppCompatActivity() {
                 }
 
 
+                messageImage!!.setOnClickListener {
+                    if(!model.message.toString().contains("/storage/"))
+                        startActivity(Intent(context, ImagePreviewActivity::class.java)
+                            .putExtra(utils.constants.KEY_IMG_PATH,model.message.toString()))
+
+
+                }
 
 
 
@@ -513,7 +535,8 @@ class MessageActivity : AppCompatActivity() {
                 var model: Models.MessageModel = super.getItem(position)
 
 
-                return if (model.from == myUID)
+                return if (position % 2 ==0)
+                               //(model.from == myUID)
                     TYPE_MINE
                 else
                     TYPE_TARGET
@@ -612,22 +635,6 @@ class MessageActivity : AppCompatActivity() {
     }
 
 
-    class targetViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
-        val message = itemView.messageText_left!!
-        val time = itemView.time_left!!
-        val imageView = itemView.imageview_left!!
-       // val imageLayout = itemView.imageFrameLayout!!
-    }
-    class myViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
-        val message = itemView.messageText_right!!
-        val time = itemView.time_right!!
-        val imageView = itemView.imageview_right!!
-        val imageLayout = itemView.imageFrameLayoutRight!!
-        val progressBar = itemView.progress_bar_right!!
-        val tapToRetry = itemView.tap_retry_right!!
-        val messageStatus = itemView.delivery_status!!
-    }
-
 
     override fun onStart() {
         super.onStart()
@@ -658,4 +665,65 @@ class MessageActivity : AppCompatActivity() {
       //  messagesList.layoutManager!!.addView(textView, 0)
 
     }
+
+
+    private fun checkIfBlocked(targetUID:String) {
+
+        //check if i have blocked
+        FirebaseUtils.ref.getBlockedUserRef(FirebaseUtils.getUid(), targetUID)
+            .addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(dataSnapshot: DataSnapshot) {
+
+                    isBlockedByMe = if (dataSnapshot.exists())
+                        dataSnapshot.getValue(Boolean::class.java)!!
+                    else
+                        false
+
+                }
+
+                override fun onCancelled(databaseError: DatabaseError) {
+
+                }
+            })
+
+        //check i am blocked my user
+
+        FirebaseUtils.ref.getBlockedUserRef(targetUID, FirebaseUtils.getUid())
+            .addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(dataSnapshot: DataSnapshot) {
+
+                    isBlockedByUser = if (dataSnapshot.exists())
+                        dataSnapshot.getValue(Boolean::class.java)!!
+                    else
+                        false
+
+                }
+
+                override fun onCancelled(databaseError: DatabaseError) {
+
+                }
+            })
+
+
+    }
+
+
+
+
+    class targetViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
+        val message = itemView.messageText_left!!
+        val time = itemView.time_left!!
+        val imageView = itemView.imageview_left!!
+        // val imageLayout = itemView.imageFrameLayout!!
+    }
+    class myViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
+        val message = itemView.messageText_right!!
+        val time = itemView.time_right!!
+        val imageView = itemView.imageview_right!!
+        val imageLayout = itemView.imageFrameLayoutRight!!
+        val progressBar = itemView.progress_bar_right!!
+        val tapToRetry = itemView.tap_retry_right!!
+        val messageStatus = itemView.delivery_status!!
+    }
+
 }

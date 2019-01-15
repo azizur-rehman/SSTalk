@@ -1,5 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+
+
+<LinearLayout android:layout_height="wrap_content"
+              android:layout_width="match_parent"
+              android:orientation="horizontal"
+              xmlns:android="http://schemas.android.com/apk/res/android">
+
+
+    <de.hdodenhof.circleimageview.CircleImageView
+            android:layout_width="30dp"
+            android:layout_marginLeft="5dp"
+            android:layout_marginTop="10dp"
+            android:src="@drawable/contact_placeholder"
+            android:layout_height="30dp"/>
+
+
+    <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:padding="3dp"
@@ -58,6 +74,7 @@
         android:layout_height="wrap_content"
         android:text="12:10 PM"
         android:paddingTop="2dp"
+        android:textSize="12sp"
         android:paddingLeft="10dp"
         android:id="@+id/time_left"
         android:textColor="@color/warm_grey"
@@ -65,3 +82,8 @@
 
 
 </LinearLayout>
+
+
+
+</LinearLayout>
+
