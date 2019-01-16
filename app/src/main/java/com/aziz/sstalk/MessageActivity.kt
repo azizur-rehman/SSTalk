@@ -1,12 +1,14 @@
 package com.aziz.sstalk
 
 import android.Manifest
+import android.animation.Animator
 import android.app.Activity
 import android.app.ProgressDialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.location.Geocoder
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -17,15 +19,18 @@ import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewAnimationUtils
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import com.aziz.sstalk.Models.Models
 import com.aziz.sstalk.utils.FirebaseUtils
+import com.aziz.sstalk.utils.LocationHelper
 import com.aziz.sstalk.utils.utils
 import com.firebase.ui.database.FirebaseRecyclerAdapter
 import com.firebase.ui.database.FirebaseRecyclerOptions
+import com.google.android.gms.common.api.GoogleApiClient
 import com.google.android.gms.tasks.Continuation
 import com.google.android.gms.tasks.Task
 import com.google.firebase.database.DataSnapshot
@@ -43,6 +48,7 @@ import me.shaohui.advancedluban.Luban
 import me.shaohui.advancedluban.OnCompressListener
 import java.io.File
 import java.lang.Exception
+import java.util.*
 
 class MessageActivity : AppCompatActivity() {
 
@@ -69,6 +75,10 @@ class MessageActivity : AppCompatActivity() {
 
     var isUploading = false
     lateinit var adapter:FirebaseRecyclerAdapter<Models.MessageModel, RecyclerView.ViewHolder>
+
+    var locationHelper:LocationHelper? = null
+
+    var shouldHideMenu = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -107,13 +117,100 @@ class MessageActivity : AppCompatActivity() {
 
         setRecyclerAdapter()
 
-        setReyclerScroll()
+
 
         checkIfBlocked(targetUid)
 
+        setMenuListeners()
 
         messageInputField.setAttachmentsListener {
 
+
+        //    val view = layoutInflater.inflate(R.layout.item_date_header, messageInputField,false)
+
+           val cx = (attachment_menu.getLeft() + attachment_menu.getRight()) / 2
+            val cy = (attachment_menu.getTop() + attachment_menu.getBottom()) / 2
+            val finalRadius = Math.max(attachment_menu.getWidth(), attachment_menu.getHeight())
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                
+                val startAnimator =     ViewAnimationUtils.createCircularReveal(attachment_menu,
+                   // cx,cy,0F,finalRadius.toFloat()
+                    attachment_menu.left,
+                    attachment_menu.top,
+                    0F,
+                    attachment_menu.width.toFloat()
+                )
+
+                val closeAnimator =     ViewAnimationUtils.createCircularReveal(attachment_menu,
+                    attachment_menu.right,
+                    attachment_menu.bottom,
+                    0F,
+                    attachment_menu.width.toFloat())
+
+
+                startAnimator.duration = 400
+                closeAnimator.duration = 400
+
+
+                if(attachment_menu.visibility == View.GONE ) {
+                    attachment_menu.visibility = View.VISIBLE
+                    startAnimator.start()
+                }
+                else {
+                    closeAnimator.start()
+
+                }
+
+
+
+
+                startAnimator.addListener(object : Animator.AnimatorListener{
+                    override fun onAnimationRepeat(animation: Animator?) {}
+
+                    override fun onAnimationEnd(animation: Animator?) {
+                    }
+
+                    override fun onAnimationCancel(animation: Animator?) {}
+
+                    override fun onAnimationStart(animation: Animator?) {  attachment_menu.visibility = View.VISIBLE
+                    }
+
+                })
+
+                    closeAnimator.addListener(object : Animator.AnimatorListener{
+                        override fun onAnimationRepeat(animation: Animator?) {}
+
+                        override fun onAnimationEnd(animation: Animator?) {
+                            attachment_menu.visibility = View.GONE
+                          //  messagesList.alpha = 1f
+
+                            Log.d("MessageActivity", "onAnimationEnd: CLose animaton")
+
+                        }
+
+                        override fun onAnimationCancel(animation: Animator?) {}
+
+                        override fun onAnimationStart(animation: Animator?) {}
+
+                    })
+
+
+            } else {
+                attachment_menu.visibility = if (attachment_menu.visibility == View.VISIBLE) View.GONE else  View.VISIBLE
+            }
+
+
+
+        }
+
+    }
+
+
+    private fun setMenuListeners(){
+
+
+        image_picker.setOnClickListener {
             if(ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
                 ImagePicker.pickImage(context, RQ_PICK)
             else{
@@ -126,6 +223,12 @@ class MessageActivity : AppCompatActivity() {
             }
         }
 
+
+
+
+        location_btn.setOnClickListener{
+            locationHelper = LocationHelper(context)
+        }
     }
 
 
@@ -293,7 +396,7 @@ class MessageActivity : AppCompatActivity() {
             override fun onCreateViewHolder(p0: ViewGroup, p1: Int): RecyclerView.ViewHolder {
 
 
-                Log.d("MessageActivity", "onCreateViewHolder: viewtype ==== "+getItemViewType(p1))
+             //   Log.d("MessageActivity", "onCreateViewHolder: viewtype ==== "+getItemViewType(p1))
 
                return if(getItemViewType(p1) == TYPE_MINE)
                      myViewHolder(LayoutInflater.from(this@MessageActivity)
@@ -317,6 +420,7 @@ class MessageActivity : AppCompatActivity() {
                 var myHolder: myViewHolder
 
                 var messageImage:ImageView? = null
+                var dateHeader:TextView? = null
 
 
 
@@ -325,6 +429,7 @@ class MessageActivity : AppCompatActivity() {
                     holder.message.text = model.message
 
                     messageImage = holder.imageView
+                    dateHeader = holder.headerDateTime
 
 
                     if(model.isFile && model.fileType == utils.constants.FILE_TYPE_IMAGE){
@@ -363,7 +468,7 @@ class MessageActivity : AppCompatActivity() {
                 else if (holder is myViewHolder){
                     holder.time.text = utils.getLocalTime(model.timeInMillis)
                     holder.message.text = model.message
-
+                    dateHeader = holder.headerDateTime
 
                     messageImage = holder.imageView
 
@@ -523,6 +628,9 @@ class MessageActivity : AppCompatActivity() {
                 }
 
 
+                dateHeader!!.text = utils.getLocalDateTime(model.timeInMillis)
+
+
 
             }
 
@@ -530,7 +638,7 @@ class MessageActivity : AppCompatActivity() {
 
             override fun getItemViewType(position: Int): Int {
 
-                Log.d("MessageActivity", "getItemViewType: position $position , from = "+super.getSnapshots()[position].from)
+             //   Log.d("MessageActivity", "getItemViewType: position $position , from = "+super.getSnapshots()[position].from)
 
                 var model: Models.MessageModel = super.getItem(position)
 
@@ -595,9 +703,6 @@ class MessageActivity : AppCompatActivity() {
 
     private fun addMessage(messageID: String , messageModel: Models.MessageModel, onlyForMe:Boolean){
 
-
-
-
         //setting my message
 
         messageModel.isRead = true
@@ -641,6 +746,7 @@ class MessageActivity : AppCompatActivity() {
 
         if(adapter!=null)
             adapter.startListening()
+
     }
 
     override fun onStop() {
@@ -649,22 +755,13 @@ class MessageActivity : AppCompatActivity() {
 
         if(adapter!=null)
             adapter.stopListening()
-    }
 
-
-    private fun setReyclerScroll(){
-
-        val viewGroup:ViewGroup  = window.decorView.findViewById(android.R.id.content)
-
-        val textView = TextView(this)
-        textView.layoutParams = RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT)
-
-        textView.text = "Sample text"
-
-      //  messagesList.layoutManager!!.addView(textView, 0)
+        if(locationHelper!=null)
+            locationHelper!!.disconnect()
 
     }
+
+
 
 
     private fun checkIfBlocked(targetUID:String) {
@@ -678,6 +775,9 @@ class MessageActivity : AppCompatActivity() {
                         dataSnapshot.getValue(Boolean::class.java)!!
                     else
                         false
+
+                    messageInputField.button.isEnabled = isBlockedByMe || isBlockedByUser
+                    messageInputField.isEnabled = messageInputField.button.isEnabled
 
                 }
 
@@ -697,6 +797,10 @@ class MessageActivity : AppCompatActivity() {
                     else
                         false
 
+                    messageInputField.button.isEnabled = isBlockedByMe || isBlockedByUser
+                    messageInputField.isEnabled = messageInputField.button.isEnabled
+
+
                 }
 
                 override fun onCancelled(databaseError: DatabaseError) {
@@ -708,12 +812,19 @@ class MessageActivity : AppCompatActivity() {
     }
 
 
+    private fun showLocationChooseDialog(){
+
+        val googleApiClientBuilder = GoogleApiClient.Builder(context)
+            .build()
+    }
+
 
 
     class targetViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
         val message = itemView.messageText_left!!
         val time = itemView.time_left!!
         val imageView = itemView.imageview_left!!
+        val headerDateTime = itemView.header_left!!
         // val imageLayout = itemView.imageFrameLayout!!
     }
     class myViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
@@ -724,6 +835,7 @@ class MessageActivity : AppCompatActivity() {
         val progressBar = itemView.progress_bar_right!!
         val tapToRetry = itemView.tap_retry_right!!
         val messageStatus = itemView.delivery_status!!
+        val headerDateTime = itemView.header_right!!
     }
 
 }
