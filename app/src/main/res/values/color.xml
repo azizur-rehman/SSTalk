@@ -2,7 +2,7 @@
 
         <color name="colorPrimary">@color/green</color>
         <color name="colorPrimaryDark">@color/green_dark</color>
-        <color name="colorAccent">#2c987d</color>
+        <color name="colorAccent">@color/colorPrimary</color>
     <color name="cornflower_blue">#6274e2</color>
     <color name="cornflower_blue_dark">#303F9F</color>
     <color name="cornflower_blue_darkest">#2d3a93</color>

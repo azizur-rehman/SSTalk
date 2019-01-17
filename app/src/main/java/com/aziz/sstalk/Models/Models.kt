@@ -9,7 +9,7 @@ class Models {
                             var reverseTimeStamp: Long = timeInMillis * -1,
                             var isFile:Boolean = false,
                             var isRead:Boolean = false,
-                            var fileType: String = "",
+                            var messageType: String = "message",
                             var caption:String = "")
 
     data class Contact(var name:String = "", var number:String = "", var photoURI:String = "" , var uid: String = "")
@@ -22,6 +22,6 @@ class Models {
                     var uid:String = "")
 
 
-    data class lastMessageDetail(var timeInMillis: Long = System.currentTimeMillis(), var reverseTimeStamp: Long = timeInMillis  * -1)
+    data class LastMessageDetail(var timeInMillis: Long = System.currentTimeMillis(), var reverseTimeStamp: Long = timeInMillis  * -1)
 
 }

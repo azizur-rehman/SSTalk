@@ -8,7 +8,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.graphics.Color
-import android.location.Geocoder
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -30,7 +29,10 @@ import com.aziz.sstalk.utils.LocationHelper
 import com.aziz.sstalk.utils.utils
 import com.firebase.ui.database.FirebaseRecyclerAdapter
 import com.firebase.ui.database.FirebaseRecyclerOptions
-import com.google.android.gms.common.api.GoogleApiClient
+import com.google.android.gms.maps.*
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.tasks.Continuation
 import com.google.android.gms.tasks.Task
 import com.google.firebase.database.DataSnapshot
@@ -44,6 +46,8 @@ import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.activity_message.*
 import kotlinx.android.synthetic.main.bubble_right.view.*
 import kotlinx.android.synthetic.main.bubble_left.view.*
+import kotlinx.android.synthetic.main.bubble_map_left.view.*
+import kotlinx.android.synthetic.main.bubble_map_right.view.*
 import me.shaohui.advancedluban.Luban
 import me.shaohui.advancedluban.OnCompressListener
 import java.io.File
@@ -52,19 +56,28 @@ import java.util.*
 
 class MessageActivity : AppCompatActivity() {
 
+
+
+    lateinit var mapRight:GoogleMap
     var TYPE_MINE = 0
     var TYPE_TARGET = 1
+    var TYPE_MY_MAP = 2
+    var TYPE_TARGET_MAP = 3
 
-    val RQ_PICK = 123
-    val RQ_PREVIEW = 321
+    val RQ_PICK = 101
+    val RQ_PREVIEW = 102
+    val RQ_LOCATION = 103
+
+    val RP_STORAGE = 101
+    val RP_LOCATION = 102
 
     var targetUid : String = ""
     var myUID : String = ""
 
     var imageFile:File? = null
 
-    var user1 = "user --- 1"
-    var user2 = "user --- 2"
+    var user1 = "user---1"
+    var user2 = "user---2"
 
     var isBlockedByMe = false
     var isBlockedByUser = false
@@ -122,6 +135,8 @@ class MessageActivity : AppCompatActivity() {
         checkIfBlocked(targetUid)
 
         setMenuListeners()
+
+        attachment_menu.visibility = View.GONE
 
         messageInputField.setAttachmentsListener {
 
@@ -210,24 +225,64 @@ class MessageActivity : AppCompatActivity() {
     private fun setMenuListeners(){
 
 
-        image_picker.setOnClickListener {
-            if(ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
-                ImagePicker.pickImage(context, RQ_PICK)
-            else{
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    requestPermissions(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), 101)
-                }
-                else{
+        camera_btn.setOnClickListener {
+
+            attachment_menu.visibility = if (attachment_menu.visibility == View.VISIBLE) View.GONE else  View.VISIBLE
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (ActivityCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.READ_EXTERNAL_STORAGE
+                    ) == PackageManager.PERMISSION_GRANTED)
+
                     ImagePicker.pickImage(context, RQ_PICK)
+                else {
+                    requestPermissions(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), RP_STORAGE)
                 }
+
+            }
+            else{
+                ImagePicker.pickImage(context, RQ_PICK)
             }
         }
 
 
+        gallery_btn.setOnClickListener {
+            attachment_menu.visibility = if (attachment_menu.visibility == View.VISIBLE) View.GONE else  View.VISIBLE
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (ActivityCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.READ_EXTERNAL_STORAGE
+                    ) == PackageManager.PERMISSION_GRANTED)
+
+                    ImagePicker.pickImageGalleryOnly(context, RQ_PICK)
+                else {
+                    requestPermissions(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), RP_STORAGE)
+                }
+
+            }
+            else{
+                ImagePicker.pickImageGalleryOnly(context, RQ_PICK)
+            }
+        }
 
 
-        location_btn.setOnClickListener{
-            locationHelper = LocationHelper(context)
+        location_btn.setOnClickListener {
+
+            attachment_menu.visibility = if (attachment_menu.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (ActivityCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
+                    startActivityForResult(Intent(context, MapsActivity::class.java), RQ_LOCATION)
+                else
+                    requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), RP_LOCATION)
+
+            }
+            else{
+                startActivityForResult(Intent(context, MapsActivity::class.java), RQ_LOCATION)
+            }
         }
     }
 
@@ -235,9 +290,16 @@ class MessageActivity : AppCompatActivity() {
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
 
         when(requestCode){
-            101 -> {
+            RP_STORAGE -> {
                 if(grantResults[0] == PackageManager.PERMISSION_GRANTED)
                     ImagePicker.pickImage(context,RQ_PICK)
+                else
+                    utils.toast(context, "Permission denied")
+            }
+
+            RP_LOCATION -> {
+                if(grantResults[0] == PackageManager.PERMISSION_GRANTED)
+                    startActivityForResult(Intent(context, MapsActivity::class.java), RQ_LOCATION)
                 else
                     utils.toast(context, "Permission denied")
             }
@@ -249,7 +311,15 @@ class MessageActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
 
 
-        if(requestCode == RQ_PICK && resultCode == Activity.RESULT_OK){
+
+        if(resultCode != Activity.RESULT_OK)
+            return
+
+
+        val messageID = "MSG" +System.currentTimeMillis() + myUID
+
+
+        if(requestCode == RQ_PICK ){
 
             val filePath = ImagePicker.getImagePathFromResult(context, requestCode, resultCode, data)
 
@@ -285,23 +355,46 @@ class MessageActivity : AppCompatActivity() {
          }
 
 
-        if(requestCode == RQ_PREVIEW && resultCode == Activity.RESULT_OK){
+        else if(requestCode == RQ_PREVIEW ){
             val caption = data!!.getStringExtra(utils.constants.KEY_CAPTION)
 
             if (imageFile != null) {
-               // utils.toast(context, "Write code for Uploading... with caption = $caption")
 
                 Log.d("MessageActivity", "onActivityResult: Uploading Image")
 
-                val messageID = "MSG" +System.currentTimeMillis() + myUID
 
                 uploadImage(messageID, imageFile!!, caption,null)
                 isUploading = true
 
-              //  FirebaseUtils.uploadPic(context,imageFile,)
             }
 
         }
+
+        else if(requestCode == RQ_LOCATION){
+
+            val latitude = data!!.getDoubleExtra(utils.constants.KEY_LATITUDE,0.0)
+            val longitude = data.getDoubleExtra(utils.constants.KEY_LONGITUDE,0.0)
+            val address = data.getStringExtra(utils.constants.KEY_ADDRESS)
+
+            if(latitude == 0.0 || longitude == 0.0){
+                utils.toast(context, "Failed to fetch location")
+                return
+            }
+
+            val message = "$latitude,$longitude"
+
+            addMessage(messageID, Models.MessageModel(message,
+                myUID,
+                targetUid,
+                System.currentTimeMillis(),
+                isFile = false,
+                isRead = false,
+                caption = address,
+                messageType = utils.constants.FILE_TYPE_LOCATION),
+                false)
+        }
+
+
 
         super.onActivityResult(requestCode, resultCode, data)
     }
@@ -318,7 +411,7 @@ class MessageActivity : AppCompatActivity() {
 
         //Initial node
         val messageModel= Models.MessageModel(file.path,
-            myUID, targetUid ,isFile = true, caption = caption, fileType = utils.constants.FILE_TYPE_IMAGE)
+            myUID, targetUid ,isFile = true, caption = caption, messageType = utils.constants.FILE_TYPE_IMAGE)
 
         addMessage(messageID, messageModel, true)
 
@@ -345,7 +438,7 @@ class MessageActivity : AppCompatActivity() {
                 if(task.isSuccessful) {
                     val link = task.result
                     val messageModel= Models.MessageModel(link.toString() ,
-                        myUID, targetUid ,isFile = true, caption = caption, fileType = utils.constants.FILE_TYPE_IMAGE)
+                        myUID, targetUid ,isFile = true, caption = caption, messageType = utils.constants.FILE_TYPE_IMAGE)
 
                     if(BuildConfig.DEBUG)
                     utils.toast(context, "Uploaded")
@@ -393,17 +486,26 @@ class MessageActivity : AppCompatActivity() {
 
          adapter = object  : FirebaseRecyclerAdapter<Models.MessageModel, RecyclerView.ViewHolder>(options) {
 
-            override fun onCreateViewHolder(p0: ViewGroup, p1: Int): RecyclerView.ViewHolder {
+            override fun onCreateViewHolder(p0: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
 
 
-             //   Log.d("MessageActivity", "onCreateViewHolder: viewtype ==== "+getItemViewType(p1))
+               return when(viewType) {
+                     TYPE_MINE ->
+                       myViewHolder(LayoutInflater.from(this@MessageActivity)
+                       .inflate(R.layout.bubble_right, p0 , false))
 
-               return if(getItemViewType(p1) == TYPE_MINE)
-                     myViewHolder(LayoutInflater.from(this@MessageActivity)
-                            .inflate(R.layout.bubble_right, p0 , false))
-                    else
-                        targetViewHolder(LayoutInflater.from(this@MessageActivity)
-                            .inflate(R.layout.bubble_left, p0, false))
+                     TYPE_MY_MAP ->
+                         myMapHolder(LayoutInflater.from(this@MessageActivity)
+                             .inflate(R.layout.bubble_map_right, p0, false))
+
+
+                     TYPE_TARGET_MAP ->
+                       targetMapHolder(LayoutInflater.from(this@MessageActivity)
+                           .inflate(R.layout.bubble_map_left, p0, false))
+
+                   else -> targetViewHolder(LayoutInflater.from(this@MessageActivity)
+                           .inflate(R.layout.bubble_left, p0, false))
+               }
             }
 
 
@@ -421,6 +523,23 @@ class MessageActivity : AppCompatActivity() {
 
                 var messageImage:ImageView? = null
                 var dateHeader:TextView? = null
+                var latitude: Double = 0.0
+                var longitude: Double = 0.0
+                var mapView: MapView? = null
+
+
+            //    Log.d("MessageActivity", "onBindViewHolder: "+getItemViewType(position) +" at $position")
+
+                if(model.messageType == utils.constants.FILE_TYPE_LOCATION){
+
+
+                    try {
+                    latitude = model.message.split(",")[0].toDouble()
+                    longitude = model.message.split(",")[1].toDouble()
+                    }
+                    catch (e :Exception){}
+
+                }
 
 
 
@@ -432,7 +551,7 @@ class MessageActivity : AppCompatActivity() {
                     dateHeader = holder.headerDateTime
 
 
-                    if(model.isFile && model.fileType == utils.constants.FILE_TYPE_IMAGE){
+                    if(model.isFile && model.messageType == utils.constants.FILE_TYPE_IMAGE){
 
                         holder.imageView.visibility = View.VISIBLE
 
@@ -473,7 +592,7 @@ class MessageActivity : AppCompatActivity() {
                     messageImage = holder.imageView
 
 
-                    if(model.isFile && model.fileType == utils.constants.FILE_TYPE_IMAGE){
+                    if(model.isFile && model.messageType == utils.constants.FILE_TYPE_IMAGE){
 
                         holder.imageLayout.visibility = View.VISIBLE
                         holder.progressBar.visibility = View.VISIBLE
@@ -619,16 +738,72 @@ class MessageActivity : AppCompatActivity() {
                 }
 
 
-                messageImage!!.setOnClickListener {
-                    if(!model.message.toString().contains("/storage/"))
-                        startActivity(Intent(context, ImagePreviewActivity::class.java)
-                            .putExtra(utils.constants.KEY_IMG_PATH,model.message.toString()))
+                else if(holder is myMapHolder ) {
 
+
+                     mapView = holder.mapView
+
+                    holder.message.text = model.caption
+
+                }
+
+              else if(holder is targetMapHolder){
+
+                    mapView = holder.mapView
+                    holder.message.text = model.caption
+                }
+
+
+
+
+                //loading message Image listener
+               if(messageImage!=null) {
+                   messageImage!!.setOnClickListener {
+                       if (!model.message.toString().contains("/storage/"))
+                           startActivity(
+                               Intent(context, ImagePreviewActivity::class.java)
+                                   .putExtra(utils.constants.KEY_IMG_PATH, model.message.toString())
+                           )
+
+
+                   }
+               }
+
+
+
+                //loading a map
+                if(mapView != null){
+                    mapView.onCreate(null)
+
+                    mapView.getMapAsync(object : OnMapReadyCallback {
+                        override fun onMapReady(p0: GoogleMap?) {
+
+                            p0!!.addMarker(MarkerOptions()
+                                .position(LatLng(latitude, longitude)).title("")
+                                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
+                                .draggable(false).visible(true))
+
+
+                            p0.uiSettings.setAllGesturesEnabled(false)
+                            p0.moveCamera(
+                                CameraUpdateFactory.newLatLngZoom(
+                                    LatLng(latitude, longitude),
+                                    12F
+                                )
+                            )
+
+                            Log.d("MessageActivity", "onMapReady: ")
+                        }
+                    })
 
                 }
 
 
-                dateHeader!!.text = utils.getLocalDateTime(model.timeInMillis)
+
+
+
+                //next time
+           //     dateHeader!!.text = utils.getLocalDateTime(model.timeInMillis)
 
 
 
@@ -636,18 +811,35 @@ class MessageActivity : AppCompatActivity() {
 
 
 
+
+
             override fun getItemViewType(position: Int): Int {
 
-             //   Log.d("MessageActivity", "getItemViewType: position $position , from = "+super.getSnapshots()[position].from)
+                val model: Models.MessageModel = getItem(position)
 
-                var model: Models.MessageModel = super.getItem(position)
+                val viewType: Int
+
+                viewType = if(model.from == myUID){
+
+                    if(model.messageType == utils.constants.FILE_TYPE_LOCATION.toString()) {
+                        TYPE_MY_MAP
+                    } else{
+                        TYPE_MINE
+                    }
+                } else{
+                    if(model.messageType == utils.constants.FILE_TYPE_LOCATION.toString())
+                            TYPE_TARGET_MAP
+                        else
+                            TYPE_TARGET
+
+                }
 
 
-                return if (position % 2 ==0)
-                               //(model.from == myUID)
-                    TYPE_MINE
-                else
-                    TYPE_TARGET
+              //  Log.d("MessageActivity", "getItemViewType: Last viewtype value = $viewType at position = $position")
+
+                return viewType
+
+
             }
 
         }
@@ -692,13 +884,6 @@ class MessageActivity : AppCompatActivity() {
     }
 
 
-    fun sendViewToBack(child: View) {
-        val parent = child.parent as ViewGroup
-        if (null != parent) {
-            parent.removeView(child)
-            parent.addView(child, 0)
-        }
-    }
 
 
     private fun addMessage(messageID: String , messageModel: Models.MessageModel, onlyForMe:Boolean){
@@ -713,7 +898,7 @@ class MessageActivity : AppCompatActivity() {
 
                 FirebaseUtils.ref.getLastMessageRef(myUID)
                     .child(targetUid)
-                    .setValue(Models.lastMessageDetail())
+                    .setValue(Models.LastMessageDetail())
 
                 print("Message sent to $targetUid") }
 
@@ -731,7 +916,7 @@ class MessageActivity : AppCompatActivity() {
 
                 FirebaseUtils.ref.getLastMessageRef(targetUid)
                     .child(myUID)
-                    .setValue(Models.lastMessageDetail())
+                    .setValue(Models.LastMessageDetail())
 
                 print("Message added to mine") }
 
@@ -749,19 +934,14 @@ class MessageActivity : AppCompatActivity() {
 
     }
 
-    override fun onStop() {
-        super.onStop()
+
+    override fun onDestroy() {
+        super.onDestroy()
 
 
         if(adapter!=null)
             adapter.stopListening()
-
-        if(locationHelper!=null)
-            locationHelper!!.disconnect()
-
     }
-
-
 
 
     private fun checkIfBlocked(targetUID:String) {
@@ -812,12 +992,6 @@ class MessageActivity : AppCompatActivity() {
     }
 
 
-    private fun showLocationChooseDialog(){
-
-        val googleApiClientBuilder = GoogleApiClient.Builder(context)
-            .build()
-    }
-
 
 
     class targetViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
@@ -838,4 +1012,19 @@ class MessageActivity : AppCompatActivity() {
         val headerDateTime = itemView.header_right!!
     }
 
+
+    class targetMapHolder(itemView: View):RecyclerView.ViewHolder(itemView){
+        val message = itemView.messageText_map_left!!
+        val mapView = itemView.mapview_left!!
+        val dateHeader = itemView.mapview_left!!
+    }
+
+    class myMapHolder(itemView: View):RecyclerView.ViewHolder(itemView){
+        val message = itemView.messageText_map_right!!
+        val mapView = itemView.mapview_right!!
+        val dateHeader = itemView.header_map_right!!
+
+
+
+    }
 }

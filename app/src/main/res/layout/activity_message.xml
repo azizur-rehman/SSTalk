@@ -34,7 +34,6 @@
                   android:orientation="horizontal"
                   android:id="@+id/attachment_menu"
                       android:padding="15dp"
-                      android:visibility="gone"
                         android:layout_margin="2dp"
                       android:background="@drawable/button_round"
                       android:layout_gravity="bottom"
@@ -42,7 +41,7 @@
 
         <LinearLayout android:layout_height="match_parent"
         android:layout_width="0dp"
-                      android:id="@+id/image_picker"
+                      android:id="@+id/camera_btn"
                       android:padding="2dp"
                       android:orientation="vertical"
                       android:background="?attr/selectableItemBackground"
@@ -53,6 +52,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     app:backgroundTint="@color/md_deep_purple_A400"
+                    android:src="@drawable/ic_camera"
+
 
             />
 
@@ -64,6 +65,33 @@
                       android:layout_height="wrap_content"/>
 
         </LinearLayout>
+
+            <LinearLayout android:layout_height="match_parent"
+                          android:layout_width="0dp"
+                          android:id="@+id/gallery_btn"
+                          android:padding="2dp"
+                          android:orientation="vertical"
+                          android:background="?attr/selectableItemBackground"
+                          android:gravity="center"
+                          android:layout_weight="1">
+
+                <android.support.design.widget.FloatingActionButton
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:backgroundTint="@color/md_light_blue_500"
+                        android:src="@drawable/ic_gallery"
+
+
+                />
+
+                <TextView android:layout_width="match_parent"
+                          style="@style/TextViewSmallWhite"
+                          android:text="Gallery"
+                          android:textSize="18sp"
+                          android:layout_marginTop="8dp"
+                          android:layout_height="wrap_content"/>
+
+            </LinearLayout>
 
 
 
@@ -80,7 +108,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         app:backgroundTint="@color/red"
-                        android:src="@drawable/ic_location"
+                        android:src="@drawable/ic_location_white"
                 />
 
                 <TextView android:layout_width="match_parent"

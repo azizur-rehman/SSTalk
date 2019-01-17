@@ -18,8 +18,13 @@ object utils {
     object constants {
 
         val FILE_TYPE_IMAGE = "image"
+        val FILE_TYPE_LOCATION = "location"
         val KEY_IMG_PATH = "path"
         val KEY_CAPTION = "caption"
+
+        val KEY_LATITUDE = "lat"
+        val KEY_LONGITUDE = "lng"
+        val KEY_ADDRESS = "address"
 
     }
 
@@ -102,7 +107,7 @@ object utils {
 
     fun getLocalDateTime(timeStamp: Long): String{
 
-        val sdf = SimpleDateFormat("DD MMMM YY hh:mm aa")
+        val sdf = SimpleDateFormat("dd mm yy hh:mm aa")
         sdf.timeZone= (Calendar.getInstance().timeZone)
 
         return sdf.format(Date(timeStamp))

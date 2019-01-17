@@ -169,16 +169,16 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private fun setAdapter(){
 
-        val options = FirebaseRecyclerOptions.Builder<Models.lastMessageDetail>()
+        val options = FirebaseRecyclerOptions.Builder<Models.LastMessageDetail>()
             .setQuery(FirebaseUtils.ref.getLastMessageRef(FirebaseUtils.getUid())
-                .orderByChild(FirebaseUtils.KEY_REVERSE_TIMESTAMP),Models.lastMessageDetail::class.java)
+                .orderByChild(FirebaseUtils.KEY_REVERSE_TIMESTAMP),Models.LastMessageDetail::class.java)
             .setLifecycleOwner(this)
             .build()
 
-        val adapter = object : FirebaseRecyclerAdapter<Models.lastMessageDetail, ViewHolder>(options){
+        val adapter = object : FirebaseRecyclerAdapter<Models.LastMessageDetail, ViewHolder>(options){
             override fun onCreateViewHolder(p0: ViewGroup, p1: Int): ViewHolder = ViewHolder(layoutInflater.inflate(R.layout.item_contact_list, p0, false))
 
-            override fun onBindViewHolder(holder: ViewHolder, position: Int, model: Models.lastMessageDetail) {
+            override fun onBindViewHolder(holder: ViewHolder, position: Int, model: Models.LastMessageDetail) {
 
                 val uid = super.getRef(position).key.toString()
 

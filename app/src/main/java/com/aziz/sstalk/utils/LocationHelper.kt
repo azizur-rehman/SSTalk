@@ -1,15 +1,20 @@
 package com.aziz.sstalk.utils
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Address
 import android.location.Geocoder
 import android.location.Location
-import android.location.LocationListener
 import android.os.Bundle
+import android.support.v7.app.AlertDialog
 import android.util.Log
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.api.GoogleApiClient
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.tasks.Task
 import java.util.*
 
@@ -21,6 +26,16 @@ class LocationHelper(val context: Context) : GoogleApiClient.ConnectionCallbacks
         .addApi(LocationServices.API)
         .build()
 
+
+    constructor( context: Context, map: GoogleMap) : this(context) {
+        this.map = map
+    }
+
+    private  lateinit var  map:GoogleMap
+
+    private var dialog:AlertDialog? = AlertDialog.Builder(context)
+        .setMessage("Getting your current location...").create()
+
     init {
         connect()
     }
@@ -30,19 +45,8 @@ class LocationHelper(val context: Context) : GoogleApiClient.ConnectionCallbacks
     fun disconnect() = apiClient.disconnect()
 
 
-    fun getLastLocation(){
 
-
-
-    }
-
-
-    fun getAddress(latitude:Double, longitude:Double):Address?{
-
-        if(!apiClient.isConnected) {
-            utils.toast(context, "Location unavailable, check your connection")
-            return null
-        }
+     fun getAddress(latitude:Double, longitude:Double):Address?{
 
         return Geocoder(context, Locale.getDefault())
             .getFromLocation(latitude,longitude,1)[0]
@@ -53,6 +57,7 @@ class LocationHelper(val context: Context) : GoogleApiClient.ConnectionCallbacks
         Log.d("LocationHelper", "onConnectionFailed: ")
     }
 
+    @SuppressLint("MissingPermission")
     override fun onConnected(p0: Bundle?) {
 
 
@@ -62,20 +67,46 @@ class LocationHelper(val context: Context) : GoogleApiClient.ConnectionCallbacks
             .lastLocation
             .addOnSuccessListener {
                 if(it!=null){
-                    Log.d("LocationHelper", "onConnected: on success = "+it.latitude)
+
+                    if(!apiClient.isConnected) {
+                        utils.toast(context, "Location unavailable, check your connection")
+                        return@addOnSuccessListener
+                    }
+
+
+                    val address = getAddress(it.latitude,it.longitude)!!.getAddressLine(0)
+                    dialog!!.setMessage(address!!)
+
+                    // Add a marker  and move the camera
+
+                    if(map== null)
+                        return@addOnSuccessListener
+
+
+                    val latLng = LatLng(it.latitude, it.longitude)
+                    map.clear()
+                    map.addMarker(MarkerOptions().position(latLng).title(address)
+                        .draggable(true)
+                    )
+
+                    map.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 12f))
+
+
+
                 }
             }
+            .addOnFailureListener { utils.toast(context, "Error while getting location") }
             .addOnCompleteListener{task: Task<Location> ->
 
                 if(task.isSuccessful && task.result!=null){
                     val latitude = task.result!!.latitude
                     val longitude = task.result!!.longitude
 
-                    getAddress(latitude, longitude)
+                  //  getAddress(latitude, longitude)
 
                 }
                 else{
-                    Log.d("LocationHelper", "onConnected: "+task.exception.toString())
+//                    Log.d("LocationHelper", "onConnected: "+task.exception.toString())
 //                    Log.d("LocationHelper", "onConnected: exception = "+task.exception!!.message)
                 }
             }

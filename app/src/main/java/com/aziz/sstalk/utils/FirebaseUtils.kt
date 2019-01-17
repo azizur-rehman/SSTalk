@@ -253,7 +253,7 @@ object FirebaseUtils {
                         textView.text = messageModel!!.message
                         textView.visibility = View.VISIBLE
 
-                        if(messageModel.isFile && messageModel.fileType == utils.constants.FILE_TYPE_IMAGE){
+                        if(messageModel.isFile && messageModel.messageType == utils.constants.FILE_TYPE_IMAGE){
                             textView.text = ("\uD83D\uDDBC Image")
                         }
 
