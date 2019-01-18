@@ -98,7 +98,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             val latitude = currentLatLng.latitude
             val longitude = currentLatLng.longitude
 
-            val address = getAddress(latitude, longitude)!!.getAddressLine(0)
+            var address = getAddress(latitude, longitude)!!.getAddressLine(0)
+
+            if(!enable_address_checkbox.isChecked)
+                address = ""
 
             setResult(Activity.RESULT_OK, intent.putExtra(utils.constants.KEY_LATITUDE, latitude)
                 .putExtra(utils.constants.KEY_LONGITUDE, longitude)

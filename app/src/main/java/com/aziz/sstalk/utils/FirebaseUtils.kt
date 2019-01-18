@@ -7,7 +7,7 @@ import android.util.Log
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
-import com.aziz.sstalk.Models.Models
+import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.FirebaseUtils.ref.getUserRef
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*

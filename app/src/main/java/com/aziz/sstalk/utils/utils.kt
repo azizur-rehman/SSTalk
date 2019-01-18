@@ -5,7 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.provider.ContactsContract
 import android.widget.Toast
-import com.aziz.sstalk.Models.Models
+import com.aziz.sstalk.models.Models
 import com.google.firebase.auth.FirebaseAuth
 import java.io.ByteArrayOutputStream
 import java.text.SimpleDateFormat

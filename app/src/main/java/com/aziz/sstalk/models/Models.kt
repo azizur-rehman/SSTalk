@@ -1,4 +1,4 @@
-package com.aziz.sstalk.Models
+package com.aziz.sstalk.models
 
 class Models {
 

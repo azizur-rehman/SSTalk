@@ -40,7 +40,6 @@
                      android:layout_height="180dp"
                      android:scaleType="centerCrop"
                      android:paddingTop="5dp"
-                     android:background="@color/white"
                      android:src="@drawable/placeholder_image"
                      android:id="@+id/imageview_right"
                      />

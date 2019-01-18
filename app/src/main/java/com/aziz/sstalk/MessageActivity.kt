@@ -3,27 +3,28 @@ package com.aziz.sstalk
 import android.Manifest
 import android.animation.Animator
 import android.app.Activity
-import android.app.ProgressDialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.support.v4.app.ActivityCompat
 import android.support.v7.app.AppCompatActivity
+import android.support.v7.view.ActionMode
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewAnimationUtils
+import android.view.Menu
+import android.view.MenuItem
+import android.view.*
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
-import com.aziz.sstalk.Models.Models
+import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.LocationHelper
 import com.aziz.sstalk.utils.utils
@@ -40,19 +41,20 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.UploadTask
-import com.mvc.imagepicker.ImagePicker
 import com.squareup.picasso.Callback
 import com.squareup.picasso.Picasso
+import com.vincent.filepicker.Constant
+import com.vincent.filepicker.activity.ImagePickActivity
+import com.vincent.filepicker.filter.entity.ImageFile
 import kotlinx.android.synthetic.main.activity_message.*
 import kotlinx.android.synthetic.main.bubble_right.view.*
 import kotlinx.android.synthetic.main.bubble_left.view.*
 import kotlinx.android.synthetic.main.bubble_map_left.view.*
 import kotlinx.android.synthetic.main.bubble_map_right.view.*
-import me.shaohui.advancedluban.Luban
-import me.shaohui.advancedluban.OnCompressListener
 import java.io.File
 import java.lang.Exception
 import java.util.*
+import kotlin.collections.ArrayList
 
 class MessageActivity : AppCompatActivity() {
 
@@ -64,8 +66,9 @@ class MessageActivity : AppCompatActivity() {
     var TYPE_MY_MAP = 2
     var TYPE_TARGET_MAP = 3
 
-    val RQ_PICK = 101
-    val RQ_PREVIEW = 102
+    val RQ_CAMERA = 100
+    val RQ_GALLERY = 101
+    val RQ_PREVIEW_IMAGE = 102
     val RQ_LOCATION = 103
 
     val RP_STORAGE = 101
@@ -85,6 +88,8 @@ class MessageActivity : AppCompatActivity() {
     val context = this@MessageActivity
     var loadedPosition:HashMap<Int,Boolean> = HashMap()
     var myLastMessagePosition = 0
+
+    var selectedMessageIDs:MutableList<String> = ArrayList()
 
     var isUploading = false
     lateinit var adapter:FirebaseRecyclerAdapter<Models.MessageModel, RecyclerView.ViewHolder>
@@ -224,6 +229,9 @@ class MessageActivity : AppCompatActivity() {
 
     private fun setMenuListeners(){
 
+        val galleryIntent = Intent(context, ImagePickActivity::class.java)
+        galleryIntent.putExtra(ImagePickActivity.IS_NEED_CAMERA, false)
+        galleryIntent.putExtra(Constant.MAX_NUMBER,5)
 
         camera_btn.setOnClickListener {
 
@@ -233,16 +241,19 @@ class MessageActivity : AppCompatActivity() {
                 if (ActivityCompat.checkSelfPermission(
                         context,
                         Manifest.permission.READ_EXTERNAL_STORAGE
-                    ) == PackageManager.PERMISSION_GRANTED)
+                    ) == PackageManager.PERMISSION_GRANTED) {
+                  //  ImagePicker.pickImage(context, RQ_PICK)
 
-                    ImagePicker.pickImage(context, RQ_PICK)
+
+
+                }
                 else {
                     requestPermissions(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), RP_STORAGE)
                 }
 
             }
             else{
-                ImagePicker.pickImage(context, RQ_PICK)
+
             }
         }
 
@@ -254,16 +265,19 @@ class MessageActivity : AppCompatActivity() {
                 if (ActivityCompat.checkSelfPermission(
                         context,
                         Manifest.permission.READ_EXTERNAL_STORAGE
-                    ) == PackageManager.PERMISSION_GRANTED)
+                    ) == PackageManager.PERMISSION_GRANTED){
 
-                    ImagePicker.pickImageGalleryOnly(context, RQ_PICK)
+                    startActivityForResult(galleryIntent, RQ_GALLERY)
+
+                }
+
                 else {
                     requestPermissions(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), RP_STORAGE)
                 }
 
             }
             else{
-                ImagePicker.pickImageGalleryOnly(context, RQ_PICK)
+                startActivityForResult(galleryIntent, RQ_GALLERY)
             }
         }
 
@@ -291,8 +305,9 @@ class MessageActivity : AppCompatActivity() {
 
         when(requestCode){
             RP_STORAGE -> {
-                if(grantResults[0] == PackageManager.PERMISSION_GRANTED)
-                    ImagePicker.pickImage(context,RQ_PICK)
+                if(grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    // ImagePicker.pickImage(context,RQ)
+                }
                 else
                     utils.toast(context, "Permission denied")
             }
@@ -316,55 +331,49 @@ class MessageActivity : AppCompatActivity() {
             return
 
 
-        val messageID = "MSG" +System.currentTimeMillis() + myUID
+        var messageID = "MSG" +System.currentTimeMillis() + myUID
 
 
-        if(requestCode == RQ_PICK ){
-
-            val filePath = ImagePicker.getImagePathFromResult(context, requestCode, resultCode, data)
-
-            Luban.compress(context, File(filePath))
-                .putGear(Luban.THIRD_GEAR)
-                .launch(object : OnCompressListener {
-                    override fun onStart() {
-
-                    }
-
-                    override fun onSuccess(file: File?) {
-
-                        imageFile = file!!
+        if(requestCode == RQ_GALLERY ){
 
 
+            val filePaths = data!!.getParcelableArrayListExtra<ImageFile>(Constant.RESULT_PICK_IMAGE)
+
+            for(imageFile in filePaths)
+                Log.d("MessageActivity", "onActivityResult: "+imageFile.path)
 
 
-                        startActivityForResult(Intent(context, UploadPreviewActivity::class.java)
-                            .putExtra(utils.constants.KEY_IMG_PATH, file.path.toString())
-                            , RQ_PREVIEW)
+            if(filePaths.isEmpty())
+                return
 
 
-                    }
+            startActivityForResult(Intent(context, UploadPreviewActivity::class.java)
+                .putParcelableArrayListExtra(utils.constants.KEY_IMG_PATH, filePaths)
+                , RQ_PREVIEW_IMAGE)
 
-                    override fun onError(e: Throwable?) {
-                        Log.d("MessageActivity", "onError: "+e!!.message.toString())
-                        utils.longToast(context, e.message.toString())
-                    }
 
-                })
 
 
          }
 
 
-        else if(requestCode == RQ_PREVIEW ){
-            val caption = data!!.getStringExtra(utils.constants.KEY_CAPTION)
+        else if(requestCode == RQ_PREVIEW_IMAGE ){
+            val caption = data!!.getStringArrayListExtra(utils.constants.KEY_CAPTION)
+            val imgPaths = data.getStringArrayListExtra(utils.constants.KEY_IMG_PATH)
 
-            if (imageFile != null) {
+            if (imgPaths.isNotEmpty()) {
 
                 Log.d("MessageActivity", "onActivityResult: Uploading Image")
 
 
-                uploadImage(messageID, imageFile!!, caption,null)
-                isUploading = true
+                for((index, path) in imgPaths.withIndex()) {
+                    messageID = "MSG" +System.currentTimeMillis() + myUID
+
+                    uploadFile(messageID,  File(path.toString()),
+                        caption[index],
+                        null, utils.constants.FILE_TYPE_IMAGE)
+                    isUploading = true
+                }
 
             }
 
@@ -400,73 +409,69 @@ class MessageActivity : AppCompatActivity() {
     }
 
 
-    private fun uploadImage(messageID: String, file: File, caption: String, progressBar: ProgressBar?){
-        val dialog = ProgressDialog(context)
-        dialog.setMessage("Uploading...")
-        dialog.setCancelable(false)
-       // dialog.show()
+    private fun uploadFile(messageID: String, file: File, caption: String, progressBar: ProgressBar?, messageType: String){
+
 
         Log.d("MessageActivity", "uploadImage: dir = "+file.path)
 
 
-        //Initial node
-        val messageModel= Models.MessageModel(file.path,
-            myUID, targetUid ,isFile = true, caption = caption, messageType = utils.constants.FILE_TYPE_IMAGE)
 
-        addMessage(messageID, messageModel, true)
+         //Initial node
+         val messageModel= Models.MessageModel(file!!.path,
+                 myUID, targetUid ,isFile = true, caption = caption, messageType = messageType)
 
-        isUploading = true
+          addMessage(messageID, messageModel, true)
 
-
-        val ref =  FirebaseStorage.getInstance()
-            .reference.child("images").child(messageID)
+                    isUploading = true
 
 
-        val uploadTask = ref.putFile(Uri.fromFile(file))
+                    val ref =  FirebaseStorage.getInstance()
+                        .reference.child("images").child(messageID)
 
-        uploadTask.continueWithTask(Continuation<UploadTask.TaskSnapshot, Task<Uri>> { task ->
-            if (!task.isSuccessful) {
-                task.exception?.let {
-                    throw it
-                }
-            }
-            return@Continuation ref.downloadUrl
-        })
-            .addOnCompleteListener { task ->
-                dialog.dismiss()
-                isUploading = false
-                if(task.isSuccessful) {
-                    val link = task.result
-                    val messageModel= Models.MessageModel(link.toString() ,
-                        myUID, targetUid ,isFile = true, caption = caption, messageType = utils.constants.FILE_TYPE_IMAGE)
 
-                    if(BuildConfig.DEBUG)
-                    utils.toast(context, "Uploaded")
+                    ref.putFile(Uri.fromFile(file))
+                        .continueWithTask(Continuation<UploadTask.TaskSnapshot, Task<Uri>> { task ->
+                        if (!task.isSuccessful) {
+                            task.exception?.let {
+                                throw it
+                            }
+                        }
+                        return@Continuation ref.downloadUrl
+                    })
+                        .addOnCompleteListener { task ->
+                            isUploading = false
+                            if(task.isSuccessful) {
+                                val link = task.result
+                                val messageModel= Models.MessageModel(link.toString() ,
+                                    myUID, targetUid ,isFile = true, caption = caption, messageType = utils.constants.FILE_TYPE_IMAGE)
 
-                    if (progressBar != null) {
-                        progressBar.visibility = View.GONE
-                    }
+                                if(BuildConfig.DEBUG)
+                                    utils.toast(context, "Uploaded")
 
-                    addMessage(messageID, messageModel, false)
+                                if (progressBar != null) {
+                                    progressBar.visibility = View.GONE
+                                }
 
-                }
-                else
-                    utils.toast(context, task.exception!!.message.toString())
-             }
+                                addMessage(messageID, messageModel, false)
 
-            .addOnSuccessListener {
-            dialog.dismiss()
-            isUploading = false
+                            }
+                            else
+                                utils.toast(context, task.exception!!.message.toString())
+                        }
 
-            }
-            .addOnFailureListener{
-                dialog.dismiss()
-                isUploading = false
-            }
+                        .addOnSuccessListener {
+                            isUploading = false
+
+                        }
+                        .addOnFailureListener{
+                            isUploading = false
+                        }
 
 
 
     }
+
+
 
     private fun setRecyclerAdapter(){
 
@@ -480,7 +485,6 @@ class MessageActivity : AppCompatActivity() {
         val options = FirebaseRecyclerOptions.Builder<Models.MessageModel>()
             .setQuery(FirebaseUtils.ref.getChatQuery(myUID, targetUid)
                 ,Models.MessageModel::class.java)
-            //.setLifecycleOwner(this)
             .build()
 
 
@@ -518,14 +522,12 @@ class MessageActivity : AppCompatActivity() {
                 messagesList.setBackgroundColor(Color.WHITE)
 
 
-                var targetHolder:targetViewHolder
-                var myHolder: myViewHolder
-
                 var messageImage:ImageView? = null
                 var dateHeader:TextView? = null
                 var latitude: Double = 0.0
                 var longitude: Double = 0.0
                 var mapView: MapView? = null
+
 
 
             //    Log.d("MessageActivity", "onBindViewHolder: "+getItemViewType(position) +" at $position")
@@ -554,6 +556,7 @@ class MessageActivity : AppCompatActivity() {
                     if(model.isFile && model.messageType == utils.constants.FILE_TYPE_IMAGE){
 
                         holder.imageView.visibility = View.VISIBLE
+                        holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
 
 
                         if(model.message.isNotEmpty() ) {
@@ -592,12 +595,15 @@ class MessageActivity : AppCompatActivity() {
                     messageImage = holder.imageView
 
 
+
+
                     if(model.isFile && model.messageType == utils.constants.FILE_TYPE_IMAGE){
 
                         holder.imageLayout.visibility = View.VISIBLE
                         holder.progressBar.visibility = View.VISIBLE
                         holder.progressBar.bringToFront()
 
+                        holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
 
 
                         if(model.message.isNotEmpty() ) {
@@ -613,8 +619,10 @@ class MessageActivity : AppCompatActivity() {
 
 
                                     if(model.message.contains("/storage/"))
-                                    uploadImage(super.getRef(position).key!!, File(model.message.toString()),
-                                        model.caption, holder.progressBar)
+                                    uploadFile(super.getRef(position).key!!, File(model.message.toString()),
+                                        model.caption, holder.progressBar,
+                                        utils.constants.FILE_TYPE_IMAGE
+                                        )
                                 }
 
                                 Picasso.get()
@@ -745,6 +753,8 @@ class MessageActivity : AppCompatActivity() {
 
                     holder.message.text = model.caption
 
+                   holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
+
                 }
 
               else if(holder is targetMapHolder){
@@ -758,7 +768,7 @@ class MessageActivity : AppCompatActivity() {
 
                 //loading message Image listener
                if(messageImage!=null) {
-                   messageImage!!.setOnClickListener {
+                   messageImage.setOnClickListener {
                        if (!model.message.toString().contains("/storage/"))
                            startActivity(
                                Intent(context, ImagePreviewActivity::class.java)
@@ -775,25 +785,24 @@ class MessageActivity : AppCompatActivity() {
                 if(mapView != null){
                     mapView.onCreate(null)
 
-                    mapView.getMapAsync(object : OnMapReadyCallback {
-                        override fun onMapReady(p0: GoogleMap?) {
-
-                            p0!!.addMarker(MarkerOptions()
-                                .position(LatLng(latitude, longitude)).title("")
-                                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
-                                .draggable(false).visible(true))
+                    mapView.getMapAsync(OnMapReadyCallback { googleMap ->
 
 
-                            p0.uiSettings.setAllGesturesEnabled(false)
-                            p0.moveCamera(
-                                CameraUpdateFactory.newLatLngZoom(
-                                    LatLng(latitude, longitude),
-                                    12F
-                                )
+                        googleMap!!.addMarker(MarkerOptions()
+                            .position(LatLng(latitude, longitude)).title("")
+                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
+                            .draggable(false).visible(true))
+
+
+                        googleMap.uiSettings.setAllGesturesEnabled(false)
+                        googleMap.moveCamera(
+                            CameraUpdateFactory.newLatLngZoom(
+                                LatLng(latitude, longitude),
+                                12F
                             )
+                        )
 
-                            Log.d("MessageActivity", "onMapReady: ")
-                        }
+                        Log.d("MessageActivity", "onMapReady: ")
                     })
 
                 }
@@ -806,6 +815,48 @@ class MessageActivity : AppCompatActivity() {
            //     dateHeader!!.text = utils.getLocalDateTime(model.timeInMillis)
 
 
+                //setting contextual toolbar
+
+                var selectedDrawable = ColorDrawable(Color.CYAN)
+                var unselectedDrawable = ColorDrawable(Color.WHITE)
+
+                val messageIDKey = super.getRef(position).key
+
+                holder.itemView.setOnLongClickListener {
+
+
+
+                    if(!isContextMenuActive) {
+
+                        if(!selectedMessageIDs.contains(messageIDKey))
+                            selectedMessageIDs.add(messageIDKey!!)
+
+                        startSupportActionMode(actionModeCallback)
+
+                        it.background = if (it.background == selectedDrawable) unselectedDrawable else selectedDrawable
+
+                    }
+
+                    true
+                }
+
+
+                holder.itemView.setOnClickListener {
+
+
+                    if(isContextMenuActive) {
+                        it.background = if (it.background == selectedDrawable) unselectedDrawable else selectedDrawable
+
+
+                        if(it.background == unselectedDrawable)
+                            selectedMessageIDs.remove(messageIDKey)
+                        else {
+                            if (!selectedMessageIDs.contains(messageIDKey))
+                                selectedMessageIDs.add(messageIDKey!!)
+                        }
+                    }
+
+                }
 
             }
 
@@ -834,8 +885,6 @@ class MessageActivity : AppCompatActivity() {
 
                 }
 
-
-              //  Log.d("MessageActivity", "getItemViewType: Last viewtype value = $viewType at position = $position")
 
                 return viewType
 
@@ -992,6 +1041,44 @@ class MessageActivity : AppCompatActivity() {
     }
 
 
+
+    var isContextMenuActive = false
+    var actionModeCallback = object : ActionMode.Callback{
+        override fun onActionItemClicked(p0: ActionMode?, p1: MenuItem?): Boolean {
+
+            for((index,messageID) in selectedMessageIDs.withIndex()){
+                FirebaseUtils.ref.getChatRef(myUID, targetUid)
+                    .child(messageID)
+                    .removeValue()
+                    .addOnCompleteListener {
+                        if(index == selectedMessageIDs.size - 1)
+                            p0!!.finish()
+                    }
+            }
+
+            return true
+        }
+
+        override fun onCreateActionMode(p0: ActionMode?, p1: Menu?): Boolean {
+
+            val delete = p1!!.add(101,102,103,"Delete")
+            delete.setIcon(R.drawable.ic_action_delete)
+
+            isContextMenuActive = true
+
+            return true
+        }
+
+        override fun onPrepareActionMode(p0: ActionMode?, p1: Menu?): Boolean {
+            return true
+        }
+
+        override fun onDestroyActionMode(p0: ActionMode?) {
+            isContextMenuActive = false
+            selectedMessageIDs.clear()
+        }
+
+    }
 
 
     class targetViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView){

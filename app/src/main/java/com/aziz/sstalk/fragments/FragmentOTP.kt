@@ -1,4 +1,4 @@
-package com.aziz.sstalk.Fragments
+package com.aziz.sstalk.fragments
 
 import android.content.Context
 import android.os.Bundle

@@ -31,6 +31,8 @@
                   android:layout_weight="1"
                   android:layout_gravity="top|center"
                   android:text="With Address"
+                  android:checked="true"
+                  android:id="@+id/enable_address_checkbox"
                   android:layout_height="match_parent"/>
 
           <android.support.design.widget.FloatingActionButton

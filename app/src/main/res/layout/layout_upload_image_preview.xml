@@ -10,43 +10,43 @@
         tools:context=".UploadPreviewActivity">
 
 
-    <android.support.v7.widget.Toolbar
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@color/black"
-            android:id="@+id/toolbar"
-    />
 
-
-
-    <FrameLayout android:layout_width="match_parent"
-                 android:layout_height="0dp"
-    android:layout_weight="1"
-    >
-    <android.support.v4.view.ViewPager
+    <com.aziz.sstalk.customviews.TouchImageView
       android:layout_width="match_parent"
-      android:layout_height="match_parent"
-    android:id="@+id/viewPager"
+      android:layout_height="0dp"
+    android:layout_weight="1"
+      android:src="@color/md_orange_50"
+      android:background="@color/black"
+    android:id="@+id/image_preview"
     />
 
 
-    <LinearLayout android:layout_width="wrap_content"
+    <LinearLayout android:layout_width="match_parent"
                   android:orientation="horizontal"
                   android:padding="20dp"
-                  android:layout_gravity="end|bottom"
+                  android:id="@+id/upload_caption_edittext_layout"
+                  android:layout_marginBottom="5dp"
                   android:layout_height="wrap_content">
 
+
+        <EditText android:layout_width="0dp"
+                  android:layout_weight="1"
+                  android:id="@+id/captionEditText"
+                  android:textColor="@color/white"
+                  android:textColorHint="@color/gray_light"
+                  android:hint="Type a Caption..."
+                  android:layout_marginRight="10dp"
+                  android:layout_height="match_parent"/>
 
         <android.support.design.widget.FloatingActionButton
                 android:layout_width="wrap_content"
                 android:id="@+id/sendBtn"
-                 android:layout_height="wrap_content"
+                android:layout_height="wrap_content"
                 android:src="@android:drawable/ic_menu_send"
         />
 
 
     </LinearLayout>
 
-    </FrameLayout>
 
 </LinearLayout>

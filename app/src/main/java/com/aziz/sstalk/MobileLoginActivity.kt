@@ -2,7 +2,7 @@ package com.aziz.sstalk
 
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
-import com.aziz.sstalk.Fragments.FragmentOTP
+import com.aziz.sstalk.fragments.FragmentOTP
 import com.aziz.sstalk.utils.utils
 import kotlinx.android.synthetic.main.input_phone.*
 
