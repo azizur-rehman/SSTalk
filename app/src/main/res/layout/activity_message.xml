@@ -25,7 +25,9 @@
 
         <android.support.v7.widget.RecyclerView
         android:id="@+id/messagesList"
-        android:background="@color/ivory"
+        android:paddingTop="15dp"
+        android:clipToPadding="true"
+        android:paddingBottom="10dp"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
