@@ -33,7 +33,7 @@
                      android:layout_height="wrap_content"/>
 
 
-        <com.aziz.sstalk.customviews.TouchImageView
+        <com.aziz.sstalk.views.TouchImageView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:id="@+id/preview"

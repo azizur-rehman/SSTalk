@@ -20,7 +20,7 @@ import java.util.ArrayList
 
 class ViewPagerImageAdapter(
     private val inflater: LayoutInflater,
-    private val imagePaths: ArrayList<ImageFile>,
+    private val imagePaths: ArrayList<String>,
     private val shouldShowEditText: Boolean
 ) : PagerAdapter() {
 
@@ -62,7 +62,7 @@ class ViewPagerImageAdapter(
         }
 
 
-        imgView.setImageURI(Uri.fromFile(File(imagePaths[position].path)))
+        imgView.setImageURI(Uri.fromFile(File(imagePaths[position])))
 
 //        Picasso.get()
 //            .load(File(imagePaths[position].path))

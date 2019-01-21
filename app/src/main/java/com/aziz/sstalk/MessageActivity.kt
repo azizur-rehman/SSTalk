@@ -1,17 +1,23 @@
 package com.aziz.sstalk
 
 import android.Manifest
-import android.animation.Animator
 import android.app.Activity
+import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.BitmapFactory
+import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.Drawable
+import android.media.ThumbnailUtils
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.os.Environment.DIRECTORY_DCIM
+import android.provider.MediaStore
 import android.support.v4.app.ActivityCompat
+import android.support.v4.content.ContextCompat
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.view.ActionMode
 import android.support.v7.widget.LinearLayoutManager
@@ -22,12 +28,12 @@ import android.view.MenuItem
 import android.view.*
 import android.view.ViewGroup
 import android.widget.ImageView
-import android.widget.ProgressBar
 import android.widget.TextView
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.LocationHelper
 import com.aziz.sstalk.utils.utils
+import com.aziz.sstalk.views.holders
 import com.firebase.ui.database.FirebaseRecyclerAdapter
 import com.firebase.ui.database.FirebaseRecyclerOptions
 import com.google.android.gms.maps.*
@@ -41,20 +47,24 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.UploadTask
+import com.mikhaellopez.circularprogressbar.CircularProgressBar
 import com.squareup.picasso.Callback
 import com.squareup.picasso.Picasso
+import com.squareup.picasso.Target
 import com.vincent.filepicker.Constant
 import com.vincent.filepicker.activity.ImagePickActivity
+import com.vincent.filepicker.activity.VideoPickActivity
 import com.vincent.filepicker.filter.entity.ImageFile
+import com.vincent.filepicker.filter.entity.VideoFile
 import kotlinx.android.synthetic.main.activity_message.*
-import kotlinx.android.synthetic.main.bubble_right.view.*
-import kotlinx.android.synthetic.main.bubble_left.view.*
-import kotlinx.android.synthetic.main.bubble_map_left.view.*
-import kotlinx.android.synthetic.main.bubble_map_right.view.*
+import me.shaohui.advancedluban.Luban
+import me.shaohui.advancedluban.OnCompressListener
 import java.io.File
 import java.lang.Exception
+import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 
 class MessageActivity : AppCompatActivity() {
 
@@ -65,33 +75,53 @@ class MessageActivity : AppCompatActivity() {
     var TYPE_TARGET = 1
     var TYPE_MY_MAP = 2
     var TYPE_TARGET_MAP = 3
+    var TYPE_MY_IMAGE = 4
+    var TYPE_TARGET_IMAGE = 5
+    val TYPE_MY_VIDEO = 6
+    val TYPE_TARGET_VIDEO = 7
+
 
     val RQ_CAMERA = 100
     val RQ_GALLERY = 101
     val RQ_PREVIEW_IMAGE = 102
     val RQ_LOCATION = 103
+    val RQ_VIDEO = 104
 
-    val RP_STORAGE = 101
+    val RP_STORAGE_GALLERY = 101
     val RP_LOCATION = 102
+    val RP_STORAGE_CAMERA = 103
+    val RP_STORAGE_VIDEO = 104
+
+    val RP_INITAL_STORAGE_PERMISSION = 105
 
     var targetUid : String = ""
     var myUID : String = ""
 
     var imageFile:File? = null
+     var cameraImagePath  = ""
+     var cameraImageUri: Uri? = null
 
     var user1 = "user---1"
     var user2 = "user---2"
+
+    val storage_dir_initial = "/storage/"
 
     var isBlockedByMe = false
     var isBlockedByUser = false
 
     val context = this@MessageActivity
     var loadedPosition:HashMap<Int,Boolean> = HashMap()
+
     var myLastMessagePosition = 0
 
     var selectedMessageIDs:MutableList<String> = ArrayList()
+    var selectedItemViews:MutableList<View> = ArrayList()
 
-    var isUploading = false
+
+    val isUploading:HashMap<String,Boolean> = HashMap()
+    val CircularProgressBarsAt:HashMap<String,CircularProgressBar> = HashMap()
+    val mediaControlImageViewAt:HashMap<String,ImageView> = HashMap()
+
     lateinit var adapter:FirebaseRecyclerAdapter<Models.MessageModel, RecyclerView.ViewHolder>
 
     var locationHelper:LocationHelper? = null
@@ -141,84 +171,14 @@ class MessageActivity : AppCompatActivity() {
 
         setMenuListeners()
 
-        attachment_menu.visibility = View.GONE
+        attachment_menu.visibility = View.INVISIBLE
 
         messageInputField.setAttachmentsListener {
 
 
-        //    val view = layoutInflater.inflate(R.layout.item_date_header, messageInputField,false)
 
-           val cx = (attachment_menu.getLeft() + attachment_menu.getRight()) / 2
-            val cy = (attachment_menu.getTop() + attachment_menu.getBottom()) / 2
-            val finalRadius = Math.max(attachment_menu.getWidth(), attachment_menu.getHeight())
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                
-                val startAnimator =     ViewAnimationUtils.createCircularReveal(attachment_menu,
-                   // cx,cy,0F,finalRadius.toFloat()
-                    attachment_menu.left,
-                    attachment_menu.top,
-                    0F,
-                    attachment_menu.width.toFloat()
-                )
-
-                val closeAnimator =     ViewAnimationUtils.createCircularReveal(attachment_menu,
-                    attachment_menu.right,
-                    attachment_menu.bottom,
-                    0F,
-                    attachment_menu.width.toFloat())
-
-
-                startAnimator.duration = 400
-                closeAnimator.duration = 400
-
-
-                if(attachment_menu.visibility == View.GONE ) {
-                    attachment_menu.visibility = View.VISIBLE
-                    startAnimator.start()
-                }
-                else {
-                    closeAnimator.start()
-
-                }
-
-
-
-
-                startAnimator.addListener(object : Animator.AnimatorListener{
-                    override fun onAnimationRepeat(animation: Animator?) {}
-
-                    override fun onAnimationEnd(animation: Animator?) {
-                    }
-
-                    override fun onAnimationCancel(animation: Animator?) {}
-
-                    override fun onAnimationStart(animation: Animator?) {  attachment_menu.visibility = View.VISIBLE
-                    }
-
-                })
-
-                    closeAnimator.addListener(object : Animator.AnimatorListener{
-                        override fun onAnimationRepeat(animation: Animator?) {}
-
-                        override fun onAnimationEnd(animation: Animator?) {
-                            attachment_menu.visibility = View.GONE
-                          //  messagesList.alpha = 1f
-
-                            Log.d("MessageActivity", "onAnimationEnd: CLose animaton")
-
-                        }
-
-                        override fun onAnimationCancel(animation: Animator?) {}
-
-                        override fun onAnimationStart(animation: Animator?) {}
-
-                    })
-
-
-            } else {
-                attachment_menu.visibility = if (attachment_menu.visibility == View.VISIBLE) View.GONE else  View.VISIBLE
-            }
+         if(attachment_menu.visibility != View.VISIBLE) utils.setEnterRevealEffect(attachment_menu)
+         else utils.setExitRevealEffect(attachment_menu)
 
 
 
@@ -230,41 +190,52 @@ class MessageActivity : AppCompatActivity() {
     private fun setMenuListeners(){
 
         val galleryIntent = Intent(context, ImagePickActivity::class.java)
-        galleryIntent.putExtra(ImagePickActivity.IS_NEED_CAMERA, false)
+        galleryIntent.putExtra(ImagePickActivity.IS_NEED_CAMERA, true)
         galleryIntent.putExtra(Constant.MAX_NUMBER,5)
+
+        val videoIntent = Intent(context, VideoPickActivity::class.java)
+        videoIntent.putExtra(VideoPickActivity.IS_NEED_CAMERA, true)
+        videoIntent.putExtra(Constant.MAX_NUMBER, 5)
 
         camera_btn.setOnClickListener {
 
-            attachment_menu.visibility = if (attachment_menu.visibility == View.VISIBLE) View.GONE else  View.VISIBLE
+            if(attachment_menu.visibility != View.VISIBLE) utils.setEnterRevealEffect(attachment_menu) else utils.setExitRevealEffect(attachment_menu)
+
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 if (ActivityCompat.checkSelfPermission(
                         context,
                         Manifest.permission.READ_EXTERNAL_STORAGE
+                    ) == PackageManager.PERMISSION_GRANTED  && ActivityCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE
                     ) == PackageManager.PERMISSION_GRANTED) {
-                  //  ImagePicker.pickImage(context, RQ_PICK)
 
-
+                    startCamera()
 
                 }
                 else {
-                    requestPermissions(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), RP_STORAGE)
+                    requestPermissions(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE), RP_STORAGE_CAMERA)
                 }
 
             }
             else{
-
+                startCamera()
             }
         }
 
 
         gallery_btn.setOnClickListener {
-            attachment_menu.visibility = if (attachment_menu.visibility == View.VISIBLE) View.GONE else  View.VISIBLE
+
+            if(attachment_menu.visibility != View.VISIBLE) utils.setEnterRevealEffect(attachment_menu) else utils.setExitRevealEffect(attachment_menu)
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 if (ActivityCompat.checkSelfPermission(
                         context,
                         Manifest.permission.READ_EXTERNAL_STORAGE
+                    ) == PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE
                     ) == PackageManager.PERMISSION_GRANTED){
 
                     startActivityForResult(galleryIntent, RQ_GALLERY)
@@ -272,7 +243,7 @@ class MessageActivity : AppCompatActivity() {
                 }
 
                 else {
-                    requestPermissions(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), RP_STORAGE)
+                    requestPermissions(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE), RP_STORAGE_GALLERY)
                 }
 
             }
@@ -284,7 +255,8 @@ class MessageActivity : AppCompatActivity() {
 
         location_btn.setOnClickListener {
 
-            attachment_menu.visibility = if (attachment_menu.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+            if(attachment_menu.visibility != View.VISIBLE) utils.setEnterRevealEffect(attachment_menu) else utils.setExitRevealEffect(attachment_menu)
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 if (ActivityCompat.checkSelfPermission(
                         context,
@@ -298,25 +270,94 @@ class MessageActivity : AppCompatActivity() {
                 startActivityForResult(Intent(context, MapsActivity::class.java), RQ_LOCATION)
             }
         }
+
+
+        video_pick_btn.setOnClickListener {
+            if(attachment_menu.visibility != View.VISIBLE) utils.setEnterRevealEffect(attachment_menu)
+            else utils.setExitRevealEffect(attachment_menu)
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (ActivityCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.READ_EXTERNAL_STORAGE
+                    ) == PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE
+                    ) == PackageManager.PERMISSION_GRANTED){
+
+                    startActivityForResult(videoIntent, RQ_VIDEO)
+
+                }
+
+                else {
+                    requestPermissions(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE), RP_STORAGE_GALLERY)
+                }
+
+            }
+            else{
+                startActivityForResult(videoIntent, RQ_VIDEO)
+            }
+
+        }
+
+    }
+
+    private fun startCamera(){
+        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(Date())
+        val file = File(
+            Environment.getExternalStoragePublicDirectory(DIRECTORY_DCIM).absolutePath
+                    + "/IMG_" + timeStamp + ".jpg"
+        )
+        val mImagePath = file.absolutePath
+        cameraImagePath = mImagePath
+
+        val contentValues = ContentValues(1)
+        contentValues.put(MediaStore.Images.Media.DATA, mImagePath)
+        val mImageUri = context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+        cameraImageUri = mImageUri
+
+        intent.putExtra(MediaStore.EXTRA_OUTPUT, mImageUri)
+
+        startActivityForResult(intent, RQ_CAMERA)
     }
 
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
 
         when(requestCode){
-            RP_STORAGE -> {
-                if(grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    // ImagePicker.pickImage(context,RQ)
+            RP_STORAGE_GALLERY -> {
+                if(grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
+                    val galleryIntent = Intent(context, ImagePickActivity::class.java)
+                    galleryIntent.putExtra(ImagePickActivity.IS_NEED_CAMERA, true)
+                    galleryIntent.putExtra(Constant.MAX_NUMBER,5)
+                    startActivityForResult(galleryIntent, RQ_GALLERY)
                 }
                 else
                     utils.toast(context, "Permission denied")
             }
-
+            RP_STORAGE_CAMERA -> {
+                if(grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
+                    startCamera()
+                }
+                else
+                    utils.toast(context, "Permission denied")
+            }
             RP_LOCATION -> {
                 if(grantResults[0] == PackageManager.PERMISSION_GRANTED)
                     startActivityForResult(Intent(context, MapsActivity::class.java), RQ_LOCATION)
                 else
                     utils.toast(context, "Permission denied")
+            }
+
+
+            RP_INITAL_STORAGE_PERMISSION -> {
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
+                    setRecyclerAdapter()
+                } else {
+                    utils.toast(context, "Permission denied")
+                    finish()
+                }
             }
         }
 
@@ -326,12 +367,16 @@ class MessageActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
 
 
+        if(resultCode == Activity.RESULT_CANCELED && requestCode == RQ_CAMERA){
+            contentResolver.delete(cameraImageUri, null,null)
+        }
+
 
         if(resultCode != Activity.RESULT_OK)
             return
 
 
-        var messageID = "MSG" +System.currentTimeMillis() + myUID
+        var messageID = "MSG" +System.currentTimeMillis()
 
 
         if(requestCode == RQ_GALLERY ){
@@ -339,8 +384,6 @@ class MessageActivity : AppCompatActivity() {
 
             val filePaths = data!!.getParcelableArrayListExtra<ImageFile>(Constant.RESULT_PICK_IMAGE)
 
-            for(imageFile in filePaths)
-                Log.d("MessageActivity", "onActivityResult: "+imageFile.path)
 
 
             if(filePaths.isEmpty())
@@ -349,6 +392,7 @@ class MessageActivity : AppCompatActivity() {
 
             startActivityForResult(Intent(context, UploadPreviewActivity::class.java)
                 .putParcelableArrayListExtra(utils.constants.KEY_IMG_PATH, filePaths)
+                .putExtra(utils.constants.IS_FOR_SINGLE_FILE, false)
                 , RQ_PREVIEW_IMAGE)
 
 
@@ -357,27 +401,7 @@ class MessageActivity : AppCompatActivity() {
          }
 
 
-        else if(requestCode == RQ_PREVIEW_IMAGE ){
-            val caption = data!!.getStringArrayListExtra(utils.constants.KEY_CAPTION)
-            val imgPaths = data.getStringArrayListExtra(utils.constants.KEY_IMG_PATH)
 
-            if (imgPaths.isNotEmpty()) {
-
-                Log.d("MessageActivity", "onActivityResult: Uploading Image")
-
-
-                for((index, path) in imgPaths.withIndex()) {
-                    messageID = "MSG" +System.currentTimeMillis() + myUID
-
-                    uploadFile(messageID,  File(path.toString()),
-                        caption[index],
-                        null, utils.constants.FILE_TYPE_IMAGE)
-                    isUploading = true
-                }
-
-            }
-
-        }
 
         else if(requestCode == RQ_LOCATION){
 
@@ -392,90 +416,108 @@ class MessageActivity : AppCompatActivity() {
 
             val message = "$latitude,$longitude"
 
-            addMessage(messageID, Models.MessageModel(message,
+            addMessageToBoth(messageID, Models.MessageModel(message,
                 myUID,
                 targetUid,
                 System.currentTimeMillis(),
                 isFile = false,
                 isRead = false,
                 caption = address,
-                messageType = utils.constants.FILE_TYPE_LOCATION),
-                false)
+                messageType = utils.constants.FILE_TYPE_LOCATION))
         }
 
 
+        else if(requestCode == RQ_CAMERA){
+            val file = File(cameraImagePath)
+            Log.d("MessageActivity", "onActivityResult: "+file.path)
+
+            if(file.path.isEmpty()){
+                utils.toast(context, "Failed to capture image")
+                return
+            }
+
+
+            startActivityForResult(Intent(context, UploadPreviewActivity::class.java)
+                .putExtra(utils.constants.KEY_IMG_PATH, file.path)
+                .putExtra(utils.constants.IS_FOR_SINGLE_FILE, true)
+                , RQ_PREVIEW_IMAGE)
+
+        }
+
+
+        else if(requestCode == RQ_VIDEO){
+            val videoPaths = data!!.getParcelableArrayListExtra<VideoFile>(Constant.RESULT_PICK_VIDEO)
+
+
+
+            for(videoFile in videoPaths){
+                Log.d("MessageActivity", "onActivityResult: path = "+videoFile.path)
+                Log.d("MessageActivity", "onActivityResult: duration = "+videoFile.duration)
+                Log.d("MessageActivity", "onActivityResult: size = "+videoFile.size / (1024) +" KB")
+                messageID = "MSG" +System.currentTimeMillis()
+
+                uploadFile(messageID, File(videoFile.path), "", utils.constants.FILE_TYPE_VIDEO)
+
+
+            }
+        }
+
+
+        // after returning from preview
+        else if(requestCode == RQ_PREVIEW_IMAGE ){
+            val caption = data!!.getStringArrayListExtra(utils.constants.KEY_CAPTION)
+            val imgPaths = data.getStringArrayListExtra(utils.constants.KEY_IMG_PATH)
+
+            if (imgPaths.isNotEmpty()) {
+
+                Log.d("MessageActivity", "onActivityResult: Uploading Image")
+
+
+                for((index, path) in imgPaths.withIndex()) {
+                    messageID = "MSG" +System.currentTimeMillis()
+
+                    uploadFile(
+                        messageID, File(path.toString()),
+                        caption[index],
+                        utils.constants.FILE_TYPE_IMAGE
+                    )
+                }
+
+            }
+
+        }
 
         super.onActivityResult(requestCode, resultCode, data)
-    }
-
-
-    private fun uploadFile(messageID: String, file: File, caption: String, progressBar: ProgressBar?, messageType: String){
-
-
-        Log.d("MessageActivity", "uploadImage: dir = "+file.path)
-
-
-
-         //Initial node
-         val messageModel= Models.MessageModel(file!!.path,
-                 myUID, targetUid ,isFile = true, caption = caption, messageType = messageType)
-
-          addMessage(messageID, messageModel, true)
-
-                    isUploading = true
-
-
-                    val ref =  FirebaseStorage.getInstance()
-                        .reference.child("images").child(messageID)
-
-
-                    ref.putFile(Uri.fromFile(file))
-                        .continueWithTask(Continuation<UploadTask.TaskSnapshot, Task<Uri>> { task ->
-                        if (!task.isSuccessful) {
-                            task.exception?.let {
-                                throw it
-                            }
-                        }
-                        return@Continuation ref.downloadUrl
-                    })
-                        .addOnCompleteListener { task ->
-                            isUploading = false
-                            if(task.isSuccessful) {
-                                val link = task.result
-                                val messageModel= Models.MessageModel(link.toString() ,
-                                    myUID, targetUid ,isFile = true, caption = caption, messageType = utils.constants.FILE_TYPE_IMAGE)
-
-                                if(BuildConfig.DEBUG)
-                                    utils.toast(context, "Uploaded")
-
-                                if (progressBar != null) {
-                                    progressBar.visibility = View.GONE
-                                }
-
-                                addMessage(messageID, messageModel, false)
-
-                            }
-                            else
-                                utils.toast(context, task.exception!!.message.toString())
-                        }
-
-                        .addOnSuccessListener {
-                            isUploading = false
-
-                        }
-                        .addOnFailureListener{
-                            isUploading = false
-                        }
-
-
 
     }
 
 
 
-    private fun setRecyclerAdapter(){
+   private fun setRecyclerAdapter(){
 
-        val linearLayoutManager = LinearLayoutManager(this)
+
+       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+           if (ActivityCompat.checkSelfPermission(
+                   context,
+                   Manifest.permission.READ_EXTERNAL_STORAGE
+               ) == PackageManager.PERMISSION_GRANTED  && ActivityCompat.checkSelfPermission(
+                   context,
+                   Manifest.permission.WRITE_EXTERNAL_STORAGE
+               ) == PackageManager.PERMISSION_GRANTED) {
+
+           }
+           else {
+               requestPermissions(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE), RP_INITAL_STORAGE_PERMISSION)
+                return
+           }
+
+       }
+       messagesList.setHasFixedSize(true)
+       messagesList.setItemViewCacheSize(20)
+       messagesList.isDrawingCacheEnabled = true;
+       messagesList.drawingCacheQuality = View.DRAWING_CACHE_QUALITY_HIGH
+
+       val linearLayoutManager = LinearLayoutManager(this)
 
         linearLayoutManager.stackFromEnd = true
 
@@ -495,19 +537,37 @@ class MessageActivity : AppCompatActivity() {
 
                return when(viewType) {
                      TYPE_MINE ->
-                       myViewHolder(LayoutInflater.from(this@MessageActivity)
+                       holders.MyTextMsgHolder(LayoutInflater.from(this@MessageActivity)
                        .inflate(R.layout.bubble_right, p0 , false))
 
                      TYPE_MY_MAP ->
-                         myMapHolder(LayoutInflater.from(this@MessageActivity)
+                         holders.MyMapHolder(LayoutInflater.from(this@MessageActivity)
                              .inflate(R.layout.bubble_map_right, p0, false))
 
 
                      TYPE_TARGET_MAP ->
-                       targetMapHolder(LayoutInflater.from(this@MessageActivity)
+                       holders.TargetMapHolder(LayoutInflater.from(this@MessageActivity)
                            .inflate(R.layout.bubble_map_left, p0, false))
 
-                   else -> targetViewHolder(LayoutInflater.from(this@MessageActivity)
+                     TYPE_MY_IMAGE ->
+                         holders.MyImageMsgHolder(LayoutInflater.from(this@MessageActivity)
+                             .inflate(R.layout.bubble_image_right, p0, false))
+
+                   TYPE_TARGET_IMAGE ->
+                       holders.TargetImageMsgHolder(LayoutInflater.from(this@MessageActivity)
+                           .inflate(R.layout.bubble_image_left, p0, false))
+
+                   TYPE_MY_VIDEO ->
+                       holders.MyVideoMsgHolder(LayoutInflater.from(this@MessageActivity)
+                           .inflate(R.layout.bubble_video_right, p0, false))
+
+                   TYPE_TARGET_VIDEO ->
+                       holders.TargetVideoMsgHolder(LayoutInflater.from(this@MessageActivity)
+                           .inflate(R.layout.bubble_video_left, p0, false))
+
+
+
+                   else -> holders.TargetTextMsgHolder(LayoutInflater.from(this@MessageActivity)
                            .inflate(R.layout.bubble_left, p0, false))
                }
             }
@@ -523,12 +583,21 @@ class MessageActivity : AppCompatActivity() {
 
 
                 var messageImage:ImageView? = null
+                var videoLayout:View? = null
                 var dateHeader:TextView? = null
                 var latitude: Double = 0.0
                 var longitude: Double = 0.0
                 var mapView: MapView? = null
+                val messageID = super.getRef(position).key!!
+                var thumbnail:ImageView? = null
+                var videoLengthTextView:TextView? = null
+
+                var circularProgressBar:CircularProgressBar? = null
+
+                var tapToDownload:TextView? = null
 
 
+                val date = Date(model.timeInMillis)
 
             //    Log.d("MessageActivity", "onBindViewHolder: "+getItemViewType(position) +" at $position")
 
@@ -545,88 +614,51 @@ class MessageActivity : AppCompatActivity() {
 
 
 
-                if(holder is targetViewHolder){
+                if(holder is holders.TargetTextMsgHolder){
                      holder.time.text = utils.getLocalTime(model.timeInMillis)
                     holder.message.text = model.message
 
-                    messageImage = holder.imageView
-                    dateHeader = holder.headerDateTime
-
-
-                    if(model.isFile && model.messageType == utils.constants.FILE_TYPE_IMAGE){
-
-                        holder.imageView.visibility = View.VISIBLE
-                        holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
-
-
-                        if(model.message.isNotEmpty() ) {
-                            Picasso.get()
-                                .load(model.message.toString()).tag(model.message.toString())
-                                .centerCrop().resize(600,400)
-                                .error(R.drawable.error_placeholder2)
-                                .placeholder(R.drawable.placeholder_image)
-                                .into(holder.imageView)
-
-                            loadedPosition[position] = true
-
-                            holder.message.text = model.caption
-                        }
-                    }
-
-
-                    //when there is no image
-                    else{
-                        holder.imageView.visibility = View.GONE
-
-
-
-                    }
-
-
-
-
                 }
 
-                else if (holder is myViewHolder){
+                else if (holder is holders.MyTextMsgHolder){
                     holder.time.text = utils.getLocalTime(model.timeInMillis)
                     holder.message.text = model.message
                     dateHeader = holder.headerDateTime
 
+
+
+
+
+                    //end of my holder
+
+                }
+
+
+
+                else if(holder is holders.MyImageMsgHolder){
+
+
                     messageImage = holder.imageView
 
+                    holder.tapToRetry.visibility = View.GONE
 
-
-
-                    if(model.isFile && model.messageType == utils.constants.FILE_TYPE_IMAGE){
-
-                        holder.imageLayout.visibility = View.VISIBLE
                         holder.progressBar.visibility = View.VISIBLE
-                        holder.progressBar.bringToFront()
-
-                        holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
+                    CircularProgressBarsAt[messageID] = holder.progressBar
 
 
-                        if(model.message.isNotEmpty() ) {
 
-                            if(model.message.contains("/storage/")){
+                    holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
+
+
+                    setTapToRetryBtn(holder.tapToRetry,holder.progressBar,model.file_local_path, messageID,model.caption, model.messageType)
+
+
+                    if(model.file_local_path.isNotEmpty() ){
 
                                 //when image is not uploaded
 
-
-                                holder.tapToRetry.setOnClickListener {
-                                    holder.progressBar.visibility = View.VISIBLE
-
-
-
-                                    if(model.message.contains("/storage/"))
-                                    uploadFile(super.getRef(position).key!!, File(model.message.toString()),
-                                        model.caption, holder.progressBar,
-                                        utils.constants.FILE_TYPE_IMAGE
-                                        )
-                                }
-
                                 Picasso.get()
-                                    .load(File(model.message.toString()))
+                                    .load(File(model.file_local_path.toString()))
                                     .resize(600,500)
                                     .centerCrop()
                                     .error(R.drawable.error_placeholder2)
@@ -635,38 +667,37 @@ class MessageActivity : AppCompatActivity() {
                                     .into(holder.imageView, object: Callback{
 
                                         override fun onSuccess() {
-
-                                            Log.d("MessageActivity", "onSuccess: is uploading = $isUploading")
-
-                                            if(isUploading) {
-                                                holder.progressBar.visibility = View.VISIBLE
-                                                holder.tapToRetry.visibility = View.GONE
-                                            }else {
-                                                holder.tapToRetry.visibility = View.VISIBLE
-                                                holder.progressBar.visibility = View.GONE
-
-                                            }
+                                            holder.progressBar.visibility = if(isUploading[messageID] == true) View.VISIBLE else View.GONE
 
                                         }
 
                                         override fun onError(e: Exception?) {
 
-                                            holder.tapToRetry.visibility = View.GONE
                                             holder.progressBar.visibility = View.GONE
 
+                                            Log.d("MessageActivity", "onError: img file failed to load : "+e!!.message)
 
+
+                                            if(model.message.isNotEmpty())
+                                            Picasso.get()
+                                                .load(model.message.toString())
+                                                .centerCrop()
+                                                .resize(600,400)
+                                                .error(R.drawable.error_placeholder2)
+                                                .placeholder(R.drawable.placeholder_image)
+                                                .tag(model.message.toString())
+                                                .into(holder.imageView)
                                         }
 
                                     })
                                 loadedPosition[position] = true
                             }
 
-                            else {
-                                holder.tapToRetry.visibility = View.GONE
+                    else  {
 
+                                if(model.message.isNotEmpty())
                                 Picasso.get()
                                     .load(model.message.toString())
-                                    //.networkPolicy(NetworkPolicy.OFFLINE)
                                     .centerCrop()
                                     .resize(600,400)
                                     .error(R.drawable.error_placeholder2)
@@ -675,7 +706,6 @@ class MessageActivity : AppCompatActivity() {
                                     .into(holder.imageView, object: Callback{
                                         override fun onSuccess() {
 
-                                            holder.tapToRetry.visibility = View.GONE
                                             holder.progressBar.visibility = View.GONE
 
 
@@ -683,13 +713,21 @@ class MessageActivity : AppCompatActivity() {
 
                                         override fun onError(e: Exception?) {
 
-                                            holder.tapToRetry.visibility = View.VISIBLE
-                                            holder.progressBar.visibility = View.GONE
+                                            holder.progressBar.visibility = if(isUploading[messageID] == false) View.GONE else View.VISIBLE
+
+                                            Log.d("MessageActivity", "onError: img url failed to load")
 
                                             holder.tapToRetry.setOnClickListener {
+
+                                                if(isContextMenuActive)
+                                                    return@setOnClickListener
+
                                                 it.visibility = View.GONE
                                                 utils.longToast(context, "Image might be deleted.")
                                             }
+
+
+
 
 
                                         }
@@ -698,69 +736,124 @@ class MessageActivity : AppCompatActivity() {
 
 
 
-                                loadedPosition[position] = true
                             }
-                        }
-                        else {
-                            if (imageFile != null) {
-                                holder.progressBar.bringToFront()
-                                holder.imageView.setImageBitmap(BitmapFactory.decodeFile(imageFile!!.path.toString()))
-                                myLastMessagePosition = position
-                            }
-                        }
-
-
 
                         holder.message.text = model.caption
 
-                    }
+
+                }
+
+
+
+                else if(holder is holders.TargetImageMsgHolder){
+                        messageImage = holder.imageView
+
+                        holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
+
+                        holder.message.text = model.caption
+
+                        if(model.file_local_path.isNotEmpty() && File(model.file_local_path).exists()) {
+                            Picasso.get()
+                                .load(File(model.file_local_path.toString()))
+                                .tag(model.message.toString())
+                                .fit()
+                                .centerCrop()
+                                //.resize(600,400)
+                                .error(R.drawable.error_placeholder2)
+                                .placeholder(R.drawable.placeholder_image)
+                                .into(holder.imageView)
+
+                        }
+
                     else{
-                        holder.imageLayout.visibility = View.GONE
+                            Picasso.get()
+                                .load(model.message.toString())
+                                .tag(model.message.toString())
+                                //.fit()
+                                //.centerCrop()
+                                //.resize(600,400)
+                                .error(R.drawable.error_placeholder2)
+                                .placeholder(R.drawable.placeholder_image)
+                                .into( object : Target{
+                                    override fun onPrepareLoad(placeHolderDrawable: Drawable?) {
+                                    }
 
+                                    override fun onBitmapFailed(e: Exception?, errorDrawable: Drawable?) {
+                                    }
+
+                                    override fun onBitmapLoaded(bitmap: Bitmap?, from: Picasso.LoadedFrom?) {
+                                        val savedPath = utils.saveBitmap(context, bitmap!!, messageID)
+                                        Log.d("MessageActivity", "onBitmapLoaded: saved path = $savedPath")
+                                        holder.imageView.setImageBitmap(bitmap)
+
+                                        FirebaseUtils.ref.getChatRef(myUID,targetUid)
+                                            .child(messageID)
+                                            .child(FirebaseUtils.KEY_FILE_LOCAL_PATH)
+                                            .setValue(savedPath)
+                                    }
+
+                                })
+                        }
+
+                }
+
+
+
+
+
+
+                else if(holder is holders.MyVideoMsgHolder){
+
+                    thumbnail = holder.thumbnail
+                    videoLengthTextView = holder.videoLengthText
+                    CircularProgressBarsAt[messageID] = holder.progressBar
+                    mediaControlImageViewAt[messageID] = holder.centerImageView
+
+                    tapToDownload = holder.tap_to_download
+
+                    setTapToRetryBtn(holder.tapToRetry,holder.progressBar,model.file_local_path, messageID,model.caption, model.messageType)
+
+
+                    holder.tapToRetry.visibility = View.GONE
+                    holder.progressBar.visibility = if(isUploading[messageID] == true) View.VISIBLE else View.GONE
+                    holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
+                  //  setTapToRetryBtn(holder.tapToRetry,holder.progressBar,model.file_local_path, messageID,model.caption, model.messageType)
+
+
+                     if(holder.progressBar.visibility == View.VISIBLE)
+                        holder.centerImageView.setImageResource(R.drawable.ic_clear_white_24dp)
+                     else
+                         holder.centerImageView.setImageResource(R.drawable.ic_play_white)
+
+                }
+
+                else if(holder is holders.TargetVideoMsgHolder){
+                    holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
+                    holder.message.text = model.caption
+
+                    tapToDownload = holder.tap_to_download
+
+                    CircularProgressBarsAt[messageID] = holder.progressBar
+                    mediaControlImageViewAt[messageID] = holder.centerImageView
+
+                    //lets hide progressbar for now
+                    holder.progressBar.visibility = View.GONE
+
+                    thumbnail = holder.thumbnail
+                    videoLengthTextView = holder.videoLengthText
+
+
+
+                    if(holder.progressBar.visibility == View.VISIBLE)
+                        holder.centerImageView.setImageResource(R.drawable.ic_clear_white_24dp)
+                    else
+                        holder.centerImageView.setImageResource(R.drawable.ic_play_white)
+
+
+                    if(model.file_local_path.isEmpty()){
+                        downloadVideo(messageID)
                     }
 
-
-
-                    FirebaseUtils.ref.getChatRef(targetUid, myUID)
-                        .child(super.getRef(position).key!!)
-                        .addValueEventListener(object : ValueEventListener{
-                            override fun onCancelled(p0: DatabaseError) {
-
-                            }
-
-                            override fun onDataChange(p0: DataSnapshot) {
-                                if(p0.exists()){
-                                    holder.messageStatus.setImageResource(R.drawable.ic_delivered_tick)
-                                    if(p0.getValue(Models.MessageModel::class.java)!!.isRead)
-                                        holder.messageStatus.setImageResource(R.drawable.ic_read_status)
-                                }
-                                else{
-                                    holder.messageStatus.setImageDrawable(null)
-                                }
-                            }
-                        })
-
-
-                    //end of my holder
-
-                }
-
-
-                else if(holder is myMapHolder ) {
-
-
-                     mapView = holder.mapView
-
-                    holder.message.text = model.caption
-
-                   holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
-
-                }
-
-              else if(holder is targetMapHolder){
-
-                    mapView = holder.mapView
-                    holder.message.text = model.caption
                 }
 
 
@@ -769,10 +862,13 @@ class MessageActivity : AppCompatActivity() {
                 //loading message Image listener
                if(messageImage!=null) {
                    messageImage.setOnClickListener {
-                       if (!model.message.toString().contains("/storage/"))
+
+
+                       if(!isContextMenuActive)
                            startActivity(
                                Intent(context, ImagePreviewActivity::class.java)
                                    .putExtra(utils.constants.KEY_IMG_PATH, model.message.toString())
+                                   .putExtra(utils.constants.KEY_LOCAL_PATH, model.file_local_path.toString())
                            )
 
 
@@ -781,34 +877,87 @@ class MessageActivity : AppCompatActivity() {
 
 
 
-                //loading a map
-                if(mapView != null){
-                    mapView.onCreate(null)
+                //setting video intent
+                if(thumbnail != null){
 
-                    mapView.getMapAsync(OnMapReadyCallback { googleMap ->
+                    if(model.file_local_path.isNotEmpty() && File(model.file_local_path).exists()){
+                        videoLengthTextView!!.text = utils.getVideoLength(context, model.file_local_path)
+                        val thumb = ThumbnailUtils.createVideoThumbnail(model.file_local_path, MediaStore.Video.Thumbnails.MINI_KIND)
+                        thumbnail.setImageBitmap(thumb)
+
+                            tapToDownload!!.visibility = View.GONE
+                    }
+                    else{
+//                        videoLengthTextView!!.text = utils.getVideoLength(context, model.message)
+                        thumbnail.setImageBitmap(utils.getVideoThumbnailFromWeb(model.message))
+                        thumbnail.setImageBitmap(null)
+
+                        Log.d("MessageActivity", "onBindViewHolder: $messageID file not found")
+
+                            tapToDownload!!.visibility = View.VISIBLE
+
+                            tapToDownload.setOnClickListener {
+
+                                if(isContextMenuActive)
+                                    return@setOnClickListener
+
+                                downloadVideo(messageID)
+                                it.visibility = View.GONE
+                            }
+
+                    }
+
+                    thumbnail.setOnClickListener {
 
 
-                        googleMap!!.addMarker(MarkerOptions()
-                            .position(LatLng(latitude, longitude)).title("")
-                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
-                            .draggable(false).visible(true))
+                        if(isContextMenuActive)
+                            return@setOnClickListener
 
+                        if(model.file_local_path.isNotEmpty() && File(model.file_local_path).exists()) {
+                            try {
+                                val videoIntent = Intent(Intent.ACTION_VIEW)
+                                videoIntent.setDataAndType(Uri.fromFile(File(model.file_local_path)), "video/*")
+                                startActivity(videoIntent)
+                            }
+                            catch (e:Exception){
+                                utils.toast(context, e.message.toString())
+                            }
+                        }
+                        else {
+                         //   downloadVideo(messageID, holder.progressBar)
+                            utils.toast(context, "File not found on the device")
+                        }
 
-                        googleMap.uiSettings.setAllGesturesEnabled(false)
-                        googleMap.moveCamera(
-                            CameraUpdateFactory.newLatLngZoom(
-                                LatLng(latitude, longitude),
-                                12F
-                            )
-                        )
-
-                        Log.d("MessageActivity", "onMapReady: ")
-                    })
+                    }
 
                 }
 
 
 
+
+
+
+
+
+
+
+                else if(holder is holders.MyMapHolder ) {
+
+                    holder.message.text = model.caption
+
+                    holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
+
+                    loadMap(holder.mapView, LatLng(latitude,longitude))
+
+                }
+
+
+                else if(holder is holders.TargetMapHolder){
+
+                    holder.message.text = model.caption
+
+                    loadMap(holder.mapView, LatLng(latitude,longitude))
+                }
 
 
                 //next time
@@ -817,7 +966,7 @@ class MessageActivity : AppCompatActivity() {
 
                 //setting contextual toolbar
 
-                var selectedDrawable = ColorDrawable(Color.CYAN)
+                var selectedDrawable = ColorDrawable(ContextCompat.getColor(context, R.color.transparent_green))
                 var unselectedDrawable = ColorDrawable(Color.WHITE)
 
                 val messageIDKey = super.getRef(position).key
@@ -831,7 +980,7 @@ class MessageActivity : AppCompatActivity() {
                         if(!selectedMessageIDs.contains(messageIDKey))
                             selectedMessageIDs.add(messageIDKey!!)
 
-                        startSupportActionMode(actionModeCallback)
+                        startSupportActionMode(actionModeCallback )
 
                         it.background = if (it.background == selectedDrawable) unselectedDrawable else selectedDrawable
 
@@ -840,6 +989,9 @@ class MessageActivity : AppCompatActivity() {
                     true
                 }
 
+
+                if(!selectedItemViews.contains(holder.itemView))
+                    selectedItemViews.add(holder.itemView)
 
                 holder.itemView.setOnClickListener {
 
@@ -864,6 +1016,8 @@ class MessageActivity : AppCompatActivity() {
 
 
 
+
+
             override fun getItemViewType(position: Int): Int {
 
                 val model: Models.MessageModel = getItem(position)
@@ -874,13 +1028,28 @@ class MessageActivity : AppCompatActivity() {
 
                     if(model.messageType == utils.constants.FILE_TYPE_LOCATION.toString()) {
                         TYPE_MY_MAP
-                    } else{
+                    }
+                    else if(model.messageType == utils.constants.FILE_TYPE_IMAGE.toString()) {
+                        TYPE_MY_IMAGE
+                    }
+                    else if(model.messageType == utils.constants.FILE_TYPE_VIDEO.toString()) {
+                        TYPE_MY_VIDEO
+                    }
+
+                    else{
                         TYPE_MINE
                     }
                 } else{
                     if(model.messageType == utils.constants.FILE_TYPE_LOCATION.toString())
                             TYPE_TARGET_MAP
-                        else
+
+                    else if(model.messageType == utils.constants.FILE_TYPE_IMAGE.toString()) {
+                        TYPE_TARGET_IMAGE
+                    }
+                    else if(model.messageType == utils.constants.FILE_TYPE_VIDEO.toString()) {
+                        TYPE_TARGET_VIDEO
+                    }
+                    else
                             TYPE_TARGET
 
                 }
@@ -906,7 +1075,11 @@ class MessageActivity : AppCompatActivity() {
             }
         })
 
+       adapter.startListening()
+
     }
+
+
 
 
     private fun setSendMessageListener(){
@@ -919,10 +1092,10 @@ class MessageActivity : AppCompatActivity() {
             val messageModel= Models.MessageModel(message ,
                 myUID, targetUid ,isFile = false)
 
-            val messageID = "MSG" +System.currentTimeMillis() + myUID
+            val messageID = "MSG" +System.currentTimeMillis()
 
 
-            addMessage(messageID, messageModel, false)
+            addMessageToBoth(messageID, messageModel)
             loadedPosition[messagesList.adapter!!.itemCount ]
 
 
@@ -933,9 +1106,98 @@ class MessageActivity : AppCompatActivity() {
     }
 
 
+    private fun setTapToRetryBtn(
+        tapToRetry:View, progressBar: CircularProgressBar, filePath:String, messageID: String,
+        caption: String, fileType:String){
 
 
-    private fun addMessage(messageID: String , messageModel: Models.MessageModel, onlyForMe:Boolean){
+        Log.d("MessageActivity", "setTapToRetryBtn: caption ")
+
+        tapToRetry.visibility = View.GONE
+
+        FirebaseUtils.ref.getChatRef(myUID, targetUid)
+            .child(messageID)
+            .child("message")
+            .addValueEventListener(object :ValueEventListener{
+                override fun onDataChange(p0: DataSnapshot) {
+
+
+
+                    if(p0.exists())
+                    tapToRetry.visibility = if(p0.getValue(String::class.java)!!.isEmpty()) View.VISIBLE else View.GONE
+
+                    if(isUploading[messageID] == true)
+                        tapToRetry.visibility = View.GONE
+
+                    Log.d("MessageActivity", "onDataChange: tap to retry changed to : visible = "+(tapToRetry.visibility == View.VISIBLE))
+
+                }
+
+                override fun onCancelled(p0: DatabaseError) {
+                }
+            })
+
+        tapToRetry.setOnClickListener {
+          progressBar!!.visibility = View.VISIBLE
+            it.visibility = View.GONE
+
+            if(File(filePath).exists())
+                uploadFile(
+                    messageID, File(filePath.toString()),
+                    caption, fileType
+                )
+            else{
+                utils.toast(context, "File does not exists on this device")
+                progressBar.visibility = View.GONE
+            }
+        }
+    }
+
+    private fun loadMap(mapView: MapView, latLng: LatLng){
+        //loading a map
+            mapView.run {
+                onCreate(null)
+
+                getMapAsync { googleMap ->
+
+
+                    googleMap!!.addMarker(MarkerOptions()
+                        .position(latLng).title("")
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
+                        .draggable(false).visible(true))
+
+
+                    googleMap.uiSettings.setAllGesturesEnabled(false)
+                    googleMap.moveCamera(
+                        CameraUpdateFactory.newLatLngZoom(
+                            latLng,
+                            12F
+                        )
+                    )
+
+                    Log.d("MessageActivity", "onMapReady: ")
+                }
+            }
+
+
+    }
+
+
+
+    private fun addMessageToBoth(messageID: String , messageModel: Models.MessageModel){
+
+        //setting  message to both
+
+
+        addMessageToMyNode(messageID, messageModel)
+
+        addMessageToTargetNode(messageID, messageModel)
+
+
+    }
+
+
+    private fun addMessageToMyNode(messageID: String , messageModel: Models.MessageModel){
 
         //setting my message
 
@@ -951,10 +1213,11 @@ class MessageActivity : AppCompatActivity() {
 
                 print("Message sent to $targetUid") }
 
+    }
 
-        if(onlyForMe)
-            return
 
+
+    private fun addMessageToTargetNode(messageID: String , messageModel: Models.MessageModel) {
 
         //setting  message to target
         messageModel.isRead = false
@@ -969,28 +1232,297 @@ class MessageActivity : AppCompatActivity() {
 
                 print("Message added to mine") }
 
+    }
+
+
+    //upload
+    private fun uploadFile(
+        messageID: String,
+        file: File,
+        caption: String,
+        messageType: String
+    ){
+
+
+        Log.d("MessageActivity", "fileUpload: dir = "+file.path)
+
+
+        val originalPath = file.path
+
+
+
+        //Initial node
+        val messageModel= Models.MessageModel(
+            "",
+            myUID, targetUid ,isFile = true, caption = caption, messageType = messageType, file_local_path = file.path,
+            file_size_in_bytes = file.length())
+
+
+        isUploading[messageID] = true
+
+
+
+
+
+        when(messageType) {
+
+            utils.constants.FILE_TYPE_IMAGE -> {
+
+                Log.d("MessageActivity", "uploadFile: image")
+                //image compressor
+                Luban.compress(context, File(file.path))
+                    .putGear(Luban.THIRD_GEAR)
+                    .launch(object : OnCompressListener {
+                        override fun onError(e: Throwable?) {
+
+                            utils.toast(context, e!!.message.toString())
+                        }
+
+                        override fun onStart() {
+
+                        }
+
+                        override fun onSuccess(file: File?) {
+
+                            val fileSizeInMB = (file!!.length()/(1024* 1024))
+
+                            Log.d("MessageActivity", "uploadFile: file size = $fileSizeInMB")
+
+                            if(fileSizeInMB > 16){
+                                utils.toast(context, "File size exceeded, Please choose a smaller file")
+                                return
+                            }
+                            fileUpload(messageID, file!!, originalPath, caption, messageType)
+
+                            addMessageToMyNode(messageID, messageModel)
+
+                        }
+                    })
+            }
+
+
+            utils.constants.FILE_TYPE_VIDEO -> {
+
+
+                //for video file check
+                val fileSizeInMB = (file.length()/(1024* 1024))
+
+                Log.d("MessageActivity", "uploadFile: file size = $fileSizeInMB")
+
+                if(fileSizeInMB > 16){
+                    utils.longToast(context, "File size exceeded, Please choose a smaller file")
+                    return
+                }
+
+
+                Log.d("MessageActivity", "uploadFile: video")
+                fileUpload(messageID, file, originalPath, caption, messageType)
+
+                addMessageToMyNode(messageID, messageModel)
+
+
+            }
+
+
+        }
+
+
 
 
     }
+
+
+    private fun fileUpload(
+        messageID: String,
+        file: File,
+        originalFinalPath: String,
+        caption: String,
+        messageType: String
+    ) {
+
+
+        val ref =  FirebaseStorage.getInstance()
+            .reference.child(messageType).child(messageID)
+
+        val uploadTask = ref.putFile(Uri.fromFile(file))
+
+
+
+        //setting inital value
+        if(CircularProgressBarsAt.containsKey(messageID)){
+            if(CircularProgressBarsAt[messageID]!=null){
+                CircularProgressBarsAt[messageID]!!.progress = 0f
+            }
+        }
+
+        //setting inital value
+        if(mediaControlImageViewAt.containsKey(messageID)){
+            if(mediaControlImageViewAt[messageID]!=null){
+                mediaControlImageViewAt[messageID]!!.setOnClickListener {
+                    uploadTask.cancel()
+                    mediaControlImageViewAt[messageID]!!.setImageResource(R.drawable.ic_play_white)
+                }
+            }
+        }
+
+
+        uploadTask.addOnProgressListener { taskSnapshot ->
+
+
+
+                val percentage:Double = (100.0 * taskSnapshot.bytesTransferred) / taskSnapshot.totalByteCount
+
+
+                if(CircularProgressBarsAt.containsKey(messageID)){
+                    if(CircularProgressBarsAt[messageID]!=null){
+                        CircularProgressBarsAt[messageID]!!.progress = percentage.toFloat()
+                    }
+                }
+
+                Log.d("MessageActivity", "fileUpload: total bytes = ${taskSnapshot.totalByteCount}")
+                Log.d("MessageActivity", "fileUpload: uploaded bytes = "+taskSnapshot.bytesTransferred)
+                Log.d("MessageActivity", "fileUpload: percentage = $percentage")
+            }
+            .continueWithTask(Continuation<UploadTask.TaskSnapshot, Task<Uri>> { task ->
+                if (!task.isSuccessful) {
+                    task.exception?.let {
+                        throw it
+                    }
+                }
+                return@Continuation ref.downloadUrl
+            })
+            .addOnCompleteListener { task ->
+
+                isUploading[messageID] = false
+
+
+
+                if(task.isSuccessful) {
+                    val link = task.result
+                    val targetModel= Models.MessageModel(link.toString() ,
+                        myUID, targetUid ,isFile = true, caption = caption, messageType = messageType,
+                        file_size_in_bytes = file.length())
+
+                    if(BuildConfig.DEBUG)
+                        utils.toast(context, "Uploaded")
+
+
+                    addMessageToTargetNode(messageID, targetModel)
+
+
+
+
+                    val myModel= Models.MessageModel(link.toString() ,
+                        myUID, targetUid ,isFile = true, caption = caption, messageType = messageType,
+                        file_local_path = originalFinalPath,
+                        isRead = true,
+                        file_size_in_bytes = file.length())
+
+                    addMessageToMyNode(messageID, myModel)
+
+
+
+                }
+                else
+                    utils.toast(context, task.exception!!.message.toString())
+            }
+    }
+
+
+    //downloading video and saving to file in the form of bytes
+    private fun downloadVideo(messageID: String){
+
+
+        val progressBar = CircularProgressBarsAt[messageID]
+
+        progressBar!!.visibility = View.VISIBLE
+        progressBar.progress =0f
+
+        val storageRef = FirebaseStorage.getInstance().reference
+            .child(utils.constants.FILE_TYPE_VIDEO).child(messageID)
+
+
+
+            val videoFile = utils.getVideoFile(context, messageID)
+
+            storageRef.getFile(videoFile)
+                .addOnProgressListener {
+                    val percentage:Double = (100.0 * it.bytesTransferred) / it.totalByteCount
+                    progressBar.progress = percentage.toFloat()
+
+                }
+                .addOnCompleteListener{
+                    progressBar.visibility = View.GONE
+                }
+                .addOnCanceledListener {
+                    progressBar.visibility = View.GONE
+                }
+                .addOnSuccessListener {
+
+                    FirebaseUtils.ref.getChatRef(myUID,targetUid)
+                        .child(messageID)
+                        .child(FirebaseUtils.KEY_FILE_LOCAL_PATH)
+                        .setValue(videoFile.path)
+                }
+
+
+        if(true)
+            return
+
+            storageRef.getBytes(Long.MAX_VALUE)
+            .addOnCompleteListener {
+                    if(it.isSuccessful){
+                        val byteArray = it.result
+                        val savedPath = utils.saveVideo(context, byteArray!!, messageID)
+                        progressBar.visibility = View.GONE
+
+                        FirebaseUtils.ref.getChatRef(myUID,targetUid)
+                            .child(messageID)
+                            .child(FirebaseUtils.KEY_FILE_LOCAL_PATH)
+                            .setValue(savedPath)
+                    }
+
+            }
+
+
+        if(storageRef.activeDownloadTasks.isNotEmpty()) {
+            Log.d("MessageActivity", "downloadVideo: Total active downloadds = ${storageRef.activeDownloadTasks.size}")
+            storageRef.activeDownloadTasks[0]
+                .addOnProgressListener {
+                    val percentage = (it.bytesTransferred / it.totalByteCount) * 100
+                    progressBar.progress = percentage.toFloat()
+                    Log.d("MessageActivity", "downloadVideo: progress = $percentage")
+                }
+        }
+
+    }
+
 
 
 
     override fun onStart() {
         super.onStart()
 
-        if(adapter!=null)
-            adapter.startListening()
+        try {
 
+            if (adapter != null)
+                adapter.startListening()
+
+        } catch (e:Exception){}
     }
 
 
     override fun onDestroy() {
         super.onDestroy()
 
+        try {
 
         if(adapter!=null)
             adapter.stopListening()
-    }
+
+    } catch (e:Exception){}
+
+}
 
 
     private fun checkIfBlocked(targetUID:String) {
@@ -1051,8 +1583,10 @@ class MessageActivity : AppCompatActivity() {
                     .child(messageID)
                     .removeValue()
                     .addOnCompleteListener {
-                        if(index == selectedMessageIDs.size - 1)
+                        if(index == selectedMessageIDs.size - 1) {
                             p0!!.finish()
+                            adapter.notifyDataSetChanged()
+                        }
                     }
             }
 
@@ -1076,42 +1610,26 @@ class MessageActivity : AppCompatActivity() {
         override fun onDestroyActionMode(p0: ActionMode?) {
             isContextMenuActive = false
             selectedMessageIDs.clear()
+            adapter.notifyDataSetChanged()
+
+            for(view in selectedItemViews)
+                view.setBackgroundColor(Color.WHITE)
         }
 
     }
 
 
-    class targetViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
-        val message = itemView.messageText_left!!
-        val time = itemView.time_left!!
-        val imageView = itemView.imageview_left!!
-        val headerDateTime = itemView.header_left!!
-        // val imageLayout = itemView.imageFrameLayout!!
-    }
-    class myViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
-        val message = itemView.messageText_right!!
-        val time = itemView.time_right!!
-        val imageView = itemView.imageview_right!!
-        val imageLayout = itemView.imageFrameLayoutRight!!
-        val progressBar = itemView.progress_bar_right!!
-        val tapToRetry = itemView.tap_retry_right!!
-        val messageStatus = itemView.delivery_status!!
-        val headerDateTime = itemView.header_right!!
-    }
+    override fun onBackPressed() {
 
-
-    class targetMapHolder(itemView: View):RecyclerView.ViewHolder(itemView){
-        val message = itemView.messageText_map_left!!
-        val mapView = itemView.mapview_left!!
-        val dateHeader = itemView.mapview_left!!
-    }
-
-    class myMapHolder(itemView: View):RecyclerView.ViewHolder(itemView){
-        val message = itemView.messageText_map_right!!
-        val mapView = itemView.mapview_right!!
-        val dateHeader = itemView.header_map_right!!
-
-
+        if(attachment_menu.visibility == View.VISIBLE)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                utils.setExitRevealEffect(attachment_menu)
+            }
+            else
+                attachment_menu.visibility = View.GONE
+        else
+            finish()
 
     }
+
 }

@@ -19,6 +19,7 @@ import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 import com.google.firebase.storage.UploadTask
 import java.io.File
+import java.lang.Exception
 
 
 object FirebaseUtils {
@@ -36,6 +37,8 @@ object FirebaseUtils {
         val KEY_PROFILE_PIC_URL = "profile_pic_url"
         val KEY_NAME = "name"
 
+        val KEY_FILE_LOCAL_PATH = "file_local_path"
+
 
         val user_voda = "vHv8TSqbS2YBHZJXS5X5Saz4acC2"
         val user_jio = "LPVjVKbpTzeUDpank04sxkoparE2"
@@ -44,6 +47,16 @@ object FirebaseUtils {
         object ref {
 
             private fun getRootRef() : DatabaseReference {
+
+                try{
+                    FirebaseDatabase.getInstance().setPersistenceEnabled(true)
+                    FirebaseDatabase.getInstance().reference
+                        .child(NODE_MESSAGES)
+                        .keepSynced(true)
+                }
+                catch (e:Exception){
+                    Log.e("ref", "getRootRef: "+e.message.toString() )}
+
                 return FirebaseDatabase.getInstance().reference
             }
 
@@ -52,7 +65,7 @@ object FirebaseUtils {
                     .child(NODE_MESSAGES)
                     .child(uid)
                     .child(targetUID)
-                    .orderByChild(KEY_TIME_IN_MILLIS)
+                    //.orderByChild(KEY_TIME_IN_MILLIS)
             }
 
             fun getChatRef(uid :String, targetUID: String) : DatabaseReference{
@@ -62,6 +75,7 @@ object FirebaseUtils {
                     .child(targetUID)
                     .orderByChild(KEY_TIME_IN_MILLIS)
                     .ref
+
             }
 
             fun getLastMessageRef( uid :String) : DatabaseReference{
@@ -267,6 +281,27 @@ object FirebaseUtils {
     }
 
 
+    fun setDeliveryStatus(myUID:String, targetUID: String, messageID:String, messageStatusImageView:ImageView){
+        FirebaseUtils.ref.getChatRef(targetUID, myUID)
+            .child(messageID)
+            .addValueEventListener(object : ValueEventListener{
+                override fun onCancelled(p0: DatabaseError) {
+
+                }
+
+                override fun onDataChange(p0: DataSnapshot) {
+                    if(p0.exists()){
+                        messageStatusImageView.setImageResource(R.drawable.ic_delivered_tick)
+                        if(p0.getValue(Models.MessageModel::class.java)!!.isRead)
+                            messageStatusImageView.setImageResource(R.drawable.ic_read_status)
+                    }
+                    else{
+                        messageStatusImageView.setImageDrawable(null)
+                    }
+                }
+            })
+
+    }
 
 
 }

@@ -1,16 +1,33 @@
 package com.aziz.sstalk.utils
 
+import android.animation.Animator
+import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.media.MediaMetadataRetriever
+import android.net.Uri
+import android.os.Build
+import android.os.Environment
 import android.provider.ContactsContract
+import android.provider.MediaStore
+import android.util.Log
+import android.view.View
+import android.view.ViewAnimationUtils
+import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.Toast
+import com.aziz.sstalk.R
 import com.aziz.sstalk.models.Models
 import com.google.firebase.auth.FirebaseAuth
 import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileOutputStream
+import java.lang.Exception
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
+
 
 object utils {
 
@@ -19,12 +36,16 @@ object utils {
 
         val FILE_TYPE_IMAGE = "image"
         val FILE_TYPE_LOCATION = "location"
+        val FILE_TYPE_VIDEO = "video"
         val KEY_IMG_PATH = "path"
         val KEY_CAPTION = "caption"
+        val KEY_LOCAL_PATH = "local_path"
 
         val KEY_LATITUDE = "lat"
         val KEY_LONGITUDE = "lng"
         val KEY_ADDRESS = "address"
+
+        val IS_FOR_SINGLE_FILE = "isSingleFile"
 
     }
 
@@ -121,5 +142,240 @@ object utils {
     }
 
     fun getBitmapFromByteArray(byteArray: ByteArray) : Bitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
+
+
+    fun setEnterRevealEffect(view:View): Animator? {
+
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            view.visibility = View.VISIBLE
+            return null
+        }
+
+
+            // get the center for the clipping circle
+        val cx = (view.left )
+        val cy = (view.top + view.bottom)
+
+        // get the final radius for the clipping circle
+        val dx = Math.max(cx, view.width - cx).toDouble()
+        val dy = Math.max(cy, view.height - cy).toDouble()
+        val finalRadius =  Math.hypot(dx, dy).toFloat()
+
+        val animator =
+            ViewAnimationUtils.createCircularReveal(view, cx, cy, 0f, finalRadius)
+        animator.interpolator = AccelerateDecelerateInterpolator()
+        animator.duration = 800
+
+        animator.addListener(object : Animator.AnimatorListener{
+            override fun onAnimationRepeat(animation: Animator?) {
+            }
+
+            override fun onAnimationEnd(animation: Animator?) {
+            }
+
+            override fun onAnimationCancel(animation: Animator?) {
+            }
+
+            override fun onAnimationStart(animation: Animator?) {
+                view.visibility = View.VISIBLE
+            }
+
+        })
+        animator.start()
+
+        return animator
+
+    }
+
+
+    fun setExitRevealEffect(view:View): Animator? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            view.visibility = View.GONE
+            return null
+        }
+
+        val cx = ( view.right + view.left)
+        val cy = (view.top + view.bottom)
+
+// get the final radius for the clipping circle
+        val dx = Math.max(cx, view.width + cx)
+        val dy = Math.max(cy, view.height + cy)
+        val finalRadius = Math.hypot(dx.toDouble(), dy.toDouble()).toFloat()
+
+        val animator =
+            ViewAnimationUtils.createCircularReveal(view, cx, cy, finalRadius, 0f)
+        animator.interpolator = AccelerateDecelerateInterpolator()
+        animator.duration = 1000
+
+        animator.addListener(object : Animator.AnimatorListener{
+            override fun onAnimationRepeat(animation: Animator?) {
+            }
+
+            override fun onAnimationEnd(animation: Animator?) {
+                view.visibility = View.GONE
+            }
+
+            override fun onAnimationCancel(animation: Animator?) {
+            }
+
+            override fun onAnimationStart(animation: Animator?) {
+            }
+
+        })
+
+        animator.start()
+
+
+        return animator
+
+
+    }
+
+
+    fun saveBitmap(context: Context?, bitmap: Bitmap, messageIdForName:String):String{
+
+        val fileName = "$messageIdForName.jpg"
+
+        val path = Environment.getExternalStorageDirectory().toString()+"/"+ context!!.getString(R.string.app_name).toString()+"" +
+                "/Images/Received/"
+
+        if(!File(path).exists())
+            File(path).mkdirs()
+
+        val file = File(path, fileName)
+
+        try {
+
+                val fout = FileOutputStream(file)
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, fout)
+                Log.d("utils", "saveBitmap: file saved to ${file.path}")
+
+
+            val values = ContentValues(3)
+            values.put(MediaStore.Video.Media.TITLE, messageIdForName)
+            values.put(MediaStore.Video.Media.MIME_TYPE, "image/*")
+            values.put(MediaStore.Video.Media.DATA, file.absolutePath)
+            context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+
+        }
+        catch (e:Exception){
+            Log.d("utils", "saveBitmap: File not found")
+        }
+
+        return file.path
+    }
+
+
+    fun getVideoLength(context: Context?, videoFilePath:String):String{
+        try {
+
+            val retriever = MediaMetadataRetriever()
+            retriever.setDataSource(context, Uri.fromFile(File(videoFilePath)))
+            val time = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+            val timeInMillisec = time.toLong()
+
+            retriever.release()
+            return String.format(
+                "%d:%d",
+                TimeUnit.MILLISECONDS.toMinutes(timeInMillisec),
+                TimeUnit.MILLISECONDS.toSeconds(timeInMillisec) -
+                        TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(timeInMillisec))
+            )
+        }
+        catch (e:Exception){return ""}
+
+    }
+
+
+     fun getVideoThumbnailFromWeb(videoPath:String): Bitmap?
+    {
+    var bitmap: Bitmap? = null
+    var mediaMetadataRetriever:MediaMetadataRetriever? = null
+    try
+    {
+        mediaMetadataRetriever = MediaMetadataRetriever()
+        if (Build.VERSION.SDK_INT >= 14)
+            mediaMetadataRetriever.setDataSource(videoPath, HashMap<String, String>())
+            else
+                mediaMetadataRetriever.setDataSource(videoPath)
+     //   mediaMetadataRetriever.setDataSource(videoPath);
+        bitmap = mediaMetadataRetriever.getFrameAtTime(1, MediaMetadataRetriever.OPTION_CLOSEST);
+    }
+    catch (e:Exception)
+    {
+        e.printStackTrace()
+    }
+    finally
+    {
+        mediaMetadataRetriever!!.release()
+    }
+    return bitmap
+}
+
+
+
+    fun getVideoFile(context: Context?, messageIdForName: String):File {
+
+        val fileName = "$messageIdForName.mp4"
+
+        val path =
+            Environment.getExternalStorageDirectory().toString() + "/" + context!!.getString(R.string.app_name).toString() + "" +
+                    "/Video/Received/"
+
+        if (!File(path).exists())
+            File(path).mkdirs()
+
+        val file = File(path, fileName)
+        return file
+    }
+
+    fun saveVideo(context: Context?, fileBytes: ByteArray, messageIdForName:String):String{
+
+        val fileName = "$messageIdForName.mp4"
+
+        val path = Environment.getExternalStorageDirectory().toString()+"/"+ context!!.getString(R.string.app_name).toString()+"" +
+                "/Video/Received/"
+
+        if(!File(path).exists())
+            File(path).mkdirs()
+
+        val file = File(path, fileName)
+
+        try {
+
+            val fout = FileOutputStream(file)
+            fout.write(fileBytes)
+          //  bitmap.compress(Bitmap.CompressFormat.PNG, 100, fout)
+            Log.d("utils", "saveVideo: file saved to ${file.path}")
+
+            addVideoToMediaStore(context, messageIdForName, file)
+        }
+        catch (e:Exception){
+            Log.d("utils", "saveVideo: File not found")
+        }
+
+        return file.path
+    }
+
+
+    public fun addVideoToMediaStore(context:Context, messageIdForName: String, file: File){
+        val values = ContentValues(3)
+        values.put(MediaStore.Video.Media.TITLE, messageIdForName)
+        values.put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
+        values.put(MediaStore.Video.Media.DATA, file.absolutePath)
+
+        //getting video length
+        val retriever = MediaMetadataRetriever()
+        retriever.setDataSource(context, Uri.fromFile(file))
+        val time = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+        val timeInMillisec = time.toLong()
+
+        retriever.release()
+
+        values.put(MediaStore.Video.Media.DURATION, timeInMillisec )
+        context.contentResolver.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values)
+
+    }
 
 }

@@ -10,7 +10,11 @@ class Models {
                             var isFile:Boolean = false,
                             var isRead:Boolean = false,
                             var messageType: String = "message",
-                            var caption:String = "")
+                            var caption:String = "",
+                            var file_local_path:String = "",
+                            var file_size_in_bytes:Long = 0,
+                            var video_length_in_sec:Long = 0,
+                            var message_deleted:Boolean = false)
 
     data class Contact(var name:String = "", var number:String = "", var photoURI:String = "" , var uid: String = "")
 

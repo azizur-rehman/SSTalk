@@ -4,12 +4,15 @@ import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import android.util.Log
 import android.view.MenuItem
 import android.view.View
 import com.aziz.sstalk.utils.utils
+import com.squareup.picasso.NetworkPolicy
 import com.squareup.picasso.Picasso
 import com.squareup.picasso.Target
 import kotlinx.android.synthetic.main.activity_image_preview.*
+import java.io.File
 import java.lang.Exception
 
 class ImagePreviewActivity : AppCompatActivity() {
@@ -21,6 +24,16 @@ class ImagePreviewActivity : AppCompatActivity() {
         setContentView(R.layout.activity_image_preview)
 
         val imgURL = intent.getStringExtra(utils.constants.KEY_IMG_PATH)
+        val imgLocalPath = intent.getStringExtra(utils.constants.KEY_LOCAL_PATH)
+
+        Log.d("ImagePreviewActivity", "onCreate: url = $imgURL")
+        Log.d("ImagePreviewActivity", "onCreate: local path = $imgLocalPath")
+
+        if(imgURL.isEmpty() && imgLocalPath.isEmpty()){
+            utils.toast(this@ImagePreviewActivity, "Failed to load image")
+            Log.d("ImagePreviewActivity", "onCreate: path empty")
+            finish()
+        }
 
 
          val target:Target = object : Target{
@@ -30,7 +43,8 @@ class ImagePreviewActivity : AppCompatActivity() {
             }
 
             override fun onBitmapFailed(e: Exception?, errorDrawable: Drawable?) {
-                utils.toast(this@ImagePreviewActivity, "Failed to load image")
+                utils.toast(this@ImagePreviewActivity, "Failed to load : Image might be deleted")
+                Log.d("ImagePreviewActivity", "onBitmapFailed: ${e!!.message}")
                 finish()
 
             }
@@ -44,14 +58,32 @@ class ImagePreviewActivity : AppCompatActivity() {
 
         }
 
-
-        Picasso.get()
-            .load(imgURL.toString())
-            .into(target)
-
         preview.tag = target
 
+        if(File(imgLocalPath).exists()){
 
+
+            Log.d("ImagePreviewActivity", "onCreate: file exists")
+
+            Picasso.get()
+                .load(File(imgLocalPath))
+                .networkPolicy(NetworkPolicy.OFFLINE)
+                .into(target)
+
+        }
+        else{
+
+            if(imgURL.isEmpty()){
+                utils.toast(this@ImagePreviewActivity, "Failed to load image")
+                Log.d("ImagePreviewActivity", "onCreate: path empty")
+                finish()
+            }
+            else
+            Picasso.get()
+                .load(imgURL.toString())
+                .networkPolicy(NetworkPolicy.OFFLINE)
+                .into(target)
+        }
 
 
 

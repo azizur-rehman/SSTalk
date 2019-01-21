@@ -30,17 +30,17 @@
         android:layout_height="match_parent" />
 
 
-        <LinearLayout android:layout_width="match_parent"
+        <io.codetail.widget.RevealLinearLayout android:layout_width="match_parent"
                   android:orientation="horizontal"
                   android:id="@+id/attachment_menu"
                       android:padding="15dp"
                         android:layout_margin="2dp"
-                      android:background="@drawable/button_round"
+                      android:background="@drawable/button_round_with_transparency"
                       android:layout_gravity="bottom"
                   android:layout_height="wrap_content">
 
-        <LinearLayout android:layout_height="match_parent"
-        android:layout_width="0dp"
+            <LinearLayout android:layout_height="match_parent"
+                        android:layout_width="0dp"
                       android:id="@+id/camera_btn"
                       android:padding="2dp"
                       android:orientation="vertical"
@@ -52,7 +52,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     app:backgroundTint="@color/md_deep_purple_A400"
-                    android:src="@drawable/ic_camera"
+                    android:src="@drawable/ic_camera_white_24dp"
 
 
             />
@@ -79,20 +79,47 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         app:backgroundTint="@color/md_light_blue_500"
-                        android:src="@drawable/ic_gallery"
+                        android:src="@drawable/ic_photo_library_white_24dp"
 
 
                 />
 
                 <TextView android:layout_width="match_parent"
                           style="@style/TextViewSmallWhite"
-                          android:text="Gallery"
+                          android:text="Picture"
                           android:textSize="18sp"
                           android:layout_marginTop="8dp"
                           android:layout_height="wrap_content"/>
 
             </LinearLayout>
 
+
+            <LinearLayout android:layout_height="match_parent"
+                          android:layout_width="0dp"
+                          android:id="@+id/video_pick_btn"
+                          android:padding="2dp"
+                          android:orientation="vertical"
+                          android:background="?attr/selectableItemBackground"
+                          android:gravity="center"
+                          android:layout_weight="1">
+
+                <android.support.design.widget.FloatingActionButton
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:backgroundTint="@color/md_deep_orange_600"
+                        android:src="@drawable/ic_video_library_white_24dp"
+
+
+                />
+
+                <TextView android:layout_width="match_parent"
+                          style="@style/TextViewSmallWhite"
+                          android:text="Video"
+                          android:textSize="18sp"
+                          android:layout_marginTop="8dp"
+                          android:layout_height="wrap_content"/>
+
+            </LinearLayout>
 
 
             <LinearLayout android:layout_height="match_parent"
@@ -108,7 +135,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         app:backgroundTint="@color/red"
-                        android:src="@drawable/ic_location_white"
+                        android:src="@drawable/ic_location_on_white_24dp"
                 />
 
                 <TextView android:layout_width="match_parent"
@@ -123,7 +150,7 @@
 
 
 
-    </LinearLayout>
+    </io.codetail.widget.RevealLinearLayout>
 
 
     </FrameLayout>
@@ -136,7 +163,7 @@
             android:id="@+id/messageInputField"
             app:attachmentButtonBackground="?android:selectableItemBackground"
             app:attachmentButtonDefaultIconColor="@color/green"
-            app:inputButtonBackground="@drawable/bg_custom_layout_send"
+            app:inputButtonBackground="@drawable/round_badge"
             app:inputButtonDefaultIconColor="@color/white"
             app:attachmentButtonDefaultIconPressedColor="@color/green_dark"
 

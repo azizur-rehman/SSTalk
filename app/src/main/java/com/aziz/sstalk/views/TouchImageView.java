@@ -10,7 +10,7 @@
  * Extends Android ImageView to include pinch zooming, panning, fling and double tap zoom.
  */
 
-package com.aziz.sstalk.customviews;
+package com.aziz.sstalk.views;
 
 import android.annotation.TargetApi;
 import android.content.Context;

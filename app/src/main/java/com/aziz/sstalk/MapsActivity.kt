@@ -17,6 +17,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import kotlinx.android.synthetic.main.activity_maps.*
+import java.lang.Exception
 import java.util.*
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
@@ -58,13 +59,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             .addOnCompleteListener {
                 if(it.isSuccessful) {
                     if (it != null) {
-                        val latLng = LatLng(it.result!!.latitude, it.result!!.longitude)
+                        try {
+                            val latLng = LatLng(it.result!!.latitude, it.result!!.longitude)
 
-                        loadLocation(latLng)
+                            loadLocation(latLng)
 
-                        current_location_btn.setOnClickListener {
-                           loadLocation(latLng)
+                            current_location_btn.setOnClickListener {
+                                loadLocation(latLng)
+                            }
                         }
+                        catch (e:Exception){ utils.toast(this@MapsActivity,"Failed to load current location")}
                     }
                 }
             }

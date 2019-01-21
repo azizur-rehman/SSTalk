@@ -22,6 +22,74 @@
     <color name="brown">#4e342e</color>
 
 
+    <color name="transparent_green">#9938be55</color>
+    <color name="transparent_green2">#b338be55</color>
+
+
+    <color name="myTransparentBlack">#99000400</color>
+
+
+
+    <color name="black_de">#000000</color>
+    <color name="color1">#2062af</color>
+    <color name="color10">#8c47fb</color>
+    <color name="color11">#51C1EE</color>
+    <color name="color12">#8cc453</color>
+
+    <color name="color13">#C2987D</color>
+    <color name="color14">#CE7777</color>
+    <color name="color15">#9086BA</color>
+    <color name="color2">#58AEB7</color>
+    <color name="color3">#F4B528</color>
+    <color name="color4">#DD3E48</color>
+    <color name="color5">#BF89AE</color>
+    <color name="color6">#5C88BE</color>
+    <color name="color7">#59BC10</color>
+    <color name="color8">#E87034</color>
+    <color name="color9">#f84c44</color>
+    <color name="lite_blue">#42a5f5</color>
+
+    <!--transparent black   -->
+
+    <color name="transparent_black_1">#11000000</color>
+    <color name="transparent_black_2">#22000000</color>
+    <color name="transparent_black_3">#33000000</color>
+    <color name="transparent_black_4">#44000000</color>
+    <color name="transparent_black_5">#55000000</color>
+    <color name="transparent_black_6">#66000000</color>
+    <color name="transparent_black_7">#77000000</color>
+    <color name="transparent_black_8">#88000000</color>
+    <color name="transparent_black_9">#99000000</color>
+    <color name="transparent_black_10">#aa000000</color>
+    <color name="transparent_black_11">#bb000000</color>
+    <color name="transparent_black_12">#cc000000</color>
+    <color name="transparent_black_13">#dd000000</color>
+    <color name="transparent_black_14">#ee000000</color>
+    <color name="transparent_black_15">#ff000000</color>
+    <color name="transparent_black_16">#80000000</color>
+    <color name="transparent_black_17">#A0000000</color>
+
+    <!--Transparent White HEX-->
+
+    <color name="transparent_white_1">#11ffffff</color>
+    <color name="transparent_white_2">#22ffffff</color>
+    <color name="transparent_white_3">#33ffffff</color>
+    <color name="transparent_white_4">#44ffffff</color>
+    <color name="transparent_white_5">#55ffffff</color>
+    <color name="transparent_white_6">#66ffffff</color>
+    <color name="transparent_white_7">#77ffffff</color>
+    <color name="transparent_white_8">#88ffffff</color>
+    <color name="transparent_white_9">#99ffffff</color>
+    <color name="transparent_white_10">#aaffffff</color>
+    <color name="transparent_white_11">#bbffffff</color>
+    <color name="transparent_white_12">#ccffffff</color>
+    <color name="transparent_white_13">#ddffffff</color>
+    <color name="transparent_white_14">#eeffffff</color>
+    <color name="transparent_white_15">#ffffffff</color>
+    <color name="transparent_white_16">#80ffffff</color>
+    <color name="transparent_white_17">#A0ffffff</color>
+
+
     <!-- google's material design colours from
 http://www.google.com/design/spec/style/color.html#color-ui-color-palette -->
 
