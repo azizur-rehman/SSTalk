@@ -754,30 +754,30 @@ class MessageActivity : AppCompatActivity() {
 
                     }
 
-//                    thumbnail.setOnClickListener {
-//
-//
-//                        if(isContextMenuActive)
-//                            return@setOnClickListener
-//
-//                        if(model.file_local_path.isNotEmpty() && File(model.file_local_path).exists()) {
-//                            try {
-//                                val videoIntent = Intent(Intent.ACTION_VIEW)
-//                                val uri = FileProvider.getUriForFile(context, utils.constants.URI_AUTHORITY, File(model.file_local_path))
-//                                videoIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-//                                videoIntent.setDataAndType(uri, "video/*")
-//                                startActivity(videoIntent)
-//                            }
-//                            catch (e:Exception){
-//                                utils.toast(context, e.message.toString())
-//                            }
-//                        }
-//                        else {
-//                         //   downloadVideo(messageID, holder.progressBar)
-//                            utils.toast(context, "File not found on the device")
-//                        }
-//
-//                    }
+                    thumbnail.setOnClickListener {
+
+
+                        if(isContextMenuActive)
+                            return@setOnClickListener
+
+                        if(model.file_local_path.isNotEmpty() && File(model.file_local_path).exists()) {
+                            try {
+                                val videoIntent = Intent(Intent.ACTION_VIEW)
+                                val uri = FileProvider.getUriForFile(context, utils.constants.URI_AUTHORITY, File(model.file_local_path))
+                                videoIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                videoIntent.setDataAndType(uri, "video/*")
+                                startActivity(videoIntent)
+                            }
+                            catch (e:Exception){
+                                utils.toast(context, e.message.toString())
+                            }
+                        }
+                        else {
+                         //   downloadVideo(messageID, holder.progressBar)
+                            utils.toast(context, "File not found on the device")
+                        }
+
+                    }
 
                 }
 
@@ -1196,6 +1196,34 @@ class MessageActivity : AppCompatActivity() {
                 }
 
 
+            //setting cancel button value
+            if(mediaControlImageViewAt.containsKey(messageID)){
+
+                if(mediaControlImageViewAt[messageID]!=null){
+
+                    val btnView = mediaControlImageViewAt[messageID]
+
+
+                    btnView!!.setOnClickListener {
+
+
+                        if(percentage >= 100)
+                            return@setOnClickListener
+
+                        Log.d("MessageActivity", "fileUpload: cancel clicked")
+                        if(BuildConfig.DEBUG)
+                            utils.toast(context, "Upload cancelled")
+
+
+                        uploadTask.cancel()
+                        mediaControlImageViewAt[messageID]!!.setImageResource(R.drawable.ic_play_white)
+                    }
+                }
+            }
+
+
+
+
              }
             .continueWithTask(Continuation<UploadTask.TaskSnapshot, Task<Uri>> { task ->
                 if (!task.isSuccessful) {
@@ -1250,24 +1278,7 @@ class MessageActivity : AppCompatActivity() {
             }
 
 
-        //setting cancel button value
-        if(mediaControlImageViewAt.containsKey(messageID)){
 
-            if(mediaControlImageViewAt[messageID]!=null){
-                mediaControlImageViewAt[messageID]!!.bringToFront()
-
-                val btnView = mediaControlImageViewAt[messageID]
-
-
-                btnView!!.setOnClickListener {
-                    Log.d("MessageActivity", "fileUpload: cancel clicked")
-                    if(BuildConfig.DEBUG)
-                        utils.toast(context, "Upload cancelled")
-                    uploadTask.cancel()
-                    mediaControlImageViewAt[messageID]!!.setImageResource(R.drawable.ic_play_white)
-                }
-            }
-        }
 
     }
 
@@ -1533,6 +1544,7 @@ class MessageActivity : AppCompatActivity() {
 
         CircularProgressBarsAt[messageID] = holder.progressBar
         mediaControlImageViewAt[messageID] = holder.centerImageView
+
 
 
         setTapToRetryBtn(holder.tapToRetry,holder.progressBar,model.file_local_path, messageID,model.caption, model.messageType)
