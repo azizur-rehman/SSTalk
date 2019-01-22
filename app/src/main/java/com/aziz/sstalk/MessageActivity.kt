@@ -18,6 +18,7 @@ import android.os.Environment.DIRECTORY_DCIM
 import android.provider.MediaStore
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
+import android.support.v4.content.FileProvider
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.view.ActionMode
 import android.support.v7.widget.LinearLayoutManager
@@ -177,9 +178,16 @@ class MessageActivity : AppCompatActivity() {
 
 
 
-         if(attachment_menu.visibility != View.VISIBLE) utils.setEnterRevealEffect(attachment_menu)
-         else utils.setExitRevealEffect(attachment_menu)
 
+         if(attachment_menu.visibility != View.VISIBLE) {
+             utils.setEnterRevealEffect(attachment_menu)
+           //  messagesList.alpha = 0.6f
+
+         }
+         else {
+             utils.setExitRevealEffect(attachment_menu)
+            // messagesList.alpha = 1f
+         }
 
 
         }
@@ -456,7 +464,7 @@ class MessageActivity : AppCompatActivity() {
                 Log.d("MessageActivity", "onActivityResult: size = "+videoFile.size / (1024) +" KB")
                 messageID = "MSG" +System.currentTimeMillis()
 
-                uploadFile(messageID, File(videoFile.path), "", utils.constants.FILE_TYPE_VIDEO)
+                uploadFile(messageID, File(videoFile.path), "", utils.constants.FILE_TYPE_VIDEO, false)
 
 
             }
@@ -479,7 +487,8 @@ class MessageActivity : AppCompatActivity() {
                     uploadFile(
                         messageID, File(path.toString()),
                         caption[index],
-                        utils.constants.FILE_TYPE_IMAGE
+                        utils.constants.FILE_TYPE_IMAGE,
+                        true
                     )
                 }
 
@@ -512,6 +521,8 @@ class MessageActivity : AppCompatActivity() {
            }
 
        }
+
+
        messagesList.setHasFixedSize(true)
        messagesList.setItemViewCacheSize(20)
        messagesList.isDrawingCacheEnabled = true;
@@ -526,6 +537,7 @@ class MessageActivity : AppCompatActivity() {
 
         val options = FirebaseRecyclerOptions.Builder<Models.MessageModel>()
             .setQuery(FirebaseUtils.ref.getChatQuery(myUID, targetUid)
+
                // .limitToLast(20)
                 ,Models.MessageModel::class.java)
             .build()
@@ -767,15 +779,16 @@ class MessageActivity : AppCompatActivity() {
                                 .placeholder(R.drawable.placeholder_image)
                                 .into(holder.imageView)
 
+
+
                         }
 
-                    else{
+                        else{
                             Picasso.get()
                                 .load(model.message.toString())
                                 .tag(model.message.toString())
-                                .fit()
                                 .centerCrop()
-                                //.resize(600,400)
+                                .resize(600,400)
                                 .error(R.drawable.error_placeholder2)
                                 .placeholder(R.drawable.placeholder_image)
                                 .into( object : Target{
@@ -893,12 +906,14 @@ class MessageActivity : AppCompatActivity() {
                     }
                     else{
 //                        videoLengthTextView!!.text = utils.getVideoLength(context, model.message)
-                        thumbnail.setImageBitmap(utils.getVideoThumbnailFromWeb(model.message))
-                        thumbnail.setImageBitmap(null)
+                       // thumbnail.setImageBitmap(utils.getVideoThumbnailFromWeb(model.message))
+                     //   thumbnail.setImageBitmap(null)
+                            utils.setVideoThumbnailFromWebAsync(model.message, thumbnail)
 
                         Log.d("MessageActivity", "onBindViewHolder: $messageID file not found")
 
                             tapToDownload!!.visibility = View.VISIBLE
+
 
                             tapToDownload.setOnClickListener {
 
@@ -920,7 +935,9 @@ class MessageActivity : AppCompatActivity() {
                         if(model.file_local_path.isNotEmpty() && File(model.file_local_path).exists()) {
                             try {
                                 val videoIntent = Intent(Intent.ACTION_VIEW)
-                                videoIntent.setDataAndType(Uri.fromFile(File(model.file_local_path)), "video/*")
+                                val uri = FileProvider.getUriForFile(context, utils.constants.URI_AUTHORITY, File(model.file_local_path))
+                                videoIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                videoIntent.setDataAndType(uri, "video/*")
                                 startActivity(videoIntent)
                             }
                             catch (e:Exception){
@@ -970,8 +987,8 @@ class MessageActivity : AppCompatActivity() {
 
                 //setting contextual toolbar
 
-                var selectedDrawable = ColorDrawable(ContextCompat.getColor(context, R.color.transparent_green))
-                var unselectedDrawable = ColorDrawable(Color.WHITE)
+                val selectedDrawable = ColorDrawable(ContextCompat.getColor(context, R.color.transparent_green))
+                val unselectedDrawable = ColorDrawable(Color.WHITE)
 
                 val messageIDKey = super.getRef(position).key
 
@@ -1142,13 +1159,13 @@ class MessageActivity : AppCompatActivity() {
             })
 
         tapToRetry.setOnClickListener {
-          progressBar!!.visibility = View.VISIBLE
+          progressBar.visibility = View.VISIBLE
             it.visibility = View.GONE
 
             if(File(filePath).exists())
                 uploadFile(
                     messageID, File(filePath.toString()),
-                    caption, fileType
+                    caption, fileType, false
                 )
             else{
                 utils.toast(context, "File does not exists on this device")
@@ -1244,7 +1261,8 @@ class MessageActivity : AppCompatActivity() {
         messageID: String,
         file: File,
         caption: String,
-        messageType: String
+        messageType: String,
+        isNewIDRequired:Boolean
     ){
 
 
@@ -1256,9 +1274,9 @@ class MessageActivity : AppCompatActivity() {
 
 
         //Initial node
-        val messageModel= Models.MessageModel(
+        var messageModel= Models.MessageModel(
             "",
-            myUID, targetUid ,isFile = true, caption = caption, messageType = messageType, file_local_path = file.path,
+            myUID, targetUid ,isFile = true, caption = caption, messageType = messageType, file_local_path = originalPath,
             file_size_in_bytes = file.length())
 
 
@@ -1288,23 +1306,42 @@ class MessageActivity : AppCompatActivity() {
 
                         override fun onSuccess(file: File?) {
 
-                            val fileSizeInMB = (file!!.length()/(1024* 1024))
+                            //setting up node for compressed image
+                            messageModel= Models.MessageModel(
+                                "",
+                                myUID, targetUid ,isFile = true,
+                                caption = caption, messageType = messageType,
+                                file_local_path = originalPath,
+                                file_size_in_bytes = file!!.length())
+
+
+
+                            val fileSizeInMB = (file.length()/(1024* 1024))
+
+
+                            val newID = if(isNewIDRequired) "MSG" +System.currentTimeMillis() else messageID
+
+                            isUploading[newID] = true
+
 
                             Log.d("MessageActivity", "uploadFile: file size = $fileSizeInMB")
 
                             if(fileSizeInMB > 16){
-                                utils.toast(context, "File size exceeded, Please choose a smaller file")
+                                utils.toast(context, "File size exceeded by 16 MB, Please choose a smaller file")
                                 return
                             }
-                            fileUpload(messageID, file!!, originalPath, caption, messageType)
 
-                            addMessageToMyNode(messageID, messageModel)
+                            fileUpload(newID, file, originalPath, caption, messageType)
+
+                            addMessageToMyNode(newID, messageModel)
 
                         }
                     })
             }
 
 
+
+            //for video upload
             utils.constants.FILE_TYPE_VIDEO -> {
 
 
@@ -1314,7 +1351,7 @@ class MessageActivity : AppCompatActivity() {
                 Log.d("MessageActivity", "uploadFile: file size = $fileSizeInMB")
 
                 if(fileSizeInMB > 16){
-                    utils.longToast(context, "File size exceeded, Please choose a smaller file")
+                    utils.longToast(context, "File size exceeded by 16 MB, Please choose a smaller file")
                     return
                 }
 
@@ -1348,7 +1385,7 @@ class MessageActivity : AppCompatActivity() {
         val ref =  FirebaseStorage.getInstance()
             .reference.child(messageType).child(messageID)
 
-        val uploadTask = ref.putFile(Uri.fromFile(file))
+        val uploadTask = ref.putFile(FileProvider.getUriForFile(context, utils.constants.URI_AUTHORITY, file))
 
 
 
@@ -1383,10 +1420,8 @@ class MessageActivity : AppCompatActivity() {
                     }
                 }
 
-                Log.d("MessageActivity", "fileUpload: total bytes = ${taskSnapshot.totalByteCount}")
-                Log.d("MessageActivity", "fileUpload: uploaded bytes = "+taskSnapshot.bytesTransferred)
-                Log.d("MessageActivity", "fileUpload: percentage = $percentage")
-            }
+
+             }
             .continueWithTask(Continuation<UploadTask.TaskSnapshot, Task<Uri>> { task ->
                 if (!task.isSuccessful) {
                     task.exception?.let {
@@ -1509,8 +1544,7 @@ class MessageActivity : AppCompatActivity() {
 
         try {
 
-            if (adapter != null)
-                adapter.startListening()
+            adapter.startListening()
 
         } catch (e:Exception){}
     }
@@ -1521,7 +1555,7 @@ class MessageActivity : AppCompatActivity() {
 
         try {
 
-        if(adapter!=null)
+        if(true)
             adapter.stopListening()
 
     } catch (e:Exception){}
@@ -1576,6 +1610,61 @@ class MessageActivity : AppCompatActivity() {
 
     }
 
+
+
+    //setting holders
+
+
+    //setting target image holder
+    private fun setTargetImageHolder(holder: holders.TargetImageMsgHolder, model:Models.MessageModel, messageID: String){
+        holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
+
+        holder.message.text = model.caption
+
+        if(model.file_local_path.isNotEmpty() && File(model.file_local_path).exists()) {
+            Picasso.get()
+                .load(File(model.file_local_path.toString()))
+                .tag(model.message.toString())
+                .fit()
+                .centerCrop()
+                //.resize(600,400)
+                .error(R.drawable.error_placeholder2)
+                .placeholder(R.drawable.placeholder_image)
+                .into(holder.imageView)
+
+
+
+        }
+
+        else{
+            Picasso.get()
+                .load(model.message.toString())
+                .tag(model.message.toString())
+                .centerCrop()
+                .resize(600,400)
+                .error(R.drawable.error_placeholder2)
+                .placeholder(R.drawable.placeholder_image)
+                .into( object : Target{
+                    override fun onPrepareLoad(placeHolderDrawable: Drawable?) {
+                    }
+
+                    override fun onBitmapFailed(e: Exception?, errorDrawable: Drawable?) {
+                    }
+
+                    override fun onBitmapLoaded(bitmap: Bitmap?, from: Picasso.LoadedFrom?) {
+                        val savedPath = utils.saveBitmap(context, bitmap!!, messageID)
+                        Log.d("MessageActivity", "onBitmapLoaded: saved path = $savedPath")
+                        holder.imageView.setImageBitmap(bitmap)
+
+                        FirebaseUtils.ref.getChatRef(myUID,targetUid)
+                            .child(messageID)
+                            .child(FirebaseUtils.KEY_FILE_LOCAL_PATH)
+                            .setValue(savedPath)
+                    }
+
+                })
+        }
+    }
 
 
     var isContextMenuActive = false

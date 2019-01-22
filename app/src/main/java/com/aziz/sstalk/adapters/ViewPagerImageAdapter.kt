@@ -1,6 +1,7 @@
 package com.aziz.sstalk.adapters
 
 import android.net.Uri
+import android.support.v4.content.FileProvider
 import android.support.v4.view.PagerAdapter
 import android.text.Editable
 import android.text.TextWatcher
@@ -11,6 +12,7 @@ import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.LinearLayout
 import com.aziz.sstalk.R
+import com.aziz.sstalk.utils.utils
 import com.squareup.picasso.Picasso
 import com.vincent.filepicker.filter.entity.ImageFile
 import kotlinx.android.synthetic.main.layout_upload_image_preview.view.*
@@ -62,7 +64,7 @@ class ViewPagerImageAdapter(
         }
 
 
-        imgView.setImageURI(Uri.fromFile(File(imagePaths[position])))
+        imgView.setImageURI(FileProvider.getUriForFile(container.context,utils.constants.URI_AUTHORITY,File(imagePaths[position])))
 
 //        Picasso.get()
 //            .load(File(imagePaths[position].path))

@@ -7,18 +7,20 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.net.Uri
-import android.os.Build
-import android.os.Environment
+import android.os.*
 import android.provider.ContactsContract
 import android.provider.MediaStore
+import android.support.v4.content.FileProvider
 import android.util.Log
 import android.view.View
 import android.view.ViewAnimationUtils
 import android.view.animation.AccelerateDecelerateInterpolator
+import android.widget.ImageView
 import android.widget.Toast
 import com.aziz.sstalk.R
 import com.aziz.sstalk.models.Models
 import com.google.firebase.auth.FirebaseAuth
+import com.squareup.picasso.Picasso
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -46,6 +48,7 @@ object utils {
         val KEY_ADDRESS = "address"
 
         val IS_FOR_SINGLE_FILE = "isSingleFile"
+        val URI_AUTHORITY = "com.mvc.imagepicker.provider"
 
     }
 
@@ -271,7 +274,7 @@ object utils {
         try {
 
             val retriever = MediaMetadataRetriever()
-            retriever.setDataSource(context, Uri.fromFile(File(videoFilePath)))
+            retriever.setDataSource(context, FileProvider.getUriForFile(context!!, constants.URI_AUTHORITY, File(videoFilePath)))
             val time = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
             val timeInMillisec = time.toLong()
 
@@ -288,10 +291,111 @@ object utils {
     }
 
 
-     fun getVideoThumbnailFromWeb(videoPath:String): Bitmap?
+   private class getThumbFromURL(private val imageView: ImageView, private val videoPath: String) : AsyncTask <Void, Void, Void>(){
+       var bitmap: Bitmap? = null
+        val mediaMetadataRetriever:MediaMetadataRetriever? = MediaMetadataRetriever()
+
+
+        override fun doInBackground(vararg params: Void?): Void? {
+
+
+            try
+            {
+                if (Build.VERSION.SDK_INT >= 14)
+                    mediaMetadataRetriever!!.setDataSource(videoPath, HashMap<String, String>())
+                else
+                    mediaMetadataRetriever!!.setDataSource(videoPath)
+                //   mediaMetadataRetriever.setDataSource(videoPath);
+                bitmap = mediaMetadataRetriever.getFrameAtTime(1, MediaMetadataRetriever.OPTION_CLOSEST);
+            }
+            catch (e:Exception)
+            {
+                e.printStackTrace()
+            }
+            finally
+            {
+                mediaMetadataRetriever!!.release()
+            }
+
+            return null
+        }
+
+        override fun onPostExecute(result: Void?) {
+            super.onPostExecute(result)
+            mediaMetadataRetriever!!.release()
+            imageView.setImageBitmap(bitmap)
+
+        }
+
+    }
+
+
+
+    fun setVideoThumbnailFromWebAsync(videoPath: String, imageView: ImageView){
+        getThumbFromURL(imageView, videoPath)
+            .execute()
+    }
+
+
+    private class loadImageUsingPicassoFromFile(private val file: File,private val imageView: ImageView) : AsyncTask<Void, Void, Void>() {
+        override fun doInBackground(vararg params: Void?): Void? {
+
+
+            Handler(Looper.getMainLooper())
+                .post {
+
+            Picasso.get()
+                .load(file)
+                .tag(file.path)
+                .fit()
+                .centerCrop()
+                //.resize(600,400)
+                .error(R.drawable.error_placeholder2)
+                .placeholder(R.drawable.placeholder_image)
+                .into(imageView)
+
+                }
+
+                    return null
+        }
+
+    }
+
+
+    private class loadImageUsingPicassoFromWeb(private val url: String,private val imageView: ImageView) : AsyncTask<Void, Void, Void>() {
+        override fun doInBackground(vararg params: Void?): Void? {
+            Picasso.get()
+                .load(url)
+                .tag(url)
+                .fit()
+                .centerCrop()
+                //.resize(600,400)
+                .error(R.drawable.error_placeholder2)
+                .placeholder(R.drawable.placeholder_image)
+                .into(imageView)
+            return null
+        }
+
+    }
+
+
+    fun loadFileUsingPicassoFromWeb(url: String, imageView: ImageView){
+        loadImageUsingPicassoFromWeb(url,imageView).execute()
+    }
+
+
+    fun loadUsingPicassoFromFile(file: File, imageView: ImageView){
+        loadImageUsingPicassoFromFile(file,imageView).execute()
+    }
+
+
+     fun getVideoThumbnailFromWeb(videoPath:String, imageView: ImageView): Bitmap?
     {
     var bitmap: Bitmap? = null
     var mediaMetadataRetriever:MediaMetadataRetriever? = null
+
+
+
     try
     {
         mediaMetadataRetriever = MediaMetadataRetriever()
@@ -367,7 +471,7 @@ object utils {
 
         //getting video length
         val retriever = MediaMetadataRetriever()
-        retriever.setDataSource(context, Uri.fromFile(file))
+        retriever.setDataSource(context, FileProvider.getUriForFile(context, utils.constants.URI_AUTHORITY, file))
         val time = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
         val timeInMillisec = time.toLong()
 

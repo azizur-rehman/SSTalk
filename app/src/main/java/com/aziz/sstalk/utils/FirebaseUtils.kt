@@ -3,6 +3,7 @@ package com.aziz.sstalk.utils
 import android.app.ProgressDialog
 import android.content.Context
 import android.net.Uri
+import android.support.v4.content.FileProvider
 import android.util.Log
 import android.view.View
 import android.widget.ImageView
@@ -118,7 +119,7 @@ object FirebaseUtils {
 
 
 
-        val uploadTask = storageRef.putFile(Uri.fromFile(file))
+        val uploadTask = storageRef.putFile(FileProvider.getUriForFile(context, utils.constants.URI_AUTHORITY, file))
 
         uploadTask.continueWithTask(Continuation<UploadTask.TaskSnapshot, Task<Uri>> { task ->
             if (!task.isSuccessful) {
