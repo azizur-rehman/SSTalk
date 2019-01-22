@@ -48,7 +48,7 @@
                          android:layout_gravity="center"
                          android:progressDrawable="@drawable/progress_drawable"
                          android:id="@+id/progress_bar_image_right"
-                         app:cpb_background_progressbar_color="@color/transparent"
+                         app:cpb_background_progressbar_color="@color/transparent_black_7"
                          app:cpb_background_progressbar_width="5dp"
                          app:cpb_progressbar_color="@color/colorAccent"
                          app:cpb_progressbar_width="5dp"

@@ -653,108 +653,11 @@ class MessageActivity : AppCompatActivity() {
 
                     messageImage = holder.imageView
 
-                    holder.tapToRetry.visibility = View.GONE
 
-                        holder.progressBar.visibility = View.VISIBLE
-                    CircularProgressBarsAt[messageID] = holder.progressBar
-
+                    //setting holder config
+                    setMyImageHolder(holder, model, messageID)
 
 
-                    holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
-
-
-                    setTapToRetryBtn(holder.tapToRetry,holder.progressBar,model.file_local_path, messageID,model.caption, model.messageType)
-
-
-                    if(model.file_local_path.isNotEmpty() ){
-
-                                //when image is not uploaded
-
-                                Picasso.get()
-                                    .load(File(model.file_local_path.toString()))
-                                  //  .resize(600,500)
-                                    .fit()
-                                    .centerCrop()
-                                    .error(R.drawable.error_placeholder2)
-                                    .placeholder(R.drawable.placeholder_image)
-                                    .tag(model.message.toString())
-                                    .into(holder.imageView, object: Callback{
-
-                                        override fun onSuccess() {
-                                            holder.progressBar.visibility = if(isUploading[messageID] == true) View.VISIBLE else View.GONE
-
-                                        }
-
-                                        override fun onError(e: Exception?) {
-
-                                            holder.progressBar.visibility = View.GONE
-
-                                            Log.d("MessageActivity", "onError: img file failed to load : "+e!!.message)
-
-
-                                            if(model.message.isNotEmpty())
-                                            Picasso.get()
-                                                .load(model.message.toString())
-                                                .fit()
-                                                .centerCrop()
-                                                //.resize(600,400)
-                                                .error(R.drawable.error_placeholder2)
-                                                .placeholder(R.drawable.placeholder_image)
-                                                .tag(model.message.toString())
-                                                .into(holder.imageView)
-                                        }
-
-                                    })
-                                loadedPosition[position] = true
-                            }
-
-                    else  {
-
-                                if(model.message.isNotEmpty())
-                                Picasso.get()
-                                    .load(model.message.toString())
-                                    .fit()
-                                    .centerCrop()
-                                   // .resize(600,400)
-                                    .error(R.drawable.error_placeholder2)
-                                    .placeholder(R.drawable.placeholder_image)
-                                    .tag(model.message.toString())
-                                    .into(holder.imageView, object: Callback{
-                                        override fun onSuccess() {
-
-                                            holder.progressBar.visibility = View.GONE
-
-
-                                        }
-
-                                        override fun onError(e: Exception?) {
-
-                                            holder.progressBar.visibility = if(isUploading[messageID] == false) View.GONE else View.VISIBLE
-
-                                            Log.d("MessageActivity", "onError: img url failed to load")
-
-                                            holder.tapToRetry.setOnClickListener {
-
-                                                if(isContextMenuActive)
-                                                    return@setOnClickListener
-
-                                                it.visibility = View.GONE
-                                                utils.longToast(context, "Image might be deleted.")
-                                            }
-
-
-
-
-
-                                        }
-
-                                    })
-
-
-
-                            }
-
-                        holder.message.text = model.caption
 
 
                 }
@@ -764,53 +667,8 @@ class MessageActivity : AppCompatActivity() {
                 else if(holder is holders.TargetImageMsgHolder){
                         messageImage = holder.imageView
 
-                        holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
-
-                        holder.message.text = model.caption
-
-                        if(model.file_local_path.isNotEmpty() && File(model.file_local_path).exists()) {
-                            Picasso.get()
-                                .load(File(model.file_local_path.toString()))
-                                .tag(model.message.toString())
-                                .fit()
-                                .centerCrop()
-                                //.resize(600,400)
-                                .error(R.drawable.error_placeholder2)
-                                .placeholder(R.drawable.placeholder_image)
-                                .into(holder.imageView)
-
-
-
-                        }
-
-                        else{
-                            Picasso.get()
-                                .load(model.message.toString())
-                                .tag(model.message.toString())
-                                .centerCrop()
-                                .resize(600,400)
-                                .error(R.drawable.error_placeholder2)
-                                .placeholder(R.drawable.placeholder_image)
-                                .into( object : Target{
-                                    override fun onPrepareLoad(placeHolderDrawable: Drawable?) {
-                                    }
-
-                                    override fun onBitmapFailed(e: Exception?, errorDrawable: Drawable?) {
-                                    }
-
-                                    override fun onBitmapLoaded(bitmap: Bitmap?, from: Picasso.LoadedFrom?) {
-                                        val savedPath = utils.saveBitmap(context, bitmap!!, messageID)
-                                        Log.d("MessageActivity", "onBitmapLoaded: saved path = $savedPath")
-                                        holder.imageView.setImageBitmap(bitmap)
-
-                                        FirebaseUtils.ref.getChatRef(myUID,targetUid)
-                                            .child(messageID)
-                                            .child(FirebaseUtils.KEY_FILE_LOCAL_PATH)
-                                            .setValue(savedPath)
-                                    }
-
-                                })
-                        }
+                    //setting holder setting
+                    setTargetImageHolder(holder, model, messageID)
 
                 }
 
@@ -823,53 +681,25 @@ class MessageActivity : AppCompatActivity() {
 
                     thumbnail = holder.thumbnail
                     videoLengthTextView = holder.videoLengthText
-                    CircularProgressBarsAt[messageID] = holder.progressBar
-                    mediaControlImageViewAt[messageID] = holder.centerImageView
 
                     tapToDownload = holder.tap_to_download
 
-                    setTapToRetryBtn(holder.tapToRetry,holder.progressBar,model.file_local_path, messageID,model.caption, model.messageType)
 
-
-                    holder.tapToRetry.visibility = View.GONE
-                    holder.progressBar.visibility = if(isUploading[messageID] == true) View.VISIBLE else View.GONE
-                    holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
-                  //  setTapToRetryBtn(holder.tapToRetry,holder.progressBar,model.file_local_path, messageID,model.caption, model.messageType)
-
-
-                     if(holder.progressBar.visibility == View.VISIBLE)
-                        holder.centerImageView.setImageResource(R.drawable.ic_clear_white_24dp)
-                     else
-                         holder.centerImageView.setImageResource(R.drawable.ic_play_white)
+                    //setting holder config
+                    setMyVideoHolder(holder, model, messageID)
 
                 }
 
                 else if(holder is holders.TargetVideoMsgHolder){
-                    holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
-                    holder.message.text = model.caption
 
                     tapToDownload = holder.tap_to_download
-
-                    CircularProgressBarsAt[messageID] = holder.progressBar
-                    mediaControlImageViewAt[messageID] = holder.centerImageView
-
-                    //lets hide progressbar for now
-                    holder.progressBar.visibility = View.GONE
 
                     thumbnail = holder.thumbnail
                     videoLengthTextView = holder.videoLengthText
 
 
-
-                    if(holder.progressBar.visibility == View.VISIBLE)
-                        holder.centerImageView.setImageResource(R.drawable.ic_clear_white_24dp)
-                    else
-                        holder.centerImageView.setImageResource(R.drawable.ic_play_white)
-
-
-                    if(model.file_local_path.isEmpty()){
-                        downloadVideo(messageID)
-                    }
+                    //setting holder config
+                    setTargetVideoHolder(holder, model, messageID)
 
                 }
 
@@ -905,10 +735,8 @@ class MessageActivity : AppCompatActivity() {
                             tapToDownload!!.visibility = View.GONE
                     }
                     else{
-//                        videoLengthTextView!!.text = utils.getVideoLength(context, model.message)
-                       // thumbnail.setImageBitmap(utils.getVideoThumbnailFromWeb(model.message))
-                     //   thumbnail.setImageBitmap(null)
-                            utils.setVideoThumbnailFromWebAsync(model.message, thumbnail)
+
+                        utils.setVideoThumbnailFromWebAsync(model.message, thumbnail)
 
                         Log.d("MessageActivity", "onBindViewHolder: $messageID file not found")
 
@@ -926,39 +754,32 @@ class MessageActivity : AppCompatActivity() {
 
                     }
 
-                    thumbnail.setOnClickListener {
-
-
-                        if(isContextMenuActive)
-                            return@setOnClickListener
-
-                        if(model.file_local_path.isNotEmpty() && File(model.file_local_path).exists()) {
-                            try {
-                                val videoIntent = Intent(Intent.ACTION_VIEW)
-                                val uri = FileProvider.getUriForFile(context, utils.constants.URI_AUTHORITY, File(model.file_local_path))
-                                videoIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                videoIntent.setDataAndType(uri, "video/*")
-                                startActivity(videoIntent)
-                            }
-                            catch (e:Exception){
-                                utils.toast(context, e.message.toString())
-                            }
-                        }
-                        else {
-                         //   downloadVideo(messageID, holder.progressBar)
-                            utils.toast(context, "File not found on the device")
-                        }
-
-                    }
+//                    thumbnail.setOnClickListener {
+//
+//
+//                        if(isContextMenuActive)
+//                            return@setOnClickListener
+//
+//                        if(model.file_local_path.isNotEmpty() && File(model.file_local_path).exists()) {
+//                            try {
+//                                val videoIntent = Intent(Intent.ACTION_VIEW)
+//                                val uri = FileProvider.getUriForFile(context, utils.constants.URI_AUTHORITY, File(model.file_local_path))
+//                                videoIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+//                                videoIntent.setDataAndType(uri, "video/*")
+//                                startActivity(videoIntent)
+//                            }
+//                            catch (e:Exception){
+//                                utils.toast(context, e.message.toString())
+//                            }
+//                        }
+//                        else {
+//                         //   downloadVideo(messageID, holder.progressBar)
+//                            utils.toast(context, "File not found on the device")
+//                        }
+//
+//                    }
 
                 }
-
-
-
-
-
-
-
 
 
 
@@ -981,62 +802,13 @@ class MessageActivity : AppCompatActivity() {
                 }
 
 
-                //next time
-           //     dateHeader!!.text = utils.getLocalDateTime(model.timeInMillis)
 
 
                 //setting contextual toolbar
+                setContextualToolbarOnViewHolder(holder.itemView, messageID)
 
-                val selectedDrawable = ColorDrawable(ContextCompat.getColor(context, R.color.transparent_green))
-                val unselectedDrawable = ColorDrawable(Color.WHITE)
-
-                val messageIDKey = super.getRef(position).key
-
-                holder.itemView.setOnLongClickListener {
-
-
-
-                    if(!isContextMenuActive) {
-
-                        if(!selectedMessageIDs.contains(messageIDKey))
-                            selectedMessageIDs.add(messageIDKey!!)
-
-                        startSupportActionMode(actionModeCallback )
-
-                        it.background = if (it.background == selectedDrawable) unselectedDrawable else selectedDrawable
-
-                    }
-
-                    true
-                }
-
-
-                if(!selectedItemViews.contains(holder.itemView))
-                    selectedItemViews.add(holder.itemView)
-
-                holder.itemView.setOnClickListener {
-
-
-                    if(isContextMenuActive) {
-                        it.background = if (it.background == selectedDrawable) unselectedDrawable else selectedDrawable
-
-
-                        if(it.background == unselectedDrawable)
-                            selectedMessageIDs.remove(messageIDKey)
-                        else {
-                            if (!selectedMessageIDs.contains(messageIDKey))
-                                selectedMessageIDs.add(messageIDKey!!)
-                        }
-                    }
-
-                }
 
             }
-
-
-
-
-
 
 
             override fun getItemViewType(position: Int): Int {
@@ -1389,22 +1161,16 @@ class MessageActivity : AppCompatActivity() {
 
 
 
-        //setting inital value
+        //setting initial value
         if(CircularProgressBarsAt.containsKey(messageID)){
             if(CircularProgressBarsAt[messageID]!=null){
                 CircularProgressBarsAt[messageID]!!.progress = 0f
+                CircularProgressBarsAt[messageID]!!.enableIndeterminateMode(true)
+
             }
         }
 
-        //setting inital value
-        if(mediaControlImageViewAt.containsKey(messageID)){
-            if(mediaControlImageViewAt[messageID]!=null){
-                mediaControlImageViewAt[messageID]!!.setOnClickListener {
-                    uploadTask.cancel()
-                    mediaControlImageViewAt[messageID]!!.setImageResource(R.drawable.ic_play_white)
-                }
-            }
-        }
+
 
 
         uploadTask.addOnProgressListener { taskSnapshot ->
@@ -1416,8 +1182,17 @@ class MessageActivity : AppCompatActivity() {
 
                 if(CircularProgressBarsAt.containsKey(messageID)){
                     if(CircularProgressBarsAt[messageID]!=null){
+                        if(percentage.toInt() < 5){
+                            CircularProgressBarsAt[messageID]!!.enableIndeterminateMode(true)
+                        }
+                        else{
+                            CircularProgressBarsAt[messageID]!!.enableIndeterminateMode(false)
+                        }
+
                         CircularProgressBarsAt[messageID]!!.progress = percentage.toFloat()
+
                     }
+
                 }
 
 
@@ -1430,6 +1205,14 @@ class MessageActivity : AppCompatActivity() {
                 }
                 return@Continuation ref.downloadUrl
             })
+            .addOnCanceledListener {
+                isUploading[messageID] = false
+                if(CircularProgressBarsAt[messageID]!=null)
+                    CircularProgressBarsAt[messageID]!!.visibility = View.GONE
+
+                Log.d("MessageActivity", "fileUpload: upload cancelled")
+
+            }
             .addOnCompleteListener { task ->
 
                 isUploading[messageID] = false
@@ -1465,6 +1248,27 @@ class MessageActivity : AppCompatActivity() {
                 else
                     utils.toast(context, task.exception!!.message.toString())
             }
+
+
+        //setting cancel button value
+        if(mediaControlImageViewAt.containsKey(messageID)){
+
+            if(mediaControlImageViewAt[messageID]!=null){
+                mediaControlImageViewAt[messageID]!!.bringToFront()
+
+                val btnView = mediaControlImageViewAt[messageID]
+
+
+                btnView!!.setOnClickListener {
+                    Log.d("MessageActivity", "fileUpload: cancel clicked")
+                    if(BuildConfig.DEBUG)
+                        utils.toast(context, "Upload cancelled")
+                    uploadTask.cancel()
+                    mediaControlImageViewAt[messageID]!!.setImageResource(R.drawable.ic_play_white)
+                }
+            }
+        }
+
     }
 
 
@@ -1612,9 +1416,143 @@ class MessageActivity : AppCompatActivity() {
 
 
 
-    //setting holders
 
 
+
+
+
+
+    //setting my holders
+    //setting my holder config
+    private fun setMyImageHolder(holder: holders.MyImageMsgHolder, model: Models.MessageModel, messageID: String){
+        holder.tapToRetry.visibility = View.GONE
+
+        holder.progressBar.visibility = View.VISIBLE
+        CircularProgressBarsAt[messageID] = holder.progressBar
+
+
+
+        holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
+
+
+        setTapToRetryBtn(holder.tapToRetry,holder.progressBar,model.file_local_path, messageID,model.caption, model.messageType)
+
+
+        if(model.file_local_path.isNotEmpty() ){
+
+            //when image is not uploaded
+
+            Picasso.get()
+                .load(File(model.file_local_path.toString()))
+                //  .resize(600,500)
+                .fit()
+                .centerCrop()
+                .error(R.drawable.error_placeholder2)
+                .placeholder(R.drawable.placeholder_image)
+                .tag(model.message.toString())
+                .into(holder.imageView, object: Callback{
+
+                    override fun onSuccess() {
+                        holder.progressBar.visibility = if(isUploading[messageID] == true) View.VISIBLE else View.GONE
+
+                    }
+
+                    override fun onError(e: Exception?) {
+
+                        holder.progressBar.visibility = View.GONE
+
+                        Log.d("MessageActivity", "onError: img file failed to load : "+e!!.message)
+
+
+                        if(model.message.isNotEmpty())
+                            Picasso.get()
+                                .load(model.message.toString())
+                                .fit()
+                                .centerCrop()
+                                //.resize(600,400)
+                                .error(R.drawable.error_placeholder2)
+                                .placeholder(R.drawable.placeholder_image)
+                                .tag(model.message.toString())
+                                .into(holder.imageView)
+                    }
+
+                })
+        }
+
+        else  {
+
+            if(model.message.isNotEmpty())
+                Picasso.get()
+                    .load(model.message.toString())
+                    .fit()
+                    .centerCrop()
+                    // .resize(600,400)
+                    .error(R.drawable.error_placeholder2)
+                    .placeholder(R.drawable.placeholder_image)
+                    .tag(model.message.toString())
+                    .into(holder.imageView, object: Callback{
+                        override fun onSuccess() {
+
+                            holder.progressBar.visibility = View.GONE
+
+
+                        }
+
+                        override fun onError(e: Exception?) {
+
+                            holder.progressBar.visibility = if(isUploading[messageID] == false) View.GONE else View.VISIBLE
+
+                            Log.d("MessageActivity", "onError: img url failed to load")
+
+                            holder.tapToRetry.setOnClickListener {
+
+                                if(isContextMenuActive)
+                                    return@setOnClickListener
+
+                                it.visibility = View.GONE
+                                utils.longToast(context, "Image might be deleted.")
+                            }
+
+
+
+
+
+                        }
+
+                    })
+
+
+
+        }
+
+        holder.message.text = model.caption
+    }
+
+    //setting my video holder
+    private fun setMyVideoHolder(holder:holders.MyVideoMsgHolder, model: Models.MessageModel, messageID: String){
+
+        CircularProgressBarsAt[messageID] = holder.progressBar
+        mediaControlImageViewAt[messageID] = holder.centerImageView
+
+
+        setTapToRetryBtn(holder.tapToRetry,holder.progressBar,model.file_local_path, messageID,model.caption, model.messageType)
+
+
+        holder.tapToRetry.visibility = View.GONE
+        holder.progressBar.visibility = if(isUploading[messageID] == true) View.VISIBLE else View.GONE
+        holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
+
+
+        if(holder.progressBar.visibility == View.VISIBLE)
+            holder.centerImageView.setImageResource(R.drawable.ic_clear_white_24dp)
+        else
+            holder.centerImageView.setImageResource(R.drawable.ic_play_white)
+
+    }
+
+
+
+    //setting target holders
     //setting target image holder
     private fun setTargetImageHolder(holder: holders.TargetImageMsgHolder, model:Models.MessageModel, messageID: String){
         holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
@@ -1665,6 +1603,90 @@ class MessageActivity : AppCompatActivity() {
                 })
         }
     }
+
+
+    //setting target video holder
+    private fun setTargetVideoHolder(holder: holders.TargetVideoMsgHolder, model: Models.MessageModel, messageID: String){
+
+        holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
+        holder.message.text = model.caption
+
+
+        CircularProgressBarsAt[messageID] = holder.progressBar
+        mediaControlImageViewAt[messageID] = holder.centerImageView
+
+        //lets hide progressbar for now
+        holder.progressBar.visibility = View.GONE
+
+
+
+
+        if(holder.progressBar.visibility == View.VISIBLE)
+            holder.centerImageView.setImageResource(R.drawable.ic_clear_white_24dp)
+        else
+            holder.centerImageView.setImageResource(R.drawable.ic_play_white)
+
+
+        if(model.file_local_path.isEmpty()){
+            downloadVideo(messageID)
+        }
+    }
+
+
+
+
+
+
+
+    //setting contextual toolbar on viewHolder
+    private fun setContextualToolbarOnViewHolder(itemView: View, messageID: String){
+        val selectedDrawable = ColorDrawable(ContextCompat.getColor(context, R.color.transparent_green))
+        val unselectedDrawable = ColorDrawable(Color.WHITE)
+
+        itemView.setOnLongClickListener {
+
+
+
+            if(!isContextMenuActive) {
+
+                if(!selectedMessageIDs.contains(messageID))
+                    selectedMessageIDs.add(messageID)
+
+                startSupportActionMode(actionModeCallback )
+
+                it.background = if (it.background == selectedDrawable) unselectedDrawable else selectedDrawable
+
+            }
+
+            true
+        }
+
+
+        if(!selectedItemViews.contains(itemView))
+            selectedItemViews.add(itemView)
+
+        itemView.setOnClickListener {
+
+
+            if(isContextMenuActive) {
+                it.background = if (it.background == selectedDrawable) unselectedDrawable else selectedDrawable
+
+
+                if(it.background == unselectedDrawable)
+                    selectedMessageIDs.remove(messageID)
+                else {
+                    if (!selectedMessageIDs.contains(messageID))
+                        selectedMessageIDs.add(messageID!!)
+                }
+            }
+
+        }
+    }
+
+
+
+
+
 
 
     var isContextMenuActive = false
