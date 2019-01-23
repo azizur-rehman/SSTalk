@@ -29,8 +29,10 @@ import android.view.MenuItem
 import android.view.*
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import com.aziz.sstalk.models.Models
+import com.aziz.sstalk.utils.DateFormatter
 import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.LocationHelper
 import com.aziz.sstalk.utils.utils
@@ -62,6 +64,7 @@ import me.shaohui.advancedluban.Luban
 import me.shaohui.advancedluban.OnCompressListener
 import java.io.File
 import java.lang.Exception
+import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
@@ -116,6 +119,7 @@ class MessageActivity : AppCompatActivity() {
     var myLastMessagePosition = 0
 
     var selectedMessageIDs:MutableList<String> = ArrayList()
+    var selectMessageModel:MutableList<Models.MessageModel> = ArrayList()
     var selectedItemViews:MutableList<View> = ArrayList()
 
 
@@ -605,6 +609,8 @@ class MessageActivity : AppCompatActivity() {
                 var thumbnail:ImageView? = null
                 var videoLengthTextView:TextView? = null
 
+                var container:LinearLayout? = null
+
                 var circularProgressBar:CircularProgressBar? = null
 
                 var tapToDownload:TextView? = null
@@ -626,81 +632,89 @@ class MessageActivity : AppCompatActivity() {
                 }
 
 
-
-                if(holder is holders.TargetTextMsgHolder){
-                     holder.time.text = utils.getLocalTime(model.timeInMillis)
-                    holder.message.text = model.message
-
-                }
-
-                else if (holder is holders.MyTextMsgHolder){
-                    holder.time.text = utils.getLocalTime(model.timeInMillis)
-                    holder.message.text = model.message
-                    dateHeader = holder.headerDateTime
+                //   downloadVideo(messageID, holder.progressBar)
 
 
+                //set date Header
 
 
-
-                    //end of my holder
-
-                }
-
-
-
-                else if(holder is holders.MyImageMsgHolder){
-
-
-                    messageImage = holder.imageView
-
-
-                    //setting holder config
-                    setMyImageHolder(holder, model, messageID)
+                //setting contextual toolbar
+                when (holder) {
+                    is holders.TargetTextMsgHolder -> {
+                        holder.time.text = utils.getLocalTime(model.timeInMillis)
+                        holder.message.text = model.message
+                        container = holder.container
+                    }
+                    is holders.MyTextMsgHolder -> {
+                        holder.time.text = utils.getLocalTime(model.timeInMillis)
+                        holder.message.text = model.message
+                        dateHeader = holder.headerDateTime
+                        container = holder.container
+                        FirebaseUtils.setDeliveryStatus(myUID, targetUid, messageID, holder.messageStatus)
 
 
+                        //end of my holder
+
+                    }
+                    is holders.MyImageMsgHolder -> {
 
 
-                }
-
-
-
-                else if(holder is holders.TargetImageMsgHolder){
                         messageImage = holder.imageView
+                        container = holder.container
 
-                    //setting holder setting
-                    setTargetImageHolder(holder, model, messageID)
-
-                }
+                        FirebaseUtils.setDeliveryStatus(myUID, targetUid, messageID, holder.messageStatus)
 
 
+                        //setting holder config
+                        setMyImageHolder(holder, model, messageID)
 
 
+                    }
+                    is holders.TargetImageMsgHolder -> {
+                        messageImage = holder.imageView
+                        dateHeader = holder.headerDateTime
+                        container = holder.container
+
+                        //setting holder setting
+                        setTargetImageHolder(holder, model, messageID)
+
+                    }
+                    is holders.MyVideoMsgHolder -> {
+
+                        thumbnail = holder.thumbnail
+                        videoLengthTextView = holder.videoLengthText
+
+                        tapToDownload = holder.tap_to_download
+                        dateHeader = holder.headerDateTime
+                        container = holder.container
 
 
-                else if(holder is holders.MyVideoMsgHolder){
-
-                    thumbnail = holder.thumbnail
-                    videoLengthTextView = holder.videoLengthText
-
-                    tapToDownload = holder.tap_to_download
+                        //setting holder config
+                        setMyVideoHolder(holder, model, messageID)
+                        FirebaseUtils.setDeliveryStatus(myUID, targetUid, messageID, holder.messageStatus)
 
 
-                    //setting holder config
-                    setMyVideoHolder(holder, model, messageID)
+                    }
+                    is holders.TargetVideoMsgHolder -> {
 
-                }
+                        tapToDownload = holder.tap_to_download
 
-                else if(holder is holders.TargetVideoMsgHolder){
-
-                    tapToDownload = holder.tap_to_download
-
-                    thumbnail = holder.thumbnail
-                    videoLengthTextView = holder.videoLengthText
+                        thumbnail = holder.thumbnail
+                        videoLengthTextView = holder.videoLengthText
+                        dateHeader = holder.headerDateTime
+                        container = holder.container
 
 
-                    //setting holder config
-                    setTargetVideoHolder(holder, model, messageID)
+                        //setting holder config
+                        setTargetVideoHolder(holder, model, messageID)
 
+                    }
+
+
+                    //loading message Image listener
+
+
+                    //setting video intent
                 }
 
 
@@ -804,11 +818,54 @@ class MessageActivity : AppCompatActivity() {
 
 
 
+                //set date Header
+
+                val dateHeaderView = layoutInflater.inflate(R.layout.date_header,
+                    findViewById(android.R.id.content)
+                    , false)
+                val dateHeaderTextView = dateHeaderView.findViewById<TextView>(R.id.header_date)
+
+
+              //  holder.setIsRecyclable(false)
+
+                dateHeaderTextView.text = utils.getLocalDate(model.timeInMillis)
+
+                if(position>0){
+
+                    val previousDate = Date(snapshots[position - 1].timeInMillis)
+
+                    if(!DateFormatter.isSameDay(date ,  previousDate)){
+
+                        when {
+                            DateFormatter.isToday(date) -> dateHeaderTextView.text ="Today"
+                            DateFormatter.isYesterday(date) -> dateHeaderTextView.text ="Yesterday"
+                            else -> dateHeaderTextView.text = utils.getLocalDate(model.timeInMillis)
+                        }
+
+                        if(dateHeaderView.parent==null && container!!.getChildAt(0)!=dateHeaderView) {
+                            container!!.addView(dateHeaderView, 0)
+                        }
+                    }
+                    else{
+                        if(dateHeaderView.parent!=null)
+                        container!!.removeView(dateHeaderView)
+                    }
+
+                }
+                else{
+                    if(dateHeaderView.parent==null)
+                        container!!.addView(dateHeaderView,0)
+                }
+
+
                 //setting contextual toolbar
-                setContextualToolbarOnViewHolder(holder.itemView, messageID)
+                setContextualToolbarOnViewHolder(holder.itemView, messageID, model)
 
 
             }
+
+
+
 
 
             override fun getItemViewType(position: Int): Int {
@@ -869,6 +926,7 @@ class MessageActivity : AppCompatActivity() {
         })
 
        adapter.startListening()
+
 
     }
 
@@ -1247,34 +1305,40 @@ class MessageActivity : AppCompatActivity() {
 
 
 
-                if(task.isSuccessful) {
+                if (task.isSuccessful) {
                     val link = task.result
-                    val targetModel= Models.MessageModel(link.toString() ,
-                        myUID, targetUid ,isFile = true, caption = caption, messageType = messageType,
-                        file_size_in_bytes = file.length())
+                    val targetModel = Models.MessageModel(
+                        link.toString(),
+                        myUID, targetUid, isFile = true, caption = caption, messageType = messageType,
+                        file_size_in_bytes = file.length()
+                    )
 
-                    if(BuildConfig.DEBUG)
+                    if (BuildConfig.DEBUG)
                         utils.toast(context, "Uploaded")
 
 
                     addMessageToTargetNode(messageID, targetModel)
 
 
-
-
-                    val myModel= Models.MessageModel(link.toString() ,
-                        myUID, targetUid ,isFile = true, caption = caption, messageType = messageType,
+                    val myModel = Models.MessageModel(
+                        link.toString(),
+                        myUID, targetUid, isFile = true, caption = caption, messageType = messageType,
                         file_local_path = originalFinalPath,
                         isRead = true,
-                        file_size_in_bytes = file.length())
+                        file_size_in_bytes = file.length()
+                    )
 
                     addMessageToMyNode(messageID, myModel)
 
 
+                } else {
 
+                        utils.longToast(context, "Upload failed. Your daily upload/download limit might have been exceeded. Please try again tomorrow")
+
+
+                    Log.e("MessageActivity", "fileUpload: error in upload : "+task.exception!!.toString())
+                    task.exception!!.printStackTrace()
                 }
-                else
-                    utils.toast(context, task.exception!!.message.toString())
             }
 
 
@@ -1651,7 +1715,7 @@ class MessageActivity : AppCompatActivity() {
 
 
     //setting contextual toolbar on viewHolder
-    private fun setContextualToolbarOnViewHolder(itemView: View, messageID: String){
+    private fun setContextualToolbarOnViewHolder(itemView: View, messageID: String, model:Models.MessageModel){
         val selectedDrawable = ColorDrawable(ContextCompat.getColor(context, R.color.transparent_green))
         val unselectedDrawable = ColorDrawable(Color.WHITE)
 
@@ -1661,8 +1725,10 @@ class MessageActivity : AppCompatActivity() {
 
             if(!isContextMenuActive) {
 
-                if(!selectedMessageIDs.contains(messageID))
+                if(!selectedMessageIDs.contains(messageID)) {
                     selectedMessageIDs.add(messageID)
+                    selectMessageModel.add(model)
+                }
 
                 startSupportActionMode(actionModeCallback )
 
@@ -1674,8 +1740,10 @@ class MessageActivity : AppCompatActivity() {
         }
 
 
-        if(!selectedItemViews.contains(itemView))
+        if(!selectedItemViews.contains(itemView)) {
             selectedItemViews.add(itemView)
+            selectMessageModel.add(model)
+        }
 
         itemView.setOnClickListener {
 
@@ -1684,11 +1752,15 @@ class MessageActivity : AppCompatActivity() {
                 it.background = if (it.background == selectedDrawable) unselectedDrawable else selectedDrawable
 
 
-                if(it.background == unselectedDrawable)
+                if(it.background == unselectedDrawable) {
                     selectedMessageIDs.remove(messageID)
+                    selectMessageModel.remove(model)
+                }
                 else {
-                    if (!selectedMessageIDs.contains(messageID))
+                    if (!selectedMessageIDs.contains(messageID)) {
                         selectedMessageIDs.add(messageID!!)
+                        selectMessageModel.add(model)
+                    }
                 }
             }
 
@@ -1702,28 +1774,56 @@ class MessageActivity : AppCompatActivity() {
 
 
     var isContextMenuActive = false
-    var actionModeCallback = object : ActionMode.Callback{
+    private var actionModeCallback = object : ActionMode.Callback{
         override fun onActionItemClicked(p0: ActionMode?, p1: MenuItem?): Boolean {
 
-            for((index,messageID) in selectedMessageIDs.withIndex()){
-                FirebaseUtils.ref.getChatRef(myUID, targetUid)
-                    .child(messageID)
-                    .removeValue()
-                    .addOnCompleteListener {
-                        if(index == selectedMessageIDs.size - 1) {
-                            p0!!.finish()
-                            adapter.notifyDataSetChanged()
-                        }
+
+            when(p1!!.itemId) {
+
+                R.id.action_delete -> {
+                    for ((index, messageID) in selectedMessageIDs.withIndex()) {
+
+
+//                        FirebaseUtils.ref.getChatRef(myUID, targetUid)
+//                            .child(messageID)
+//                            .child("message_deleted")
+//                            .setValue(true)
+//
+//
+//                        FirebaseUtils.ref.getChatRef( targetUid, myUID)
+//                            .child(messageID)
+//                            .child("message_deleted")
+//                            .setValue(true)
+
+
+                        FirebaseUtils.ref.getChatRef(myUID, targetUid)
+                            .child(messageID)
+                            .removeValue()
+                            .addOnCompleteListener {
+                                if (index == selectedMessageIDs.size - 1) {
+                                    adapter.notifyDataSetChanged()
+                                }
+                            }
                     }
+                }
+
+                R.id.action_copy ->{
+
+                    }
+
+
+
             }
+
+            p0!!.finish()
 
             return true
         }
 
         override fun onCreateActionMode(p0: ActionMode?, p1: Menu?): Boolean {
 
-            val delete = p1!!.add(101,102,103,"Delete")
-            delete.setIcon(R.drawable.ic_action_delete)
+            p0!!.menuInflater.inflate(R.menu.chat_actions_menu, p1)
+
 
             isContextMenuActive = true
 

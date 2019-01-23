@@ -265,7 +265,7 @@ object FirebaseUtils {
                     }
 
                     if(p0.exists()) {
-                        textView.text = messageModel!!.message
+                        textView.text = messageModel!!.message.replace("\n"," ")
                         textView.visibility = View.VISIBLE
 
                         if(messageModel.isFile && messageModel.messageType == utils.constants.FILE_TYPE_IMAGE){
@@ -292,12 +292,16 @@ object FirebaseUtils {
 
                 override fun onDataChange(p0: DataSnapshot) {
                     if(p0.exists()){
-                        messageStatusImageView.setImageResource(R.drawable.ic_delivered_tick)
                         if(p0.getValue(Models.MessageModel::class.java)!!.isRead)
                             messageStatusImageView.setImageResource(R.drawable.ic_read_status)
+                        else if(p0.getValue(Models.MessageModel::class.java)!!.message_delivered)
+                            messageStatusImageView.setImageResource(R.drawable.ic_delivered_tick)
+                        else
+                            messageStatusImageView.setImageResource(R.drawable.ic_tick_sent_grey_24dp)
+
                     }
                     else{
-                        messageStatusImageView.setImageDrawable(null)
+                        messageStatusImageView.setImageResource(R.drawable.ic_message_pending_gray_24dp)
                     }
                 }
             })

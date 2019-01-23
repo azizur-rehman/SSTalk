@@ -14,7 +14,8 @@ class Models {
                             var file_local_path:String = "",
                             var file_size_in_bytes:Long = 0,
                             var video_length_in_sec:Long = 0,
-                            var message_deleted:Boolean = false)
+                            var message_deleted:Boolean = false,
+                            var message_delivered:Boolean  = false)
 
     data class Contact(var name:String = "", var number:String = "", var photoURI:String = "" , var uid: String = "")
 

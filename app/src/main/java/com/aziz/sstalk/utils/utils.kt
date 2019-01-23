@@ -121,20 +121,37 @@ object utils {
 
 
 
-    fun getLocalTime(timeStamp: Long): String{
+    fun getLocalTime(timeInMillis: Long): String{
 
-        val sdf = SimpleDateFormat("hh:mm aa")
-        sdf.timeZone= (Calendar.getInstance().timeZone)
+        val calendar = Calendar.getInstance()
+        calendar.timeInMillis = timeInMillis
+        val sdf = SimpleDateFormat("hh:mm a")
 
-        return sdf.format(Date(timeStamp))
+        sdf.timeZone = TimeZone.getDefault()
+
+        return sdf.format(calendar.time)
     }
 
-    fun getLocalDateTime(timeStamp: Long): String{
+    fun getLocalDate(timeInMillis: Long): String{
 
-        val sdf = SimpleDateFormat("dd mm yy hh:mm aa")
-        sdf.timeZone= (Calendar.getInstance().timeZone)
+        val calendar = Calendar.getInstance()
+        calendar.timeInMillis = timeInMillis
+        val sdf = SimpleDateFormat("dd MMM yy")
 
-        return sdf.format(Date(timeStamp))
+        sdf.timeZone = TimeZone.getDefault()
+
+        return sdf.format(calendar.time)
+    }
+
+    fun getUtcTimeFromMillis(timeInMillis:Long) : String{
+
+        val calendar = Calendar.getInstance()
+        calendar.setTimeInMillis(timeInMillis)
+        val sdf = SimpleDateFormat("hh:mm a")
+
+        sdf.timeZone = TimeZone.getDefault()
+
+        return sdf.format(calendar.time)
     }
 
 
