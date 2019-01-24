@@ -5,17 +5,22 @@ import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Color
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.*
 import android.provider.ContactsContract
 import android.provider.MediaStore
 import android.support.v4.content.FileProvider
+import android.text.SpannableString
+import android.text.style.BackgroundColorSpan
+import android.text.style.ForegroundColorSpan
 import android.util.Log
 import android.view.View
 import android.view.ViewAnimationUtils
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
 import com.aziz.sstalk.R
 import com.aziz.sstalk.models.Models
@@ -480,7 +485,7 @@ object utils {
     }
 
 
-    public fun addVideoToMediaStore(context:Context, messageIdForName: String, file: File){
+    fun addVideoToMediaStore(context:Context, messageIdForName: String, file: File){
         val values = ContentValues(3)
         values.put(MediaStore.Video.Media.TITLE, messageIdForName)
         values.put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
@@ -498,5 +503,22 @@ object utils {
         context.contentResolver.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values)
 
     }
+
+
+    fun highlightTextView(textView: TextView, highlightedText:String, color:Int){
+
+        val text = textView.text.toString().toLowerCase()
+
+        val startIndex = text.indexOf(highlightedText.toLowerCase())
+        val endIndex = startIndex + highlightedText.length
+
+        val spannableString = SpannableString(text)
+        spannableString.setSpan(BackgroundColorSpan(color), startIndex,
+            endIndex, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
+
+
+        textView.text = spannableString
+    }
+
 
 }

@@ -29,4 +29,8 @@ class Models {
 
     data class LastMessageDetail(var timeInMillis: Long = System.currentTimeMillis(), var reverseTimeStamp: Long = timeInMillis  * -1)
 
+
+    data class MessageStatus(var read:Boolean = false, var delivered:Boolean = false, var messageID:String = "")
+
+    data class UserActivity(var status:String)
 }

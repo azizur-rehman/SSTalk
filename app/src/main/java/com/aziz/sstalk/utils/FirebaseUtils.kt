@@ -28,8 +28,12 @@ object FirebaseUtils {
 
         val NODE_MESSAGES = "Messages"
         val NODE_USER = "users"
-        val NODE_BLOCKED_LIST = "block_list"
+        val NODE_BLOCKED_LIST = "Block_list"
+        val NODE_MESSAGE_STATUS = "Message_Status"
+        val NODE_USER_ACTIVITY_STATUS = "User_Activity_Status"
 
+
+        val KEY_STATUS = "status"
         val KEY_UID = "uid"
         val NODE_LAST_MESSAGE = "LastMessage"
         val KEY_REVERSE_TIMESTAMP = "reverseTimeStamp"
@@ -37,6 +41,8 @@ object FirebaseUtils {
         val KEY_PHONE = "phone"
         val KEY_PROFILE_PIC_URL = "profile_pic_url"
         val KEY_NAME = "name"
+
+        val KEY_BLOCKED = "blocked"
 
         val KEY_FILE_LOCAL_PATH = "file_local_path"
 
@@ -99,6 +105,12 @@ object FirebaseUtils {
                 .child(NODE_BLOCKED_LIST)
                 .child(uid)
                 .child(targetUID)
+                .child(KEY_BLOCKED)
+
+            fun getMessageStatusRef(uid: String, messageID: String):DatabaseReference = getRootRef()
+                .child(NODE_MESSAGE_STATUS)
+                .child(messageID)
+                .child(uid)
         }
 
 
@@ -282,9 +294,12 @@ object FirebaseUtils {
     }
 
 
-    fun setDeliveryStatus(myUID:String, targetUID: String, messageID:String, messageStatusImageView:ImageView){
-        FirebaseUtils.ref.getChatRef(targetUID, myUID)
-            .child(messageID)
+    fun setDeliveryStatusTick(
+        uid: String,
+        messageID: String,
+        messageStatusImageView: ImageView
+    ){
+        FirebaseUtils.ref.getMessageStatusRef(uid, messageID)
             .addValueEventListener(object : ValueEventListener{
                 override fun onCancelled(p0: DatabaseError) {
 
@@ -292,9 +307,9 @@ object FirebaseUtils {
 
                 override fun onDataChange(p0: DataSnapshot) {
                     if(p0.exists()){
-                        if(p0.getValue(Models.MessageModel::class.java)!!.isRead)
+                        if(p0.getValue(Models.MessageStatus::class.java)!!.read)
                             messageStatusImageView.setImageResource(R.drawable.ic_read_status)
-                        else if(p0.getValue(Models.MessageModel::class.java)!!.message_delivered)
+                        else if(p0.getValue(Models.MessageStatus::class.java)!!.delivered)
                             messageStatusImageView.setImageResource(R.drawable.ic_delivered_tick)
                         else
                             messageStatusImageView.setImageResource(R.drawable.ic_tick_sent_grey_24dp)
@@ -309,4 +324,9 @@ object FirebaseUtils {
     }
 
 
+    fun setMessageStatusToDB(messageID: String, uid: String, isDelivered:Boolean, isRead:Boolean){
+        ref.getMessageStatusRef(uid,messageID)
+            .setValue(Models.MessageStatus(isRead, isDelivered, messageID))
+
+    }
 }

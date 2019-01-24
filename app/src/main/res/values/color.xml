@@ -34,6 +34,9 @@
     <color name="color1">#2062af</color>
     <color name="color10">#8c47fb</color>
     <color name="color11">#51C1EE</color>
+
+    <color name="highlight_blue_color">@color/color11</color>
+
     <color name="color12">#8cc453</color>
 
     <color name="color13">#C2987D</color>

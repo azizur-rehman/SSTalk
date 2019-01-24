@@ -1,8 +1,11 @@
 package com.aziz.sstalk
 
 import android.Manifest
+import android.animation.ArgbEvaluator
+import android.animation.ObjectAnimator
 import android.app.Activity
 import android.content.ContentValues
+import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -15,10 +18,13 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.os.Environment.DIRECTORY_DCIM
+import android.os.Handler
 import android.provider.MediaStore
+import android.support.design.widget.Snackbar
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v4.content.FileProvider
+import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.view.ActionMode
 import android.support.v7.widget.LinearLayoutManager
@@ -28,9 +34,8 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.*
 import android.view.ViewGroup
-import android.widget.ImageView
-import android.widget.LinearLayout
-import android.widget.TextView
+import android.support.v7.widget.SearchView
+import android.widget.*
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.DateFormatter
 import com.aziz.sstalk.utils.FirebaseUtils
@@ -64,7 +69,6 @@ import me.shaohui.advancedluban.Luban
 import me.shaohui.advancedluban.OnCompressListener
 import java.io.File
 import java.lang.Exception
-import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
@@ -121,6 +125,9 @@ class MessageActivity : AppCompatActivity() {
     var selectedMessageIDs:MutableList<String> = ArrayList()
     var selectMessageModel:MutableList<Models.MessageModel> = ArrayList()
     var selectedItemViews:MutableList<View> = ArrayList()
+    var searchFilterItemPosition:MutableList<Int> = ArrayList()
+
+    val allMessages:HashMap<Models.MessageModel, Int> = HashMap()
 
 
     val isUploading:HashMap<String,Boolean> = HashMap()
@@ -181,6 +188,8 @@ class MessageActivity : AppCompatActivity() {
         messageInputField.setAttachmentsListener {
 
 
+            if(isBlockedByUser || isBlockedByMe)
+                return@setAttachmentsListener
 
 
          if(attachment_menu.visibility != View.VISIBLE) {
@@ -614,11 +623,11 @@ class MessageActivity : AppCompatActivity() {
                 var circularProgressBar:CircularProgressBar? = null
 
                 var tapToDownload:TextView? = null
+                var textView:TextView? = null
+
 
 
                 val date = Date(model.timeInMillis)
-
-            //    Log.d("MessageActivity", "onBindViewHolder: "+getItemViewType(position) +" at $position")
 
                 if(model.messageType == utils.constants.FILE_TYPE_LOCATION){
 
@@ -632,26 +641,21 @@ class MessageActivity : AppCompatActivity() {
                 }
 
 
-                //   downloadVideo(messageID, holder.progressBar)
 
-
-                //set date Header
-
-
-                //setting contextual toolbar
                 when (holder) {
                     is holders.TargetTextMsgHolder -> {
                         holder.time.text = utils.getLocalTime(model.timeInMillis)
                         holder.message.text = model.message
                         container = holder.container
+                        textView = holder.message
                     }
                     is holders.MyTextMsgHolder -> {
                         holder.time.text = utils.getLocalTime(model.timeInMillis)
                         holder.message.text = model.message
                         dateHeader = holder.headerDateTime
                         container = holder.container
-                        FirebaseUtils.setDeliveryStatus(myUID, targetUid, messageID, holder.messageStatus)
-
+                        FirebaseUtils.setDeliveryStatusTick(targetUid, messageID, holder.messageStatus)
+                        textView = holder.message
 
                         //end of my holder
 
@@ -662,12 +666,12 @@ class MessageActivity : AppCompatActivity() {
                         messageImage = holder.imageView
                         container = holder.container
 
-                        FirebaseUtils.setDeliveryStatus(myUID, targetUid, messageID, holder.messageStatus)
+                        FirebaseUtils.setDeliveryStatusTick(targetUid, messageID, holder.messageStatus)
 
 
                         //setting holder config
                         setMyImageHolder(holder, model, messageID)
-
+                        textView = holder.message
 
                     }
                     is holders.TargetImageMsgHolder -> {
@@ -677,6 +681,7 @@ class MessageActivity : AppCompatActivity() {
 
                         //setting holder setting
                         setTargetImageHolder(holder, model, messageID)
+                        textView = holder.message
 
                     }
                     is holders.MyVideoMsgHolder -> {
@@ -691,7 +696,8 @@ class MessageActivity : AppCompatActivity() {
 
                         //setting holder config
                         setMyVideoHolder(holder, model, messageID)
-                        FirebaseUtils.setDeliveryStatus(myUID, targetUid, messageID, holder.messageStatus)
+                        FirebaseUtils.setDeliveryStatusTick(targetUid, messageID, holder.messageStatus)
+                        textView = holder.message
 
 
                     }
@@ -707,14 +713,10 @@ class MessageActivity : AppCompatActivity() {
 
                         //setting holder config
                         setTargetVideoHolder(holder, model, messageID)
+                        textView = holder.message
 
                     }
 
-
-                    //loading message Image listener
-
-
-                    //setting video intent
                 }
 
 
@@ -825,8 +827,7 @@ class MessageActivity : AppCompatActivity() {
                     , false)
                 val dateHeaderTextView = dateHeaderView.findViewById<TextView>(R.id.header_date)
 
-
-              //  holder.setIsRecyclable(false)
+                dateHeaderView.id = position
 
                 dateHeaderTextView.text = utils.getLocalDate(model.timeInMillis)
 
@@ -860,6 +861,29 @@ class MessageActivity : AppCompatActivity() {
 
                 //setting contextual toolbar
                 setContextualToolbarOnViewHolder(holder.itemView, messageID, model)
+
+
+
+                if(searchFilterItemPosition.contains(position) ){
+                    utils.highlightTextView(textView!!, searchQuery, Color.parseColor("#51C1EE"))
+
+                    val fadeAnim = ObjectAnimator.ofObject(holder.itemView, "backgroundColor",
+                        ArgbEvaluator(),Color.parseColor("#51C1EE"), Color.WHITE)
+                    fadeAnim.duration = 5000
+                    fadeAnim.startDelay = 500
+
+                    if(selectedPosition == position)
+                    fadeAnim.start()
+                }
+                else{
+
+                    if(textView!=null)
+                    textView!!.text = if(model.isFile) model.caption else model.message
+                }
+
+
+
+                holder.itemView.setPadding(0,10,0,10)
 
 
             }
@@ -928,6 +952,8 @@ class MessageActivity : AppCompatActivity() {
        adapter.startListening()
 
 
+
+
     }
 
 
@@ -938,9 +964,13 @@ class MessageActivity : AppCompatActivity() {
 
         messageInputField.setInputListener {
 
+            if(isBlockedByMe || isBlockedByUser) {
+                return@setInputListener true
+            }
+
             val message = messageInputField.inputEditText.text.toString()
 
-            val messageModel= Models.MessageModel(message ,
+            val messageModel= Models.MessageModel(message.trim() ,
                 myUID, targetUid ,isFile = false)
 
             val messageID = "MSG" +System.currentTimeMillis()
@@ -1058,6 +1088,8 @@ class MessageActivity : AppCompatActivity() {
             .setValue(messageModel)
             .addOnSuccessListener {
 
+                FirebaseUtils.setMessageStatusToDB(messageID, myUID, true, true)
+
                 FirebaseUtils.ref.getLastMessageRef(myUID)
                     .child(targetUid)
                     .setValue(Models.LastMessageDetail())
@@ -1076,6 +1108,8 @@ class MessageActivity : AppCompatActivity() {
             .child(messageID)
             .setValue(messageModel)
             .addOnSuccessListener {
+
+                FirebaseUtils.setMessageStatusToDB(messageID, targetUid, false, false)
 
                 FirebaseUtils.ref.getLastMessageRef(targetUid)
                     .child(myUID)
@@ -1347,7 +1381,7 @@ class MessageActivity : AppCompatActivity() {
     }
 
 
-    //downloading video and saving to file in the form of bytes
+    //downloading video and saving to file in the form of file
     private fun downloadVideo(messageID: String){
 
 
@@ -1371,6 +1405,10 @@ class MessageActivity : AppCompatActivity() {
                 }
                 .addOnCompleteListener{
                     progressBar.visibility = View.GONE
+                    try {
+                       // adapter.notifyDataSetChanged()
+                    }
+                    catch (e:Exception){}
                 }
                 .addOnCanceledListener {
                     progressBar.visibility = View.GONE
@@ -1384,34 +1422,8 @@ class MessageActivity : AppCompatActivity() {
                 }
 
 
-        if(true)
-            return
-
-            storageRef.getBytes(Long.MAX_VALUE)
-            .addOnCompleteListener {
-                    if(it.isSuccessful){
-                        val byteArray = it.result
-                        val savedPath = utils.saveVideo(context, byteArray!!, messageID)
-                        progressBar.visibility = View.GONE
-
-                        FirebaseUtils.ref.getChatRef(myUID,targetUid)
-                            .child(messageID)
-                            .child(FirebaseUtils.KEY_FILE_LOCAL_PATH)
-                            .setValue(savedPath)
-                    }
-
-            }
 
 
-        if(storageRef.activeDownloadTasks.isNotEmpty()) {
-            Log.d("MessageActivity", "downloadVideo: Total active downloadds = ${storageRef.activeDownloadTasks.size}")
-            storageRef.activeDownloadTasks[0]
-                .addOnProgressListener {
-                    val percentage = (it.bytesTransferred / it.totalByteCount) * 100
-                    progressBar.progress = percentage.toFloat()
-                    Log.d("MessageActivity", "downloadVideo: progress = $percentage")
-                }
-        }
 
     }
 
@@ -1434,7 +1446,6 @@ class MessageActivity : AppCompatActivity() {
 
         try {
 
-        if(true)
             adapter.stopListening()
 
     } catch (e:Exception){}
@@ -1442,10 +1453,15 @@ class MessageActivity : AppCompatActivity() {
 }
 
 
+    var blockedSnackbar:Snackbar? = null
+
     private fun checkIfBlocked(targetUID:String) {
 
+        blockedSnackbar =   Snackbar.make(messageInputField, "You cannot reply to this conversation anymore", Snackbar.LENGTH_INDEFINITE)
+
+
         //check if i have blocked
-        FirebaseUtils.ref.getBlockedUserRef(FirebaseUtils.getUid(), targetUID)
+        FirebaseUtils.ref.getBlockedUserRef(myUID, targetUID)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
 
@@ -1454,8 +1470,14 @@ class MessageActivity : AppCompatActivity() {
                     else
                         false
 
-                    messageInputField.button.isEnabled = isBlockedByMe || isBlockedByUser
-                    messageInputField.isEnabled = messageInputField.button.isEnabled
+
+                    if(isBlockedByMe || isBlockedByUser)
+                        blockedSnackbar!!.show()
+                    else
+                        blockedSnackbar!!.dismiss()
+
+
+                    invalidateOptionsMenu()
 
                 }
 
@@ -1463,10 +1485,9 @@ class MessageActivity : AppCompatActivity() {
 
                 }
             })
-
         //check i am blocked my user
 
-        FirebaseUtils.ref.getBlockedUserRef(targetUID, FirebaseUtils.getUid())
+        FirebaseUtils.ref.getBlockedUserRef(targetUID, myUID)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
 
@@ -1475,9 +1496,11 @@ class MessageActivity : AppCompatActivity() {
                     else
                         false
 
-                    messageInputField.button.isEnabled = isBlockedByMe || isBlockedByUser
-                    messageInputField.isEnabled = messageInputField.button.isEnabled
 
+                    if(isBlockedByUser || isBlockedByMe)
+                        blockedSnackbar!!.show()
+                    else
+                        blockedSnackbar!!.dismiss()
 
                 }
 
@@ -1488,12 +1511,6 @@ class MessageActivity : AppCompatActivity() {
 
 
     }
-
-
-
-
-
-
 
 
 
@@ -1713,11 +1730,14 @@ class MessageActivity : AppCompatActivity() {
 
 
 
+    var selectedDrawable:Drawable? = null
+    var unselectedDrawable:Drawable? = null
 
     //setting contextual toolbar on viewHolder
     private fun setContextualToolbarOnViewHolder(itemView: View, messageID: String, model:Models.MessageModel){
-        val selectedDrawable = ColorDrawable(ContextCompat.getColor(context, R.color.transparent_green))
-        val unselectedDrawable = ColorDrawable(Color.WHITE)
+
+        selectedDrawable = ColorDrawable(ContextCompat.getColor(context, R.color.transparent_green))
+        unselectedDrawable = ColorDrawable(Color.WHITE)
 
         itemView.setOnLongClickListener {
 
@@ -1857,6 +1877,154 @@ class MessageActivity : AppCompatActivity() {
         else
             finish()
 
+    }
+
+    private var blockItem: MenuItem? = null
+    private var selectedPosition = -1
+    private var searchQuery = ""
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.message_activity_menu, menu)
+
+        val searchView = menu!!.findItem(R.id.app_bar_search).actionView as SearchView
+
+
+
+
+
+
+
+
+
+        blockItem = menu.findItem(R.id.menu_action_block)
+        blockItem!!.title = if(isBlockedByMe) "Unblock" else "Block"
+
+
+        setSearchView(searchView)
+
+
+
+        return super.onCreateOptionsMenu(menu)
+    }
+
+
+    private fun setSearchView(searchView: SearchView){
+
+
+
+        searchView.maxWidth = Integer.MAX_VALUE
+        searchView.isIconified = true
+
+
+        val searchLayout = searchView.getChildAt(0) as LinearLayout
+        val upBtn = ImageButton(context)
+        val downBtn = ImageButton(context)
+
+
+        upBtn.setImageResource(R.drawable.ic_up_white_24dp)
+        upBtn.background = null
+        upBtn.scaleType= ImageView.ScaleType.FIT_XY
+
+        downBtn.setImageResource(R.drawable.ic__down_white_24dp)
+        downBtn.background = null
+        downBtn.scaleType= ImageView.ScaleType.FIT_XY
+
+        upBtn.visibility = View.GONE
+        downBtn.visibility = View.GONE
+
+        searchLayout.addView(upBtn)
+        searchLayout.addView(downBtn)
+
+
+        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener{
+            override fun onQueryTextSubmit(p0: String?): Boolean {
+
+
+                if(p0!!.isEmpty())
+                    return true
+
+                val query = p0
+                var resultCount = 0
+                searchFilterItemPosition.clear()
+
+                for((index,model) in adapter.snapshots.withIndex().reversed()){
+
+
+                    if(model.isFile){
+                        if (model.caption.toLowerCase().contains(query.toString().toLowerCase())) {
+                            searchFilterItemPosition.add((index))
+                            resultCount++
+                        }
+                    }
+                    else {
+                        if (model.message.toLowerCase().contains(query.toString().toLowerCase())) {
+                            searchFilterItemPosition.add(index)
+                            resultCount++
+                        }
+                    }
+                }
+
+                searchQuery = query.toString()
+
+
+
+                if(resultCount>0) {
+                    utils.toast(context, "Searching for :"+query.toString())
+                    upBtn.visibility = View.VISIBLE
+                    downBtn.visibility = View.VISIBLE
+                    messagesList.scrollToPosition(searchFilterItemPosition[0])
+                }
+                else{
+                    utils.toast(context, "No result")
+                }
+
+
+                adapter.notifyDataSetChanged()
+
+                return true
+            }
+
+            override fun onQueryTextChange(p0: String?): Boolean = true
+
+        })
+
+
+        searchView.setOnCloseListener {
+
+            upBtn.visibility = View.GONE
+            downBtn.visibility = View.GONE
+            adapter.notifyDataSetChanged()
+
+            selectedPosition = -1
+            searchQuery = ""
+            searchView.onActionViewCollapsed()
+            searchFilterItemPosition.clear()
+
+
+            true
+        }
+
+    }
+
+
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+
+        when(item!!.itemId){
+            R.id.menu_action_block -> {
+
+                AlertDialog.Builder(context).setMessage("${if (isBlockedByMe) "Unblock" else "Block"} this user")
+                    .setPositiveButton("Yes") { _, _ ->
+                        FirebaseUtils.ref.getBlockedUserRef(myUID, targetUid)
+                            .setValue(!isBlockedByMe)
+                    }
+                    .setNegativeButton("No", null)
+                    .show()
+
+            }
+        }
+
+
+        return super.onOptionsItemSelected(item)
     }
 
 }
