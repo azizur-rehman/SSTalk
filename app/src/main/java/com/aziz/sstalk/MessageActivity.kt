@@ -3,6 +3,7 @@ package com.aziz.sstalk
 import android.Manifest
 import android.animation.ArgbEvaluator
 import android.animation.ObjectAnimator
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.ContentValues
 import android.content.DialogInterface
@@ -127,6 +128,8 @@ class MessageActivity : AppCompatActivity() {
     var selectedItemViews:MutableList<View> = ArrayList()
     var searchFilterItemPosition:MutableList<Int> = ArrayList()
 
+    var headerPosition:MutableList<Int> = ArrayList()
+
     val allMessages:HashMap<Models.MessageModel, Int> = HashMap()
 
 
@@ -136,9 +139,7 @@ class MessageActivity : AppCompatActivity() {
 
     lateinit var adapter:FirebaseRecyclerAdapter<Models.MessageModel, RecyclerView.ViewHolder>
 
-    var locationHelper:LocationHelper? = null
 
-    var shouldHideMenu = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -599,6 +600,7 @@ class MessageActivity : AppCompatActivity() {
             }
 
 
+            @SuppressLint("ObjectAnimatorBinding")
             override fun onBindViewHolder(
                 holder: RecyclerView.ViewHolder,
                 position: Int,
@@ -625,6 +627,7 @@ class MessageActivity : AppCompatActivity() {
                 var tapToDownload:TextView? = null
                 var textView:TextView? = null
 
+                var messageLayout:LinearLayout? = null
 
 
                 val date = Date(model.timeInMillis)
@@ -648,6 +651,8 @@ class MessageActivity : AppCompatActivity() {
                         holder.message.text = model.message
                         container = holder.container
                         textView = holder.message
+                        messageLayout = holder.messageLayout
+                        dateHeader = holder.headerDateTime
                     }
                     is holders.MyTextMsgHolder -> {
                         holder.time.text = utils.getLocalTime(model.timeInMillis)
@@ -656,6 +661,7 @@ class MessageActivity : AppCompatActivity() {
                         container = holder.container
                         FirebaseUtils.setDeliveryStatusTick(targetUid, messageID, holder.messageStatus)
                         textView = holder.message
+                        messageLayout = holder.messageLayout
 
                         //end of my holder
 
@@ -665,6 +671,7 @@ class MessageActivity : AppCompatActivity() {
 
                         messageImage = holder.imageView
                         container = holder.container
+                        dateHeader = holder.headerDateTime
 
                         FirebaseUtils.setDeliveryStatusTick(targetUid, messageID, holder.messageStatus)
 
@@ -672,6 +679,7 @@ class MessageActivity : AppCompatActivity() {
                         //setting holder config
                         setMyImageHolder(holder, model, messageID)
                         textView = holder.message
+                        messageLayout = holder.messageLayout
 
                     }
                     is holders.TargetImageMsgHolder -> {
@@ -682,6 +690,7 @@ class MessageActivity : AppCompatActivity() {
                         //setting holder setting
                         setTargetImageHolder(holder, model, messageID)
                         textView = holder.message
+                        messageLayout = holder.messageLayout
 
                     }
                     is holders.MyVideoMsgHolder -> {
@@ -698,6 +707,7 @@ class MessageActivity : AppCompatActivity() {
                         setMyVideoHolder(holder, model, messageID)
                         FirebaseUtils.setDeliveryStatusTick(targetUid, messageID, holder.messageStatus)
                         textView = holder.message
+                        messageLayout = holder.messageLayout
 
 
                     }
@@ -714,11 +724,29 @@ class MessageActivity : AppCompatActivity() {
                         //setting holder config
                         setTargetVideoHolder(holder, model, messageID)
                         textView = holder.message
+                        messageLayout = holder.messageLayout
 
                     }
 
-                }
+                    is holders.MyMapHolder -> {
+                        holder.message.text = model.caption
+                        holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
+                        loadMap(holder.mapView, LatLng(latitude,longitude))
+                        messageLayout = holder.messageLayout
+                        dateHeader = holder.dateHeader
 
+                    }
+
+                    is holders.TargetMapHolder -> {
+
+                        holder.message.text = model.caption
+                        loadMap(holder.mapView, LatLng(latitude,longitude))
+                        dateHeader = holder.dateHeader
+
+                        messageLayout = holder.messageLayout
+
+                    }
+                }
 
 
 
@@ -799,23 +827,6 @@ class MessageActivity : AppCompatActivity() {
 
 
 
-                else if(holder is holders.MyMapHolder ) {
-
-                    holder.message.text = model.caption
-
-                    holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
-
-                    loadMap(holder.mapView, LatLng(latitude,longitude))
-
-                }
-
-
-                else if(holder is holders.TargetMapHolder){
-
-                    holder.message.text = model.caption
-
-                    loadMap(holder.mapView, LatLng(latitude,longitude))
-                }
 
 
 
@@ -831,63 +842,65 @@ class MessageActivity : AppCompatActivity() {
 
                 dateHeaderTextView.text = utils.getLocalDate(model.timeInMillis)
 
+                when {
+                    DateFormatter.isToday(date) -> dateHeader!!.text ="Today"
+                    DateFormatter.isYesterday(date) -> dateHeader!!.text ="Yesterday"
+                    else -> dateHeader!!.text = utils.getLocalDate(model.timeInMillis)
+                }
+
+
                 if(position>0){
 
                     val previousDate = Date(snapshots[position - 1].timeInMillis)
 
-                    if(!DateFormatter.isSameDay(date ,  previousDate)){
-
-                        when {
-                            DateFormatter.isToday(date) -> dateHeaderTextView.text ="Today"
-                            DateFormatter.isYesterday(date) -> dateHeaderTextView.text ="Yesterday"
-                            else -> dateHeaderTextView.text = utils.getLocalDate(model.timeInMillis)
-                        }
-
-                        if(dateHeaderView.parent==null && container!!.getChildAt(0)!=dateHeaderView) {
-                            container!!.addView(dateHeaderView, 0)
-                        }
-                    }
-                    else{
-                        if(dateHeaderView.parent!=null)
-                        container!!.removeView(dateHeaderView)
-                    }
+                    dateHeader.visibility =  if(!DateFormatter.isSameDay(date ,  previousDate)){ View.VISIBLE }
+                    else{ View.GONE }
 
                 }
                 else{
-                    if(dateHeaderView.parent==null)
-                        container!!.addView(dateHeaderView,0)
+
+                    dateHeader.visibility = View.VISIBLE
+
                 }
 
 
                 //setting contextual toolbar
-                setContextualToolbarOnViewHolder(holder.itemView, messageID, model)
+                setContextualToolbarOnViewHolder(messageLayout as View, messageID, model)
 
 
 
                 if(searchFilterItemPosition.contains(position) ){
                     utils.highlightTextView(textView!!, searchQuery, Color.parseColor("#51C1EE"))
 
-                    val fadeAnim = ObjectAnimator.ofObject(holder.itemView, "backgroundColor",
-                        ArgbEvaluator(),Color.parseColor("#51C1EE"), Color.WHITE)
-                    fadeAnim.duration = 5000
-                    fadeAnim.startDelay = 500
-
-                    if(selectedPosition == position)
-                    fadeAnim.start()
+                    if(selectedPosition == position) {
+                        val fadeAnim = ObjectAnimator.ofObject(messageLayout, "backgroundColor",
+                            ArgbEvaluator(),Color.parseColor("#51C1EE"), Color.WHITE)
+                        fadeAnim.duration = 2000
+                        fadeAnim.start()
+                        selectedPosition = -1
+                    }
                 }
                 else{
 
                     if(textView!=null)
-                    textView!!.text = if(model.isFile) model.caption else model.message
+                    textView.text = if(model.isFile) model.caption else model.message
                 }
 
 
 
-                holder.itemView.setPadding(0,10,0,10)
+               // holder.itemView.setPadding(0,10,0,10)
 
 
             }
 
+
+             override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
+                 super.onViewRecycled(holder)
+
+                 Log.d("MessageActivity", "onViewRecycled: ")
+
+
+             }
 
 
 
@@ -1158,6 +1171,7 @@ class MessageActivity : AppCompatActivity() {
                 //image compressor
                 Luban.compress(context, File(file.path))
                     .putGear(Luban.THIRD_GEAR)
+                    .clearCache()
                     .launch(object : OnCompressListener {
                         override fun onError(e: Throwable?) {
 
@@ -1821,6 +1835,7 @@ class MessageActivity : AppCompatActivity() {
                             .removeValue()
                             .addOnCompleteListener {
                                 if (index == selectedMessageIDs.size - 1) {
+                                    headerPosition.clear()
                                     adapter.notifyDataSetChanged()
                                 }
                             }
@@ -1844,7 +1859,6 @@ class MessageActivity : AppCompatActivity() {
 
             p0!!.menuInflater.inflate(R.menu.chat_actions_menu, p1)
 
-
             isContextMenuActive = true
 
             return true
@@ -1857,6 +1871,8 @@ class MessageActivity : AppCompatActivity() {
         override fun onDestroyActionMode(p0: ActionMode?) {
             isContextMenuActive = false
             selectedMessageIDs.clear()
+            headerPosition.clear()
+
             adapter.notifyDataSetChanged()
 
             for(view in selectedItemViews)
@@ -1889,13 +1905,6 @@ class MessageActivity : AppCompatActivity() {
         val searchView = menu!!.findItem(R.id.app_bar_search).actionView as SearchView
 
 
-
-
-
-
-
-
-
         blockItem = menu.findItem(R.id.menu_action_block)
         blockItem!!.title = if(isBlockedByMe) "Unblock" else "Block"
 
@@ -1907,6 +1916,8 @@ class MessageActivity : AppCompatActivity() {
         return super.onCreateOptionsMenu(menu)
     }
 
+
+    var searchPosition = 0
 
     private fun setSearchView(searchView: SearchView){
 
@@ -1946,6 +1957,8 @@ class MessageActivity : AppCompatActivity() {
                 val query = p0
                 var resultCount = 0
                 searchFilterItemPosition.clear()
+                searchPosition = 0
+                selectedPosition = -1
 
                 for((index,model) in adapter.snapshots.withIndex().reversed()){
 
@@ -1966,18 +1979,19 @@ class MessageActivity : AppCompatActivity() {
 
                 searchQuery = query.toString()
 
-
-
                 if(resultCount>0) {
-                    utils.toast(context, "Searching for :"+query.toString())
+                    utils.toast(context, "$resultCount results found")
                     upBtn.visibility = View.VISIBLE
                     downBtn.visibility = View.VISIBLE
                     messagesList.scrollToPosition(searchFilterItemPosition[0])
+                    selectedPosition = searchFilterItemPosition[0]
                 }
                 else{
                     utils.toast(context, "No result")
                 }
 
+
+                utils.hideSoftKeyboard(this@MessageActivity)
 
                 adapter.notifyDataSetChanged()
 
@@ -1993,15 +2007,53 @@ class MessageActivity : AppCompatActivity() {
 
             upBtn.visibility = View.GONE
             downBtn.visibility = View.GONE
-            adapter.notifyDataSetChanged()
 
             selectedPosition = -1
             searchQuery = ""
             searchView.onActionViewCollapsed()
             searchFilterItemPosition.clear()
 
+            adapter.notifyDataSetChanged()
 
             true
+        }
+
+        upBtn.setOnClickListener {
+            if(searchPosition>=searchFilterItemPosition.size){
+                searchPosition = 0
+            }
+
+
+            if(searchPosition>=0 && searchPosition<searchFilterItemPosition.count()) {
+                selectedPosition = searchFilterItemPosition[searchPosition]
+                messagesList.scrollToPosition(searchFilterItemPosition[searchPosition])
+
+            }
+
+            adapter.notifyDataSetChanged()
+
+            searchPosition++
+            utils.hideSoftKeyboard(this@MessageActivity)
+
+
+        }
+
+        downBtn.setOnClickListener {
+            if(searchPosition<0){
+                searchPosition = searchFilterItemPosition.size - 1
+            }
+
+
+            if(searchPosition>=0 && searchPosition<searchFilterItemPosition.count()) {
+                selectedPosition = searchFilterItemPosition[searchPosition]
+                messagesList.scrollToPosition(searchFilterItemPosition[searchPosition])
+
+            }
+            adapter.notifyDataSetChanged()
+
+            searchPosition--
+            utils.hideSoftKeyboard(this@MessageActivity)
+
         }
 
     }

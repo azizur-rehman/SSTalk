@@ -2,7 +2,6 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:padding="3dp"
     android:id="@+id/container_right"
 
     android:orientation="vertical"
@@ -10,16 +9,25 @@
 
 
     <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:padding="10dp"
-        android:layout_margin="5dp"
-        android:visibility="gone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="20dp"
+            android:layout_margin="5dp"
+            android:gravity="center"
+            android:drawableLeft="@drawable/shape_line"
+            android:drawableRight="@drawable/shape_line"
         android:id="@+id/header_right"
         android:layout_gravity="center"
         android:textColor="@color/black"
         android:text="@string/app_name"
         />
+
+
+    <LinearLayout android:layout_width="match_parent"
+                  android:orientation="vertical"
+                  android:padding="3dp"
+                  android:layout_height="wrap_content"
+                  android:id="@+id/message_layout_text_right">
 
 
     <LinearLayout
@@ -75,5 +83,7 @@
         />
     </LinearLayout>
 
+
+    </LinearLayout>
 
 </LinearLayout>

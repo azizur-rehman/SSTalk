@@ -1,11 +1,13 @@
 package com.aziz.sstalk.utils
 
 import android.animation.Animator
+import android.app.Activity
 import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.inputmethodservice.InputMethodService
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.*
@@ -19,6 +21,7 @@ import android.util.Log
 import android.view.View
 import android.view.ViewAnimationUtils
 import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -520,5 +523,14 @@ object utils {
         textView.text = spannableString
     }
 
+
+    fun hideSoftKeyboard(activity: Activity) {
+        try {
+            val inputMethodManager = activity.getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
+            inputMethodManager.hideSoftInputFromWindow(activity.currentFocus.windowToken, 0)
+        } catch (e:Exception) {
+            e.printStackTrace()
+        }
+    }
 
 }

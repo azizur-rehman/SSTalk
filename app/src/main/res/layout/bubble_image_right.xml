@@ -2,18 +2,19 @@
 <LinearLayout
         xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent" xmlns:app="http://schemas.android.com/apk/res-auto"
-        android:padding="3dp"
         android:id="@+id/container_image_right"
         android:orientation="vertical"
         android:layout_height="wrap_content">
 
 
     <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:padding="10dp"
-        android:layout_margin="5dp"
-        android:visibility="gone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="20dp"
+            android:layout_margin="5dp"
+            android:gravity="center"
+            android:drawableLeft="@drawable/shape_line"
+            android:drawableRight="@drawable/shape_line"
         android:id="@+id/header_image_right"
         android:layout_gravity="center"
         android:textColor="@color/black"
@@ -21,7 +22,14 @@
         />
 
 
-    <LinearLayout
+    <LinearLayout android:layout_width="match_parent"
+                  android:orientation="vertical"
+                  android:padding="3dp"
+                  android:layout_height="wrap_content"
+                  android:id="@+id/message_layout_image_right">
+
+
+        <LinearLayout
         android:layout_width="wrap_content"
         android:layout_gravity="end"
         android:orientation="vertical"
@@ -93,7 +101,7 @@
     </LinearLayout>
 
 
-    <LinearLayout android:layout_width="wrap_content"
+        <LinearLayout android:layout_width="wrap_content"
     android:layout_height="wrap_content"
                   android:gravity="center"
                   android:paddingTop="2dp"
@@ -118,5 +126,6 @@
         />
     </LinearLayout>
 
+    </LinearLayout>
 
 </LinearLayout>

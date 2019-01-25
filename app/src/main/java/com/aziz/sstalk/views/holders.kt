@@ -19,6 +19,7 @@ object holders {
         val headerDateTime = itemView.header_left!!
         // val imageLayout = itemView.imageFrameLayout!!
         val container = itemView.container_left!!
+        val messageLayout = itemView.message_layout_text_left!!
     }
     class MyTextMsgHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
         val message = itemView.messageText_right!!
@@ -26,6 +27,8 @@ object holders {
         val messageStatus = itemView.delivery_status!!
         val headerDateTime = itemView.header_right!!
         val container = itemView.container_right!!
+        val messageLayout = itemView.message_layout_text_right!!
+
 
     }
 
@@ -40,6 +43,7 @@ object holders {
         val headerDateTime = itemView.header_image_right!!
         val container = itemView.container_image_right!!
 
+        val messageLayout = itemView.message_layout_image_right!!
 
     }
 
@@ -50,6 +54,9 @@ object holders {
         val headerDateTime = itemView.header_image_left!!
         // val imageLayout = itemView.imageFrameLayout!!
         val container = itemView.container_image_left!!
+
+        val messageLayout = itemView.message_layout_image_left!!
+
 
     }
 
@@ -70,6 +77,10 @@ object holders {
         val tap_to_download = itemView.tap_retry_download_video_right!!
         val container = itemView.container_video_right!!
 
+        val messageLayout = itemView.message_layout_video_right!!
+
+
+
 
     }
 
@@ -85,6 +96,9 @@ object holders {
         val tap_to_download = itemView.tap_retry_download_video_left!!
         val container = itemView.container_video_left!!
 
+        val messageLayout = itemView.message_layout_video_left!!
+
+
     }
 
 
@@ -93,7 +107,11 @@ object holders {
     class TargetMapHolder(itemView: View): RecyclerView.ViewHolder(itemView){
         val message = itemView.messageText_map_left!!
         val mapView = itemView.mapview_left!!
-        val dateHeader = itemView.mapview_left!!
+        val dateHeader = itemView.header_map_left!!
+        val time = itemView.time_map_left
+
+        val messageLayout = itemView.message_layout_map_left!!
+
     }
 
     class MyMapHolder(itemView: View): RecyclerView.ViewHolder(itemView){
@@ -101,6 +119,9 @@ object holders {
         val mapView = itemView.mapview_right!!
         val dateHeader = itemView.header_map_right!!
         val messageStatus = itemView.delivery_status_map_right!!
+        val messageLayout = itemView.message_layout_map_right!!
+        val time = itemView.time_map_right!!
+
 
 
     }

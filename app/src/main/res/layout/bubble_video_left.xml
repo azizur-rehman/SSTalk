@@ -10,10 +10,13 @@
 
 
     <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="10dp"
+            android:padding="20dp"
             android:layout_margin="5dp"
+            android:gravity="center"
+            android:drawableLeft="@drawable/shape_line"
+            android:drawableRight="@drawable/shape_line"
             android:id="@+id/header_video_left"
             android:layout_gravity="center"
             android:textColor="@color/black"
@@ -25,6 +28,8 @@
     <LinearLayout android:layout_height="wrap_content"
                   android:layout_width="match_parent"
                   android:orientation="horizontal"
+                  android:padding="3dp"
+                  android:id="@+id/message_layout_video_left"
                   xmlns:android="http://schemas.android.com/apk/res/android">
 
 
