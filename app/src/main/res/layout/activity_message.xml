@@ -1,8 +1,83 @@
 <?xml version="1.0" encoding="utf-8"?>
 
+
+<android.support.design.widget.CoordinatorLayout android:layout_height="match_parent"
+                                                 android:layout_width="match_parent"
+                                                 xmlns:android="http://schemas.android.com/apk/res/android"
+                                                 xmlns:app="http://schemas.android.com/apk/res-auto">
+
+
+    <android.support.design.widget.AppBarLayout android:layout_width="match_parent"
+                                                android:layout_height="wrap_content">
+
+        <android.support.v7.widget.Toolbar android:layout_width="match_parent"
+                                           android:id="@+id/toolbar"
+                                           android:layout_height="wrap_content">
+
+        <LinearLayout android:layout_width="match_parent"
+                      android:orientation="horizontal"
+                     android:background="?selectableItemBackground"
+                     android:layout_height="match_parent">
+
+
+            <ImageView android:layout_width="wrap_content" android:layout_height="match_parent"
+            android:src="@drawable/ic_arrow_back_black_24dp"
+            />
+
+
+            <de.hdodenhof.circleimageview.CircleImageView
+                    android:layout_width="32dp"
+                    android:layout_marginLeft="5dp"
+                    android:layout_height="32dp"
+                    android:src="@drawable/bg_preview_custom_holder"
+                    android:id="@+id/profile_circleimageview"
+            />
+
+            <LinearLayout android:layout_width="0dp"
+                          android:layout_weight="1"
+                          android:id="@+id/layout_toolbar_title"
+                          android:paddingLeft="20dp"
+                          android:orientation="vertical"
+                          android:layout_height="match_parent">
+
+                <TextView android:layout_width="match_parent"
+                          android:text="Target Name"
+                          android:textStyle="bold"
+                          android:textColor="@color/white"
+                          android:layout_height="wrap_content"/>
+
+
+                <TextView android:layout_width="match_parent"
+                          android:text="Online"
+                          android:textColor="@color/white"
+                          android:textSize="11sp"
+                          android:layout_marginTop="1dp"
+                          android:layout_height="wrap_content"/>
+
+
+
+            </LinearLayout>
+
+
+
+        </LinearLayout>
+
+
+
+        </android.support.v7.widget.Toolbar>
+
+
+
+    </android.support.design.widget.AppBarLayout>
+
+
+
+    <!--content layout-->
+
 <FrameLayout android:layout_width="match_parent"
              xmlns:android="http://schemas.android.com/apk/res/android"
              android:layout_height="match_parent"
+             app:layout_behavior="@string/appbar_scrolling_view_behavior"
              xmlns:app="http://schemas.android.com/apk/res-auto">
 
 
@@ -186,3 +261,7 @@
 
 </FrameLayout>
 
+
+
+
+</android.support.design.widget.CoordinatorLayout>

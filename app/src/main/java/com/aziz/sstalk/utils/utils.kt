@@ -4,6 +4,7 @@ import android.animation.Animator
 import android.app.Activity
 import android.content.ContentValues
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
@@ -340,15 +341,49 @@ object utils {
             val timeInMillisec = time.toLong()
 
             retriever.release()
-            return String.format(
-                "%d:%d",
-                TimeUnit.MILLISECONDS.toMinutes(timeInMillisec),
-                TimeUnit.MILLISECONDS.toSeconds(timeInMillisec) -
-                        TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(timeInMillisec))
-            )
+//            return String.format(
+//                "%d:%d",
+//                TimeUnit.MILLISECONDS.toMinutes(timeInMillisec),
+//                TimeUnit.MILLISECONDS.toSeconds(timeInMillisec) -
+//                        TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(timeInMillisec))
+//            )
+
+            return getDurationString(timeInMillisec)
         }
         catch (e:Exception){return ""}
 
+    }
+
+
+    fun startVideoIntent(context: Context, videoPath: String){
+      try{
+            val videoIntent = Intent(Intent.ACTION_VIEW)
+            val uri =utils.getUriFromFile(context,  File(videoPath))
+            videoIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            videoIntent.setDataAndType(uri, "video/*")
+            context.startActivity(videoIntent)
+        }
+        catch (e:Exception){
+            utils.toast(context, e.message.toString())
+        }
+    }
+
+
+    fun getDurationString(duration: Long): String {
+        //        long days = duration / (1000 * 60 * 60 * 24);
+        val hours = duration % (1000 * 60 * 60 * 24) / (1000 * 60 * 60)
+        val minutes = duration % (1000 * 60 * 60) / (1000 * 60)
+        val seconds = duration % (1000 * 60) / 1000
+
+        val hourStr = if (hours < 10) "0$hours" else hours.toString() + ""
+        val minuteStr = if (minutes < 10) "0$minutes" else minutes.toString() + ""
+        val secondStr = if (seconds < 10) "0$seconds" else seconds.toString() + ""
+
+        return if (hours != 0L) {
+            "$hourStr:$minuteStr:$secondStr"
+        } else {
+            "$minuteStr:$secondStr"
+        }
     }
 
 

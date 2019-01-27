@@ -144,6 +144,7 @@ class MessageActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_message)
+        setSupportActionBar(toolbar)
 
 
       //  targetUid = intent.getStringExtra(FirebaseUtils.KEY_UID)
@@ -157,6 +158,11 @@ class MessageActivity : AppCompatActivity() {
 
         myUID = user2
         targetUid = user1
+
+
+        layout_toolbar_title.setOnClickListener {
+            startActivity(Intent(this, UserProfileActivity::class.java))
+        }
 
 
 //        //todo remove this in production
@@ -812,16 +818,8 @@ class MessageActivity : AppCompatActivity() {
                             return@setOnClickListener
 
                         if(model.file_local_path.isNotEmpty() && File(model.file_local_path).exists()) {
-                            try {
-                                val videoIntent = Intent(Intent.ACTION_VIEW)
-                                val uri =utils.getUriFromFile(context,  File(model.file_local_path))
-                                videoIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                videoIntent.setDataAndType(uri, "video/*")
-                                startActivity(videoIntent)
-                            }
-                            catch (e:Exception){
-                                utils.toast(context, e.message.toString())
-                            }
+
+                            utils.startVideoIntent(context, model.file_local_path)
                         }
                         else {
                          //   downloadVideo(messageID, holder.progressBar)
@@ -840,14 +838,6 @@ class MessageActivity : AppCompatActivity() {
 
                 //set date Header
 
-                val dateHeaderView = layoutInflater.inflate(R.layout.date_header,
-                    findViewById(android.R.id.content)
-                    , false)
-                val dateHeaderTextView = dateHeaderView.findViewById<TextView>(R.id.header_date)
-
-                dateHeaderView.id = position
-
-                dateHeaderTextView.text = utils.getLocalDate(model.timeInMillis)
 
                 when {
                     DateFormatter.isToday(date) -> dateHeader!!.text ="Today"
@@ -869,6 +859,9 @@ class MessageActivity : AppCompatActivity() {
                     dateHeader.visibility = View.VISIBLE
 
                 }
+
+                dateHeader.setPadding(20,80,20,80)
+
 
 
                 //setting contextual toolbar
@@ -1541,7 +1534,7 @@ class MessageActivity : AppCompatActivity() {
         setTapToRetryBtn(holder.tapToRetry,holder.progressBar,model.file_local_path, messageID,model.caption, model.messageType)
 
 
-        if(model.file_local_path.isNotEmpty() ){
+        if(model.file_local_path.isNotEmpty() && File(model.file_local_path).exists()){
 
             //when image is not uploaded
 
@@ -1564,19 +1557,7 @@ class MessageActivity : AppCompatActivity() {
 
                         holder.progressBar.visibility = View.GONE
 
-                        Log.d("MessageActivity", "onError: img file failed to load : "+e!!.message)
-
-
-                        if(model.message.isNotEmpty())
-                            Picasso.get()
-                                .load(model.message.toString())
-                                .fit()
-                                .centerCrop()
-                                //.resize(600,400)
-                                .error(R.drawable.error_placeholder2)
-                                .placeholder(R.drawable.placeholder_image)
-                                .tag(model.message.toString())
-                                .into(holder.imageView)
+                        Log.d("MessageActivity", "onError: img file failed to load : " + e!!.message)
                     }
 
                 })
