@@ -7,6 +7,7 @@ import android.view.MenuItem
 import com.aziz.sstalk.adapters.ViewPagerImageAdapter
 import com.aziz.sstalk.utils.utils
 import com.vincent.filepicker.filter.entity.ImageFile
+import com.vincent.filepicker.filter.entity.VideoFile
 import kotlinx.android.synthetic.main.activity_upload_preview.*
 
 class UploadPreviewActivity : AppCompatActivity() {
@@ -33,12 +34,22 @@ class UploadPreviewActivity : AppCompatActivity() {
             imagePaths.add(cameraImagePath)
         }
         else {
-            val imgFilePaths = intent.getParcelableArrayListExtra<ImageFile>(utils.constants.KEY_IMG_PATH)
 
 
-            for (item in imgFilePaths) {
-                imageCaptions.add("")
-                imagePaths.add(item.path.toString())
+            if (intent.getStringExtra(utils.constants.KEY_FILE_TYPE) == utils.constants.FILE_TYPE_VIDEO) {
+                val videoPaths = intent.getParcelableArrayListExtra<VideoFile>(utils.constants.KEY_IMG_PATH)
+
+                for (item in videoPaths) {
+                    imageCaptions.add("")
+                    imagePaths.add(item.path.toString())
+                }
+            } else {
+                val imgFilePaths = intent.getParcelableArrayListExtra<ImageFile>(utils.constants.KEY_IMG_PATH)
+
+                for (item in imgFilePaths) {
+                    imageCaptions.add("")
+                    imagePaths.add(item.path.toString())
+                }
             }
         }
 
@@ -49,7 +60,7 @@ class UploadPreviewActivity : AppCompatActivity() {
             utils.longToast(this, "Failed to load image")
         }
 
-        val adapter = ViewPagerImageAdapter(layoutInflater, imagePaths as java.util.ArrayList<String>, true)
+        val adapter = ViewPagerImageAdapter(layoutInflater, imagePaths as java.util.ArrayList<String>, intent.getStringExtra(utils.constants.KEY_FILE_TYPE))
         viewPager.adapter = adapter
 
 
@@ -77,7 +88,10 @@ class UploadPreviewActivity : AppCompatActivity() {
                                   imageCaptions as java.util.ArrayList<String>?)
                                        .putStringArrayListExtra(utils.constants.KEY_IMG_PATH,
                                                 imagePaths as java.util.ArrayList<String>?
-                                            ))
+                                            )
+                            .putExtra(utils.constants.KEY_FILE_TYPE, intent.getStringExtra(utils.constants.KEY_FILE_TYPE))
+                                        )
+
                                     finish()
 
 

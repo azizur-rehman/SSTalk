@@ -5,12 +5,11 @@ import android.animation.ArgbEvaluator
 import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.content.ContentValues
-import android.content.DialogInterface
-import android.content.Intent
+import android.content.*
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.media.ThumbnailUtils
@@ -415,6 +414,7 @@ class MessageActivity : AppCompatActivity() {
             startActivityForResult(Intent(context, UploadPreviewActivity::class.java)
                 .putParcelableArrayListExtra(utils.constants.KEY_IMG_PATH, filePaths)
                 .putExtra(utils.constants.IS_FOR_SINGLE_FILE, false)
+                .putExtra(utils.constants.KEY_FILE_TYPE, utils.constants.FILE_TYPE_IMAGE)
                 , RQ_PREVIEW_IMAGE)
 
 
@@ -462,6 +462,7 @@ class MessageActivity : AppCompatActivity() {
             startActivityForResult(Intent(context, UploadPreviewActivity::class.java)
                 .putExtra(utils.constants.KEY_IMG_PATH, file.path)
                 .putExtra(utils.constants.IS_FOR_SINGLE_FILE, true)
+                .putExtra(utils.constants.KEY_FILE_TYPE, utils.constants.FILE_TYPE_IMAGE)
                 , RQ_PREVIEW_IMAGE)
 
         }
@@ -471,6 +472,12 @@ class MessageActivity : AppCompatActivity() {
             val videoPaths = data!!.getParcelableArrayListExtra<VideoFile>(Constant.RESULT_PICK_VIDEO)
 
 
+            startActivityForResult(Intent(context, UploadPreviewActivity::class.java)
+                .putParcelableArrayListExtra(utils.constants.KEY_IMG_PATH, videoPaths)
+                .putExtra(utils.constants.IS_FOR_SINGLE_FILE, false)
+                .putExtra(utils.constants.KEY_FILE_TYPE, utils.constants.FILE_TYPE_VIDEO)
+                , RQ_PREVIEW_IMAGE)
+
 
             for(videoFile in videoPaths){
                 Log.d("MessageActivity", "onActivityResult: path = "+videoFile.path)
@@ -478,7 +485,7 @@ class MessageActivity : AppCompatActivity() {
                 Log.d("MessageActivity", "onActivityResult: size = "+videoFile.size / (1024) +" KB")
                 messageID = "MSG" +System.currentTimeMillis()
 
-                uploadFile(messageID, File(videoFile.path), "", utils.constants.FILE_TYPE_VIDEO, false)
+               // uploadFile(messageID, File(videoFile.path), "", utils.constants.FILE_TYPE_VIDEO, false)
 
 
             }
@@ -501,7 +508,7 @@ class MessageActivity : AppCompatActivity() {
                     uploadFile(
                         messageID, File(path.toString()),
                         caption[index],
-                        utils.constants.FILE_TYPE_IMAGE,
+                        data.getStringExtra(utils.constants.KEY_FILE_TYPE),
                         true
                     )
                 }
@@ -550,7 +557,7 @@ class MessageActivity : AppCompatActivity() {
 
 
         val options = FirebaseRecyclerOptions.Builder<Models.MessageModel>()
-            .setQuery(FirebaseUtils.ref.getChatQuery(myUID, targetUid)
+            .setQuery(FirebaseUtils.ref.getChatRef(myUID, targetUid)
 
                // .limitToLast(20)
                 ,Models.MessageModel::class.java)
@@ -807,7 +814,7 @@ class MessageActivity : AppCompatActivity() {
                         if(model.file_local_path.isNotEmpty() && File(model.file_local_path).exists()) {
                             try {
                                 val videoIntent = Intent(Intent.ACTION_VIEW)
-                                val uri = FileProvider.getUriForFile(context, utils.constants.URI_AUTHORITY, File(model.file_local_path))
+                                val uri =utils.getUriFromFile(context,  File(model.file_local_path))
                                 videoIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                 videoIntent.setDataAndType(uri, "video/*")
                                 startActivity(videoIntent)
@@ -892,17 +899,6 @@ class MessageActivity : AppCompatActivity() {
 
 
             }
-
-
-             override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
-                 super.onViewRecycled(holder)
-
-                 Log.d("MessageActivity", "onViewRecycled: ")
-
-
-             }
-
-
 
 
             override fun getItemViewType(position: Int): Int {
@@ -1263,7 +1259,7 @@ class MessageActivity : AppCompatActivity() {
         val ref =  FirebaseStorage.getInstance()
             .reference.child(messageType).child(messageID)
 
-        val uploadTask = ref.putFile(FileProvider.getUriForFile(context, utils.constants.URI_AUTHORITY, file))
+        val uploadTask = ref.putFile(utils.getUriFromFile(context, file))
 
 
 
@@ -1323,6 +1319,7 @@ class MessageActivity : AppCompatActivity() {
 
                         uploadTask.cancel()
                         mediaControlImageViewAt[messageID]!!.setImageResource(R.drawable.ic_play_white)
+                        adapter.notifyDataSetChanged()
                     }
                 }
             }
@@ -1381,7 +1378,7 @@ class MessageActivity : AppCompatActivity() {
 
                 } else {
 
-                        utils.longToast(context, "Upload failed. Your daily upload/download limit might have been exceeded. Please try again tomorrow")
+                      //  utils.longToast(context, "Upload failed. Your daily upload/download limit might have been exceeded. Please try again tomorrow")
 
 
                     Log.e("MessageActivity", "fileUpload: error in upload : "+task.exception!!.toString())
@@ -1600,7 +1597,14 @@ class MessageActivity : AppCompatActivity() {
                         override fun onSuccess() {
 
                             holder.progressBar.visibility = View.GONE
-
+                            val bitmap = (holder.imageView.drawable as BitmapDrawable).bitmap
+                            if(bitmap!=null){
+                                val path = utils.saveBitmapToSent(context, bitmap, messageID)
+                                FirebaseUtils.ref.getChatRef(myUID,targetUid)
+                                    .child(messageID)
+                                    .child(FirebaseUtils.KEY_FILE_LOCAL_PATH)
+                                    .setValue(path)
+                            }
 
                         }
 
@@ -1697,7 +1701,7 @@ class MessageActivity : AppCompatActivity() {
                     }
 
                     override fun onBitmapLoaded(bitmap: Bitmap?, from: Picasso.LoadedFrom?) {
-                        val savedPath = utils.saveBitmap(context, bitmap!!, messageID)
+                        val savedPath = utils.saveBitmapToReceived(context, bitmap!!, messageID)
                         Log.d("MessageActivity", "onBitmapLoaded: saved path = $savedPath")
                         holder.imageView.setImageBitmap(bitmap)
 
@@ -1748,14 +1752,23 @@ class MessageActivity : AppCompatActivity() {
     var unselectedDrawable:Drawable? = null
 
     //setting contextual toolbar on viewHolder
+
+    var actionMode: ActionMode? = null
     private fun setContextualToolbarOnViewHolder(itemView: View, messageID: String, model:Models.MessageModel){
 
         selectedDrawable = ColorDrawable(ContextCompat.getColor(context, R.color.transparent_green))
         unselectedDrawable = ColorDrawable(Color.WHITE)
 
+
+
+        //adding all views
+        if(!selectedItemViews.contains(itemView)) {
+            selectedItemViews.add(itemView)
+            selectMessageModel.add(model)
+        }
+
+
         itemView.setOnLongClickListener {
-
-
 
             if(!isContextMenuActive) {
 
@@ -1764,7 +1777,9 @@ class MessageActivity : AppCompatActivity() {
                     selectMessageModel.add(model)
                 }
 
-                startSupportActionMode(actionModeCallback )
+                actionMode = startSupportActionMode(actionModeCallback )
+                actionMode!!.title = selectedMessageIDs.size.toString()
+
 
                 it.background = if (it.background == selectedDrawable) unselectedDrawable else selectedDrawable
 
@@ -1774,15 +1789,14 @@ class MessageActivity : AppCompatActivity() {
         }
 
 
-        if(!selectedItemViews.contains(itemView)) {
-            selectedItemViews.add(itemView)
-            selectMessageModel.add(model)
-        }
-
         itemView.setOnClickListener {
 
 
+
             if(isContextMenuActive) {
+
+
+
                 it.background = if (it.background == selectedDrawable) unselectedDrawable else selectedDrawable
 
 
@@ -1792,17 +1806,27 @@ class MessageActivity : AppCompatActivity() {
                 }
                 else {
                     if (!selectedMessageIDs.contains(messageID)) {
-                        selectedMessageIDs.add(messageID!!)
+                        selectedMessageIDs.add(messageID)
                         selectMessageModel.add(model)
                     }
+                }
+
+
+                if(actionMode!=null) {
+                    actionMode!!.title = selectedMessageIDs.size.toString()
+                }
+
+                if(selectedMessageIDs.isEmpty()){
+                    if(actionMode!=null) {
+                        actionMode!!.finish()
+                    }
+                    
+
                 }
             }
 
         }
     }
-
-
-
 
 
 
@@ -1844,6 +1868,14 @@ class MessageActivity : AppCompatActivity() {
 
                 R.id.action_copy ->{
 
+                    var messages = ""
+                    for(message in selectMessageModel)
+                        messages = messages + message.message+"\n"
+
+                    val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    clipboard.primaryClip = (ClipData.newPlainText("Messages ",messages.toString()))
+
+                    utils.toast(context, "Messages copied")
                     }
 
 
@@ -2072,6 +2104,20 @@ class MessageActivity : AppCompatActivity() {
                     .setNegativeButton("No", null)
                     .show()
 
+            }
+
+
+            R.id.menu_action_clear -> {
+                AlertDialog.Builder(context).setMessage("Clear all the messages from this user?")
+                    .setPositiveButton("Yes, Please!") { _, _ ->
+                        FirebaseUtils.ref.getChatRef(myUID, targetUid)
+                            .removeValue()
+                            .addOnCompleteListener {
+                                utils.toast(context, if (it.isSuccessful) "Messages cleared" else "Failed to clear messages")
+                            }
+                    }
+                    .setNegativeButton("No, Don't", null)
+                    .show()
             }
         }
 

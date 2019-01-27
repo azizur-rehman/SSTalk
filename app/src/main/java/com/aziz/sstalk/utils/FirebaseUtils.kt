@@ -72,7 +72,7 @@ object FirebaseUtils {
                     .child(NODE_MESSAGES)
                     .child(uid)
                     .child(targetUID)
-                    //.orderByChild(KEY_TIME_IN_MILLIS)
+                    .orderByChild(KEY_TIME_IN_MILLIS)
             }
 
             fun getChatRef(uid :String, targetUID: String) : DatabaseReference{
@@ -80,8 +80,6 @@ object FirebaseUtils {
                     .child(NODE_MESSAGES)
                     .child(uid)
                     .child(targetUID)
-                    .orderByChild(KEY_TIME_IN_MILLIS)
-                    .ref
 
             }
 
@@ -131,7 +129,7 @@ object FirebaseUtils {
 
 
 
-        val uploadTask = storageRef.putFile(FileProvider.getUriForFile(context, utils.constants.URI_AUTHORITY, file))
+        val uploadTask = storageRef.putFile(utils.getUriFromFile(context, file))
 
         uploadTask.continueWithTask(Continuation<UploadTask.TaskSnapshot, Task<Uri>> { task ->
             if (!task.isSuccessful) {
@@ -265,6 +263,7 @@ object FirebaseUtils {
         textView.text  = ""
 
         ref.getChatQuery(getUid(), targetUID)
+            .limitToLast(1)
             .addValueEventListener(object : ValueEventListener {
                 override fun onCancelled(p0: DatabaseError) {
 

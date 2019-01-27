@@ -25,6 +25,7 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import com.aziz.sstalk.BuildConfig
 import com.aziz.sstalk.R
 import com.aziz.sstalk.models.Models
 import com.google.firebase.auth.FirebaseAuth
@@ -57,6 +58,8 @@ object utils {
 
         val IS_FOR_SINGLE_FILE = "isSingleFile"
         val URI_AUTHORITY = "com.mvc.imagepicker.provider"
+
+        val KEY_FILE_TYPE = "type"
 
     }
 
@@ -261,12 +264,12 @@ object utils {
     }
 
 
-    fun saveBitmap(context: Context?, bitmap: Bitmap, messageIdForName:String):String{
+    fun saveBitmapToSent(context: Context?, bitmap: Bitmap, messageIdForName:String):String{
 
         val fileName = "$messageIdForName.jpg"
 
         val path = Environment.getExternalStorageDirectory().toString()+"/"+ context!!.getString(R.string.app_name).toString()+"" +
-                "/Images/Received/"
+                "/Images/Sent/"
 
         if(!File(path).exists())
             File(path).mkdirs()
@@ -295,11 +298,44 @@ object utils {
     }
 
 
+    fun saveBitmapToReceived(context: Context?, bitmap: Bitmap, messageIdForName:String):String{
+
+        val fileName = "$messageIdForName.jpg"
+
+        val path = Environment.getExternalStorageDirectory().toString()+"/"+ context!!.getString(R.string.app_name).toString()+"" +
+                "/Images/Received/"
+
+        if(!File(path).exists())
+            File(path).mkdirs()
+
+        val file = File(path, fileName)
+
+        try {
+
+            val fout = FileOutputStream(file)
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, fout)
+            Log.d("utils", "saveBitmap: file saved to ${file.path}")
+
+
+            val values = ContentValues(3)
+            values.put(MediaStore.Video.Media.TITLE, messageIdForName)
+            values.put(MediaStore.Video.Media.MIME_TYPE, "image/*")
+            values.put(MediaStore.Video.Media.DATA, file.absolutePath)
+            context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+
+        }
+        catch (e:Exception){
+            Log.d("utils", "saveBitmap: File not found")
+        }
+
+        return file.path
+    }
+
     fun getVideoLength(context: Context?, videoFilePath:String):String{
         try {
 
             val retriever = MediaMetadataRetriever()
-            retriever.setDataSource(context, FileProvider.getUriForFile(context!!, constants.URI_AUTHORITY, File(videoFilePath)))
+            retriever.setDataSource(context, utils.getUriFromFile(context,  File(videoFilePath)))
             val time = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
             val timeInMillisec = time.toLong()
 
@@ -496,7 +532,7 @@ object utils {
 
         //getting video length
         val retriever = MediaMetadataRetriever()
-        retriever.setDataSource(context, FileProvider.getUriForFile(context, utils.constants.URI_AUTHORITY, file))
+        retriever.setDataSource(context, utils.getUriFromFile(context, file))
         val time = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
         val timeInMillisec = time.toLong()
 
@@ -533,4 +569,16 @@ object utils {
         }
     }
 
+
+
+    fun getUriFromFile(context: Context?, file:File) : Uri {
+
+        var uri = Uri.fromFile(file)
+
+        if(Build.VERSION.SDK_INT>= 24)
+            uri = FileProvider.getUriForFile(context!!, constants.URI_AUTHORITY, file)
+
+        return uri
+
+    }
 }

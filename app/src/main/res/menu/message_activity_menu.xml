@@ -8,4 +8,7 @@
             android:title="Search" app:actionViewClass="android.support.v7.widget.SearchView"/>
 
     <item android:title="Block" app:showAsAction="never" android:id="@+id/menu_action_block"/>
+
+    <item android:title="Clear Messages" app:showAsAction="never" android:id="@+id/menu_action_clear"/>
+
 </menu>
