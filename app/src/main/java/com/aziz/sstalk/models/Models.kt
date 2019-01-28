@@ -1,5 +1,7 @@
 package com.aziz.sstalk.models
 
+import java.io.Serializable
+
 class Models {
 
     data class MessageModel(var message:String = "",
@@ -8,14 +10,11 @@ class Models {
                             var timeInMillis:Long = System.currentTimeMillis(),
                             var reverseTimeStamp: Long = timeInMillis * -1,
                             var isFile:Boolean = false,
-                            var isRead:Boolean = false,
                             var messageType: String = "message",
                             var caption:String = "",
                             var file_local_path:String = "",
                             var file_size_in_bytes:Long = 0,
-                            var video_length_in_sec:Long = 0,
-                            var message_deleted:Boolean = false,
-                            var message_delivered:Boolean  = false)
+                            var message_deleted:Boolean = false) : Serializable
 
     data class Contact(var name:String = "", var number:String = "", var photoURI:String = "" , var uid: String = "")
 

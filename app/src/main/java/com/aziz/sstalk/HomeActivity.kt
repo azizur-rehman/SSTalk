@@ -24,8 +24,12 @@ import com.aziz.sstalk.utils.utils
 import com.firebase.ui.database.FirebaseRecyclerAdapter
 import com.firebase.ui.database.FirebaseRecyclerOptions
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.ValueEventListener
 import kotlinx.android.synthetic.main.activity_home.*
 import kotlinx.android.synthetic.main.app_bar_home.*
+import kotlinx.android.synthetic.main.contact_screen.*
 import kotlinx.android.synthetic.main.content_home.*
 import kotlinx.android.synthetic.main.item_contact_list.view.*
 
@@ -35,6 +39,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     var hasPermission:Boolean = false
     val id = R.drawable.contact_placeholder
+    val debugUserID = "user---2"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,7 +53,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         drawer_layout.addDrawerListener(toggle)
         toggle.syncState()
 
-        show_contacts.setOnClickListener { v ->
+        show_contacts.setOnClickListener {
 
             startActivity(Intent(context, ContactsActivity::class.java))
         }
@@ -67,25 +72,6 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             }
             else
             setAdapter()
-
-
-        if(!FirebaseUtils.isLoggedIn()){
-            FirebaseAuth.getInstance().signInAnonymously()
-                .addOnSuccessListener { authResult ->
-
-                    Log.d("HomeActivity", "onCreate: uid "+authResult.user.uid)
-                    utils.longToast(context, "Anonymous logged in")
-
-                }
-                .addOnFailureListener { exception ->
-
-                    Log.d("HomeActivity", "onCreate: "+exception.message.toString())
-                }
-        }
-        else{
-            Log.d("HomeActivity", "onCreate: uid "+FirebaseAuth.getInstance().currentUser!!.uid)
-
-    }
 
 
 
@@ -117,26 +103,6 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
     }
 
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        menuInflater.inflate(R.menu.home, menu)
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-
-        startActivity(Intent(context, MessageActivity::class.java))
-
-
-        when (item.itemId) {
-            R.id.action_settings ->
-                return true
-            else -> return super.onOptionsItemSelected(item)
-        }
-    }
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         // Handle navigation view item clicks here.
@@ -171,6 +137,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         val options = FirebaseRecyclerOptions.Builder<Models.LastMessageDetail>()
             .setQuery(FirebaseUtils.ref.getLastMessageRef(FirebaseUtils.getUid())
+                    //todo dont forget to change it
                 .orderByChild(FirebaseUtils.KEY_REVERSE_TIMESTAMP),Models.LastMessageDetail::class.java)
             .setLifecycleOwner(this)
             .build()
@@ -184,7 +151,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
                 holder.name.text = uid
 
-                FirebaseUtils.loadProfilePic(uid, holder.pic, false)
+                FirebaseUtils.loadProfilePic(this@HomeActivity, uid, holder.pic, false)
 
                 FirebaseUtils.setLastMessage(uid, holder.lastMessage)
 
@@ -212,6 +179,8 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         conversationRecycler.addItemDecoration(DividerItemDecoration(this, DividerItemDecoration.VERTICAL))
 
     }
+
+
 
 
 

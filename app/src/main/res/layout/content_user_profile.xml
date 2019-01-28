@@ -1,20 +1,83 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.v4.widget.NestedScrollView
+<LinearLayout
         xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
         xmlns:app="http://schemas.android.com/apk/res-auto"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
         tools:showIn="@layout/activity_user_profile"
         android:layout_width="match_parent"
+        android:orientation="vertical"
         android:layout_height="match_parent"
+        android:paddingTop="10dp"
         tools:context=".UserProfileActivity">
+
+
+    <TextView android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+    style="@style/TextViewHeading"
+              android:text="Phone Number"
+              android:padding="10dp"
+              android:layout_marginLeft="5dp"
+              android:layout_marginTop="5dp"
+    />
+
+
+    <TextView android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:padding="15dp"
+              android:text="Loading..."
+              android:textSize="18sp"
+              android:background="?selectableItemBackground"
+              android:gravity="center_vertical"
+              android:drawablePadding="20dp"
+              android:layout_marginBottom="5dp"
+              android:drawableLeft="@drawable/ic_phone_green_24dp"
+              android:id="@+id/phone_textview"
+    />
+
+
+    <View android:layout_width="match_parent"
+          android:layout_height="10dp"
+          android:background="@color/gray_light"
+    />
+
+
+
+    <TextView android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+    android:textColor="#B10808"
+     android:padding="15dp"
+    android:drawableLeft="@drawable/ic_block_red_24dp"
+    android:text="Block this contact"
+              android:id="@+id/block_user"
+              android:drawablePadding="15dp"
+              android:layout_marginTop="5dp"
+              android:layout_marginBottom="5dp"
+     android:gravity="center_vertical"
+              android:background="?selectableItemBackground"
+    />
+
+    <View android:layout_width="match_parent"
+          android:layout_height="10dp"
+    android:background="@color/gray_light"
+    />
+
+
+    <TextView android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              style="@style/TextViewHeading"
+              android:layout_marginTop="10dp"
+              android:text="Media"
+    />
 
     <android.support.v7.widget.RecyclerView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:id="@+id/mediaRecyclerView"
-            app:layoutManager="android.support.v7.widget.GridLayoutManager"
+            android:layout_weight="1"
 
     />
 
-</android.support.v4.widget.NestedScrollView>
+
+
+</LinearLayout>

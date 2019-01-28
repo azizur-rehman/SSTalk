@@ -16,11 +16,12 @@
 
         <LinearLayout android:layout_width="match_parent"
                       android:orientation="horizontal"
-                     android:background="?selectableItemBackground"
-                     android:layout_height="match_parent">
+                      android:gravity="center_vertical"
+                     android:layout_height="?actionBarSize">
 
 
-            <ImageView android:layout_width="wrap_content" android:layout_height="match_parent"
+            <ImageView android:layout_width="wrap_content"
+                       android:layout_height="match_parent"
             android:src="@drawable/ic_arrow_back_black_24dp"
             />
 
@@ -37,7 +38,10 @@
                           android:layout_weight="1"
                           android:id="@+id/layout_toolbar_title"
                           android:paddingLeft="20dp"
+                          android:gravity="center_vertical"
                           android:orientation="vertical"
+                          android:background="?selectableItemBackground"
+
                           android:layout_height="match_parent">
 
                 <TextView android:layout_width="match_parent"
@@ -100,14 +104,14 @@
 
         <android.support.v7.widget.RecyclerView
         android:id="@+id/messagesList"
-        android:paddingTop="15dp"
-        android:clipToPadding="true"
-        android:paddingBottom="10dp"
+        android:clipToPadding="false"
+        android:paddingBottom="15dp"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
 
-        <io.codetail.widget.RevealLinearLayout android:layout_width="match_parent"
+        <io.codetail.widget.RevealLinearLayout
+                android:layout_width="match_parent"
                   android:orientation="horizontal"
                   android:id="@+id/attachment_menu"
                       android:padding="15dp"

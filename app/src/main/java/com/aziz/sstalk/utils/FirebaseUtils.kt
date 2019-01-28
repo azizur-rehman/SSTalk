@@ -2,12 +2,14 @@ package com.aziz.sstalk.utils
 
 import android.app.ProgressDialog
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.support.v4.content.FileProvider
 import android.util.Log
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
+import com.aziz.sstalk.ImagePreviewActivity
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.FirebaseUtils.ref.getUserRef
 import com.google.firebase.auth.FirebaseAuth
@@ -147,7 +149,7 @@ object FirebaseUtils {
 
 
 
-                    dbRef.setValue(link)
+                    dbRef.setValue(link.toString())
                         .addOnSuccessListener {
                          //   isProfileChanged = false
                             if(toastAfterUploadIfAny.isNotEmpty())
@@ -175,7 +177,7 @@ object FirebaseUtils {
     }
 
 
-    fun loadProfilePic(uid:String, imageView: ImageView, isLarge: Boolean){
+    fun loadProfilePic(context: Context, uid:String, imageView: ImageView, isLarge: Boolean){
 
 
             if(uid.isEmpty())
@@ -198,6 +200,11 @@ object FirebaseUtils {
                                     .placeholder(R.drawable.contact_placeholder)
                                     .into(imageView)
                             }
+
+                            imageView.setOnClickListener {
+                                context.startActivity(Intent(context, ImagePreviewActivity::class.java)
+                                    .putExtra(utils.constants.KEY_IMG_PATH, link))
+                            }
                         }
                     }
 
@@ -213,7 +220,7 @@ object FirebaseUtils {
 
     //todo Remove this else condition when production
     //below is the id for my mobile number(Shanu)
-        fun getUid() : String = if (isLoggedIn())  FirebaseAuth.getInstance().uid.toString() else "vHv8TSqbS2YBHZJXS5X5Saz4acC2"
+        fun getUid() : String = if (isLoggedIn())  FirebaseAuth.getInstance().uid.toString() else utils.constants.debugUserID
 
         fun setUserDetailFromUID(context : Context,
             textView: TextView,
@@ -262,26 +269,30 @@ object FirebaseUtils {
 
         textView.text  = ""
 
-        ref.getChatQuery(getUid(), targetUID)
+        ref.getChatRef(getUid(), targetUID)
             .limitToLast(1)
             .addValueEventListener(object : ValueEventListener {
-                override fun onCancelled(p0: DatabaseError) {
-
-                }
+                override fun onCancelled(p0: DatabaseError) {}
 
                 override fun onDataChange(p0: DataSnapshot) {
+
                     var messageModel:Models.MessageModel? = null
-                    for(post in p0.children){
-                        messageModel = post.getValue(Models.MessageModel::class.java)
-                    }
+                    for(item in p0.children)
+                      messageModel = item.getValue(Models.MessageModel::class.java)
+
 
                     if(p0.exists()) {
-                        textView.text = messageModel!!.message.replace("\n"," ")
+                        textView.text = messageModel!!.message//.replace("\n"," ")
                         textView.visibility = View.VISIBLE
 
-                        if(messageModel.isFile && messageModel.messageType == utils.constants.FILE_TYPE_IMAGE){
+
+
+                        if(messageModel.messageType == utils.constants.FILE_TYPE_IMAGE){
                             textView.text = ("\uD83D\uDDBC Image")
                         }
+                        else if(messageModel.messageType == utils.constants.FILE_TYPE_VIDEO)
+                            textView.text = "\uD83C\uDFA5 Video"
+
 
                     }
                     else {

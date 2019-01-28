@@ -21,6 +21,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 app:toolbarId="@+id/toolbar"
+                app:title=""
                 app:layout_scrollFlags="scroll|exitUntilCollapsed"
                 app:contentScrim="?attr/colorPrimary">
 
@@ -28,6 +29,9 @@
             <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent">
 
                          <ImageView android:layout_height="match_parent"
+                                    android:id="@+id/user_profile_imageview"
+                                    android:alpha="0.9"
+                                    android:scaleType="centerCrop"
                                     android:layout_width="match_parent"/>
 
 
@@ -38,6 +42,7 @@
                     android:layout_height="?attr/actionBarSize"
                     android:layout_width="match_parent"
                     app:layout_collapseMode="pin"
+                    app:title=""
                     app:popupTheme="@style/AppTheme.PopupOverlay"/>
 
         </android.support.design.widget.CollapsingToolbarLayout>

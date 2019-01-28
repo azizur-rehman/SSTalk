@@ -23,8 +23,14 @@ class ImagePreviewActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_image_preview)
 
-        val imgURL = intent.getStringExtra(utils.constants.KEY_IMG_PATH)
-        val imgLocalPath = intent.getStringExtra(utils.constants.KEY_LOCAL_PATH)
+        var imgURL = intent.getStringExtra(utils.constants.KEY_IMG_PATH)
+        var imgLocalPath = intent.getStringExtra(utils.constants.KEY_LOCAL_PATH)
+
+        if(imgURL == null)
+            imgURL = ""
+
+        if(imgLocalPath == null)
+            imgLocalPath = ""
 
         Log.d("ImagePreviewActivity", "onCreate: url = $imgURL")
         Log.d("ImagePreviewActivity", "onCreate: local path = $imgLocalPath")

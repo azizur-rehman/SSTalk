@@ -18,12 +18,13 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.os.Environment.DIRECTORY_DCIM
-import android.os.Handler
+import android.os.Parcelable
 import android.provider.MediaStore
 import android.support.design.widget.Snackbar
+import android.support.text.emoji.EmojiCompat
+import android.support.text.emoji.bundled.BundledEmojiCompatConfig
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
-import android.support.v4.content.FileProvider
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.view.ActionMode
@@ -39,7 +40,6 @@ import android.widget.*
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.DateFormatter
 import com.aziz.sstalk.utils.FirebaseUtils
-import com.aziz.sstalk.utils.LocationHelper
 import com.aziz.sstalk.utils.utils
 import com.aziz.sstalk.views.holders
 import com.firebase.ui.database.FirebaseRecyclerAdapter
@@ -68,6 +68,7 @@ import kotlinx.android.synthetic.main.activity_message.*
 import me.shaohui.advancedluban.Luban
 import me.shaohui.advancedluban.OnCompressListener
 import java.io.File
+import java.io.Serializable
 import java.lang.Exception
 import java.text.SimpleDateFormat
 import java.util.*
@@ -146,8 +147,17 @@ class MessageActivity : AppCompatActivity() {
         setContentView(R.layout.activity_message)
         setSupportActionBar(toolbar)
 
+        val emojiConfig = BundledEmojiCompatConfig(this)
+        EmojiCompat.init(emojiConfig)
+            .registerInitCallback(object:EmojiCompat.InitCallback() {
+                override fun onInitialized() {
+                    setRecyclerAdapter()
+                    super.onInitialized()
+                }
+            })
 
-      //  targetUid = intent.getStringExtra(FirebaseUtils.KEY_UID)
+
+        targetUid = intent.getStringExtra(FirebaseUtils.KEY_UID)
 
         myUID = FirebaseUtils.getUid()
 
@@ -156,24 +166,15 @@ class MessageActivity : AppCompatActivity() {
 
 
 
-        myUID = user2
-        targetUid = user1
+     //   myUID = user2
+      //  targetUid = user1
 
 
         layout_toolbar_title.setOnClickListener {
-            startActivity(Intent(this, UserProfileActivity::class.java))
+            startActivity(Intent(this, UserProfileActivity::class.java)
+                .putExtra(FirebaseUtils.KEY_UID, targetUid)
+            )
         }
-
-
-//        //todo remove this in production
-//        if(myUID.equals(FirebaseUtils.getUid())) {
-//            myUID = user1
-//            targetUid = user2
-//        }
-//        else{
-//            myUID = user2
-//            targetUid = user1
-//        }
 
 
         Log.d("MessageActivity", "onCreate: myUID = "+myUID)
@@ -181,7 +182,6 @@ class MessageActivity : AppCompatActivity() {
 
         setSendMessageListener()
 
-        setRecyclerAdapter()
 
 
 
@@ -449,7 +449,6 @@ class MessageActivity : AppCompatActivity() {
                 targetUid,
                 System.currentTimeMillis(),
                 isFile = false,
-                isRead = false,
                 caption = address,
                 messageType = utils.constants.FILE_TYPE_LOCATION))
         }
@@ -638,7 +637,7 @@ class MessageActivity : AppCompatActivity() {
                 var circularProgressBar:CircularProgressBar? = null
 
                 var tapToDownload:TextView? = null
-                var textView:TextView? = null
+                var messageTextView:TextView? = null
 
                 var messageLayout:LinearLayout? = null
 
@@ -663,7 +662,7 @@ class MessageActivity : AppCompatActivity() {
                         holder.time.text = utils.getLocalTime(model.timeInMillis)
                         holder.message.text = model.message
                         container = holder.container
-                        textView = holder.message
+                        messageTextView = holder.message
                         messageLayout = holder.messageLayout
                         dateHeader = holder.headerDateTime
                     }
@@ -673,7 +672,7 @@ class MessageActivity : AppCompatActivity() {
                         dateHeader = holder.headerDateTime
                         container = holder.container
                         FirebaseUtils.setDeliveryStatusTick(targetUid, messageID, holder.messageStatus)
-                        textView = holder.message
+                        messageTextView = holder.message
                         messageLayout = holder.messageLayout
 
                         //end of my holder
@@ -691,7 +690,7 @@ class MessageActivity : AppCompatActivity() {
 
                         //setting holder config
                         setMyImageHolder(holder, model, messageID)
-                        textView = holder.message
+                        messageTextView = holder.message
                         messageLayout = holder.messageLayout
 
                     }
@@ -702,7 +701,7 @@ class MessageActivity : AppCompatActivity() {
 
                         //setting holder setting
                         setTargetImageHolder(holder, model, messageID)
-                        textView = holder.message
+                        messageTextView = holder.message
                         messageLayout = holder.messageLayout
 
                     }
@@ -719,7 +718,7 @@ class MessageActivity : AppCompatActivity() {
                         //setting holder config
                         setMyVideoHolder(holder, model, messageID)
                         FirebaseUtils.setDeliveryStatusTick(targetUid, messageID, holder.messageStatus)
-                        textView = holder.message
+                        messageTextView = holder.message
                         messageLayout = holder.messageLayout
 
 
@@ -736,7 +735,7 @@ class MessageActivity : AppCompatActivity() {
 
                         //setting holder config
                         setTargetVideoHolder(holder, model, messageID)
-                        textView = holder.message
+                        messageTextView = holder.message
                         messageLayout = holder.messageLayout
 
                     }
@@ -747,6 +746,7 @@ class MessageActivity : AppCompatActivity() {
                         loadMap(holder.mapView, LatLng(latitude,longitude))
                         messageLayout = holder.messageLayout
                         dateHeader = holder.dateHeader
+                        messageTextView = holder.message
 
                     }
 
@@ -757,6 +757,7 @@ class MessageActivity : AppCompatActivity() {
                         dateHeader = holder.dateHeader
 
                         messageLayout = holder.messageLayout
+                        messageTextView = holder.message
 
                     }
                 }
@@ -833,8 +834,9 @@ class MessageActivity : AppCompatActivity() {
 
 
 
-
-
+                val emojiProcessed = EmojiCompat.get().process(messageTextView!!.text)
+                messageTextView.text = emojiProcessed
+                Log.d("MessageActivity", "onBindViewHolder: $emojiProcessed")
 
                 //set date Header
 
@@ -870,7 +872,7 @@ class MessageActivity : AppCompatActivity() {
 
 
                 if(searchFilterItemPosition.contains(position) ){
-                    utils.highlightTextView(textView!!, searchQuery, Color.parseColor("#51C1EE"))
+                    utils.highlightTextView(messageTextView!!, searchQuery, Color.parseColor("#51C1EE"))
 
                     if(selectedPosition == position) {
                         val fadeAnim = ObjectAnimator.ofObject(messageLayout, "backgroundColor",
@@ -882,9 +884,10 @@ class MessageActivity : AppCompatActivity() {
                 }
                 else{
 
-                    if(textView!=null)
-                    textView.text = if(model.isFile) model.caption else model.message
+                    if(messageTextView!=null)
+                    messageTextView.text = if(model.isFile) model.caption else model.message
                 }
+
 
 
 
@@ -1084,7 +1087,6 @@ class MessageActivity : AppCompatActivity() {
 
         //setting my message
 
-        messageModel.isRead = true
         FirebaseUtils.ref.getChatRef(myUID, targetUid)
             .child(messageID)
             .setValue(messageModel)
@@ -1105,7 +1107,6 @@ class MessageActivity : AppCompatActivity() {
     private fun addMessageToTargetNode(messageID: String , messageModel: Models.MessageModel) {
 
         //setting  message to target
-        messageModel.isRead = false
         FirebaseUtils.ref.getChatRef(targetUid, myUID)
             .child(messageID)
             .setValue(messageModel)
@@ -1360,9 +1361,9 @@ class MessageActivity : AppCompatActivity() {
 
                     val myModel = Models.MessageModel(
                         link.toString(),
-                        myUID, targetUid, isFile = true, caption = caption, messageType = messageType,
+                        myUID, targetUid,
+                        isFile = true, caption = caption, messageType = messageType,
                         file_local_path = originalFinalPath,
-                        isRead = true,
                         file_size_in_bytes = file.length()
                     )
 
@@ -1517,6 +1518,10 @@ class MessageActivity : AppCompatActivity() {
     }
 
 
+    override fun onResume() {
+        invalidateOptionsMenu()
+        super.onResume()
+    }
 
     //setting my holders
     //setting my holder config
@@ -1745,7 +1750,6 @@ class MessageActivity : AppCompatActivity() {
         //adding all views
         if(!selectedItemViews.contains(itemView)) {
             selectedItemViews.add(itemView)
-            selectMessageModel.add(model)
         }
 
 
@@ -1817,6 +1821,8 @@ class MessageActivity : AppCompatActivity() {
         override fun onActionItemClicked(p0: ActionMode?, p1: MenuItem?): Boolean {
 
 
+            Log.d("MessageActivity", "onActionItemClicked:Total messages = ${selectMessageModel.size}")
+
             when(p1!!.itemId) {
 
                 R.id.action_delete -> {
@@ -1859,6 +1865,11 @@ class MessageActivity : AppCompatActivity() {
                     utils.toast(context, "Messages copied")
                     }
 
+                R.id.action_forward -> {
+                    startActivity(Intent(context, ForwardActivity::class.java)
+                        .putExtra(utils.constants.KEY_MSG_MODEL, selectMessageModel as Serializable)
+                    )
+                }
 
 
             }
@@ -1972,12 +1983,13 @@ class MessageActivity : AppCompatActivity() {
                 searchFilterItemPosition.clear()
                 searchPosition = 0
                 selectedPosition = -1
+                searchQuery = query.toString().trim().toLowerCase()
 
                 for((index,model) in adapter.snapshots.withIndex().reversed()){
 
 
                     if(model.isFile){
-                        if (model.caption.toLowerCase().contains(query.toString().toLowerCase())) {
+                        if (model.caption.toLowerCase().contains(searchQuery)) {
                             searchFilterItemPosition.add((index))
                             resultCount++
                         }
@@ -1990,7 +2002,6 @@ class MessageActivity : AppCompatActivity() {
                     }
                 }
 
-                searchQuery = query.toString()
 
                 if(resultCount>0) {
                     utils.toast(context, "$resultCount results found")
@@ -2001,6 +2012,9 @@ class MessageActivity : AppCompatActivity() {
                 }
                 else{
                     utils.toast(context, "No result")
+                    upBtn.visibility = View.GONE
+                    downBtn.visibility = View.GONE
+
                 }
 
 
@@ -2032,6 +2046,10 @@ class MessageActivity : AppCompatActivity() {
         }
 
         upBtn.setOnClickListener {
+
+            if(searchFilterItemPosition.isEmpty())
+                return@setOnClickListener
+
             if(searchPosition>=searchFilterItemPosition.size){
                 searchPosition = 0
             }
@@ -2052,6 +2070,11 @@ class MessageActivity : AppCompatActivity() {
         }
 
         downBtn.setOnClickListener {
+
+
+            if(searchFilterItemPosition.isEmpty())
+                return@setOnClickListener
+
             if(searchPosition<0){
                 searchPosition = searchFilterItemPosition.size - 1
             }

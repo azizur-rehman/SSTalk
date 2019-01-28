@@ -24,7 +24,7 @@ import java.io.File
 
 class EditProfile : AppCompatActivity() {
 
-    val myUID = FirebaseUtils.getUid()
+    var myUID = FirebaseUtils.getUid()
     val context = this
     var isProfileChanged = false
     lateinit var bitmap:Bitmap
@@ -34,8 +34,9 @@ class EditProfile : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_edit_profile)
 
+        myUID = utils.constants.debugUserID
 
-        FirebaseUtils.loadProfilePic(myUID, profile_circleimageview, false)
+        FirebaseUtils.loadProfilePic(this, myUID, profile_circleimageview, false)
 
         profile_pick_btn.setOnClickListener { ImagePicker.pickImage(context) }
 

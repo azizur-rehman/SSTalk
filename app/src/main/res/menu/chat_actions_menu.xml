@@ -14,6 +14,11 @@
         app:showAsAction="always"/>
 
 
+    <item
+            android:id="@+id/action_forward"
+            android:icon="@drawable/ic_action_forward"
+            android:title="Copy"
+            app:showAsAction="always"/>
 
 
 

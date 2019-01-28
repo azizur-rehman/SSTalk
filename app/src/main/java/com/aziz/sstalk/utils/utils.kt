@@ -53,6 +53,8 @@ object utils {
         val KEY_CAPTION = "caption"
         val KEY_LOCAL_PATH = "local_path"
 
+        val KEY_MSG_MODEL = "msg_model"
+
         val KEY_LATITUDE = "lat"
         val KEY_LONGITUDE = "lng"
         val KEY_ADDRESS = "address"
@@ -61,6 +63,8 @@ object utils {
         val URI_AUTHORITY = "com.mvc.imagepicker.provider"
 
         val KEY_FILE_TYPE = "type"
+        val debugUserID = "user---2"
+
 
     }
 
@@ -117,7 +121,7 @@ object utils {
             }
 
             if(FirebaseUtils.isLoggedIn()){
-                isDuplicate = FirebaseAuth.getInstance().currentUser!!.phoneNumber == number;
+                isDuplicate = FirebaseAuth.getInstance().currentUser!!.phoneNumber == number
             }
 
             if(!isDuplicate)
@@ -579,19 +583,24 @@ object utils {
     }
 
 
-    fun highlightTextView(textView: TextView, highlightedText:String, color:Int){
+    fun highlightTextView(textView: TextView, highlightedText:String, color:Int) {
 
-        val text = textView.text.toString().toLowerCase()
+        try {
+            val text = textView.text.toString().toLowerCase()
 
-        val startIndex = text.indexOf(highlightedText.toLowerCase())
-        val endIndex = startIndex + highlightedText.length
+            val startIndex = text.indexOf(highlightedText.toLowerCase())
+            val endIndex = startIndex + highlightedText.length
 
-        val spannableString = SpannableString(text)
-        spannableString.setSpan(BackgroundColorSpan(color), startIndex,
-            endIndex, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
+            val spannableString = SpannableString(text)
+            spannableString.setSpan(
+                BackgroundColorSpan(color), startIndex,
+                endIndex, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
 
 
-        textView.text = spannableString
+            textView.text = spannableString
+        }
+        catch (e:Exception){}
     }
 
 
