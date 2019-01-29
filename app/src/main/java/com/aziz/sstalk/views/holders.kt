@@ -20,6 +20,7 @@ object holders {
         // val imageLayout = itemView.imageFrameLayout!!
         val container = itemView.container_left!!
         val messageLayout = itemView.message_layout_text_left!!
+        val senderIcon = itemView.circle_sender_text!!
     }
     class MyTextMsgHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
         val message = itemView.messageText_right!!
@@ -56,6 +57,7 @@ object holders {
         val container = itemView.container_image_left!!
 
         val messageLayout = itemView.message_layout_image_left!!
+        val senderIcon = itemView.circle_sender_image!!
 
 
     }
@@ -97,6 +99,7 @@ object holders {
         val container = itemView.container_video_left!!
 
         val messageLayout = itemView.message_layout_video_left!!
+        val senderIcon = itemView.circle_sender_image!!
 
 
     }
@@ -111,6 +114,8 @@ object holders {
         val time = itemView.time_map_left
 
         val messageLayout = itemView.message_layout_map_left!!
+        val senderIcon = itemView.circle_sender_map!!
+
 
     }
 

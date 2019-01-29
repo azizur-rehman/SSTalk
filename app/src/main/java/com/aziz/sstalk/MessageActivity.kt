@@ -12,13 +12,11 @@ import android.graphics.Color
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
-import android.media.ThumbnailUtils
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.os.Environment.DIRECTORY_DCIM
-import android.os.Parcelable
 import android.provider.MediaStore
 import android.support.design.widget.Snackbar
 import android.support.text.emoji.EmojiCompat
@@ -146,6 +144,10 @@ class MessageActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_message)
         setSupportActionBar(toolbar)
+        targetUid = intent.getStringExtra(FirebaseUtils.KEY_UID)
+        myUID = FirebaseUtils.getUid()
+
+        FirebaseUtils.loadProfileThumbnail(context, targetUid, profile_circleimageview)
 
         val emojiConfig = BundledEmojiCompatConfig(this)
         EmojiCompat.init(emojiConfig)
@@ -157,9 +159,6 @@ class MessageActivity : AppCompatActivity() {
             })
 
 
-        targetUid = intent.getStringExtra(FirebaseUtils.KEY_UID)
-
-        myUID = FirebaseUtils.getUid()
 
       //  myUID = FirebaseUtils.user_voda
       //  targetUid = FirebaseUtils.user_jio
@@ -175,6 +174,10 @@ class MessageActivity : AppCompatActivity() {
                 .putExtra(FirebaseUtils.KEY_UID, targetUid)
             )
         }
+
+        back_layout_toolbar_message.setOnClickListener { finish() }
+
+
 
 
         Log.d("MessageActivity", "onCreate: myUID = "+myUID)
@@ -665,6 +668,17 @@ class MessageActivity : AppCompatActivity() {
                         messageTextView = holder.message
                         messageLayout = holder.messageLayout
                         dateHeader = holder.headerDateTime
+
+                        if(position==0){
+                            FirebaseUtils.loadProfileThumbnail(context, targetUid, holder.senderIcon)
+                            holder.senderIcon.visibility = View.VISIBLE }
+                        else{
+                            if(model.from == snapshots[position -1 ].from) holder.senderIcon.visibility = View.INVISIBLE
+                            else {
+                                holder.senderIcon.visibility = View.VISIBLE
+                                FirebaseUtils.loadProfileThumbnail(context, targetUid, holder.senderIcon)
+                            }
+                        }
                     }
                     is holders.MyTextMsgHolder -> {
                         holder.time.text = utils.getLocalTime(model.timeInMillis)
@@ -688,10 +702,12 @@ class MessageActivity : AppCompatActivity() {
                         FirebaseUtils.setDeliveryStatusTick(targetUid, messageID, holder.messageStatus)
 
 
-                        //setting holder config
-                        setMyImageHolder(holder, model, messageID)
                         messageTextView = holder.message
                         messageLayout = holder.messageLayout
+
+
+                        //setting holder config
+                        setMyImageHolder(holder, model, messageID)
 
                     }
                     is holders.TargetImageMsgHolder -> {
@@ -699,11 +715,22 @@ class MessageActivity : AppCompatActivity() {
                         dateHeader = holder.headerDateTime
                         container = holder.container
 
-                        //setting holder setting
-                        setTargetImageHolder(holder, model, messageID)
                         messageTextView = holder.message
                         messageLayout = holder.messageLayout
 
+                        //setting holder setting
+                        setTargetImageHolder(holder, model, messageID)
+
+                        if(position==0){
+                            FirebaseUtils.loadProfileThumbnail(context, targetUid, holder.senderIcon)
+                            holder.senderIcon.visibility = View.VISIBLE }
+                        else{
+                            if(model.from == snapshots[position -1 ].from) holder.senderIcon.visibility = View.INVISIBLE
+                            else {
+                                holder.senderIcon.visibility = View.VISIBLE
+                                FirebaseUtils.loadProfileThumbnail(context, targetUid, holder.senderIcon)
+                            }
+                        }
                     }
                     is holders.MyVideoMsgHolder -> {
 
@@ -715,11 +742,12 @@ class MessageActivity : AppCompatActivity() {
                         container = holder.container
 
 
-                        //setting holder config
-                        setMyVideoHolder(holder, model, messageID)
                         FirebaseUtils.setDeliveryStatusTick(targetUid, messageID, holder.messageStatus)
                         messageTextView = holder.message
                         messageLayout = holder.messageLayout
+
+                        //setting holder config
+                        setMyVideoHolder(holder, model, messageID)
 
 
                     }
@@ -733,34 +761,63 @@ class MessageActivity : AppCompatActivity() {
                         container = holder.container
 
 
-                        //setting holder config
-                        setTargetVideoHolder(holder, model, messageID)
                         messageTextView = holder.message
                         messageLayout = holder.messageLayout
+
+
+                        //setting holder config
+                        setTargetVideoHolder(holder, model, messageID)
+
+                        if(position==0){
+                            FirebaseUtils.loadProfileThumbnail(context, targetUid, holder.senderIcon)
+                            holder.senderIcon.visibility = View.VISIBLE }
+                        else{
+                            if(model.from == snapshots[position -1 ].from) holder.senderIcon.visibility = View.INVISIBLE
+                            else {
+                                holder.senderIcon.visibility = View.VISIBLE
+                                FirebaseUtils.loadProfileThumbnail(context, targetUid, holder.senderIcon)
+                            }
+                        }
 
                     }
 
                     is holders.MyMapHolder -> {
                         holder.message.text = model.caption
                         holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
-                        loadMap(holder.mapView, LatLng(latitude,longitude))
+
                         messageLayout = holder.messageLayout
                         dateHeader = holder.dateHeader
                         messageTextView = holder.message
+
+                        loadMap(holder.mapView, LatLng(latitude,longitude))
 
                     }
 
                     is holders.TargetMapHolder -> {
 
                         holder.message.text = model.caption
-                        loadMap(holder.mapView, LatLng(latitude,longitude))
                         dateHeader = holder.dateHeader
 
                         messageLayout = holder.messageLayout
                         messageTextView = holder.message
 
+                        loadMap(holder.mapView, LatLng(latitude,longitude))
+                        if(position==0){
+                            FirebaseUtils.loadProfileThumbnail(context, targetUid, holder.senderIcon)
+                            holder.senderIcon.visibility = View.VISIBLE }
+                        else{
+                            if(model.from == snapshots[position -1 ].from) holder.senderIcon.visibility = View.INVISIBLE
+                            else {
+                                holder.senderIcon.visibility = View.VISIBLE
+                                FirebaseUtils.loadProfileThumbnail(context, targetUid, holder.senderIcon)
+                            }
+                        }
+
+
                     }
                 }
+
+
 
 
 
@@ -787,8 +844,8 @@ class MessageActivity : AppCompatActivity() {
 
                     if(model.file_local_path.isNotEmpty() && File(model.file_local_path).exists()){
                         videoLengthTextView!!.text = utils.getVideoLength(context, model.file_local_path)
-                        val thumb = ThumbnailUtils.createVideoThumbnail(model.file_local_path, MediaStore.Video.Thumbnails.MINI_KIND)
-                        thumbnail.setImageBitmap(thumb)
+
+                        utils.loadVideoThumbnailFromLocalAsync(context, thumbnail, model.file_local_path)
 
                             tapToDownload!!.visibility = View.GONE
                     }
@@ -872,7 +929,7 @@ class MessageActivity : AppCompatActivity() {
 
 
                 if(searchFilterItemPosition.contains(position) ){
-                    utils.highlightTextView(messageTextView!!, searchQuery, Color.parseColor("#51C1EE"))
+                    utils.highlightTextView(messageTextView, searchQuery, Color.parseColor("#51C1EE"))
 
                     if(selectedPosition == position) {
                         val fadeAnim = ObjectAnimator.ofObject(messageLayout, "backgroundColor",
@@ -884,7 +941,6 @@ class MessageActivity : AppCompatActivity() {
                 }
                 else{
 
-                    if(messageTextView!=null)
                     messageTextView.text = if(model.isFile) model.caption else model.message
                 }
 
@@ -1041,16 +1097,20 @@ class MessageActivity : AppCompatActivity() {
 
     private fun loadMap(mapView: MapView, latLng: LatLng){
         //loading a map
+
+        try {
             mapView.run {
                 onCreate(null)
 
                 getMapAsync { googleMap ->
 
 
-                    googleMap!!.addMarker(MarkerOptions()
-                        .position(latLng).title("")
-                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
-                        .draggable(false).visible(true))
+                    googleMap!!.addMarker(
+                        MarkerOptions()
+                            .position(latLng).title("")
+                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
+                            .draggable(false).visible(true)
+                    )
 
 
                     googleMap.uiSettings.setAllGesturesEnabled(false)
@@ -1064,7 +1124,8 @@ class MessageActivity : AppCompatActivity() {
                     Log.d("MessageActivity", "onMapReady: ")
                 }
             }
-
+        }
+        catch (e:Exception){}
 
     }
 
@@ -1476,10 +1537,14 @@ class MessageActivity : AppCompatActivity() {
                         false
 
 
-                    if(isBlockedByMe || isBlockedByUser)
+                    if(isBlockedByUser || isBlockedByMe) {
+                        messageInputField.visibility = View.INVISIBLE
                         blockedSnackbar!!.show()
-                    else
+                    }
+                    else {
+                        messageInputField.visibility = View.VISIBLE
                         blockedSnackbar!!.dismiss()
+                    }
 
 
                     invalidateOptionsMenu()
@@ -1490,7 +1555,7 @@ class MessageActivity : AppCompatActivity() {
 
                 }
             })
-        //check i am blocked my user
+        //check i am blocked by user
 
         FirebaseUtils.ref.getBlockedUserRef(targetUID, myUID)
             .addValueEventListener(object : ValueEventListener {
@@ -1502,11 +1567,14 @@ class MessageActivity : AppCompatActivity() {
                         false
 
 
-                    if(isBlockedByUser || isBlockedByMe)
+                    if(isBlockedByUser || isBlockedByMe) {
+                        messageInputField.visibility = View.INVISIBLE
                         blockedSnackbar!!.show()
-                    else
+                    }
+                    else {
+                        messageInputField.visibility = View.VISIBLE
                         blockedSnackbar!!.dismiss()
-
+                    }
                 }
 
                 override fun onCancelled(databaseError: DatabaseError) {
@@ -1610,9 +1678,6 @@ class MessageActivity : AppCompatActivity() {
                             }
 
 
-
-
-
                         }
 
                     })
@@ -1655,6 +1720,7 @@ class MessageActivity : AppCompatActivity() {
         holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
 
         holder.message.text = model.caption
+
 
         if(model.file_local_path.isNotEmpty() && File(model.file_local_path).exists()) {
             Picasso.get()
@@ -1763,6 +1829,7 @@ class MessageActivity : AppCompatActivity() {
                 }
 
                 actionMode = startSupportActionMode(actionModeCallback )
+
                 actionMode!!.title = selectedMessageIDs.size.toString()
 
 
@@ -1797,8 +1864,11 @@ class MessageActivity : AppCompatActivity() {
                 }
 
 
+
                 if(actionMode!=null) {
                     actionMode!!.title = selectedMessageIDs.size.toString()
+                    if(model.isFile)
+                    actionMode!!.invalidate()
                 }
 
                 if(selectedMessageIDs.isEmpty()){
@@ -1856,11 +1926,14 @@ class MessageActivity : AppCompatActivity() {
                 R.id.action_copy ->{
 
                     var messages = ""
-                    for(message in selectMessageModel)
-                        messages = messages + message.message+"\n"
+                    for(message in selectMessageModel) {
+                        messages = if(message.isFile) messages + message.caption + "\n"
+                                    else messages + message.message + "\n"
+
+                    }
 
                     val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                    clipboard.primaryClip = (ClipData.newPlainText("Messages ",messages.toString()))
+                    clipboard.primaryClip = (ClipData.newPlainText("Messages ",messages.trim()))
 
                     utils.toast(context, "Messages copied")
                     }
@@ -1895,6 +1968,7 @@ class MessageActivity : AppCompatActivity() {
         override fun onDestroyActionMode(p0: ActionMode?) {
             isContextMenuActive = false
             selectedMessageIDs.clear()
+            selectMessageModel.clear()
             headerPosition.clear()
 
             adapter.notifyDataSetChanged()

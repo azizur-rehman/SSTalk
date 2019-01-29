@@ -215,6 +215,34 @@ object FirebaseUtils {
         }
 
 
+    fun loadProfileThumbnail(context: Context, uid:String, imageView: ImageView){
+
+
+        if(uid.isEmpty())
+            return
+        ref.getUserRef(uid)
+            .child(KEY_PROFILE_PIC_URL)
+            .addValueEventListener(object : ValueEventListener {
+
+                override fun onDataChange(p0: DataSnapshot) {
+                    if (p0.exists()) {
+                        val link: String? = p0.getValue(String::class.java)
+
+                            Picasso.get().load(link)
+                                .resize(60,60)
+                                .centerCrop()
+                                .placeholder(R.drawable.contact_placeholder)
+                                .into(imageView)
+
+                    }
+                }
+
+                override fun onCancelled(p0: DatabaseError) {
+
+                }
+            })
+    }
+
     fun isLoggedIn() : Boolean = FirebaseAuth.getInstance().currentUser != null
 
 

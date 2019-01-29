@@ -37,6 +37,7 @@
                 android:layout_width="30dp"
                 android:layout_marginLeft="2dp"
                 android:layout_marginTop="10dp"
+                android:id="@+id/circle_sender_text"
                 android:src="@drawable/contact_placeholder"
                 android:layout_height="30dp"/>
 

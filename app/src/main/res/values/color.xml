@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
         <color name="colorPrimary">@color/green</color>
         <color name="colorPrimaryDark">@color/green_dark</color>
@@ -17,10 +17,11 @@
     <color name="ivory">#f8efe6</color>
     <color name="ivory_dark">#f7e8d9</color>
     <color name="green">#38be55</color>
-    <color name="green_dark">#2da346</color>
+    <color name="green_dark">#2B9242</color>
     <color name="red">#e94f4f</color>
     <color name="brown">#4e342e</color>
 
+    <color name="design_snackbar_background_color" tools:override="true">@color/colorPrimaryDark</color>
 
     <color name="transparent_green">#9938be55</color>
     <color name="transparent_green2">#b338be55</color>

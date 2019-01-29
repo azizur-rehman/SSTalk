@@ -2,13 +2,8 @@ package com.aziz.sstalk
 
 import android.annotation.SuppressLint
 import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.media.ThumbnailUtils
 import android.net.Uri
 import android.os.Bundle
-import android.provider.MediaStore
-import android.support.design.widget.Snackbar
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.GridLayoutManager
@@ -21,6 +16,7 @@ import com.aziz.sstalk.utils.utils
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
+import com.squareup.picasso.Picasso
 import com.vincent.filepicker.DividerGridItemDecoration
 import kotlinx.android.synthetic.main.activity_user_profile.*
 import kotlinx.android.synthetic.main.content_user_profile.*
@@ -35,11 +31,15 @@ class UserProfileActivity : AppCompatActivity() {
     var myUID = ""
     var targetUID = ""
     var isBlockedByMe = false
+    var isPhoneLoaded = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_user_profile)
         setSupportActionBar(toolbar)
+
+
+
 
 
         var user1 = "user---1"
@@ -60,6 +60,7 @@ class UserProfileActivity : AppCompatActivity() {
 
                 override fun onDataChange(p0: DataSnapshot) {
                     phone_textview.text = p0.getValue(String::class.java)
+                    isPhoneLoaded = true
                 }
 
             })
@@ -69,6 +70,7 @@ class UserProfileActivity : AppCompatActivity() {
 
         val layoutManager = GridLayoutManager(this, 4)
         mediaRecyclerView.addItemDecoration(DividerGridItemDecoration(this))
+        mediaRecyclerView.isNestedScrollingEnabled = true
 
         mediaRecyclerView.layoutManager = layoutManager
 
@@ -121,7 +123,11 @@ class UserProfileActivity : AppCompatActivity() {
                             override fun onBindViewHolder(holder: RecyclerView.ViewHolder, p1: Int) {
 
                                 if (holder is imageHolder) {
-                                    holder.imageView.setImageBitmap(BitmapFactory.decodeFile(messageModels[p1].file_local_path))
+                                    Picasso.get().load(File(messageModels[p1].file_local_path))
+                                        .fit()
+                                        .centerCrop()
+                                        .into(holder.imageView)
+                                  //  holder.imageView.setImageBitmap(BitmapFactory.decodeFile(messageModels[p1].file_local_path))
 
                                     holder.imageView.setOnClickListener {
                                         startActivity(
@@ -133,12 +139,13 @@ class UserProfileActivity : AppCompatActivity() {
                                         )
                                     }
                                 } else if (holder is videoHolder) {
-                                    holder.imageView.setImageBitmap(
-                                        ThumbnailUtils.createVideoThumbnail(
-                                            messageModels[p1].file_local_path,
-                                            MediaStore.Video.Thumbnails.MINI_KIND
-                                        )
-                                    )
+//                                    holder.imageView.setImageBitmap(
+//                                        ThumbnailUtils.createVideoThumbnail(
+//                                            messageModels[p1].file_local_path,
+//                                            MediaStore.Video.Thumbnails.MICRO_KIND
+//                                        )
+//                                    )
+                                    utils.loadVideoThumbnailFromLocalAsync(this@UserProfileActivity, holder.imageView, messageModels[p1].file_local_path)
 
                                     holder.length.text = utils.getVideoLength(
                                         this@UserProfileActivity,
@@ -163,8 +170,8 @@ class UserProfileActivity : AppCompatActivity() {
 
 
         phone_textview.setOnClickListener {
-            if(phone_textview.text.matches(Regex("[0-9]+")))
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("tel:${phone_textview.text.toString()}")))
+            if(isPhoneLoaded && phone_textview.text.isNotEmpty())
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("tel:${phone_textview.text}")))
         }
 
 

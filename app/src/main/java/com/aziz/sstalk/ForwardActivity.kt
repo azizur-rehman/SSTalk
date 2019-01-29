@@ -4,6 +4,8 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.support.design.widget.Snackbar
+import android.support.v4.content.ContextCompat
 import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
@@ -29,17 +31,25 @@ class ForwardActivity : AppCompatActivity() {
     var numberList:MutableList<Models.Contact> = mutableListOf()
     var registeredAvailableUser:MutableList<Models.Contact> = mutableListOf()
 
+    var nameOfRecipient :String = ""
+
     private var allContactAdapter:RecyclerView.Adapter<ViewHolder>? = null
 
     val context = this@ForwardActivity
+    private var myUID: String = ""
+
+    var fwd_snackbar:Snackbar? = null
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_forward)
 
+        fwd_snackbar = Snackbar.make(sendBtn, "", Snackbar.LENGTH_INDEFINITE)
+
         setFrequentAdapter()
 
-        val myUID = FirebaseUtils.getUid()
+        myUID = FirebaseUtils.getUid()
 
         val messageModels = intent.getSerializableExtra(utils.constants.KEY_MSG_MODEL) as MutableList<Models.MessageModel>
 
@@ -54,6 +64,7 @@ class ForwardActivity : AppCompatActivity() {
                     model.timeInMillis = System.currentTimeMillis()
                     model.reverseTimeStamp = model.timeInMillis * -1
                     model.to = targetUID
+                    model.caption = ""
 
                     //send to my node
                     FirebaseUtils.ref.getChatRef(myUID, targetUID)
@@ -87,11 +98,13 @@ class ForwardActivity : AppCompatActivity() {
                     .putExtra(FirebaseUtils.KEY_UID, selectedUIDs[0])
                 )
             else
-                startActivity(Intent(context, HomeActivity::class.java))
+                startActivity(Intent(context, HomeActivity::class.java)
+                    .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP))
 
             finish()
         }
     }
+
 
 
 
@@ -176,6 +189,21 @@ class ForwardActivity : AppCompatActivity() {
 
         FirebaseUtils.loadProfilePic(context, uid, holder.pic, false)
 
+        //check if user is blocked
+        FirebaseUtils.ref.getBlockedUserRef(myUID, uid)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onCancelled(p0: DatabaseError) {}
+
+                override fun onDataChange(p0: DataSnapshot) {
+                    holder.itemView.isEnabled = true
+                    if(p0.exists()){
+                        holder.itemView.isEnabled = !p0.value.toString().toBoolean()
+                        holder.itemView.isClickable = holder.itemView.isEnabled
+
+                    }
+                }
+
+            })
 
         FirebaseUtils.setUserDetailFromUID(context, holder.title, uid, true)
 
@@ -183,12 +211,25 @@ class ForwardActivity : AppCompatActivity() {
         holder.itemView.setOnClickListener {
             holder.checkBox.isChecked = !holder.checkBox.isChecked
 
-            if(holder.checkBox.isChecked)
+
+
+            if(holder.checkBox.isChecked) {
                 selectedUIDs.add(uid)
-            else
+                nameOfRecipient = nameOfRecipient + holder.title.text +" "
+            }
+            else {
                 selectedUIDs.remove(uid)
+                nameOfRecipient = nameOfRecipient.replace(holder.title.text.toString(),"")
+            }
+
+             fwd_snackbar!!.setText(">  ${nameOfRecipient.trim()}")
 
             sendBtn.visibility = if(selectedUIDs.isEmpty()) View.GONE else View.VISIBLE
+
+            if(selectedUIDs.isEmpty()) {fwd_snackbar!!.dismiss()
+            nameOfRecipient = ""
+            }
+            else { if(!fwd_snackbar!!.isShown) fwd_snackbar!!.show() }
 
         }
     }

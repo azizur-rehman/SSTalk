@@ -1,6 +1,7 @@
 package com.aziz.sstalk.utils
 
 import android.animation.Animator
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.ContentValues
 import android.content.Context
@@ -10,6 +11,7 @@ import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.inputmethodservice.InputMethodService
 import android.media.MediaMetadataRetriever
+import android.media.ThumbnailUtils
 import android.net.Uri
 import android.os.*
 import android.provider.ContactsContract
@@ -64,6 +66,8 @@ object utils {
 
         val KEY_FILE_TYPE = "type"
         val debugUserID = "user---2"
+
+        val REGEX_PATTERN_PHONE = "^(\\+\\d{1,2}\\s)?\\(?\\d{3}\\)?[\\s.-]?\\d{3}[\\s.-]?\\d{4}\$"
 
 
     }
@@ -517,6 +521,26 @@ object utils {
     return bitmap
 }
 
+    fun loadVideoThumbnailFromLocalAsync(context: Context, imageView: ImageView, path:String){
+        val task = @SuppressLint("StaticFieldLeak")
+        object : AsyncTask<Void, Void, Void>() {
+
+            override fun onPostExecute(result: Void?) {
+                super.onPostExecute(result)
+                this.cancel(true)
+            }
+
+            override fun doInBackground(vararg params: Void?): Void? {
+                try{
+                    imageView.setImageBitmap(ThumbnailUtils.createVideoThumbnail(path, MediaStore.Video.Thumbnails.MICRO_KIND))
+                }
+                catch (e:Exception) {}
+                return null
+            }
+
+        }
+        task.execute()
+    }
 
 
     fun getVideoFile(context: Context?, messageIdForName: String):File {

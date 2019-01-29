@@ -32,6 +32,7 @@ import kotlinx.android.synthetic.main.app_bar_home.*
 import kotlinx.android.synthetic.main.contact_screen.*
 import kotlinx.android.synthetic.main.content_home.*
 import kotlinx.android.synthetic.main.item_contact_list.view.*
+import java.lang.Exception
 
 class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
@@ -40,6 +41,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     var hasPermission:Boolean = false
     val id = R.drawable.contact_placeholder
     val debugUserID = "user---2"
+    lateinit var adapter:FirebaseRecyclerAdapter<Models.LastMessageDetail, ViewHolder>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -139,10 +141,9 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             .setQuery(FirebaseUtils.ref.getLastMessageRef(FirebaseUtils.getUid())
                     //todo dont forget to change it
                 .orderByChild(FirebaseUtils.KEY_REVERSE_TIMESTAMP),Models.LastMessageDetail::class.java)
-            .setLifecycleOwner(this)
             .build()
 
-        val adapter = object : FirebaseRecyclerAdapter<Models.LastMessageDetail, ViewHolder>(options){
+         adapter = object : FirebaseRecyclerAdapter<Models.LastMessageDetail, ViewHolder>(options){
             override fun onCreateViewHolder(p0: ViewGroup, p1: Int): ViewHolder = ViewHolder(layoutInflater.inflate(R.layout.item_contact_list, p0, false))
 
             override fun onBindViewHolder(holder: ViewHolder, position: Int, model: Models.LastMessageDetail) {
@@ -178,6 +179,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         conversationRecycler.adapter = adapter
         conversationRecycler.addItemDecoration(DividerItemDecoration(this, DividerItemDecoration.VERTICAL))
 
+        adapter.startListening()
     }
 
 
@@ -192,5 +194,14 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         val time = itemView.messageTime
         val unreadCount = itemView.unreadCount
 
+    }
+
+    override fun onDestroy() {
+        try {
+            adapter.stopListening()
+        }
+        catch (e:Exception) {}
+
+        super.onDestroy()
     }
 }

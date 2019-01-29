@@ -24,7 +24,7 @@
 
     <LinearLayout android:layout_width="match_parent"
                   android:orientation="vertical"
-                  android:padding="3dp"
+                  android:padding="5dp"
                   android:layout_height="wrap_content"
                   android:id="@+id/message_layout_image_right">
 
@@ -45,8 +45,8 @@
 
 
                      <ImageView
-                     android:layout_width="200dp"
-                     android:layout_height="180dp"
+                     android:layout_width="match_parent"
+                     android:layout_height="match_parent"
                      android:scaleType="centerCrop"
                      android:paddingTop="5dp"
                      android:src="@drawable/placeholder_image"
@@ -62,6 +62,7 @@
                          app:cpb_progressbar_color="@color/colorAccent"
                          app:cpb_progressbar_width="5dp"
                          app:cpb_progress="0"
+                         android:background="@color/transparent_black_1"
                          android:indeterminate="false"
                          android:layout_height="60dp"/>
 
