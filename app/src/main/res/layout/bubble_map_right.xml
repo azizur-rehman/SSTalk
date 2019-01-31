@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    xmlns:map="http://schemas.android.com/apk/res-auto"
-    android:orientation="vertical"
-    android:id="@+id/container_map_right"
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        xmlns:map="http://schemas.android.com/apk/res-auto" xmlns:app="http://schemas.android.com/tools"
+        android:orientation="vertical"
+        android:id="@+id/container_map_right"
 
-    android:layout_height="wrap_content">
+        android:layout_height="wrap_content" app:ignore="NamespaceTypo">
 
 
     <TextView
@@ -27,7 +27,7 @@
 
    <LinearLayout android:layout_width="match_parent"
                  android:orientation="vertical"
-                 android:padding="3dp"
+                 android:padding="5dp"
                  android:layout_height="wrap_content"
                  android:id="@+id/message_layout_map_right">
 
@@ -37,27 +37,40 @@
         android:layout_gravity="end"
         android:orientation="vertical"
         android:layout_marginLeft="50dp"
-        android:background="@drawable/bg_custom_outcoming_message"
+        android:background="@drawable/shape_bubble_right"
         android:layout_height="wrap_content">
 
 
-        <LinearLayout android:layout_width="200dp"
-                      android:id="@+id/map_container_right"
-                      android:layout_height="180dp"
-                      android:orientation="vertical">
+           <com.skyline.widget.layout.RoundCornerLayout
+                   android:layout_width="210dp"
+
+                   android:id="@+id/map_container_right_card"
+
+                   android:layout_height="180dp"
+                   app:cornerRadius="35dp"
+                   app:topLeftEnabled="true"
+                   app:topRightEnabled="true"
+                   app:bottomLeftEnabled="true"
+                   app:bottomRightEnabled="false"
+                   android:background="@drawable/shape_bubble_right"
+                   android:orientation="vertical">
+
 
             <com.google.android.gms.maps.MapView
                     android:layout_width="match_parent"
                     android:id="@+id/mapview_right"
                     map:cameraZoom="15"
                     map:mapType="normal"
+                    android:background="@drawable/shape_bubble_right"
+                    android:layout_gravity="center"
                     map:liteMode="true"
                     android:layout_height="match_parent"
 
             />
 
 
-        </LinearLayout>
+
+           </com.skyline.widget.layout.RoundCornerLayout>
 
 
 
@@ -65,7 +78,9 @@
         <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="0dp"
-                android:padding="5dp"
+                android:paddingBottom="10dp"
+                android:paddingTop="10dp"
+                android:layout_marginLeft="8dp"
                 android:layout_weight="1"
                 android:maxWidth="200dp"
                 android:autoLink="all"
@@ -101,6 +116,8 @@
                 android:textColor="@color/warm_grey"
         />
     </LinearLayout>
+
+
    </LinearLayout>
 
 

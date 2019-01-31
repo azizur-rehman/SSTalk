@@ -4,14 +4,15 @@
         xmlns:android="http://schemas.android.com/apk/res/android">
 
     <solid android:color="@color/colorPrimary"/>
-    <corners android:bottomLeftRadius="35dp"
-             android:topRightRadius="35dp"
-             android:topLeftRadius="35dp"/>
     <gradient android:angle="45"
-              android:centerColor="@color/md_green_300"
-              android:endColor="@color/md_green_400"
+              android:centerColor="@color/md_green_200"
+              android:endColor="@color/md_green_300"
               android:startColor="@color/colorAccent"
               />
 
+    <padding android:bottom="2dp"
+             android:top="2dp"
+             android:right="2dp"
+             android:left="2dp"/>
 
 </shape>

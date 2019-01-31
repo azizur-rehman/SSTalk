@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    xmlns:map="http://schemas.android.com/apk/res-auto"
-    android:orientation="vertical"
-    android:id="@+id/container_map_left"
-    android:layout_height="wrap_content">
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        xmlns:map="http://schemas.android.com/apk/res-auto"
+        xmlns:app="http://schemas.android.com/tools"
+        android:orientation="vertical"
+        android:id="@+id/container_map_left"
+        android:layout_height="wrap_content" app:ignore="NamespaceTypo">
 
 
     <TextView
@@ -32,44 +33,50 @@
 
 
         <de.hdodenhof.circleimageview.CircleImageView
-                android:layout_width="30dp"
-                android:layout_marginLeft="5dp"
-                android:layout_marginTop="10dp"
+                android:layout_width="50dp"
+                android:layout_marginLeft="2dp"
                 android:id="@+id/circle_sender_map"
                 android:src="@drawable/contact_placeholder"
-                android:layout_height="30dp"/>
+                android:layout_height="50dp"/>
 
 
 
         <LinearLayout
         android:layout_width="wrap_content"
-        android:orientation="vertical"
-        android:layout_marginRight="50dp"
         android:padding="3dp"
+        android:layout_marginLeft="1dp"
+        android:layout_marginTop="1dp"
+        android:orientation="vertical"
         android:gravity="center"
-        android:background="@drawable/bg_custom_incoming_message"
+        android:background="@drawable/shape_bubble_left"
         android:layout_height="wrap_content">
 
 
-        <LinearLayout android:layout_width="200dp"
-                      android:id="@+id/map_container_right"
-                      android:layout_height="180dp"
-                      android:gravity="right"
-                      android:orientation="vertical">
 
-            <com.google.android.gms.maps.MapView
-                    android:layout_width="190dp"
-                    android:id="@+id/mapview_left"
-                    map:cameraZoom="15"
-                    map:mapType="normal"
-                    android:layout_gravity="center"
-                    map:liteMode="true"
-                    android:layout_height="match_parent"
+            <com.skyline.widget.layout.RoundCornerLayout
+                    android:layout_width="210dp"
+                    android:id="@+id/map_container_left_card"
+                    android:layout_height="180dp"
+                    app:cornerRadius="35dp"
+                    app:topLeftEnabled="false"
+                    app:topRightEnabled="true"
+                    app:bottomLeftEnabled="false"
+                    app:bottomRightEnabled="false"
+                    android:orientation="vertical">
 
-            />
+                <com.google.android.gms.maps.MapView
+                        android:layout_width="match_parent"
+                        android:id="@+id/mapview_left"
+                        map:cameraZoom="15"
+                        map:mapType="normal"
+                        android:layout_gravity="center"
+                        map:liteMode="true"
+                        android:layout_height="match_parent"
+
+                />
 
 
-        </LinearLayout>
+            </com.skyline.widget.layout.RoundCornerLayout>
 
 
 
@@ -78,7 +85,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:padding="5dp"
-                android:layout_marginLeft="10dp"
+                android:layout_marginLeft="5dp"
                 android:layout_weight="1"
                 android:maxWidth="200dp"
                 android:autoLink="all"
@@ -92,15 +99,17 @@
 
     </LinearLayout>
 
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="12:10 PM"
+            android:paddingTop="2dp"
+            android:textSize="10sp"
+            android:paddingLeft="10dp"
+            android:id="@+id/time_map_left"
+            android:textColor="@color/warm_grey"
+            android:layout_marginLeft="52dp"
+    />
 
-        <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:text="12:10 PM"
-                android:textSize="10sp"
-                android:id="@+id/time_map_left"
-                android:layout_marginLeft="32dp"
-                android:textColor="@color/warm_grey"
-        />
 
 </LinearLayout>

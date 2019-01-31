@@ -6,11 +6,11 @@
     <solid android:color="@color/colorPrimary"/>
     <corners android:bottomLeftRadius="35dp"
              android:topRightRadius="35dp"
-             android:topLeftRadius="35dp"/>
+             android:bottomRightRadius="35dp"/>
     <gradient android:angle="45"
-              android:centerColor="@color/md_green_300"
-              android:endColor="@color/md_green_400"
-              android:startColor="@color/colorAccent"
+              android:centerColor="@color/md_brown_50"
+              android:endColor="@color/ivory"
+              android:startColor="@color/ivory_dark"
               />
 
 

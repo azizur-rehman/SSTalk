@@ -941,7 +941,8 @@ class MessageActivity : AppCompatActivity() {
                 }
                 else{
 
-                    messageTextView.text = if(model.isFile) model.caption else model.message
+                    messageTextView.text = if(model.isFile || model.messageType == utils.constants.FILE_TYPE_LOCATION)
+                        model.caption else model.message
                 }
 
 
@@ -1599,6 +1600,8 @@ class MessageActivity : AppCompatActivity() {
         holder.progressBar.visibility = View.VISIBLE
         CircularProgressBarsAt[messageID] = holder.progressBar
 
+        holder.cardContainer.setCornerEnabled(true,true, model.caption.isEmpty(), false)
+
 
 
         holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
@@ -1643,7 +1646,6 @@ class MessageActivity : AppCompatActivity() {
                     .load(model.message.toString())
                     .fit()
                     .centerCrop()
-                    // .resize(600,400)
                     .error(R.drawable.error_placeholder2)
                     .placeholder(R.drawable.placeholder_image)
                     .tag(model.message.toString())
@@ -1651,14 +1653,9 @@ class MessageActivity : AppCompatActivity() {
                         override fun onSuccess() {
 
                             holder.progressBar.visibility = View.GONE
-                            val bitmap = (holder.imageView.drawable as BitmapDrawable).bitmap
-                            if(bitmap!=null){
-                                val path = utils.saveBitmapToSent(context, bitmap, messageID)
-                                FirebaseUtils.ref.getChatRef(myUID,targetUid)
-                                    .child(messageID)
-                                    .child(FirebaseUtils.KEY_FILE_LOCAL_PATH)
-                                    .setValue(path)
-                            }
+
+                            saveBitmapFromPicasso(model.message.toString(), messageID, true)
+
 
                         }
 
@@ -1696,6 +1693,7 @@ class MessageActivity : AppCompatActivity() {
         mediaControlImageViewAt[messageID] = holder.centerImageView
 
 
+        holder.cardContainer.setCornerEnabled(true,true, model.caption.isEmpty(), false)
 
         setTapToRetryBtn(holder.tapToRetry,holder.progressBar,model.file_local_path, messageID,model.caption, model.messageType)
 
@@ -1773,6 +1771,7 @@ class MessageActivity : AppCompatActivity() {
 
         holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
         holder.message.text = model.caption
+        holder.cardContainer.setCornerEnabled(false,true, model.caption.isEmpty(), model.caption.isEmpty())
 
 
         CircularProgressBarsAt[messageID] = holder.progressBar
@@ -2201,6 +2200,35 @@ class MessageActivity : AppCompatActivity() {
 
 
         return super.onOptionsItemSelected(item)
+    }
+
+
+    private fun saveBitmapFromPicasso(url:String, messageID: String, isSent:Boolean){
+
+
+        Picasso.get().load(url)
+            .into(object : Target {
+                override fun onPrepareLoad(placeHolderDrawable: Drawable?) {
+                }
+
+                override fun onBitmapFailed(e: Exception?, errorDrawable: Drawable?) {
+                }
+
+                override fun onBitmapLoaded(bitmap: Bitmap?, from: Picasso.LoadedFrom?) {
+                    if(bitmap!=null){
+                        val path: String = if(isSent) utils.saveBitmapToSent(context, bitmap, messageID)
+                        else utils.saveBitmapToReceived(context, bitmap, messageID)
+
+                        FirebaseUtils.ref.getChatRef(myUID,targetUid)
+                            .child(messageID)
+                            .child(FirebaseUtils.KEY_FILE_LOCAL_PATH)
+                            .setValue(path)
+                    }
+                }
+            })
+
+
+
     }
 
 }

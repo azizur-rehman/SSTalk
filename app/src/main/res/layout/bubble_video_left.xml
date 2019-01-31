@@ -34,12 +34,11 @@
 
 
         <de.hdodenhof.circleimageview.CircleImageView
-                android:layout_width="30dp"
-                android:layout_marginLeft="5dp"
-                android:layout_marginTop="10dp"
+                android:layout_width="50dp"
+                android:layout_marginLeft="3dp"
                 android:id="@+id/circle_sender_video"
                 android:src="@drawable/contact_placeholder"
-                android:layout_height="30dp"/>
+                android:layout_height="50dp"/>
 
 
         <LinearLayout
@@ -56,15 +55,27 @@
                     android:layout_width="wrap_content"
                     android:layout_marginRight="50dp"
                     android:orientation="vertical"
-                    android:background="@drawable/bg_custom_incoming_message"
+                    android:background="@drawable/shape_bubble_left"
                     android:layout_height="wrap_content">
 
 
-                <FrameLayout
-                        android:layout_width="200dp"
+                <com.skyline.widget.layout.RoundCornerLayout
+                        android:layout_width="210dp"
+                        android:id="@+id/video_container_left_card"
+                        android:layout_height="180dp"
+                        app:cornerRadius="35dp"
+                        app:topLeftEnabled="false"
+                        app:topRightEnabled="true"
+                        app:bottomLeftEnabled="false"
+                        app:bottomRightEnabled="false"
+                        android:orientation="vertical">
+
+
+                         <FrameLayout
+                        android:layout_width="match_parent"
                         android:id="@+id/videoFrameLayoutLeft"
                         android:background="@color/black"
-                        android:layout_height="180dp">
+                        android:layout_height="match_parent">
 
                     <ImageView android:layout_width="match_parent"
                                android:layout_height="match_parent"
@@ -111,9 +122,8 @@
                                   android:orientation="horizontal"
                                   android:gravity="center"
                                   android:layout_gravity="end|bottom"
-                                  android:padding="0dp"
+                                  android:padding="0dp">
 
-                    >
                         <ImageView android:layout_width="wrap_content" android:layout_height="wrap_content"
                                    android:src="@drawable/ic_video_white_24dp"
                         />
@@ -132,16 +142,18 @@
                 </FrameLayout>
 
 
+                </com.skyline.widget.layout.RoundCornerLayout>
+
                 <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="0dp"
                         android:padding="5dp"
                         android:layout_weight="1"
                         android:maxWidth="200dp"
+                        android:layout_marginLeft="10dp"
                         android:autoLink="all"
-                        android:text="Caption is used for image asasfasfasfasfasfasfasfasfasfasfasfwhich is not optional"
+                        android:text="Caption is used for image"
                         android:id="@+id/messageText_video_left"
-                        android:textColor="@color/black"
                 />
 
 
@@ -152,7 +164,7 @@
                     android:layout_height="wrap_content"
                     android:text="12:10 PM"
                     android:paddingTop="2dp"
-                    android:textSize="12sp"
+                    android:textSize="10sp"
                     android:paddingLeft="10dp"
                     android:id="@+id/time_video_left"
                     android:textColor="@color/warm_grey"

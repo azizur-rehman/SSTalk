@@ -69,7 +69,7 @@ class ViewPagerImageAdapter(
 
         itemView.captionEditText.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
-                captions.add(position, s.toString())
+                captions.add(position, s.toString().trim())
             }
 
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {

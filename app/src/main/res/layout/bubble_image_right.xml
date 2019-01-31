@@ -34,62 +34,79 @@
         android:layout_gravity="end"
         android:orientation="vertical"
         android:layout_marginLeft="50dp"
-        android:background="@drawable/bg_custom_outcoming_message"
+        android:background="@drawable/shape_bubble_right"
         android:layout_height="wrap_content">
 
 
-             <FrameLayout
-              android:layout_width="200dp"
-              android:id="@+id/imageFrameLayoutRight"
-              android:layout_height="180dp">
+
+            <com.skyline.widget.layout.RoundCornerLayout
+                    android:layout_width="210dp"
+
+                    android:id="@+id/image_container_right_card"
+
+                    android:layout_height="180dp"
+                    app:cornerRadius="35dp"
+                    app:topLeftEnabled="true"
+                    app:topRightEnabled="true"
+                    app:bottomLeftEnabled="true"
+                    app:bottomRightEnabled="false"
+                    android:background="@drawable/shape_bubble_right"
+                     android:orientation="vertical">
+
+                 <FrameLayout
+                  android:layout_width="match_parent"
+                  android:id="@+id/imageFrameLayoutRight"
+                  android:layout_height="match_parent">
 
 
-                     <ImageView
-                     android:layout_width="match_parent"
-                     android:layout_height="match_parent"
-                     android:scaleType="centerCrop"
-                     android:paddingTop="5dp"
-                     android:src="@drawable/placeholder_image"
-                     android:id="@+id/imageview_image_right"
-                     />
-                 <com.mikhaellopez.circularprogressbar.CircularProgressBar
-                         android:layout_width="60dp"
-                         android:layout_gravity="center"
-                         android:progressDrawable="@drawable/progress_drawable"
-                         android:id="@+id/progress_bar_image_right"
-                         app:cpb_background_progressbar_color="@color/transparent_black_7"
-                         app:cpb_background_progressbar_width="5dp"
-                         app:cpb_progressbar_color="@color/colorAccent"
-                         app:cpb_progressbar_width="5dp"
-                         app:cpb_progress="0"
-                         android:background="@color/transparent_black_1"
-                         android:indeterminate="false"
-                         android:layout_height="60dp"/>
+                         <ImageView
+                         android:layout_width="match_parent"
+                         android:layout_height="match_parent"
+                         android:scaleType="centerCrop"
+                         android:src="@drawable/placeholder_image"
+                         android:id="@+id/imageview_image_right"
+                         />
+                         <com.mikhaellopez.circularprogressbar.CircularProgressBar
+                             android:layout_width="60dp"
+                             android:layout_gravity="center"
+                             android:progressDrawable="@drawable/progress_drawable"
+                             android:id="@+id/progress_bar_image_right"
+                             app:cpb_background_progressbar_color="@color/transparent_black_7"
+                             app:cpb_background_progressbar_width="5dp"
+                             app:cpb_progressbar_color="@color/colorAccent"
+                             app:cpb_progressbar_width="5dp"
+                             app:cpb_progress="0"
+                             android:background="@color/transparent_black_1"
+                             android:indeterminate="false"
+                             android:layout_height="60dp"/>
 
-          <TextView android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:textColor="@color/white"
-                    android:drawableLeft="@drawable/ic_file_upload_white_24dp"
-                    android:id="@+id/tap_retry_image_right"
-                    android:text="Tap to Retry"
-                    android:background="@drawable/blurred_text_background"
-                    android:padding="15dp"
-                    android:alpha="0.8"
-          />
-
+                        <TextView android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:textColor="@color/white"
+                        android:drawableLeft="@drawable/ic_file_upload_white_24dp"
+                        android:id="@+id/tap_retry_image_right"
+                        android:text="Tap to Retry"
+                        android:background="@drawable/blurred_text_background"
+                        android:padding="15dp"
+                        android:alpha="0.8"
+              />
 
 
 
 
-      </FrameLayout>
+
+          </FrameLayout>
+
+                </com.skyline.widget.layout.RoundCornerLayout>
 
 
-
-        <TextView
+                <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="0dp"
-                android:padding="5dp"
+                android:paddingBottom="10dp"
+                android:paddingTop="10dp"
+                android:layout_marginLeft="10dp"
                 android:layout_weight="1"
                 android:maxWidth="200dp"
                 android:autoLink="all"

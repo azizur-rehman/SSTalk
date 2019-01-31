@@ -69,4 +69,6 @@ dependencies {
 
     implementation 'com.github.lguipeng:AnimCheckBox:1.0.1'
 
+    implementation 'com.skyline.widget:round-corner-layout:1.0.1'
+
 }
