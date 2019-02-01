@@ -147,7 +147,9 @@ class MessageActivity : AppCompatActivity() {
         targetUid = intent.getStringExtra(FirebaseUtils.KEY_UID)
         myUID = FirebaseUtils.getUid()
 
+        FirebaseUtils.setUserDetailFromUID(this, target_name_textview, targetUid, utils.hasContactPermission(context))
         FirebaseUtils.loadProfileThumbnail(context, targetUid, profile_circleimageview)
+        FirebaseUtils.setUserOnlineStatus(this, targetUid, user_online_status)
 
         val emojiConfig = BundledEmojiCompatConfig(this)
         EmojiCompat.init(emojiConfig)
@@ -160,18 +162,10 @@ class MessageActivity : AppCompatActivity() {
 
 
 
-      //  myUID = FirebaseUtils.user_voda
-      //  targetUid = FirebaseUtils.user_jio
-
-
-
-     //   myUID = user2
-      //  targetUid = user1
-
-
         layout_toolbar_title.setOnClickListener {
             startActivity(Intent(this, UserProfileActivity::class.java)
                 .putExtra(FirebaseUtils.KEY_UID, targetUid)
+                .putExtra(FirebaseUtils.KEY_NAME, target_name_textview.text)
             )
         }
 
@@ -893,18 +887,13 @@ class MessageActivity : AppCompatActivity() {
 
                 val emojiProcessed = EmojiCompat.get().process(messageTextView!!.text)
                 messageTextView.text = emojiProcessed
-                Log.d("MessageActivity", "onBindViewHolder: $emojiProcessed")
 
                 //set date Header
-
-
                 when {
                     DateFormatter.isToday(date) -> dateHeader!!.text ="Today"
                     DateFormatter.isYesterday(date) -> dateHeader!!.text ="Yesterday"
                     else -> dateHeader!!.text = utils.getLocalDate(model.timeInMillis)
                 }
-
-
                 if(position>0){
 
                     val previousDate = Date(snapshots[position - 1].timeInMillis)
@@ -1718,6 +1707,7 @@ class MessageActivity : AppCompatActivity() {
         holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
 
         holder.message.text = model.caption
+        holder.cardContainer.setCornerEnabled(false,true, model.caption.isEmpty(), model.caption.isEmpty())
 
 
         if(model.file_local_path.isNotEmpty() && File(model.file_local_path).exists()) {
@@ -1820,6 +1810,8 @@ class MessageActivity : AppCompatActivity() {
 
         itemView.setOnLongClickListener {
 
+
+
             if(!isContextMenuActive) {
 
                 if(!selectedMessageIDs.contains(messageID)) {
@@ -1836,12 +1828,11 @@ class MessageActivity : AppCompatActivity() {
 
             }
 
-            true
+            actionMode!=null
         }
 
 
         itemView.setOnClickListener {
-
 
 
             if(isContextMenuActive) {
@@ -1866,8 +1857,8 @@ class MessageActivity : AppCompatActivity() {
 
                 if(actionMode!=null) {
                     actionMode!!.title = selectedMessageIDs.size.toString()
-                    if(model.isFile)
-                    actionMode!!.invalidate()
+//                    if(model.isFile)
+//                    actionMode!!.invalidate()
                 }
 
                 if(selectedMessageIDs.isEmpty()){
@@ -1943,7 +1934,6 @@ class MessageActivity : AppCompatActivity() {
                     )
                 }
 
-
             }
 
             p0!!.finish()
@@ -1954,6 +1944,7 @@ class MessageActivity : AppCompatActivity() {
         override fun onCreateActionMode(p0: ActionMode?, p1: Menu?): Boolean {
 
             p0!!.menuInflater.inflate(R.menu.chat_actions_menu, p1)
+            Log.d("MessageActivity", "onCreateActionMode: ")
 
             isContextMenuActive = true
 
@@ -1961,6 +1952,11 @@ class MessageActivity : AppCompatActivity() {
         }
 
         override fun onPrepareActionMode(p0: ActionMode?, p1: Menu?): Boolean {
+            Log.d("MessageActivity", "onPrepareActionMode: ")
+            p1!!.findItem(R.id.action_copy).isVisible = true
+            p1.findItem(R.id.action_forward).isVisible = true
+            p1.findItem(R.id.action_delete).isVisible = true
+
             return true
         }
 
@@ -1970,10 +1966,12 @@ class MessageActivity : AppCompatActivity() {
             selectMessageModel.clear()
             headerPosition.clear()
 
-            adapter.notifyDataSetChanged()
 
             for(view in selectedItemViews)
                 view.setBackgroundColor(Color.WHITE)
+
+            Log.d("MessageActivity", "onDestroyActionMode: ")
+            adapter.notifyDataSetChanged()
         }
 
     }

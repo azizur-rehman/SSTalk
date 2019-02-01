@@ -87,4 +87,13 @@
 
     </style>
 
+
+    <style name="AppToolbar" parent="ThemeOverlay.AppCompat.Dark.ActionBar">
+
+
+      <item name="android:actionMenuTextColor">@color/colorPrimary</item>
+
+
+    </style>
+
 </resources>

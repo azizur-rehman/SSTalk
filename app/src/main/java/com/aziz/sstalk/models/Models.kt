@@ -31,5 +31,5 @@ class Models {
 
     data class MessageStatus(var read:Boolean = false, var delivered:Boolean = false, var messageID:String = "")
 
-    data class UserActivity(var status:String)
+    data class UserActivityStatus(var status:String = "offline", var timeInMillis: Long = System.currentTimeMillis())
 }

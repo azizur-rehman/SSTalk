@@ -3,8 +3,9 @@ package com.aziz.sstalk.utils
 import android.app.ProgressDialog
 import android.content.Context
 import android.content.Intent
+import android.graphics.drawable.Drawable
 import android.net.Uri
-import android.support.v4.content.FileProvider
+import android.support.v4.content.ContextCompat
 import android.util.Log
 import android.view.View
 import android.widget.ImageView
@@ -32,7 +33,10 @@ object FirebaseUtils {
         val NODE_USER = "users"
         val NODE_BLOCKED_LIST = "Block_list"
         val NODE_MESSAGE_STATUS = "Message_Status"
-        val NODE_USER_ACTIVITY_STATUS = "User_Activity_Status"
+        val NODE_USER_ACTIVITY_STATUS = "User_Status"
+
+        val VAL_ONLINE = "Online"
+        val VAL_OFFLINE = "Offline"
 
 
         val KEY_STATUS = "status"
@@ -110,6 +114,9 @@ object FirebaseUtils {
             fun getMessageStatusRef(uid: String, messageID: String):DatabaseReference = getRootRef()
                 .child(NODE_MESSAGE_STATUS)
                 .child(messageID)
+                .child(uid)
+
+            fun getUserStatusRef(uid: String):DatabaseReference = getRootRef().child(NODE_USER_ACTIVITY_STATUS)
                 .child(uid)
         }
 
@@ -366,5 +373,37 @@ object FirebaseUtils {
         ref.getMessageStatusRef(uid,messageID)
             .setValue(Models.MessageStatus(isRead, isDelivered, messageID))
 
+    }
+
+
+    fun setUserOnlineStatus(context: Context, uid: String, textView: TextView){
+        ref.getUserStatusRef(uid)
+            .addValueEventListener(object : ValueEventListener {
+                override fun onCancelled(p0: DatabaseError) {
+                }
+
+                override fun onDataChange(p0: DataSnapshot) {
+
+                    textView.setCompoundDrawablesWithIntrinsicBounds(ContextCompat.getDrawable(context, R.drawable.shape_bubble_offline),
+                        null, null,null)
+                    textView.compoundDrawablePadding = 20
+
+                    if(!p0.exists()){
+                        textView.text = VAL_OFFLINE
+                        return
+                    }
+
+                    val userStatus = p0.getValue(Models.UserActivityStatus::class.java)!!
+
+                    if(userStatus.status == VAL_ONLINE){
+                        textView.text = VAL_ONLINE
+                        textView.setCompoundDrawablesWithIntrinsicBounds(ContextCompat.getDrawable(context, R.drawable.shape_bubble_online),
+                            null, null,null)
+                    }
+                    else{
+                        textView.text = "last seen at ${utils.getLocalTime(userStatus.timeInMillis)}"
+                    }
+                }
+            })
     }
 }

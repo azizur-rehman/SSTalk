@@ -61,7 +61,7 @@ object holders {
         val messageLayout = itemView.message_layout_image_left!!
         val senderIcon = itemView.circle_sender_image!!
 
-      //  val cardContainer = itemView.image_container_left_card!!
+        val cardContainer = itemView.image_container_left_card!!
 
 
     }

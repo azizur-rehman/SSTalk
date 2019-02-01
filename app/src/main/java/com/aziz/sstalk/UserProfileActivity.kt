@@ -50,6 +50,10 @@ class UserProfileActivity : AppCompatActivity() {
         myUID = utils.constants.debugUserID
 
         targetUID = intent.getStringExtra(FirebaseUtils.KEY_UID)
+        val name = intent.getStringExtra(FirebaseUtils.KEY_NAME)
+
+        title = name
+
 
         FirebaseUtils.ref.getAllUserRef()
             .child(targetUID)

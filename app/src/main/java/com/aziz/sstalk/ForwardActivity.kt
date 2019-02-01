@@ -208,6 +208,7 @@ class ForwardActivity : AppCompatActivity() {
         FirebaseUtils.setUserDetailFromUID(context, holder.title, uid, true)
 
 
+
         holder.itemView.setOnClickListener {
             holder.checkBox.isChecked = !holder.checkBox.isChecked
 

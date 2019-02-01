@@ -58,22 +58,27 @@
                     android:layout_height="wrap_content">
 
 
-                <android.support.v7.widget.CardView
+                <com.skyline.widget.layout.RoundCornerLayout
                         android:layout_width="210dp"
-                        android:id="@+id/map_container_right"
+                        android:id="@+id/image_container_left_card"
                         android:layout_height="180dp"
-                        app:cardCornerRadius="35dp"
+                        app:cornerRadius="35dp"
+                        app:topLeftEnabled="false"
+                        app:topRightEnabled="true"
+                        app:bottomLeftEnabled="true"
+                        app:bottomRightEnabled="true"
+                        android:background="@drawable/shape_bubble_left"
                         android:orientation="vertical">
 
                     <ImageView
-                            android:layout_width="200dp"
-                            android:layout_height="180dp"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
                             android:scaleType="centerCrop"
                             android:src="@drawable/placeholder_image"
                                android:id="@+id/imageview_image_left"
                     />
 
-                </android.support.v7.widget.CardView>
+                </com.skyline.widget.layout.RoundCornerLayout>
 
 
                 <TextView
@@ -81,7 +86,7 @@
                         android:layout_height="0dp"
                         android:padding="5dp"
                         android:layout_weight="1"
-                        android:layout_marginLeft="5dp"
+                        android:layout_marginLeft="8dp"
                         android:maxWidth="200dp"
                         android:autoLink="all"
                         android:text="Caption is used for image"

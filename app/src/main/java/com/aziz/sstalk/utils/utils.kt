@@ -1,11 +1,13 @@
 package com.aziz.sstalk.utils
 
+import android.Manifest
 import android.animation.Animator
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
@@ -16,6 +18,7 @@ import android.net.Uri
 import android.os.*
 import android.provider.ContactsContract
 import android.provider.MediaStore
+import android.support.v4.app.ActivityCompat
 import android.support.v4.content.FileProvider
 import android.text.SpannableString
 import android.text.style.BackgroundColorSpan
@@ -61,11 +64,14 @@ object utils {
         val KEY_LONGITUDE = "lng"
         val KEY_ADDRESS = "address"
 
+        val KEY_NAME = "name"
+
         val IS_FOR_SINGLE_FILE = "isSingleFile"
         val URI_AUTHORITY = "com.mvc.imagepicker.provider"
 
         val KEY_FILE_TYPE = "type"
         val debugUserID = "user---2"
+        val debugUserID2 = "user---1"
 
         val REGEX_PATTERN_PHONE = "^(\\+\\d{1,2}\\s)?\\(?\\d{3}\\)?[\\s.-]?\\d{3}[\\s.-]?\\d{4}\$"
 
@@ -139,6 +145,12 @@ object utils {
 
     }
 
+
+    fun getNameFromPhone(){
+
+    }
+
+    fun hasContactPermission(context: Context) = (ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED)
 
 
     fun getLocalTime(timeInMillis: Long): String{
@@ -587,7 +599,7 @@ object utils {
     }
 
 
-    fun addVideoToMediaStore(context:Context, messageIdForName: String, file: File){
+    private fun addVideoToMediaStore(context:Context, messageIdForName: String, file: File){
         val values = ContentValues(3)
         values.put(MediaStore.Video.Media.TITLE, messageIdForName)
         values.put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")

@@ -13,8 +13,6 @@ import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
-import android.util.Log
-import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
@@ -23,13 +21,8 @@ import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.utils
 import com.firebase.ui.database.FirebaseRecyclerAdapter
 import com.firebase.ui.database.FirebaseRecyclerOptions
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.ValueEventListener
 import kotlinx.android.synthetic.main.activity_home.*
 import kotlinx.android.synthetic.main.app_bar_home.*
-import kotlinx.android.synthetic.main.contact_screen.*
 import kotlinx.android.synthetic.main.content_home.*
 import kotlinx.android.synthetic.main.item_contact_list.view.*
 import java.lang.Exception
@@ -180,6 +173,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         conversationRecycler.addItemDecoration(DividerItemDecoration(this, DividerItemDecoration.VERTICAL))
 
         adapter.startListening()
+        setonDisconnectListener()
     }
 
 
@@ -199,9 +193,26 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     override fun onDestroy() {
         try {
             adapter.stopListening()
+            FirebaseUtils.ref.getUserStatusRef(FirebaseUtils.getUid())
+                .setValue(Models.UserActivityStatus("Offline", System.currentTimeMillis()))
         }
         catch (e:Exception) {}
 
         super.onDestroy()
+    }
+
+
+    override fun onResume() {
+
+        FirebaseUtils.ref.getUserStatusRef(FirebaseUtils.getUid())
+            .setValue(Models.UserActivityStatus("Online", System.currentTimeMillis()))
+        super.onResume()
+    }
+
+    private fun setonDisconnectListener(){
+
+        FirebaseUtils.ref.getUserStatusRef(FirebaseUtils.getUid())
+            .onDisconnect()
+            .setValue(Models.UserActivityStatus("Offline", System.currentTimeMillis()))
     }
 }
