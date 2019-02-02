@@ -152,6 +152,8 @@ object utils {
 
     fun hasContactPermission(context: Context) = (ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED)
 
+    fun hasStoragePermission(context: Context) = (ActivityCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
+            && (ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
 
     fun getLocalTime(timeInMillis: Long): String{
 
@@ -303,6 +305,36 @@ object utils {
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, fout)
                 Log.d("utils", "saveBitmap: file saved to ${file.path}")
 
+        }
+        catch (e:Exception){
+            Log.d("utils", "saveBitmap: File not found")
+        }
+
+        return file.path
+    }
+
+
+    fun getProfilePicPath(context: Context):String = Environment.getExternalStorageDirectory().toString()+"/"+ context.getString(R.string.app_name).toString()+"" +
+            "/ProfilePics/"
+
+    fun saveBitmapToProfileFolder(context: Context?, bitmap: Bitmap, messageIdForName:String):String{
+
+        val fileName = "$messageIdForName.jpg"
+
+        val path = Environment.getExternalStorageDirectory().toString()+"/"+ context!!.getString(R.string.app_name).toString()+"" +
+                "/ProfilePics/"
+
+        if(!File(path).exists())
+            File(path).mkdirs()
+
+        val file = File(path, fileName)
+
+        try {
+
+            val fout = FileOutputStream(file)
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, fout)
+            Log.d("utils", "saveBitmap: file saved to ${file.path}")
+
 
             val values = ContentValues(3)
             values.put(MediaStore.Video.Media.TITLE, messageIdForName)
@@ -317,7 +349,6 @@ object utils {
 
         return file.path
     }
-
 
     fun saveBitmapToReceived(context: Context?, bitmap: Bitmap, messageIdForName:String):String{
 

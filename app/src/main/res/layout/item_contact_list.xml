@@ -17,14 +17,43 @@
         android:orientation="horizontal"
         >
 
-        <de.hdodenhof.circleimageview.CircleImageView
+
+       <FrameLayout android:layout_width="wrap_content"
+                    android:layout_marginLeft="5dp"
+                    android:layout_height="wrap_content">
+
+
+            <de.hdodenhof.circleimageview.CircleImageView
             android:id="@+id/pic"
-            android:layout_width="48dp"
-            android:layout_marginLeft="5dp"
-            android:layout_height="48dp"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             app:civ_border_width="1dp"
             app:civ_border_color="@color/colorAccent"
             android:src="@drawable/contact_placeholder" />
+
+           <ImageView android:layout_width="12dp"
+                      android:layout_height="12dp"
+           android:layout_gravity="end|top"
+                      android:visibility="gone"
+                      android:id="@+id/online_status_imageview"
+           android:src="@drawable/shape_bubble_online"
+           />
+
+           <com.github.lguipeng.library.animcheckbox.AnimCheckBox
+                   android:layout_width="18dp"
+                   android:layout_height="18dp"
+                   app:checked="false"
+                   android:visibility="invisible"
+                   app:stroke_color="@color/white"
+                   app:circle_color="@color/color4"
+                   app:stroke_width="2dp"
+                   android:id="@+id/contact_checkbox"
+                   android:layout_gravity="end|bottom"
+           />
+
+       </FrameLayout>
+
+
 
         <LinearLayout
             android:layout_width="0dp"

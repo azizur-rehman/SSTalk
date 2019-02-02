@@ -3,6 +3,8 @@ package com.aziz.sstalk.utils
 import android.app.ProgressDialog
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.support.v4.content.ContextCompat
@@ -22,6 +24,8 @@ import com.google.android.gms.tasks.Task
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 import com.google.firebase.storage.UploadTask
+import com.squareup.picasso.Callback
+import com.squareup.picasso.Target
 import java.io.File
 import java.lang.Exception
 
@@ -37,6 +41,7 @@ object FirebaseUtils {
 
         val VAL_ONLINE = "Online"
         val VAL_OFFLINE = "Offline"
+        val VAL_TYPING = "Typing..."
 
 
         val KEY_STATUS = "status"
@@ -105,11 +110,18 @@ object FirebaseUtils {
                 .reference.child("profile_pics").child(uid)
 
 
+            //will return a boolean snapshot
             fun getBlockedUserRef(uid: String, targetUID: String): DatabaseReference = getRootRef()
                 .child(NODE_BLOCKED_LIST)
                 .child(uid)
                 .child(targetUID)
                 .child(KEY_BLOCKED)
+
+            //will return a boolean snapshot
+            fun getBlockedUserListQuery(uid: String): Query = getRootRef()
+                .child(NODE_BLOCKED_LIST)
+                .child(uid)
+                .orderByChild(KEY_BLOCKED).equalTo(true)
 
             fun getMessageStatusRef(uid: String, messageID: String):DatabaseReference = getRootRef()
                 .child(NODE_MESSAGE_STATUS)
@@ -189,6 +201,22 @@ object FirebaseUtils {
 
             if(uid.isEmpty())
                 return
+
+        if(utils.hasStoragePermission(context)){
+            val file= File(utils.getProfilePicPath(context)+uid+".jpg")
+            if(file.exists()){
+                Picasso.get().load(file).into(imageView)
+                imageView.setOnClickListener {
+                    context.startActivity(Intent(context, ImagePreviewActivity::class.java)
+                        .putExtra(utils.constants.KEY_LOCAL_PATH, file.path))
+                }
+              //  return
+            }
+        }
+
+
+
+
             ref.getUserRef(uid)
                 .child(KEY_PROFILE_PIC_URL)
                 .addValueEventListener(object : ValueEventListener {
@@ -196,10 +224,22 @@ object FirebaseUtils {
                     override fun onDataChange(p0: DataSnapshot) {
                         if (p0.exists()) {
                             val link: String? = p0.getValue(String::class.java)
-                            if(isLarge)
-                            Picasso.get().load(link)
-                                .placeholder(R.drawable.contact_placeholder)
-                                .into(imageView)
+                            if(isLarge) {
+                                Picasso.get().load(link)
+                                    .placeholder(R.drawable.contact_placeholder)
+                                    .into(imageView, object : Callback {
+                                        override fun onSuccess() {
+                                            if(utils.hasStoragePermission(context)){
+                                                utils.saveBitmapToProfileFolder(context,(imageView.drawable as BitmapDrawable).bitmap, uid)
+                                            }
+                                        }
+
+                                        override fun onError(e: Exception?) {
+                                        }
+
+
+                                    })
+                            }
                             else{
                                 Picasso.get().load(link)
                                     .resize(120,120)
@@ -227,6 +267,21 @@ object FirebaseUtils {
 
         if(uid.isEmpty())
             return
+
+
+        if(utils.hasStoragePermission(context)){
+            val file= File(utils.getProfilePicPath(context)+uid+".jpg")
+            if(file.exists()){
+                Picasso.get().load(file)
+                    .resize(60,60)
+                    .centerCrop()
+                    .into(imageView)
+
+               // return
+            }
+        }
+
+
         ref.getUserRef(uid)
             .child(KEY_PROFILE_PIC_URL)
             .addValueEventListener(object : ValueEventListener {
@@ -255,9 +310,9 @@ object FirebaseUtils {
 
     //todo Remove this else condition when production
     //below is the id for my mobile number(Shanu)
-        fun getUid() : String = if (isLoggedIn())  FirebaseAuth.getInstance().uid.toString() else utils.constants.debugUserID
+    fun getUid() : String = if (isLoggedIn())  FirebaseAuth.getInstance().uid.toString() else utils.constants.debugUserID
 
-        fun setUserDetailFromUID(context : Context,
+    fun setUserDetailFromUID(context : Context,
             textView: TextView,
             uid: String,
             shouldQueryFromContacts: Boolean){
@@ -300,7 +355,7 @@ object FirebaseUtils {
         }
 
 
-        fun setLastMessage(targetUID: String, textView: TextView){
+    fun setLastMessage(targetUID: String, textView: TextView){
 
         textView.text  = ""
 
@@ -338,6 +393,20 @@ object FirebaseUtils {
             })
     }
 
+    fun setMeAsOnline(){
+        FirebaseUtils.ref.getUserStatusRef(FirebaseUtils.getUid())
+            .setValue(Models.UserActivityStatus(FirebaseUtils.VAL_ONLINE, System.currentTimeMillis()))
+    }
+
+    fun setMeAsOffline(){
+        FirebaseUtils.ref.getUserStatusRef(FirebaseUtils.getUid())
+            .setValue(Models.UserActivityStatus(FirebaseUtils.VAL_OFFLINE, System.currentTimeMillis()))
+    }
+
+    fun setMeAsTyping(){
+        FirebaseUtils.ref.getUserStatusRef(FirebaseUtils.getUid())
+            .setValue(Models.UserActivityStatus(FirebaseUtils.VAL_TYPING, System.currentTimeMillis()))
+    }
 
     fun setDeliveryStatusTick(
         uid: String,
@@ -377,6 +446,10 @@ object FirebaseUtils {
 
 
     fun setUserOnlineStatus(context: Context, uid: String, textView: TextView){
+
+        if(textView.text == VAL_ONLINE)
+            return
+
         ref.getUserStatusRef(uid)
             .addValueEventListener(object : ValueEventListener {
                 override fun onCancelled(p0: DatabaseError) {
@@ -395,8 +468,8 @@ object FirebaseUtils {
 
                     val userStatus = p0.getValue(Models.UserActivityStatus::class.java)!!
 
-                    if(userStatus.status == VAL_ONLINE){
-                        textView.text = VAL_ONLINE
+                    if(userStatus.status == VAL_ONLINE || userStatus.status == VAL_TYPING){
+                        textView.text = userStatus.status
                         textView.setCompoundDrawablesWithIntrinsicBounds(ContextCompat.getDrawable(context, R.drawable.shape_bubble_online),
                             null, null,null)
                     }

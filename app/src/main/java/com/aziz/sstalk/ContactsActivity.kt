@@ -142,6 +142,9 @@ class ContactsActivity : AppCompatActivity(){
             holder.pic.borderWidth = holder.pic.borderWidth
             holder.number.visibility = View.VISIBLE
 
+            val uid = registeredAvailableUser.get(index = position).uid
+
+            FirebaseUtils.loadProfilePic(this@ContactsActivity, uid, holder.pic, false)
 
             if(position == registeredAvailableUser.size - 1) {
                 holder.pic.setImageResource(android.R.drawable.ic_menu_share)
@@ -153,7 +156,6 @@ class ContactsActivity : AppCompatActivity(){
             holder.itemView.setOnClickListener {
                 if(position != registeredAvailableUser.size - 1){
 
-                    val uid = registeredAvailableUser.get(index = position).uid
 
                     utils.longToast(this@ContactsActivity, uid)
 

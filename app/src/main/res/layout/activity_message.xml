@@ -60,7 +60,6 @@
 
 
                 <TextView android:layout_width="wrap_content"
-                          android:text="Online"
                           android:textColor="@color/white"
                           android:textSize="11sp"
                           android:drawablePadding="5dp"
@@ -262,6 +261,7 @@
             app:attachmentButtonHeight="27dp"
             app:attachmentButtonWidth="27dp"
             app:inputMaxLines="3"
+            app:delayTypingStatus="5000"
             app:showAttachmentButton="true"
             app:inputHint="Type your message..."
             android:layout_height="wrap_content"/>

@@ -9,7 +9,6 @@ import android.content.*
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Color
-import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.net.Uri
@@ -57,6 +56,7 @@ import com.mikhaellopez.circularprogressbar.CircularProgressBar
 import com.squareup.picasso.Callback
 import com.squareup.picasso.Picasso
 import com.squareup.picasso.Target
+import com.stfalcon.chatkit.messages.MessageInput
 import com.vincent.filepicker.Constant
 import com.vincent.filepicker.activity.ImagePickActivity
 import com.vincent.filepicker.activity.VideoPickActivity
@@ -122,8 +122,10 @@ class MessageActivity : AppCompatActivity() {
     var myLastMessagePosition = 0
 
     var selectedMessageIDs:MutableList<String> = ArrayList()
-    var selectMessageModel:MutableList<Models.MessageModel> = ArrayList()
+    var selectedMessageModel:MutableList<Models.MessageModel> = ArrayList()
     var selectedItemViews:MutableList<View> = ArrayList()
+    val selectedItemPosition:MutableList<Int> = ArrayList()
+
     var searchFilterItemPosition:MutableList<Int> = ArrayList()
 
     var headerPosition:MutableList<Int> = ArrayList()
@@ -172,6 +174,14 @@ class MessageActivity : AppCompatActivity() {
         back_layout_toolbar_message.setOnClickListener { finish() }
 
 
+        messageInputField.setTypingListener(object : MessageInput.TypingListener {
+            override fun onStartTyping() {
+                FirebaseUtils.setMeAsTyping()
+            }
+
+            override fun onStopTyping() { FirebaseUtils.setMeAsOnline() }
+
+        })
 
 
         Log.d("MessageActivity", "onCreate: myUID = "+myUID)
@@ -913,7 +923,7 @@ class MessageActivity : AppCompatActivity() {
 
 
                 //setting contextual toolbar
-                setContextualToolbarOnViewHolder(messageLayout as View, messageID, model)
+                setContextualToolbarOnViewHolder(messageLayout as View, messageID, model, position)
 
 
 
@@ -1795,7 +1805,7 @@ class MessageActivity : AppCompatActivity() {
     //setting contextual toolbar on viewHolder
 
     var actionMode: ActionMode? = null
-    private fun setContextualToolbarOnViewHolder(itemView: View, messageID: String, model:Models.MessageModel){
+    private fun setContextualToolbarOnViewHolder(itemView: View, messageID: String, model:Models.MessageModel, position:Int){
 
         selectedDrawable = ColorDrawable(ContextCompat.getColor(context, R.color.transparent_green))
         unselectedDrawable = ColorDrawable(Color.WHITE)
@@ -1814,9 +1824,10 @@ class MessageActivity : AppCompatActivity() {
 
             if(!isContextMenuActive) {
 
-                if(!selectedMessageIDs.contains(messageID)) {
+                if(!selectedItemPosition.contains(position)) {
                     selectedMessageIDs.add(messageID)
-                    selectMessageModel.add(model)
+                    selectedMessageModel.add(model)
+                    selectedItemPosition.add(position)
                 }
 
                 actionMode = startSupportActionMode(actionModeCallback )
@@ -1837,23 +1848,20 @@ class MessageActivity : AppCompatActivity() {
 
             if(isContextMenuActive) {
 
-
-
                 it.background = if (it.background == selectedDrawable) unselectedDrawable else selectedDrawable
-
 
                 if(it.background == unselectedDrawable) {
                     selectedMessageIDs.remove(messageID)
-                    selectMessageModel.remove(model)
+                    selectedMessageModel.remove(model)
+                    selectedItemPosition.remove(position)
                 }
                 else {
-                    if (!selectedMessageIDs.contains(messageID)) {
+                    if (!selectedItemPosition.contains(position)) {
                         selectedMessageIDs.add(messageID)
-                        selectMessageModel.add(model)
+                        selectedMessageModel.add(model)
+                        selectedItemPosition.add(position)
                     }
                 }
-
-
 
                 if(actionMode!=null) {
                     actionMode!!.title = selectedMessageIDs.size.toString()
@@ -1861,7 +1869,7 @@ class MessageActivity : AppCompatActivity() {
 //                    actionMode!!.invalidate()
                 }
 
-                if(selectedMessageIDs.isEmpty()){
+                if(selectedItemPosition.isEmpty()){
                     if(actionMode!=null) {
                         actionMode!!.finish()
                     }
@@ -1881,7 +1889,7 @@ class MessageActivity : AppCompatActivity() {
         override fun onActionItemClicked(p0: ActionMode?, p1: MenuItem?): Boolean {
 
 
-            Log.d("MessageActivity", "onActionItemClicked:Total messages = ${selectMessageModel.size}")
+            Log.d("MessageActivity", "onActionItemClicked:Total messages = ${selectedMessageModel.size}")
 
             when(p1!!.itemId) {
 
@@ -1916,7 +1924,7 @@ class MessageActivity : AppCompatActivity() {
                 R.id.action_copy ->{
 
                     var messages = ""
-                    for(message in selectMessageModel) {
+                    for(message in selectedMessageModel) {
                         messages = if(message.isFile) messages + message.caption + "\n"
                                     else messages + message.message + "\n"
 
@@ -1930,7 +1938,7 @@ class MessageActivity : AppCompatActivity() {
 
                 R.id.action_forward -> {
                     startActivity(Intent(context, ForwardActivity::class.java)
-                        .putExtra(utils.constants.KEY_MSG_MODEL, selectMessageModel as Serializable)
+                        .putExtra(utils.constants.KEY_MSG_MODEL, selectedMessageModel as Serializable)
                     )
                 }
 
@@ -1963,7 +1971,7 @@ class MessageActivity : AppCompatActivity() {
         override fun onDestroyActionMode(p0: ActionMode?) {
             isContextMenuActive = false
             selectedMessageIDs.clear()
-            selectMessageModel.clear()
+            selectedMessageModel.clear()
             headerPosition.clear()
 
 

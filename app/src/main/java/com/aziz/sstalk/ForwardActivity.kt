@@ -2,6 +2,7 @@ package com.aziz.sstalk
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.graphics.Color
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.support.design.widget.Snackbar
@@ -22,6 +23,7 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import kotlinx.android.synthetic.main.activity_forward.*
 import kotlinx.android.synthetic.main.item__forward_contact_list.view.*
+import kotlinx.android.synthetic.main.item_contact_layout.view.*
 
 class ForwardActivity : AppCompatActivity() {
 
@@ -186,8 +188,8 @@ class ForwardActivity : AppCompatActivity() {
     private fun bindHolder(holder: ViewHolder, uid:String){
 
         holder.title.text = uid
-
-        FirebaseUtils.loadProfilePic(context, uid, holder.pic, false)
+        FirebaseUtils.loadProfileThumbnail(context, uid, holder.pic)
+        holder.title.setTextColor(Color.BLACK)
 
         //check if user is blocked
         FirebaseUtils.ref.getBlockedUserRef(myUID, uid)
@@ -199,8 +201,9 @@ class ForwardActivity : AppCompatActivity() {
                     if(p0.exists()){
                         holder.itemView.isEnabled = !p0.value.toString().toBoolean()
                         holder.itemView.isClickable = holder.itemView.isEnabled
-
+                        holder.title.setTextColor(if(holder.itemView.isEnabled) Color.BLACK else Color.LTGRAY)
                     }
+
                 }
 
             })

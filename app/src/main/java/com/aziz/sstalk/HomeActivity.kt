@@ -10,12 +10,11 @@ import android.support.v4.app.ActivityCompat
 import android.support.v4.view.GravityCompat
 import android.support.v7.app.ActionBarDrawerToggle
 import android.support.v7.app.AppCompatActivity
+import android.support.v7.view.ActionMode
 import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
-import android.view.MenuItem
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.utils
@@ -36,11 +35,14 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     val debugUserID = "user---2"
     lateinit var adapter:FirebaseRecyclerAdapter<Models.LastMessageDetail, ViewHolder>
 
+    val selectItemPosition:MutableList<Int> = ArrayList()
+
+    var isContextToolbarActive = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
         setSupportActionBar(toolbar)
-
 
         val toggle = ActionBarDrawerToggle(
             this, drawer_layout, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close
@@ -55,8 +57,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         nav_view.setNavigationItemSelectedListener(this)
 
-          hasPermission = (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED)
-
+          hasPermission = utils.hasContactPermission(this)
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 if(!hasPermission) {
@@ -68,6 +69,8 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             else
             setAdapter()
 
+
+        FirebaseUtils.setMeAsOnline()
 
 
     }
@@ -108,6 +111,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             }
             R.id.nav_setting -> {
 
+                startActivity(Intent(context, BlockListActivity::class.java))
             }
             R.id.nav_slideshow -> {
 
@@ -157,8 +161,79 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
 
                 holder.itemView.setOnClickListener {
+
+                    if(isContextToolbarActive){
+                        holder.checkbox.visibility = View.VISIBLE
+                        holder.checkbox.isChecked = true
+
+                        if(!selectItemPosition.contains(position))
+                        {
+                            selectItemPosition.add(position)
+                        }
+
+                        return@setOnClickListener
+                    }
+
                     startActivity(Intent(context, MessageActivity::class.java).putExtra(FirebaseUtils.KEY_UID, uid))
                 }
+
+                if(!isContextToolbarActive){
+                    holder.checkbox.visibility = View.INVISIBLE
+                    holder.checkbox.isChecked = false
+                }
+
+                holder.itemView.setOnLongClickListener {
+
+                    if(isContextToolbarActive)
+                        return@setOnLongClickListener false
+
+                    if(!selectItemPosition.contains(position))
+                    {
+                        selectItemPosition.add(position)
+                    }
+
+                    holder.checkbox.visibility = View.VISIBLE
+                    holder.checkbox.isChecked = true
+
+                    startSupportActionMode(object : ActionMode.Callback {
+                        override fun onActionItemClicked(p0: ActionMode?, p1: MenuItem?): Boolean {
+
+                            when(p1!!.itemId){
+                                R.id.action_delete_conversation -> {
+                                    utils.toast(context, "Pending")
+                                }
+                            }
+
+                            p0!!.finish()
+                            return true
+                        }
+
+                        override fun onCreateActionMode(p0: ActionMode?, p1: Menu?): Boolean {
+
+                            p0!!.menuInflater.inflate(R.menu.converstation_option_menu, p1)
+                            isContextToolbarActive = true
+
+                            return true
+                        }
+
+                        override fun onPrepareActionMode(p0: ActionMode?, p1: Menu?): Boolean = true
+
+                        override fun onDestroyActionMode(p0: ActionMode?) {
+                            isContextToolbarActive = false
+
+                            for(pos in selectItemPosition)
+                                adapter.notifyItemChanged(pos)
+
+                            selectItemPosition.clear()
+
+                        }
+
+                    })
+
+                    true
+                }
+
+
 
 
             }
@@ -187,14 +262,15 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         val messageInfo = itemView.messageInfoLayout
         val time = itemView.messageTime
         val unreadCount = itemView.unreadCount
+        val onlineStatus = itemView.online_status_imageview
+        val checkbox = itemView.contact_checkbox
 
     }
 
     override fun onDestroy() {
         try {
             adapter.stopListening()
-            FirebaseUtils.ref.getUserStatusRef(FirebaseUtils.getUid())
-                .setValue(Models.UserActivityStatus("Offline", System.currentTimeMillis()))
+            FirebaseUtils.setMeAsOffline()
         }
         catch (e:Exception) {}
 
@@ -202,17 +278,19 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
 
-    override fun onResume() {
-
-        FirebaseUtils.ref.getUserStatusRef(FirebaseUtils.getUid())
-            .setValue(Models.UserActivityStatus("Online", System.currentTimeMillis()))
-        super.onResume()
-    }
-
     private fun setonDisconnectListener(){
 
         FirebaseUtils.ref.getUserStatusRef(FirebaseUtils.getUid())
             .onDisconnect()
-            .setValue(Models.UserActivityStatus("Offline", System.currentTimeMillis()))
+            .setValue(Models.UserActivityStatus(FirebaseUtils.VAL_OFFLINE, System.currentTimeMillis()))
+    }
+
+
+    override fun onCreateContextMenu(menu: ContextMenu?, v: View?, menuInfo: ContextMenu.ContextMenuInfo?) {
+
+        menuInflater.inflate(R.menu.converstation_option_menu, menu)
+        menu!!.setHeaderTitle("Options")
+
+        super.onCreateContextMenu(menu, v, menuInfo)
     }
 }

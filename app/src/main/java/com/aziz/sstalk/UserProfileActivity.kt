@@ -4,10 +4,13 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.provider.ContactsContract
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import com.aziz.sstalk.models.Models
@@ -32,12 +35,17 @@ class UserProfileActivity : AppCompatActivity() {
     var targetUID = ""
     var isBlockedByMe = false
     var isPhoneLoaded = false
+    var name = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_user_profile)
         setSupportActionBar(toolbar)
 
+        if(supportActionBar!=null) {
+            supportActionBar!!.setDisplayHomeAsUpEnabled(true)
+            supportActionBar!!.setHomeButtonEnabled(true)
+        }
 
 
 
@@ -50,7 +58,7 @@ class UserProfileActivity : AppCompatActivity() {
         myUID = utils.constants.debugUserID
 
         targetUID = intent.getStringExtra(FirebaseUtils.KEY_UID)
-        val name = intent.getStringExtra(FirebaseUtils.KEY_NAME)
+        name = intent.getStringExtra(FirebaseUtils.KEY_NAME)
 
         title = name
 
@@ -194,6 +202,30 @@ class UserProfileActivity : AppCompatActivity() {
 
     }
 
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+
+        menuInflater.inflate(R.menu.user_profile_menu, menu)
+
+        return super.onCreateOptionsMenu(menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+
+        when(item!!.itemId){
+            android.R.id.home -> finish()
+            R.id.action_contact -> {
+                val contactIntent = Intent(Intent.ACTION_INSERT)
+                contactIntent.putExtra(ContactsContract.Intents.Insert.PHONE, phone_textview.text)
+                contactIntent.putExtra(ContactsContract.Intents.Insert.NAME, name)
+                contactIntent.type = ContactsContract.RawContacts.CONTENT_TYPE
+                startActivity(contactIntent)
+            }
+        }
+
+        return super.onOptionsItemSelected(item)
+
+    }
 
     private fun checkIfBlocked(){
         //check if i have blocked
