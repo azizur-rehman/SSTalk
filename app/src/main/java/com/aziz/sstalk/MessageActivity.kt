@@ -145,6 +145,7 @@ class MessageActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_message)
+
         setSupportActionBar(toolbar)
         targetUid = intent.getStringExtra(FirebaseUtils.KEY_UID)
         myUID = FirebaseUtils.getUid()
@@ -1811,11 +1812,11 @@ class MessageActivity : AppCompatActivity() {
         unselectedDrawable = ColorDrawable(Color.WHITE)
 
 
+        if(selectedItemPosition.contains(position))
+            itemView.background = selectedDrawable
+        else
+            itemView.background = unselectedDrawable
 
-        //adding all views
-        if(!selectedItemViews.contains(itemView)) {
-            selectedItemViews.add(itemView)
-        }
 
 
         itemView.setOnLongClickListener {
@@ -1824,22 +1825,98 @@ class MessageActivity : AppCompatActivity() {
 
             if(!isContextMenuActive) {
 
-                if(!selectedItemPosition.contains(position)) {
-                    selectedMessageIDs.add(messageID)
-                    selectedMessageModel.add(model)
+                if (!selectedItemPosition.contains(position)) {
                     selectedItemPosition.add(position)
                 }
 
-                actionMode = startSupportActionMode(actionModeCallback )
 
-                actionMode!!.title = selectedMessageIDs.size.toString()
+                actionMode = startSupportActionMode(object : ActionMode.Callback {
+                        override fun onActionItemClicked(p0: ActionMode?, p1: MenuItem?): Boolean {
+                            when (p1!!.itemId) {
+
+                                R.id.action_delete -> {
+                                    for ((index, itemPosition) in selectedItemPosition.withIndex()) {
 
 
-                it.background = if (it.background == selectedDrawable) unselectedDrawable else selectedDrawable
+                                        FirebaseUtils.ref.getChatRef(myUID, targetUid)
+                                            .child(adapter.getRef(itemPosition).key.toString())
+                                            .removeValue()
+                                            .addOnCompleteListener {
+                                                if (index == selectedItemPosition.size - 1) {
+                                                    headerPosition.clear()
+                                                    p0!!.finish()
+                                                }
+                                            }
+                                    }
+                                }
 
+                                R.id.action_copy -> {
+
+                                    var messages = ""
+                                    for (itemPosition in selectedItemPosition) {
+                                        val message = adapter.getItem(itemPosition)
+                                        messages = if (message.isFile) messages + message.caption + "\n"
+                                        else messages + message.message + "\n"
+                                    }
+                                    val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                    clipboard.primaryClip = (ClipData.newPlainText("Messages ", messages.trim()))
+                                    utils.toast(context, "Messages copied")
+                                }
+
+                                R.id.action_forward -> {
+
+                                    selectedMessageModel.clear()
+                                    for (itemPosition in selectedItemPosition)
+                                        selectedMessageModel.add(adapter.getItem(itemPosition))
+
+                                    startActivity(
+                                        Intent(context, ForwardActivity::class.java)
+                                            .putExtra(
+                                                utils.constants.KEY_MSG_MODEL,
+                                                selectedMessageModel as Serializable
+                                            )
+                                    )
+                                }
+                            }
+
+                            if (p1.itemId != R.id.action_delete)
+                                p0!!.finish()
+
+                            return true
+
+                        }
+
+                        override fun onCreateActionMode(p0: ActionMode?, p1: Menu?): Boolean {
+                            p0!!.menuInflater.inflate(R.menu.chat_actions_menu, p1!!)
+                            isContextMenuActive = true
+                            return true
+                        }
+
+                        override fun onPrepareActionMode(p0: ActionMode?, p1: Menu?): Boolean = false
+
+                        override fun onDestroyActionMode(p0: ActionMode?) {
+                            for (pos in selectedItemPosition)
+                                adapter.notifyItemChanged(pos)
+
+                            Log.d(
+                                "MessageActivity",
+                                "onDestroyActionMode: selected pos = ${selectedItemPosition.toString()}"
+                            )
+
+                            selectedItemPosition.clear()
+                            isContextMenuActive = false
+                        }
+
+                    })
+
+                actionMode!!.title = selectedItemPosition.size.toString()
+
+
+                itemView.background = selectedDrawable
             }
 
-            actionMode!=null
+
+            true
         }
 
 
@@ -1848,34 +1925,22 @@ class MessageActivity : AppCompatActivity() {
 
             if(isContextMenuActive) {
 
-                it.background = if (it.background == selectedDrawable) unselectedDrawable else selectedDrawable
-
-                if(it.background == unselectedDrawable) {
-                    selectedMessageIDs.remove(messageID)
-                    selectedMessageModel.remove(model)
+                if(selectedItemPosition.contains(position)){
+                    itemView.background = unselectedDrawable
                     selectedItemPosition.remove(position)
                 }
-                else {
-                    if (!selectedItemPosition.contains(position)) {
-                        selectedMessageIDs.add(messageID)
-                        selectedMessageModel.add(model)
-                        selectedItemPosition.add(position)
-                    }
+                else{
+                    itemView.background = selectedDrawable
+                    selectedItemPosition.add(position)
                 }
 
-                if(actionMode!=null) {
-                    actionMode!!.title = selectedMessageIDs.size.toString()
-//                    if(model.isFile)
-//                    actionMode!!.invalidate()
-                }
+                actionMode!!.title = selectedItemPosition.size.toString()
 
                 if(selectedItemPosition.isEmpty()){
-                    if(actionMode!=null) {
                         actionMode!!.finish()
-                    }
-                    
-
                 }
+
+
             }
 
         }
@@ -1885,104 +1950,6 @@ class MessageActivity : AppCompatActivity() {
 
 
     var isContextMenuActive = false
-    private var actionModeCallback = object : ActionMode.Callback{
-        override fun onActionItemClicked(p0: ActionMode?, p1: MenuItem?): Boolean {
-
-
-            Log.d("MessageActivity", "onActionItemClicked:Total messages = ${selectedMessageModel.size}")
-
-            when(p1!!.itemId) {
-
-                R.id.action_delete -> {
-                    for ((index, messageID) in selectedMessageIDs.withIndex()) {
-
-
-//                        FirebaseUtils.ref.getChatRef(myUID, targetUid)
-//                            .child(messageID)
-//                            .child("message_deleted")
-//                            .setValue(true)
-//
-//
-//                        FirebaseUtils.ref.getChatRef( targetUid, myUID)
-//                            .child(messageID)
-//                            .child("message_deleted")
-//                            .setValue(true)
-
-
-                        FirebaseUtils.ref.getChatRef(myUID, targetUid)
-                            .child(messageID)
-                            .removeValue()
-                            .addOnCompleteListener {
-                                if (index == selectedMessageIDs.size - 1) {
-                                    headerPosition.clear()
-                                    adapter.notifyDataSetChanged()
-                                }
-                            }
-                    }
-                }
-
-                R.id.action_copy ->{
-
-                    var messages = ""
-                    for(message in selectedMessageModel) {
-                        messages = if(message.isFile) messages + message.caption + "\n"
-                                    else messages + message.message + "\n"
-
-                    }
-
-                    val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                    clipboard.primaryClip = (ClipData.newPlainText("Messages ",messages.trim()))
-
-                    utils.toast(context, "Messages copied")
-                    }
-
-                R.id.action_forward -> {
-                    startActivity(Intent(context, ForwardActivity::class.java)
-                        .putExtra(utils.constants.KEY_MSG_MODEL, selectedMessageModel as Serializable)
-                    )
-                }
-
-            }
-
-            p0!!.finish()
-
-            return true
-        }
-
-        override fun onCreateActionMode(p0: ActionMode?, p1: Menu?): Boolean {
-
-            p0!!.menuInflater.inflate(R.menu.chat_actions_menu, p1)
-            Log.d("MessageActivity", "onCreateActionMode: ")
-
-            isContextMenuActive = true
-
-            return true
-        }
-
-        override fun onPrepareActionMode(p0: ActionMode?, p1: Menu?): Boolean {
-            Log.d("MessageActivity", "onPrepareActionMode: ")
-            p1!!.findItem(R.id.action_copy).isVisible = true
-            p1.findItem(R.id.action_forward).isVisible = true
-            p1.findItem(R.id.action_delete).isVisible = true
-
-            return true
-        }
-
-        override fun onDestroyActionMode(p0: ActionMode?) {
-            isContextMenuActive = false
-            selectedMessageIDs.clear()
-            selectedMessageModel.clear()
-            headerPosition.clear()
-
-
-            for(view in selectedItemViews)
-                view.setBackgroundColor(Color.WHITE)
-
-            Log.d("MessageActivity", "onDestroyActionMode: ")
-            adapter.notifyDataSetChanged()
-        }
-
-    }
 
 
     override fun onBackPressed() {
