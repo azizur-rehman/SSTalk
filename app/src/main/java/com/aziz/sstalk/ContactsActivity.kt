@@ -144,7 +144,7 @@ class ContactsActivity : AppCompatActivity(){
 
             val uid = registeredAvailableUser.get(index = position).uid
 
-            FirebaseUtils.loadProfilePic(this@ContactsActivity, uid, holder.pic, false)
+            FirebaseUtils.loadProfilePic(this@ContactsActivity, uid, holder.pic)
 
             if(position == registeredAvailableUser.size - 1) {
                 holder.pic.setImageResource(android.R.drawable.ic_menu_share)

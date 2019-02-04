@@ -6,7 +6,6 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.support.design.widget.NavigationView
-import android.support.v4.app.ActivityCompat
 import android.support.v4.view.GravityCompat
 import android.support.v7.app.ActionBarDrawerToggle
 import android.support.v7.app.AppCompatActivity
@@ -111,20 +110,13 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             }
             R.id.nav_setting -> {
 
-                startActivity(Intent(context, BlockListActivity::class.java))
+                startActivity(Intent(context, SettingsActivity::class.java))
             }
-            R.id.nav_slideshow -> {
 
-            }
-            R.id.nav_manage -> {
-
-            }
             R.id.nav_share -> {
 
             }
-            R.id.nav_send -> {
 
-            }
         }
 
         drawer_layout.closeDrawer(GravityCompat.START)
@@ -149,7 +141,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
                 holder.name.text = uid
 
-                FirebaseUtils.loadProfilePic(this@HomeActivity, uid, holder.pic, false)
+                FirebaseUtils.loadProfilePic(this@HomeActivity, uid, holder.pic)
 
                 FirebaseUtils.setLastMessage(uid, holder.lastMessage)
 

@@ -2066,7 +2066,8 @@ class MessageActivity : AppCompatActivity() {
 
                 utils.hideSoftKeyboard(this@MessageActivity)
 
-                adapter.notifyDataSetChanged()
+                for(pos in searchFilterItemPosition)
+                adapter.notifyItemChanged(pos)
 
                 return true
             }

@@ -78,7 +78,7 @@ class UserProfileActivity : AppCompatActivity() {
             })
 
 
-        FirebaseUtils.loadProfilePic(this, targetUID, user_profile_imageview, true)
+        FirebaseUtils.loadProfilePic(this, targetUID, user_profile_imageview)
 
         val layoutManager = GridLayoutManager(this, 4)
         mediaRecyclerView.addItemDecoration(DividerGridItemDecoration(this))

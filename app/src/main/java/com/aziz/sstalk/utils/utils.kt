@@ -342,6 +342,7 @@ object utils {
             values.put(MediaStore.Video.Media.DATA, file.absolutePath)
             context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
 
+
         }
         catch (e:Exception){
             Log.d("utils", "saveBitmap: File not found")

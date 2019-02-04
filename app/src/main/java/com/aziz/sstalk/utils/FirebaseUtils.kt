@@ -3,9 +3,7 @@ package com.aziz.sstalk.utils
 import android.app.ProgressDialog
 import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
-import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.support.v4.content.ContextCompat
 import android.util.Log
@@ -25,7 +23,6 @@ import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 import com.google.firebase.storage.UploadTask
 import com.squareup.picasso.Callback
-import com.squareup.picasso.Target
 import java.io.File
 import java.lang.Exception
 
@@ -196,13 +193,16 @@ object FirebaseUtils {
     }
 
 
-    fun loadProfilePic(context: Context, uid:String, imageView: ImageView, isLarge: Boolean){
+    fun loadProfilePic(context: Context, uid: String, imageView: ImageView){
 
 
             if(uid.isEmpty())
                 return
 
         if(utils.hasStoragePermission(context)){
+
+            Log.d("FirebaseUtils", "onDataChange: loading in prior from local")
+
             val file= File(utils.getProfilePicPath(context)+uid+".jpg")
             if(file.exists()){
                 Picasso.get().load(file).into(imageView)
@@ -210,12 +210,9 @@ object FirebaseUtils {
                     context.startActivity(Intent(context, ImagePreviewActivity::class.java)
                         .putExtra(utils.constants.KEY_LOCAL_PATH, file.path))
                 }
-              //  return
             }
+
         }
-
-
-
 
             ref.getUserRef(uid)
                 .child(KEY_PROFILE_PIC_URL)
@@ -224,33 +221,52 @@ object FirebaseUtils {
                     override fun onDataChange(p0: DataSnapshot) {
                         if (p0.exists()) {
                             val link: String? = p0.getValue(String::class.java)
-                            if(isLarge) {
-                                Picasso.get().load(link)
-                                    .placeholder(R.drawable.contact_placeholder)
-                                    .into(imageView, object : Callback {
-                                        override fun onSuccess() {
-                                            if(utils.hasStoragePermission(context)){
-                                                utils.saveBitmapToProfileFolder(context,(imageView.drawable as BitmapDrawable).bitmap, uid)
+
+                            if(Pref.Profile.isProfileUrlSame(context, uid, link.toString())
+                                && utils.hasStoragePermission(context)){
+
+                                Log.d("FirebaseUtils", "onDataChange: loading from local")
+
+                                    val file= File(utils.getProfilePicPath(context)+uid+".jpg")
+                                    if(file.exists()){
+                                        Picasso.get().load(file).into(imageView)
+                                        imageView.setOnClickListener {
+                                            context.startActivity(Intent(context, ImagePreviewActivity::class.java)
+                                                .putExtra(utils.constants.KEY_LOCAL_PATH, file.path))
+                                        }
+                                        return
+                                    }
+
+                            }
+                            else {
+
+                                    Picasso.get().load(link)
+                                        .placeholder(R.drawable.contact_placeholder)
+                                        .into(imageView, object : Callback {
+                                            override fun onSuccess() {
+                                                if (utils.hasStoragePermission(context)) {
+                                                    utils.saveBitmapToProfileFolder(
+                                                        context,
+                                                        (imageView.drawable as BitmapDrawable).bitmap,
+                                                        uid
+                                                    )
+                                                    Pref.Profile.setProfileUrl(context, uid, link.toString())
+                                                }
                                             }
-                                        }
 
-                                        override fun onError(e: Exception?) {
-                                        }
+                                            override fun onError(e: Exception?) {
+                                            }
 
 
-                                    })
-                            }
-                            else{
-                                Picasso.get().load(link)
-                                    .resize(120,120)
-                                    .centerCrop()
-                                    .placeholder(R.drawable.contact_placeholder)
-                                    .into(imageView)
-                            }
+                                        })
 
-                            imageView.setOnClickListener {
-                                context.startActivity(Intent(context, ImagePreviewActivity::class.java)
-                                    .putExtra(utils.constants.KEY_IMG_PATH, link))
+
+                                imageView.setOnClickListener {
+                                    context.startActivity(
+                                        Intent(context, ImagePreviewActivity::class.java)
+                                            .putExtra(utils.constants.KEY_IMG_PATH, link)
+                                    )
+                                }
                             }
                         }
                     }
@@ -276,8 +292,6 @@ object FirebaseUtils {
                     .resize(60,60)
                     .centerCrop()
                     .into(imageView)
-
-               // return
             }
         }
 
@@ -290,12 +304,40 @@ object FirebaseUtils {
                     if (p0.exists()) {
                         val link: String? = p0.getValue(String::class.java)
 
-                            Picasso.get().load(link)
-                                .resize(60,60)
-                                .centerCrop()
-                                .placeholder(R.drawable.contact_placeholder)
-                                .into(imageView)
 
+                        if(Pref.Profile.isProfileUrlSame(context, uid, link.toString())
+                            && utils.hasStoragePermission(context)){
+                                val file= File(utils.getProfilePicPath(context)+uid+".jpg")
+                                if(file.exists()){
+                                    Picasso.get().load(file)
+                                        .resize(60,60)
+                                        .centerCrop()
+                                        .into(imageView)
+                                }
+
+                            return
+                        }
+                        else {
+                            //download profile pic
+                            Log.d("FirebaseUtils", "onDataChange:,  url has changed, loading from web")
+                            Picasso.get().load(link)
+                                .placeholder(R.drawable.contact_placeholder)
+                                .into(imageView, object : Callback {
+                                    override fun onSuccess() {
+                                        if (utils.hasStoragePermission(context)) {
+                                            utils.saveBitmapToProfileFolder(
+                                                context,
+                                                (imageView.drawable as BitmapDrawable).bitmap,
+                                                uid)
+                                            Pref.Profile.setProfileUrl(context, uid, link.toString())
+                                        }
+                                    }
+
+                                    override fun onError(e: Exception?) {
+                                    }
+
+                                })
+                        }
                     }
                 }
 

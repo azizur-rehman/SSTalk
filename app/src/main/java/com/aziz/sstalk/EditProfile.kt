@@ -1,20 +1,13 @@
 package com.aziz.sstalk
 
 import android.app.Activity
-import android.app.ProgressDialog
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.net.Uri
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.utils
-import com.google.android.gms.tasks.Continuation
-import com.google.android.gms.tasks.Task
-import com.google.firebase.storage.FirebaseStorage
-import com.google.firebase.storage.UploadTask
 import com.mvc.imagepicker.ImagePicker
 import kotlinx.android.synthetic.main.activity_edit_profile.*
 import kotlinx.android.synthetic.main.layout_profile_image_picker.*
@@ -36,7 +29,7 @@ class EditProfile : AppCompatActivity() {
 
         myUID = utils.constants.debugUserID
 
-        FirebaseUtils.loadProfilePic(this, myUID, profile_circleimageview, false)
+        FirebaseUtils.loadProfilePic(this, myUID, profile_circleimageview)
 
         profile_pick_btn.setOnClickListener { ImagePicker.pickImage(context) }
 

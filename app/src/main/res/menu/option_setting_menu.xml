@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu
+        xmlns:tools="http://schemas.android.com/tools"
+        tools:showIn = "navigation_view"
+        xmlns:app="http://schemas.android.com/apk/res-auto" xmlns:android="http://schemas.android.com/apk/res/android">
+
+  <item android:title="Privacy" android:checkable="false">
+      <menu>
+        <item android:title="Block list"
+              android:id="@+id/action_block_list"
+            android:icon="@drawable/ic_person_flat"
+        />
+
+    </menu>
+
+  </item>
+
+
+    <item android:title="Notifications" android:checkable="false">
+        <menu>
+
+            <item android:title="Sound"
+                  android:icon="@drawable/ic_volume_up_white_24dp"
+                  app:actionViewClass="android.widget.CheckBox"
+                  android:id="@+id/action_sound_enable"
+            />
+
+            <item android:title="Vibrate"
+                  android:icon="@drawable/ic_vibration_white_24dp"
+                  app:actionViewClass="android.widget.CheckBox"
+                  android:id="@+id/action_vibration_enable"
+
+            />
+        </menu>
+
+    </item>
+
+</menu>
