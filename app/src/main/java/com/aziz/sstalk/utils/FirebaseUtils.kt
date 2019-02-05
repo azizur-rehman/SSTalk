@@ -293,7 +293,11 @@ object FirebaseUtils {
                     .centerCrop()
                     .into(imageView)
             }
+
+            Log.d("FirebaseUtils", "loadProfileThumbnail: ${file.path}")
         }
+
+
 
 
         ref.getUserRef(uid)
