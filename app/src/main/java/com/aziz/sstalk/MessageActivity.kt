@@ -690,7 +690,7 @@ class MessageActivity : AppCompatActivity() {
                         holder.message.text = model.message
                         dateHeader = holder.headerDateTime
                         container = holder.container
-                        FirebaseUtils.setDeliveryStatusTick(targetUid, messageID, holder.messageStatus)
+                        FirebaseUtils.setDeliveryStatusTick(targetUid, myUID, messageID, holder.messageStatus)
                         messageTextView = holder.message
                         messageLayout = holder.messageLayout
 
@@ -704,7 +704,7 @@ class MessageActivity : AppCompatActivity() {
                         container = holder.container
                         dateHeader = holder.headerDateTime
 
-                        FirebaseUtils.setDeliveryStatusTick(targetUid, messageID, holder.messageStatus)
+                        FirebaseUtils.setDeliveryStatusTick(targetUid, myUID, messageID, holder.messageStatus)
 
 
                         messageTextView = holder.message
@@ -747,7 +747,7 @@ class MessageActivity : AppCompatActivity() {
                         container = holder.container
 
 
-                        FirebaseUtils.setDeliveryStatusTick(targetUid, messageID, holder.messageStatus)
+                        FirebaseUtils.setDeliveryStatusTick(targetUid,myUID, messageID, holder.messageStatus)
                         messageTextView = holder.message
                         messageLayout = holder.messageLayout
 
@@ -1154,7 +1154,7 @@ class MessageActivity : AppCompatActivity() {
             .setValue(messageModel)
             .addOnSuccessListener {
 
-                FirebaseUtils.setMessageStatusToDB(messageID, myUID, true, true)
+                FirebaseUtils.setMessageStatusToDB(messageID, myUID, targetUid, true, true)
 
                 FirebaseUtils.ref.getLastMessageRef(myUID)
                     .child(targetUid)
@@ -1174,7 +1174,7 @@ class MessageActivity : AppCompatActivity() {
             .setValue(messageModel)
             .addOnSuccessListener {
 
-                FirebaseUtils.setMessageStatusToDB(messageID, targetUid, false, false)
+                FirebaseUtils.setMessageStatusToDB(messageID, targetUid, myUID,false, false)
 
                 FirebaseUtils.ref.getLastMessageRef(targetUid)
                     .child(myUID)

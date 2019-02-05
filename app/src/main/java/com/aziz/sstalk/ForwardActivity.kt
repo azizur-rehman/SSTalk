@@ -73,7 +73,7 @@ class ForwardActivity : AppCompatActivity() {
                         .child(messageID)
                         .setValue(model)
                         .addOnSuccessListener {
-                            FirebaseUtils.setMessageStatusToDB(messageID, myUID, true, true)
+                            FirebaseUtils.setMessageStatusToDB(messageID, myUID, targetUID,true, true)
 
                             FirebaseUtils.ref.getLastMessageRef(myUID)
                                 .child(targetUID)
@@ -86,7 +86,7 @@ class ForwardActivity : AppCompatActivity() {
                         .child(messageID)
                         .setValue(model)
                         .addOnSuccessListener {
-                            FirebaseUtils.setMessageStatusToDB(messageID, targetUID, false, false)
+                            FirebaseUtils.setMessageStatusToDB(messageID, targetUID, myUID,false, false)
 
                             FirebaseUtils.ref.getLastMessageRef(targetUID)
                                 .child(myUID)

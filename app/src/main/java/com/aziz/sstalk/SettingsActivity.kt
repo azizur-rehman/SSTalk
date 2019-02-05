@@ -5,6 +5,7 @@ import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.view.MenuItem
 import android.widget.CheckBox
+import android.widget.Switch
 import com.aziz.sstalk.utils.Pref
 import kotlinx.android.synthetic.main.activity_settings.*
 
@@ -34,8 +35,8 @@ class SettingsActivity : AppCompatActivity() {
             true
         }
 
-        val enableSound = setting_nav_view.menu.findItem(R.id.action_sound_enable).actionView as CheckBox
-        val enableVibration = setting_nav_view.menu.findItem(R.id.action_vibration_enable).actionView as CheckBox
+        val enableSound = setting_nav_view.menu.findItem(R.id.action_sound_enable).actionView as Switch
+        val enableVibration = setting_nav_view.menu.findItem(R.id.action_vibration_enable).actionView as Switch
 
         enableSound.isChecked = Pref.Notification.getSoundEnabled(context)
         enableVibration.isChecked = Pref.Notification.getVibrationEnabled(context)

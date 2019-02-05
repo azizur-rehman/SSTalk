@@ -19,10 +19,13 @@ import com.squareup.picasso.Picasso
 import com.aziz.sstalk.R
 import com.google.android.gms.tasks.Continuation
 import com.google.android.gms.tasks.Task
+import com.google.firebase.iid.FirebaseInstanceId
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 import com.google.firebase.storage.UploadTask
 import com.squareup.picasso.Callback
+import com.squareup.picasso.MemoryPolicy
+import com.squareup.picasso.NetworkPolicy
 import java.io.File
 import java.lang.Exception
 
@@ -35,6 +38,7 @@ object FirebaseUtils {
         val NODE_BLOCKED_LIST = "Block_list"
         val NODE_MESSAGE_STATUS = "Message_Status"
         val NODE_USER_ACTIVITY_STATUS = "User_Status"
+        val NODE_TOKEN = "FCM_Tokens"
 
         val VAL_ONLINE = "Online"
         val VAL_OFFLINE = "Offline"
@@ -106,6 +110,11 @@ object FirebaseUtils {
             fun getProfilePicStorageRef(uid: String): StorageReference = FirebaseStorage.getInstance()
                 .reference.child("profile_pics").child(uid)
 
+            fun getFCMTokenRef(uid: String):DatabaseReference =
+                getRootRef()
+                    .child(NODE_TOKEN)
+                    .child(uid)
+
 
             //will return a boolean snapshot
             fun getBlockedUserRef(uid: String, targetUID: String): DatabaseReference = getRootRef()
@@ -120,10 +129,11 @@ object FirebaseUtils {
                 .child(uid)
                 .orderByChild(KEY_BLOCKED).equalTo(true)
 
-            fun getMessageStatusRef(uid: String, messageID: String):DatabaseReference = getRootRef()
+            fun getMessageStatusRef(uid: String, targetUID: String, messageID: String):DatabaseReference = getRootRef()
                 .child(NODE_MESSAGE_STATUS)
-                .child(messageID)
                 .child(uid)
+                .child(targetUID)
+                .child(messageID)
 
             fun getUserStatusRef(uid: String):DatabaseReference = getRootRef().child(NODE_USER_ACTIVITY_STATUS)
                 .child(uid)
@@ -201,11 +211,11 @@ object FirebaseUtils {
 
         if(utils.hasStoragePermission(context)){
 
-            Log.d("FirebaseUtils", "onDataChange: loading in prior from local")
 
             val file= File(utils.getProfilePicPath(context)+uid+".jpg")
             if(file.exists()){
-                Picasso.get().load(file).into(imageView)
+                Picasso.get().load(file)
+                    .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE).into(imageView)
                 imageView.setOnClickListener {
                     context.startActivity(Intent(context, ImagePreviewActivity::class.java)
                         .putExtra(utils.constants.KEY_LOCAL_PATH, file.path))
@@ -225,11 +235,11 @@ object FirebaseUtils {
                             if(Pref.Profile.isProfileUrlSame(context, uid, link.toString())
                                 && utils.hasStoragePermission(context)){
 
-                                Log.d("FirebaseUtils", "onDataChange: loading from local")
 
                                     val file= File(utils.getProfilePicPath(context)+uid+".jpg")
                                     if(file.exists()){
-                                        Picasso.get().load(file).into(imageView)
+                                        Picasso.get().load(file)
+                                            .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE).into(imageView)
                                         imageView.setOnClickListener {
                                             context.startActivity(Intent(context, ImagePreviewActivity::class.java)
                                                 .putExtra(utils.constants.KEY_LOCAL_PATH, file.path))
@@ -242,6 +252,7 @@ object FirebaseUtils {
 
                                     Picasso.get().load(link)
                                         .placeholder(R.drawable.contact_placeholder)
+                                        .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
                                         .into(imageView, object : Callback {
                                             override fun onSuccess() {
                                                 if (utils.hasStoragePermission(context)) {
@@ -291,10 +302,10 @@ object FirebaseUtils {
                 Picasso.get().load(file)
                     .resize(60,60)
                     .centerCrop()
+                    .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
                     .into(imageView)
             }
 
-            Log.d("FirebaseUtils", "loadProfileThumbnail: ${file.path}")
         }
 
 
@@ -314,6 +325,7 @@ object FirebaseUtils {
                                 val file= File(utils.getProfilePicPath(context)+uid+".jpg")
                                 if(file.exists()){
                                     Picasso.get().load(file)
+                                        .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
                                         .resize(60,60)
                                         .centerCrop()
                                         .into(imageView)
@@ -323,14 +335,14 @@ object FirebaseUtils {
                         }
                         else {
                             //download profile pic
-                            Log.d("FirebaseUtils", "onDataChange:,  url has changed, loading from web")
+                            Log.d("FirebaseUtils", "onDataChange:,  profile url has changed, loading from web")
                             Picasso.get().load(link)
                                 .placeholder(R.drawable.contact_placeholder)
+                                .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
                                 .into(imageView, object : Callback {
                                     override fun onSuccess() {
                                         if (utils.hasStoragePermission(context)) {
-                                            utils.saveBitmapToProfileFolder(
-                                                context,
+                                            utils.saveBitmapToProfileFolder(context,
                                                 (imageView.drawable as BitmapDrawable).bitmap,
                                                 uid)
                                             Pref.Profile.setProfileUrl(context, uid, link.toString())
@@ -455,17 +467,20 @@ object FirebaseUtils {
     }
 
     fun setDeliveryStatusTick(
-        uid: String,
+        uid: String,targetUID: String,
         messageID: String,
         messageStatusImageView: ImageView
     ){
-        FirebaseUtils.ref.getMessageStatusRef(uid, messageID)
+
+        ref.getMessageStatusRef(uid,targetUID, messageID)
             .addValueEventListener(object : ValueEventListener{
                 override fun onCancelled(p0: DatabaseError) {
 
                 }
 
                 override fun onDataChange(p0: DataSnapshot) {
+
+
                     if(p0.exists()){
                         if(p0.getValue(Models.MessageStatus::class.java)!!.read)
                             messageStatusImageView.setImageResource(R.drawable.ic_read_status)
@@ -484,9 +499,9 @@ object FirebaseUtils {
     }
 
 
-    fun setMessageStatusToDB(messageID: String, uid: String, isDelivered:Boolean, isRead:Boolean){
-        ref.getMessageStatusRef(uid,messageID)
-            .setValue(Models.MessageStatus(isRead, isDelivered, messageID))
+    fun setMessageStatusToDB(messageID: String, uid: String,targetUID: String, isDelivered:Boolean, isRead:Boolean){
+        ref.getMessageStatusRef(uid,targetUID,messageID)
+            .setValue(Models.MessageStatus(FirebaseUtils.getUid(), isRead, isDelivered, messageID))
 
     }
 
@@ -524,5 +539,20 @@ object FirebaseUtils {
                     }
                 }
             })
+    }
+
+
+    fun storeFCMToken(context: Context){
+        FirebaseInstanceId.getInstance()
+            .instanceId
+            .addOnCompleteListener {
+                 if(!it.isSuccessful)
+                     return@addOnCompleteListener
+
+
+                    if(Pref.getStoredToken(context) != it.result!!.token)
+                    ref.getFCMTokenRef(FirebaseUtils.getUid()).child(it.result!!.id)
+                        .setValue(it.result!!.token)
+            }
     }
 }

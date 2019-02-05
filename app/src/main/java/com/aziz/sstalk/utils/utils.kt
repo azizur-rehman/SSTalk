@@ -4,8 +4,10 @@ import android.Manifest
 import android.animation.Animator
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.ActivityManager
 import android.content.ContentValues
 import android.content.Context
+import android.content.Context.VIBRATOR_SERVICE
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -330,6 +332,11 @@ object utils {
         val file = File(path, fileName)
 
         try {
+
+            if(file.exists()){
+                file.delete()
+                Log.d("utils", "saveBitmapToProfileFolder: old file deleted")
+            }
 
             val fout = FileOutputStream(file)
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, fout)
@@ -693,4 +700,38 @@ object utils {
         return uri
 
     }
+
+    fun isAppIsInBackground(context: Context):Boolean {
+        var isInBackground = true;
+        val am =  context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.KITKAT_WATCH) {
+            val runningProcesses = am.runningAppProcesses
+            for (processInfo in runningProcesses) {
+                if (processInfo.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
+                    for ( activeProcess in  processInfo.pkgList) {
+                        if (activeProcess == context.packageName) {
+                            isInBackground = false
+                        }
+                    }
+                }
+            }
+        } else {
+            val taskInfo = am.getRunningTasks(1)
+            val componentInfo = taskInfo[0].topActivity
+            if (componentInfo.packageName == context.packageName) {
+                isInBackground = false
+            }
+        }
+
+        return isInBackground
+    }
+
+
+    fun vibrate(context: Context) {
+    if (Build.VERSION.SDK_INT >= 26) {
+        (context.getSystemService(VIBRATOR_SERVICE) as Vibrator).vibrate(VibrationEffect.createOneShot(150, VibrationEffect.DEFAULT_AMPLITUDE));
+    } else {
+        ( context.getSystemService(VIBRATOR_SERVICE) as Vibrator).vibrate(150)
+    }
+}
 }
