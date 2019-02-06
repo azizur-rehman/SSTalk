@@ -154,6 +154,8 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
                 holder.time.text = utils.getLocalTime(model.timeInMillis)
 
+                FirebaseUtils.setUnreadCount(uid, holder.unreadCount, holder.name, holder.lastMessage, holder.time)
+
 
                 holder.itemView.setOnClickListener {
 
@@ -169,7 +171,8 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                         return@setOnClickListener
                     }
 
-                    startActivity(Intent(context, MessageActivity::class.java).putExtra(FirebaseUtils.KEY_UID, uid))
+                    startActivity(Intent(context, MessageActivity::class.java).putExtra(FirebaseUtils.KEY_UID, uid)
+                        .putExtra(utils.constants.KEY_UNREAD,holder.unreadCount.getTextView().text.toString().toInt()))
                 }
 
                 if(!isContextToolbarActive){

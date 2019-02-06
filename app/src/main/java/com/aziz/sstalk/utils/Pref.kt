@@ -36,11 +36,11 @@ object Pref {
         }
 
 
-        fun getSoundEnabled(context: Context):Boolean =
+        fun hasSoundEnabled(context: Context):Boolean =
             context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
                 .getBoolean(KEY_SOUND, true)
 
-        fun getVibrationEnabled(context: Context):Boolean =
+        fun hasVibrationEnabled(context: Context):Boolean =
             context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
                 .getBoolean(KEY_VIBRATION, true)
 

@@ -70,6 +70,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="@color/black"
+                android:fontFamily="@font/calibri"
                 android:text="User name"
                 android:textSize="16sp" />
 
@@ -79,6 +80,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="5dp"
                 android:text="Phone no."
+                android:fontFamily="@font/calibri"
                 android:textSize="14sp" />
 
         </LinearLayout>
@@ -91,22 +93,26 @@
                       android:layout_height="match_parent">
 
             <TextView android:layout_width="wrap_content"
-                      android:layout_height="wrap_content"
+                      android:layout_height="0dp"
+                      android:layout_weight="1"
+                      android:gravity="center"
                       android:id="@+id/messageTime"
+                      android:fontFamily="@font/calibri"
                         android:text="12:00 PM"
                       android:textSize="12sp"
             />
 
             <com.nex3z.notificationbadge.NotificationBadge
-                    android:layout_width="wrap_content"
-                      android:layout_height="wrap_content"
-                      android:gravity="center"
-                        app:nbBackground="@color/colorPrimary"
-                      android:layout_marginTop="5dp"
+                    android:layout_width="28dp"
+                      android:layout_height="28dp"
+                      android:layout_gravity="center"
+                    app:nbAnimationEnabled="true"
+                    app:nbAnimationDuration="200"
+                    app:nbEllipsizeText="99+"
+                    app:nbMaxTextLength="2"
                       android:id="@+id/unreadCount"
                       android:textColor="@color/white"
-                      android:textSize="9sp"
-                      android:padding="1dp"
+                      android:textSize="12sp"
                 />
 
 

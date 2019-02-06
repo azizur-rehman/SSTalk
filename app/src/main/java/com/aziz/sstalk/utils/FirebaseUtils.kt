@@ -3,6 +3,7 @@ package com.aziz.sstalk.utils
 import android.app.ProgressDialog
 import android.content.Context
 import android.content.Intent
+import android.graphics.Typeface
 import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
 import android.support.v4.content.ContextCompat
@@ -17,15 +18,16 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import com.squareup.picasso.Picasso
 import com.aziz.sstalk.R
+import com.aziz.sstalk.utils.FirebaseUtils.ref.getAllMessageStatusRef
 import com.google.android.gms.tasks.Continuation
 import com.google.android.gms.tasks.Task
 import com.google.firebase.iid.FirebaseInstanceId
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 import com.google.firebase.storage.UploadTask
+import com.nex3z.notificationbadge.NotificationBadge
 import com.squareup.picasso.Callback
 import com.squareup.picasso.MemoryPolicy
-import com.squareup.picasso.NetworkPolicy
 import java.io.File
 import java.lang.Exception
 
@@ -129,10 +131,14 @@ object FirebaseUtils {
                 .child(uid)
                 .orderByChild(KEY_BLOCKED).equalTo(true)
 
-            fun getMessageStatusRef(uid: String, targetUID: String, messageID: String):DatabaseReference = getRootRef()
-                .child(NODE_MESSAGE_STATUS)
-                .child(uid)
-                .child(targetUID)
+            fun getAllMessageStatusRef(uid: String, targetUID: String):DatabaseReference =
+                getRootRef()
+                    .child(NODE_MESSAGE_STATUS)
+                    .child(uid)
+                    .child(targetUID)
+
+            fun getMessageStatusRef(uid: String, targetUID: String, messageID: String):DatabaseReference =
+                getAllMessageStatusRef(uid, targetUID)
                 .child(messageID)
 
             fun getUserStatusRef(uid: String):DatabaseReference = getRootRef().child(NODE_USER_ACTIVITY_STATUS)
@@ -393,19 +399,13 @@ object FirebaseUtils {
 
                         textView.text = phone
 
-                        phone = utils.getFormattedTenDigitNumber(phone!!)
 
 
                         if(shouldQueryFromContacts){
 
-                            val list = utils.getContactList(context)
+                            textView.text = utils.getNameFromNumber(context, phone!!)
 
-                            for(item in list){
-                                val number = utils.getFormattedTenDigitNumber(item.number)
-                                if(number == phone){
-                                  textView.text = item.name
-                                }
-                            }
+
                         }
                     }
 
@@ -446,6 +446,42 @@ object FirebaseUtils {
                     else {
                         textView.text = ""
                         textView.visibility = View.GONE
+                    }
+                }
+            })
+    }
+
+    fun setUnreadCount(targetUID: String, notificationBadge: NotificationBadge, vararg boldTextViews: TextView ){
+
+        var initialTypeface:Typeface? = null
+
+        if(boldTextViews.isNotEmpty())
+            initialTypeface = boldTextViews[0].typeface
+
+
+        getAllMessageStatusRef(FirebaseUtils.getUid(), targetUID)
+            .orderByChild("read")
+            .equalTo(false)
+            .addValueEventListener(object : ValueEventListener {
+                override fun onCancelled(p0: DatabaseError) {
+                }
+
+                override fun onDataChange(p0: DataSnapshot) {
+
+                    Log.d("FirebaseUtils", "onDataChange: unread count = ${p0.childrenCount}")
+
+                    if(p0.childrenCount.toInt() == 0) {
+                        boldTextViews.forEach {
+                            it.setTypeface(null, Typeface.NORMAL)
+                            notificationBadge.visibility = View.INVISIBLE
+                        }
+                    } else {
+                        boldTextViews.forEach {
+                            it.setTypeface(null, Typeface.BOLD)
+                        }
+
+                        notificationBadge.visibility = View.VISIBLE
+                        notificationBadge.setNumber(p0.childrenCount.toInt(), true)
                     }
                 }
             })

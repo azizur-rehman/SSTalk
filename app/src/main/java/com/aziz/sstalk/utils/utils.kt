@@ -74,6 +74,7 @@ object utils {
         val KEY_FILE_TYPE = "type"
         val debugUserID = "user---2"
         val debugUserID2 = "user---1"
+        val KEY_UNREAD = "unread"
 
         val REGEX_PATTERN_PHONE = "^(\\+\\d{1,2}\\s)?\\(?\\d{3}\\)?[\\s.-]?\\d{3}[\\s.-]?\\d{4}\$"
 
@@ -148,9 +149,6 @@ object utils {
     }
 
 
-    fun getNameFromPhone(){
-
-    }
 
     fun hasContactPermission(context: Context) = (ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED)
 
@@ -726,12 +724,29 @@ object utils {
         return isInBackground
     }
 
+    //provide unformatted number
+    fun getNameFromNumber(context: Context, number: String):String{
+
+
+
+        val list = utils.getContactList(context)
+
+
+        for(item in list){
+            val formattedNumber = utils.getFormattedTenDigitNumber(item.number)
+            if(getFormattedTenDigitNumber(number) == formattedNumber){
+                return item.name
+            }
+        }
+        return number
+    }
+
 
     fun vibrate(context: Context) {
     if (Build.VERSION.SDK_INT >= 26) {
-        (context.getSystemService(VIBRATOR_SERVICE) as Vibrator).vibrate(VibrationEffect.createOneShot(150, VibrationEffect.DEFAULT_AMPLITUDE));
+        (context.getSystemService(VIBRATOR_SERVICE) as Vibrator).vibrate(VibrationEffect.createOneShot(200, VibrationEffect.DEFAULT_AMPLITUDE));
     } else {
-        ( context.getSystemService(VIBRATOR_SERVICE) as Vibrator).vibrate(150)
+        ( context.getSystemService(VIBRATOR_SERVICE) as Vibrator).vibrate(200)
     }
 }
 }

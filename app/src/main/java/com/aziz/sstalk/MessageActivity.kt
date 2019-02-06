@@ -25,6 +25,7 @@ import android.support.v4.content.ContextCompat
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.view.ActionMode
+import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.Log
@@ -77,6 +78,8 @@ class MessageActivity : AppCompatActivity() {
 
 
 
+    var isUnreadHeaderShown = false
+    var totalUnreadMessages = 0
     lateinit var mapRight:GoogleMap
     var TYPE_MINE = 0
     var TYPE_TARGET = 1
@@ -149,6 +152,9 @@ class MessageActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
         targetUid = intent.getStringExtra(FirebaseUtils.KEY_UID)
         myUID = FirebaseUtils.getUid()
+        totalUnreadMessages = intent.getIntExtra(utils.constants.KEY_UNREAD,0)
+
+
 
         FirebaseUtils.setUserDetailFromUID(this, target_name_textview, targetUid, utils.hasContactPermission(context))
         FirebaseUtils.loadProfileThumbnail(context, targetUid, profile_circleimageview)
@@ -826,6 +832,12 @@ class MessageActivity : AppCompatActivity() {
 
 
 
+                if(container!=null){
+                    if(totalUnreadMessages != 0 && (adapter.itemCount - totalUnreadMessages - 1) == position)
+                        container.addView(layoutInflater.inflate(R.layout.date_header, container, false))
+                }
+
+
                 //loading message Image listener
                if(messageImage!=null) {
                    messageImage.setOnClickListener {
@@ -1013,6 +1025,7 @@ class MessageActivity : AppCompatActivity() {
 
        adapter.startListening()
 
+       findIndexOfFirstUnreadMessage()
 
 
 
@@ -1022,6 +1035,7 @@ class MessageActivity : AppCompatActivity() {
 
 
     private fun setSendMessageListener(){
+
 
 
         messageInputField.setInputListener {
@@ -1037,6 +1051,8 @@ class MessageActivity : AppCompatActivity() {
 
             val messageID = "MSG" +System.currentTimeMillis()
 
+            totalUnreadMessages = 0
+            adapter.notifyItemChanged(0)
 
             addMessageToBoth(messageID, messageModel)
             loadedPosition[messagesList.adapter!!.itemCount ]
@@ -1046,6 +1062,31 @@ class MessageActivity : AppCompatActivity() {
             true
         }
 
+    }
+
+
+    private fun findIndexOfFirstUnreadMessage(){
+        FirebaseUtils.ref.getAllMessageStatusRef(myUID, targetUid)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onCancelled(p0: DatabaseError) {
+                }
+
+                override fun onDataChange(p0: DataSnapshot) {
+
+                    val itemDecor = DividerItemDecoration(context, DividerItemDecoration.VERTICAL)
+
+                    for((index, snapshot) in p0.children.withIndex()){
+                        val model = snapshot.getValue(Models.MessageStatus::class.java)
+                        if(!model!!.read && index < (p0.childrenCount.toInt() - 1))
+                        {
+                            Log.d("MessageActivity", "onDataChange: first unread data ${snapshot.value}")
+                            Log.d("MessageActivity", "onDataChange: first unread found at $index")
+                            messagesList.scrollToPosition(index)
+                            break
+                        }
+                    }
+                }
+            })
     }
 
 
