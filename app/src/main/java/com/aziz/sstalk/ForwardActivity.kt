@@ -128,7 +128,7 @@ class ForwardActivity : AppCompatActivity() {
 
                 val uid = super.getRef(position).key.toString()
 
-                bindHolder(holder, uid)
+                bindHolder(holder, uid,"")
 
 
             }
@@ -174,20 +174,31 @@ class ForwardActivity : AppCompatActivity() {
 
                 val uid = registeredAvailableUser[p1].uid
 
-                bindHolder(holder, uid)
+                bindHolder(holder, uid, registeredAvailableUser[p1].number )
 
             }
 
         }
         allContactRecyclerView.adapter = allContactAdapter
 
+
+
     }
 
 
     @SuppressLint("RestrictedApi")
-    private fun bindHolder(holder: ViewHolder, uid:String){
+    private fun bindHolder(holder: ViewHolder, uid:String, phone:String){
+
 
         holder.title.text = uid
+
+        if(phone.isNotEmpty()){
+            holder.title.text = utils.getNameFromNumber(context, phone)
+        }
+        else{
+            FirebaseUtils.setUserDetailFromUID(context, holder.title, uid, true)
+        }
+
         FirebaseUtils.loadProfileThumbnail(context, uid, holder.pic)
         holder.title.setTextColor(Color.BLACK)
 
@@ -208,7 +219,6 @@ class ForwardActivity : AppCompatActivity() {
 
             })
 
-        FirebaseUtils.setUserDetailFromUID(context, holder.title, uid, true)
 
 
 
@@ -260,6 +270,9 @@ class ForwardActivity : AppCompatActivity() {
 
                         val number = utils.getFormattedTenDigitNumber(userModel!!.phone)
                         val uid = userModel.uid
+
+                        if(uid == FirebaseUtils.getUid())
+                            continue
 
                         for((index, item) in numberList.withIndex()) {
                             if (item.number == number) {

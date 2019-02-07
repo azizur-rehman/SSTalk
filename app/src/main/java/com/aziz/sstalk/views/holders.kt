@@ -122,7 +122,7 @@ object holders {
         val messageLayout = itemView.message_layout_map_left!!
         val senderIcon = itemView.circle_sender_map!!
 
-        val cardContainer = itemView.map_container_left_card!!
+        val container = itemView.container_map_left!!
 
     }
 
@@ -135,7 +135,7 @@ object holders {
         val time = itemView.time_map_right!!
 
 
-        val cardContainer = itemView.map_container_right_card!!
+        val container = itemView.container_map_right!!
 
 
     }

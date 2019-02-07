@@ -64,6 +64,7 @@ import com.vincent.filepicker.activity.VideoPickActivity
 import com.vincent.filepicker.filter.entity.ImageFile
 import com.vincent.filepicker.filter.entity.VideoFile
 import kotlinx.android.synthetic.main.activity_message.*
+import kotlinx.android.synthetic.main.unread_header.view.*
 import me.shaohui.advancedluban.Luban
 import me.shaohui.advancedluban.OnCompressListener
 import java.io.File
@@ -77,10 +78,8 @@ import kotlin.collections.HashMap
 class MessageActivity : AppCompatActivity() {
 
 
-
-    var isUnreadHeaderShown = false
-    var totalUnreadMessages = 0
-    lateinit var mapRight:GoogleMap
+    var unreadHeaderPosition = 0
+    var unreadFirstMessageID = ""
     var TYPE_MINE = 0
     var TYPE_TARGET = 1
     var TYPE_MY_MAP = 2
@@ -152,7 +151,6 @@ class MessageActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
         targetUid = intent.getStringExtra(FirebaseUtils.KEY_UID)
         myUID = FirebaseUtils.getUid()
-        totalUnreadMessages = intent.getIntExtra(utils.constants.KEY_UNREAD,0)
 
 
 
@@ -626,6 +624,14 @@ class MessageActivity : AppCompatActivity() {
             }
 
 
+             override fun getItemCount(): Int {
+
+                 message_progressbar.visibility = View.GONE
+
+                 return super.getItemCount()
+             }
+
+
             @SuppressLint("ObjectAnimatorBinding")
             override fun onBindViewHolder(
                 holder: RecyclerView.ViewHolder,
@@ -657,6 +663,10 @@ class MessageActivity : AppCompatActivity() {
 
 
                 val date = Date(model.timeInMillis)
+
+
+                FirebaseUtils.setMessageStatusToDB(messageID, myUID, targetUid, true, true)
+
 
                 if(model.messageType == utils.constants.FILE_TYPE_LOCATION){
 
@@ -696,7 +706,7 @@ class MessageActivity : AppCompatActivity() {
                         holder.message.text = model.message
                         dateHeader = holder.headerDateTime
                         container = holder.container
-                        FirebaseUtils.setDeliveryStatusTick(targetUid, myUID, messageID, holder.messageStatus)
+                        FirebaseUtils.setDeliveryStatusTick(targetUid, messageID, holder.messageStatus)
                         messageTextView = holder.message
                         messageLayout = holder.messageLayout
 
@@ -705,12 +715,12 @@ class MessageActivity : AppCompatActivity() {
                     }
                     is holders.MyImageMsgHolder -> {
 
-
+                        holder.time.text = utils.getLocalTime(model.timeInMillis)
                         messageImage = holder.imageView
                         container = holder.container
                         dateHeader = holder.headerDateTime
 
-                        FirebaseUtils.setDeliveryStatusTick(targetUid, myUID, messageID, holder.messageStatus)
+                        FirebaseUtils.setDeliveryStatusTick(targetUid, messageID, holder.messageStatus)
 
 
                         messageTextView = holder.message
@@ -725,7 +735,7 @@ class MessageActivity : AppCompatActivity() {
                         messageImage = holder.imageView
                         dateHeader = holder.headerDateTime
                         container = holder.container
-
+                        holder.time.text = utils.getLocalTime(model.timeInMillis)
                         messageTextView = holder.message
                         messageLayout = holder.messageLayout
 
@@ -747,13 +757,13 @@ class MessageActivity : AppCompatActivity() {
 
                         thumbnail = holder.thumbnail
                         videoLengthTextView = holder.videoLengthText
-
+                        holder.time.text = utils.getLocalTime(model.timeInMillis)
                         tapToDownload = holder.tap_to_download
                         dateHeader = holder.headerDateTime
                         container = holder.container
 
 
-                        FirebaseUtils.setDeliveryStatusTick(targetUid,myUID, messageID, holder.messageStatus)
+                        FirebaseUtils.setDeliveryStatusTick(targetUid, messageID, holder.messageStatus)
                         messageTextView = holder.message
                         messageLayout = holder.messageLayout
 
@@ -765,7 +775,7 @@ class MessageActivity : AppCompatActivity() {
                     is holders.TargetVideoMsgHolder -> {
 
                         tapToDownload = holder.tap_to_download
-
+                        holder.time.text = utils.getLocalTime(model.timeInMillis)
                         thumbnail = holder.thumbnail
                         videoLengthTextView = holder.videoLengthText
                         dateHeader = holder.headerDateTime
@@ -795,10 +805,11 @@ class MessageActivity : AppCompatActivity() {
                     is holders.MyMapHolder -> {
                         holder.message.text = model.caption
                         holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
-
+                        holder.time.text = utils.getLocalTime(model.timeInMillis)
                         messageLayout = holder.messageLayout
                         dateHeader = holder.dateHeader
                         messageTextView = holder.message
+                        container = holder.container
 
                         loadMap(holder.mapView, LatLng(latitude,longitude))
 
@@ -808,7 +819,8 @@ class MessageActivity : AppCompatActivity() {
 
                         holder.message.text = model.caption
                         dateHeader = holder.dateHeader
-
+                        container = holder.container
+                        holder.time.text = utils.getLocalTime(model.timeInMillis)
                         messageLayout = holder.messageLayout
                         messageTextView = holder.message
 
@@ -832,9 +844,13 @@ class MessageActivity : AppCompatActivity() {
 
 
 
-                if(container!=null){
-                    if(totalUnreadMessages != 0 && (adapter.itemCount - totalUnreadMessages - 1) == position)
-                        container.addView(layoutInflater.inflate(R.layout.date_header, container, false))
+                if(container!=null) {
+                    // add unread header
+                    if (unreadFirstMessageID == messageID && position != 0) {
+                        val unreadView = (layoutInflater.inflate(R.layout.unread_header, container, false))
+                        unreadView.header_unread_textView.text = "${itemCount - unreadHeaderPosition - 1} unread messages"
+                        container.addView(unreadView)
+                    }
                 }
 
 
@@ -868,7 +884,7 @@ class MessageActivity : AppCompatActivity() {
                     }
                     else{
 
-                        utils.setVideoThumbnailFromWebAsync(model.message, thumbnail)
+                        utils.setVideoThumbnailFromWebAsync(context, model.message, thumbnail)
 
                         Log.d("MessageActivity", "onBindViewHolder: $messageID file not found")
 
@@ -1016,10 +1032,19 @@ class MessageActivity : AppCompatActivity() {
         adapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
             override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
 
+
                 if(adapter.getItem(positionStart).from == myUID)
                     messagesList.scrollToPosition(adapter.itemCount - 1)
 
                 super.onItemRangeInserted(positionStart, itemCount)
+            }
+
+            override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) {
+                val oldPos = unreadHeaderPosition
+                unreadHeaderPosition = 0
+                unreadFirstMessageID = ""
+                adapter.notifyItemChanged(oldPos)
+                super.onItemRangeRemoved(positionStart, itemCount)
             }
         })
 
@@ -1051,7 +1076,6 @@ class MessageActivity : AppCompatActivity() {
 
             val messageID = "MSG" +System.currentTimeMillis()
 
-            totalUnreadMessages = 0
             adapter.notifyItemChanged(0)
 
             addMessageToBoth(messageID, messageModel)
@@ -1073,17 +1097,24 @@ class MessageActivity : AppCompatActivity() {
 
                 override fun onDataChange(p0: DataSnapshot) {
 
-                    val itemDecor = DividerItemDecoration(context, DividerItemDecoration.VERTICAL)
 
-                    for((index, snapshot) in p0.children.withIndex()){
-                        val model = snapshot.getValue(Models.MessageStatus::class.java)
-                        if(!model!!.read && index < (p0.childrenCount.toInt() - 1))
-                        {
-                            Log.d("MessageActivity", "onDataChange: first unread data ${snapshot.value}")
-                            Log.d("MessageActivity", "onDataChange: first unread found at $index")
-                            messagesList.scrollToPosition(index)
-                            break
+                    try {
+
+                        for ((index, snapshot) in p0.children.withIndex()) {
+                            val model = snapshot.getValue(Models.MessageStatus::class.java)
+                            if (!model!!.read && index < (p0.childrenCount.toInt() - 1)) {
+                                Log.d("MessageActivity", "onDataChange: first unread data ${snapshot.value}")
+                                Log.d("MessageActivity", "onDataChange: first unread found at $index")
+                                unreadHeaderPosition = index
+                                unreadFirstMessageID = model.messageID
+                                adapter.notifyItemChanged(unreadHeaderPosition)
+                                messagesList.scrollToPosition(index)
+                                break
+                            }
                         }
+                    }
+                    catch (e:Exception){
+                        Log.d("MessageActivity", "onDataChange: error parsing this model = $p0")
                     }
                 }
             })
@@ -1189,6 +1220,10 @@ class MessageActivity : AppCompatActivity() {
     private fun addMessageToMyNode(messageID: String , messageModel: Models.MessageModel){
 
         //setting my message
+
+        adapter.notifyItemChanged(unreadHeaderPosition)
+        unreadHeaderPosition = 0
+        unreadFirstMessageID = ""
 
         FirebaseUtils.ref.getChatRef(myUID, targetUid)
             .child(messageID)

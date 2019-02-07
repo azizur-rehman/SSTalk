@@ -413,7 +413,7 @@ object FirebaseUtils {
         }
 
 
-    fun setLastMessage(targetUID: String, textView: TextView){
+    fun setLastMessage(targetUID: String, textView: TextView, messageStatusImageView:ImageView){
 
         textView.text  = ""
 
@@ -424,23 +424,34 @@ object FirebaseUtils {
 
                 override fun onDataChange(p0: DataSnapshot) {
 
+                    messageStatusImageView.visibility = View.GONE
                     var messageModel:Models.MessageModel? = null
-                    for(item in p0.children)
-                      messageModel = item.getValue(Models.MessageModel::class.java)
-
+                    var messageID = ""
+                    for(item in p0.children) {
+                        messageModel = item.getValue(Models.MessageModel::class.java)
+                        messageID = item.key!!
+                    }
 
                     if(p0.exists()) {
                         textView.text = messageModel!!.message//.replace("\n"," ")
                         textView.visibility = View.VISIBLE
 
 
+                        if(messageModel.from == FirebaseUtils.getUid()){
+                            messageStatusImageView.visibility = View.VISIBLE
+                            setDeliveryStatusTick(targetUID, messageID, messageStatusImageView)
+                        }
+                        else{
+                            messageStatusImageView.visibility = View.GONE
+                        }
 
                         if(messageModel.messageType == utils.constants.FILE_TYPE_IMAGE){
                             textView.text = ("\uD83D\uDDBC Image")
                         }
                         else if(messageModel.messageType == utils.constants.FILE_TYPE_VIDEO)
                             textView.text = "\uD83C\uDFA5 Video"
-
+                        else if(messageModel.messageType == utils.constants.FILE_TYPE_LOCATION)
+                            textView.text = "\uD83D\uDCCC ${if(messageModel.caption.isEmpty()) " Location" else messageModel.caption}"
 
                     }
                     else {
@@ -503,12 +514,11 @@ object FirebaseUtils {
     }
 
     fun setDeliveryStatusTick(
-        uid: String,targetUID: String,
-        messageID: String,
+        targetUID: String, messageID: String,
         messageStatusImageView: ImageView
     ){
 
-        ref.getMessageStatusRef(uid,targetUID, messageID)
+        ref.getMessageStatusRef(targetUID,FirebaseUtils.getUid(), messageID)
             .addValueEventListener(object : ValueEventListener{
                 override fun onCancelled(p0: DatabaseError) {
 

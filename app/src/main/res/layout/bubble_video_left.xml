@@ -145,12 +145,14 @@
                 </com.skyline.widget.layout.RoundCornerLayout>
 
                 <TextView
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="0dp"
-                        android:padding="5dp"
+                        android:paddingBottom="10dp"
+                        android:paddingTop="10dp"
+                        android:gravity="center"
+                        android:layout_marginRight="15dp"
                         android:layout_weight="1"
                         android:maxWidth="200dp"
-                        android:layout_marginLeft="10dp"
                         android:autoLink="all"
                         android:text="Caption is used for image"
                         android:id="@+id/messageText_video_left"

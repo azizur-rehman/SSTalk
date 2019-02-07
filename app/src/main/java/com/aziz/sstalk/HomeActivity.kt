@@ -146,13 +146,14 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
                 FirebaseUtils.loadProfilePic(this@HomeActivity, uid, holder.pic)
 
-                FirebaseUtils.setLastMessage(uid, holder.lastMessage)
+                FirebaseUtils.setLastMessage(uid, holder.lastMessage, holder.deliveryTick)
 
                 FirebaseUtils.setUserDetailFromUID(this@HomeActivity, holder.name, uid, hasPermission)
 
                 holder.messageInfo.visibility = View.VISIBLE
 
                 holder.time.text = utils.getLocalTime(model.timeInMillis)
+                holder.time.visibility = View.VISIBLE
 
                 FirebaseUtils.setUnreadCount(uid, holder.unreadCount, holder.name, holder.lastMessage, holder.time)
 
@@ -171,8 +172,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                         return@setOnClickListener
                     }
 
-                    startActivity(Intent(context, MessageActivity::class.java).putExtra(FirebaseUtils.KEY_UID, uid)
-                        .putExtra(utils.constants.KEY_UNREAD,holder.unreadCount.getTextView().text.toString().toInt()))
+                    startActivity(Intent(context, MessageActivity::class.java).putExtra(FirebaseUtils.KEY_UID, uid))
                 }
 
                 if(!isContextToolbarActive){
@@ -262,6 +262,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         val unreadCount = itemView.unreadCount
         val onlineStatus = itemView.online_status_imageview
         val checkbox = itemView.contact_checkbox
+        val deliveryTick = itemView.delivery_status_last_msg
 
     }
 

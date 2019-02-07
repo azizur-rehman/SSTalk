@@ -36,6 +36,7 @@ import android.widget.Toast
 import com.aziz.sstalk.BuildConfig
 import com.aziz.sstalk.R
 import com.aziz.sstalk.models.Models
+import com.bumptech.glide.Glide
 import com.google.firebase.auth.FirebaseAuth
 import com.squareup.picasso.Picasso
 import java.io.ByteArrayOutputStream
@@ -398,12 +399,6 @@ object utils {
             val timeInMillisec = time.toLong()
 
             retriever.release()
-//            return String.format(
-//                "%d:%d",
-//                TimeUnit.MILLISECONDS.toMinutes(timeInMillisec),
-//                TimeUnit.MILLISECONDS.toSeconds(timeInMillisec) -
-//                        TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(timeInMillisec))
-//            )
 
             return getDurationString(timeInMillisec)
         }
@@ -444,151 +439,23 @@ object utils {
     }
 
 
-   private class getThumbFromURL(private val imageView: ImageView, private val videoPath: String) : AsyncTask <Void, Void, Void>(){
-       var bitmap: Bitmap? = null
-        val mediaMetadataRetriever:MediaMetadataRetriever? = MediaMetadataRetriever()
+    fun setVideoThumbnailFromWebAsync(context: Context, videoPath: String, imageView: ImageView){
 
-
-        override fun doInBackground(vararg params: Void?): Void? {
-
-
-            try
-            {
-                if (Build.VERSION.SDK_INT >= 14)
-                    mediaMetadataRetriever!!.setDataSource(videoPath, HashMap<String, String>())
-                else
-                    mediaMetadataRetriever!!.setDataSource(videoPath)
-                //   mediaMetadataRetriever.setDataSource(videoPath);
-                bitmap = mediaMetadataRetriever.getFrameAtTime(1, MediaMetadataRetriever.OPTION_CLOSEST);
-            }
-            catch (e:Exception)
-            {
-                e.printStackTrace()
-            }
-            finally
-            {
-                mediaMetadataRetriever!!.release()
-            }
-
-            return null
-        }
-
-        override fun onPostExecute(result: Void?) {
-            super.onPostExecute(result)
-            mediaMetadataRetriever!!.release()
-            imageView.setImageBitmap(bitmap)
-
-        }
+        Glide.with(context)
+            .load(videoPath)
+            .thumbnail(0.1f)
+            .into(imageView)
 
     }
 
-
-
-    fun setVideoThumbnailFromWebAsync(videoPath: String, imageView: ImageView){
-        getThumbFromURL(imageView, videoPath)
-            .execute()
-    }
-
-
-    private class loadImageUsingPicassoFromFile(private val file: File,private val imageView: ImageView) : AsyncTask<Void, Void, Void>() {
-        override fun doInBackground(vararg params: Void?): Void? {
-
-
-            Handler(Looper.getMainLooper())
-                .post {
-
-            Picasso.get()
-                .load(file)
-                .tag(file.path)
-                .fit()
-                .centerCrop()
-                //.resize(600,400)
-                .error(R.drawable.error_placeholder2)
-                .placeholder(R.drawable.placeholder_image)
-                .into(imageView)
-
-                }
-
-                    return null
-        }
-
-    }
-
-
-    private class loadImageUsingPicassoFromWeb(private val url: String,private val imageView: ImageView) : AsyncTask<Void, Void, Void>() {
-        override fun doInBackground(vararg params: Void?): Void? {
-            Picasso.get()
-                .load(url)
-                .tag(url)
-                .fit()
-                .centerCrop()
-                //.resize(600,400)
-                .error(R.drawable.error_placeholder2)
-                .placeholder(R.drawable.placeholder_image)
-                .into(imageView)
-            return null
-        }
-
-    }
-
-
-    fun loadFileUsingPicassoFromWeb(url: String, imageView: ImageView){
-        loadImageUsingPicassoFromWeb(url,imageView).execute()
-    }
-
-
-    fun loadUsingPicassoFromFile(file: File, imageView: ImageView){
-        loadImageUsingPicassoFromFile(file,imageView).execute()
-    }
-
-
-     fun getVideoThumbnailFromWeb(videoPath:String, imageView: ImageView): Bitmap?
-    {
-    var bitmap: Bitmap? = null
-    var mediaMetadataRetriever:MediaMetadataRetriever? = null
-
-
-
-    try
-    {
-        mediaMetadataRetriever = MediaMetadataRetriever()
-        if (Build.VERSION.SDK_INT >= 14)
-            mediaMetadataRetriever.setDataSource(videoPath, HashMap<String, String>())
-            else
-                mediaMetadataRetriever.setDataSource(videoPath)
-     //   mediaMetadataRetriever.setDataSource(videoPath);
-        bitmap = mediaMetadataRetriever.getFrameAtTime(1, MediaMetadataRetriever.OPTION_CLOSEST);
-    }
-    catch (e:Exception)
-    {
-        e.printStackTrace()
-    }
-    finally
-    {
-        mediaMetadataRetriever!!.release()
-    }
-    return bitmap
-}
 
     fun loadVideoThumbnailFromLocalAsync(context: Context, imageView: ImageView, path:String){
-        val task = @SuppressLint("StaticFieldLeak")
-        object : AsyncTask<Void, Void, Void>() {
 
-            override fun onPostExecute(result: Void?) {
-                super.onPostExecute(result)
-                this.cancel(true)
-            }
+        Glide.with(context)
+            .load(path)
+            .thumbnail(0.1f)
+            .into(imageView)
 
-            override fun doInBackground(vararg params: Void?): Void? {
-                try{
-                    imageView.setImageBitmap(ThumbnailUtils.createVideoThumbnail(path, MediaStore.Video.Thumbnails.MICRO_KIND))
-                }
-                catch (e:Exception) {}
-                return null
-            }
-
-        }
-        task.execute()
     }
 
 

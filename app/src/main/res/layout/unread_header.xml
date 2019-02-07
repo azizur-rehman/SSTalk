@@ -3,14 +3,17 @@
                                              android:layout_width="match_parent"
               android:orientation="vertical"
               android:gravity="center"
-                                             android:layout_height="wrap_content">
+              android:layout_height="wrap_content">
 
 
     <TextView android:layout_width="wrap_content"
-              android:text="Date"
+              android:text="Unread messages"
               style="@style/RoundButton"
-              android:id="@+id/header_date"
+              android:id="@+id/header_unread_textView"
+              android:paddingLeft="10dp"
+              android:paddingRight="10dp"
+              android:textSize="13sp"
               android:background="@drawable/button_round"
-              android:layout_height="wrap_content"/>
+              android:layout_height="32dp"/>
 
 </LinearLayout>
