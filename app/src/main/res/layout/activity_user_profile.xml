@@ -26,11 +26,13 @@
                 app:contentScrim="?attr/colorPrimary">
 
 
-            <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent">
+            <FrameLayout android:layout_width="match_parent"
+                         android:background="@color/black"
+                         android:layout_height="match_parent">
 
                          <ImageView android:layout_height="match_parent"
                                     android:id="@+id/user_profile_imageview"
-                                    android:alpha="0.9"
+                                    android:alpha="0.8"
                                     android:src="@drawable/contact_placeholder"
                                     android:scaleType="centerCrop"
                                     android:layout_width="match_parent"/>
@@ -49,7 +51,14 @@
         </android.support.design.widget.CollapsingToolbarLayout>
     </android.support.design.widget.AppBarLayout>
 
-    <include layout="@layout/content_user_profile"/>
+
+    <android.support.v4.widget.NestedScrollView android:layout_width="match_parent"
+                                                app:layout_behavior="@string/appbar_scrolling_view_behavior"
+                                                android:layout_height="wrap_content">
+
+        <include layout="@layout/content_user_profile"/>
+
+    </android.support.v4.widget.NestedScrollView>
 
 
 </android.support.design.widget.CoordinatorLayout>

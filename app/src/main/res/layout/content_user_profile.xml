@@ -42,6 +42,35 @@
     />
 
 
+    <TextView android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              style="@style/TextViewHeading"
+              android:text="Notification"
+              android:padding="10dp"
+              android:layout_marginLeft="5dp"
+              android:layout_marginTop="5dp"
+    />
+
+
+    <Switch android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:padding="15dp"
+              android:text="Mute Notification"
+              android:textColor="@color/gray_dark"
+              android:textSize="18sp"
+              android:background="?selectableItemBackground"
+              android:gravity="center_vertical"
+              android:drawablePadding="20dp"
+              android:layout_marginBottom="5dp"
+              android:checked="false"
+              android:id="@+id/notification_switch"
+    />
+
+
+    <View android:layout_width="match_parent"
+          android:layout_height="10dp"
+          android:background="@color/gray_light"
+    />
 
     <TextView android:layout_width="match_parent"
               android:layout_height="wrap_content"
@@ -72,7 +101,7 @@
 
     <android.support.v7.widget.RecyclerView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
             android:id="@+id/mediaRecyclerView"
             android:layout_weight="1"
 

@@ -220,7 +220,7 @@ object utils {
         val animator =
             ViewAnimationUtils.createCircularReveal(view, cx, cy, 0f, finalRadius)
         animator.interpolator = AccelerateDecelerateInterpolator()
-        animator.duration = 800
+        animator.duration = 600
 
         animator.addListener(object : Animator.AnimatorListener{
             override fun onAnimationRepeat(animation: Animator?) {

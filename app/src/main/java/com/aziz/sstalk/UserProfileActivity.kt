@@ -53,9 +53,8 @@ class UserProfileActivity : AppCompatActivity() {
         var user1 = "user---1"
         var user2 = "user---2"
 
-        //todo change this to uid
 
-        myUID = utils.constants.debugUserID
+        myUID = FirebaseUtils.getUid()
 
         targetUID = intent.getStringExtra(FirebaseUtils.KEY_UID)
         name = intent.getStringExtra(FirebaseUtils.KEY_NAME)
@@ -200,6 +199,27 @@ class UserProfileActivity : AppCompatActivity() {
 
         checkIfBlocked()
 
+
+        //set notification switch enable/disable
+        notification_switch.setOnCheckedChangeListener { _, isChecked ->
+            FirebaseUtils.ref.getNotificationMuteRef(targetUID)
+                .setValue(isChecked)
+        }
+
+        //set switch initial value
+        FirebaseUtils.ref.getNotificationMuteRef(targetUID)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onCancelled(p0: DatabaseError) {
+                }
+
+                override fun onDataChange(p0: DataSnapshot) {
+                    if(!p0.exists()) {
+                        notification_switch.isChecked = false
+                        return
+                    }
+                        notification_switch.isChecked = p0.getValue(Boolean::class.java)!!
+                }
+            })
     }
 
 

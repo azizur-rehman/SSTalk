@@ -41,6 +41,7 @@ object FirebaseUtils {
         val NODE_MESSAGE_STATUS = "Message_Status"
         val NODE_USER_ACTIVITY_STATUS = "User_Status"
         val NODE_TOKEN = "FCM_Tokens"
+        val NODE_INDIVIDUAL_NOTIFICATION_SETTING = "Mute_Notification"
 
         val VAL_ONLINE = "Online"
         val VAL_OFFLINE = "Offline"
@@ -48,6 +49,7 @@ object FirebaseUtils {
 
 
         val KEY_STATUS = "status"
+        val KEY_ENABLED = "enabled"
         val KEY_UID = "uid"
         val NODE_LAST_MESSAGE = "LastMessage"
         val KEY_REVERSE_TIMESTAMP = "reverseTimeStamp"
@@ -137,12 +139,24 @@ object FirebaseUtils {
                     .child(uid)
                     .child(targetUID)
 
+            fun getMyAllMessageStatusRootRef():DatabaseReference =
+                    getRootRef().child(NODE_MESSAGE_STATUS)
+                        .child(FirebaseUtils.getUid())
+                    //.child("vHv8TSqbS2YBHZJXS5X5Saz4acC2")
+
             fun getMessageStatusRef(uid: String, targetUID: String, messageID: String):DatabaseReference =
                 getAllMessageStatusRef(uid, targetUID)
                 .child(messageID)
 
             fun getUserStatusRef(uid: String):DatabaseReference = getRootRef().child(NODE_USER_ACTIVITY_STATUS)
                 .child(uid)
+
+            //this will return a boolean snapshot
+            fun getNotificationMuteRef(uid: String):DatabaseReference =
+                    getRootRef().child(NODE_INDIVIDUAL_NOTIFICATION_SETTING)
+                        .child(FirebaseUtils.getUid())
+                        .child(uid)
+                        .child(KEY_ENABLED)
         }
 
 

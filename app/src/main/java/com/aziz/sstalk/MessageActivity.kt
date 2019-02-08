@@ -1302,8 +1302,25 @@ class MessageActivity : AppCompatActivity() {
                     .clearCache()
                     .launch(object : OnCompressListener {
                         override fun onError(e: Throwable?) {
+                            //setting up node for original image
+                            messageModel= Models.MessageModel(
+                                "",
+                                myUID, targetUid ,isFile = true,
+                                caption = caption, messageType = messageType,
+                                file_local_path = originalPath,
+                                file_size_in_bytes = file.length())
 
-                            utils.toast(context, e!!.message.toString())
+
+                            //uploading original image
+                            //this happens in a rare case when cache is bad
+                            val newID = if(isNewIDRequired) "MSG" +System.currentTimeMillis() else messageID
+
+                            isUploading[newID] = true
+                            fileUpload(newID, file, originalPath, caption, messageType)
+
+                            addMessageToMyNode(newID, messageModel)
+
+                            utils.toast(context, "Failed to compress, uploading original image")
                         }
 
                         override fun onStart() {
@@ -1319,8 +1336,6 @@ class MessageActivity : AppCompatActivity() {
                                 caption = caption, messageType = messageType,
                                 file_local_path = originalPath,
                                 file_size_in_bytes = file!!.length())
-
-
 
                             val fileSizeInMB = (file.length()/(1024* 1024))
 
@@ -1375,6 +1390,10 @@ class MessageActivity : AppCompatActivity() {
 
 
 
+
+    }
+
+    private fun onImageCompressed(){
 
     }
 

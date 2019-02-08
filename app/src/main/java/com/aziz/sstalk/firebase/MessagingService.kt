@@ -3,12 +3,11 @@ package com.aziz.sstalk.firebase
 import android.app.Notification
 import android.app.PendingIntent
 import android.content.Intent
-import android.media.RingtoneManager
-import android.os.Build
 import android.support.v4.app.NotificationCompat
 import android.support.v4.app.NotificationManagerCompat
 import android.util.Log
 import com.aziz.sstalk.HomeActivity
+import com.aziz.sstalk.MessageActivity
 import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.Pref
 import com.aziz.sstalk.utils.utils
@@ -40,15 +39,32 @@ class MessagingService: FirebaseMessagingService() {
 
         setAllMessageFromUserAsDelivered(data!![KEY_RECEIVER]!!, data[KEY_SENDER]!!, data[KEY_MSG_IDs]!!)
 
-        if(utils.isAppIsInBackground(this)){
-            //app is in background show notification
-            showNotification(p0)
-        }
-        else {
 
-            if(Pref.Notification.hasVibrationEnabled(this))
-            utils.vibrate(this)
-        }
+
+        FirebaseUtils.ref.getNotificationMuteRef(data[KEY_SENDER]!!)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onCancelled(p0: DatabaseError) {
+                }
+
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if(snapshot.exists()){
+                        if(snapshot.getValue(Boolean::class.java)!!)
+                            return
+                    }
+                    if(utils.isAppIsInBackground(this@MessagingService)){
+                        //app is in background show notification
+                        showNotification(p0)
+                    }
+                    else {
+
+                        if(Pref.Notification.hasVibrationEnabled(this@MessagingService))
+                            utils.vibrate(this@MessagingService)
+                    }
+                }
+            })
+
+
+
 
     }
 
@@ -77,8 +93,9 @@ class MessagingService: FirebaseMessagingService() {
                         val title = "$totalMessage ${if(totalMessage!!.toInt()==1) "message" else "messages"} from $name"
 
                         Log.d("MessagingService", "onDataChange: sending notification with title = $title")
-                        val intent = Intent(this@MessagingService, HomeActivity::class.java).apply {
+                        val intent = Intent(this@MessagingService, MessageActivity::class.java).apply {
                             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                            putExtra(FirebaseUtils.KEY_UID, sender)
                         }
 
                         notify(title, intent)
@@ -92,7 +109,7 @@ class MessagingService: FirebaseMessagingService() {
 
 
     private fun notify(title:String, intent: Intent){
-        val pendingIntent: PendingIntent = PendingIntent.getActivity(this@MessagingService, 0, intent, 0)
+        val pendingIntent: PendingIntent = PendingIntent.getActivity(this@MessagingService, NotificationID, intent, 0)
 
         val notification = NotificationCompat.Builder(this@MessagingService)
             .setContentTitle(title)
@@ -101,10 +118,12 @@ class MessagingService: FirebaseMessagingService() {
             .setDefaults(Notification.DEFAULT_ALL)
             .setStyle(NotificationCompat.BigTextStyle()
                 .setBigContentTitle(title)
-                .bigText("Message"))
+                .bigText("Tap to Read"))
             .setContentIntent(pendingIntent)
             .setPriority(Notification.PRIORITY_MAX)
             .setAutoCancel(true)
+
+
 
 //        if(!Pref.Notification.hasVibrationEnabled(this@MessagingService)) {
 //            //if(Build.VERSION.SDK_INT<Build.VERSION_CODES.O)
@@ -120,6 +139,60 @@ class MessagingService: FirebaseMessagingService() {
             notify(NotificationID, notification.build())
         }
 
+        getAllUnreadMessages(notification)
+    }
+
+
+    private fun getAllUnreadMessages(notificationCompatBuilder: NotificationCompat.Builder){
+        var unreadCount = 0
+        var unreadConversation = 0
+        FirebaseUtils.ref.getMyAllMessageStatusRootRef()
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onCancelled(p0: DatabaseError) {
+                }
+
+                override fun onDataChange(p0: DataSnapshot) {
+                    //iterate through every node to check for unread messages
+
+                    for((index,snapshot) in p0.children.withIndex()){
+                        snapshot.ref.orderByChild("read")
+                            .equalTo(false)
+                            .addListenerForSingleValueEvent(object : ValueEventListener {
+                                override fun onCancelled(p0: DatabaseError) {
+                                }
+
+                                override fun onDataChange(p1: DataSnapshot) {
+
+
+                                    if (!p1.exists()) return
+                                    unreadCount += p1.childrenCount.toInt()
+                                    unreadConversation++
+
+                                    if (index == p0.childrenCount.toInt() - 1) {
+
+                                        if(index == 0)
+                                            return
+
+                                        val intent = Intent(this@MessagingService, HomeActivity::class.java).apply {
+                                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                        }
+
+                                        val title = "$unreadCount messages from $unreadConversation conversations"
+                                        with(NotificationManagerCompat.from(this@MessagingService)){
+                                            notify(NotificationID, notificationCompatBuilder.setStyle(NotificationCompat.BigTextStyle()
+                                                .setBigContentTitle(title)
+                                                .bigText("Tap to Read"))
+                                                .setContentIntent(PendingIntent.getActivity(this@MessagingService, NotificationID, intent, 0))
+                                                .setContentTitle(title)
+                                                .build())
+                                        }
+                                    }
+                                }
+                            })
+                    }
+
+                }
+            })
     }
 
 
