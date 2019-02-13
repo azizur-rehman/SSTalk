@@ -36,6 +36,8 @@
         <de.hdodenhof.circleimageview.CircleImageView
                 android:layout_width="50dp"
                 android:layout_marginLeft="2dp"
+                app:civ_border_width="0.5dp"
+                app:civ_border_color="@color/colorPrimary"
                 android:src="@drawable/contact_placeholder"
                 android:id="@+id/circle_sender_image"
                 android:layout_height="50dp"/>
@@ -59,9 +61,9 @@
 
 
                 <com.skyline.widget.layout.RoundCornerLayout
-                        android:layout_width="210dp"
+                        android:layout_width="240dp"
                         android:id="@+id/image_container_left_card"
-                        android:layout_height="180dp"
+                        android:layout_height="210dp"
                         app:cornerRadius="35dp"
                         app:topLeftEnabled="false"
                         app:topRightEnabled="true"
@@ -78,6 +80,27 @@
                                android:id="@+id/imageview_image_left"
                     />
 
+                    <View android:layout_width="match_parent"
+                          android:layout_gravity="bottom"
+                          android:layout_height="match_parent"
+                          android:background="@drawable/image_background"
+                    />
+
+                    <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="12:10 PM"
+                            android:paddingTop="2dp"
+                            android:textSize="10sp"
+                            android:layout_gravity="end|bottom"
+                            android:paddingRight="10dp"
+                            android:paddingLeft="20dp"
+                            android:layout_marginRight="10dp"
+                            android:layout_marginBottom="4dp"
+                            android:id="@+id/time_image_left"
+                            android:textColor="@color/transparent_white_10"
+                    />
+
                 </com.skyline.widget.layout.RoundCornerLayout>
 
 
@@ -89,7 +112,7 @@
                         android:gravity="center"
                         android:layout_marginRight="15dp"
                         android:layout_weight="1"
-                        android:maxWidth="200dp"
+                        android:maxWidth="230dp"
                         android:autoLink="all"
                         android:text="Caption is used for image"
                         android:id="@+id/messageText_image_left"
@@ -98,16 +121,7 @@
 
             </LinearLayout>
 
-            <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="12:10 PM"
-                    android:paddingTop="2dp"
-                    android:textSize="12sp"
-                    android:paddingLeft="10dp"
-                    android:id="@+id/time_image_left"
-                    android:textColor="@color/warm_grey"
-            />
+
 
 
         </LinearLayout>

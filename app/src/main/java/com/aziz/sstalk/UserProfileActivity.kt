@@ -16,6 +16,7 @@ import android.view.ViewGroup
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.utils
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
@@ -83,7 +84,7 @@ class UserProfileActivity : AppCompatActivity() {
         mediaRecyclerView.addItemDecoration(DividerGridItemDecoration(this))
         mediaRecyclerView.isNestedScrollingEnabled = true
 
-        mediaRecyclerView.layoutManager = layoutManager
+        mediaRecyclerView.layoutManager = layoutManager as RecyclerView.LayoutManager?
 
         FirebaseUtils.ref.getChatRef(myUID,targetUID)
             .orderByChild(FirebaseUtils.KEY_REVERSE_TIMESTAMP)

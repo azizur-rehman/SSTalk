@@ -532,6 +532,8 @@ object FirebaseUtils {
         messageStatusImageView: ImageView
     ){
 
+        messageStatusImageView.alpha = 0.8f
+
         ref.getMessageStatusRef(targetUID,FirebaseUtils.getUid(), messageID)
             .addValueEventListener(object : ValueEventListener{
                 override fun onCancelled(p0: DatabaseError) {
@@ -543,11 +545,11 @@ object FirebaseUtils {
 
                     if(p0.exists()){
                         if(p0.getValue(Models.MessageStatus::class.java)!!.read)
-                            messageStatusImageView.setImageResource(R.drawable.ic_read_status)
+                            messageStatusImageView.setImageResource(R.drawable.ic_read_round)
                         else if(p0.getValue(Models.MessageStatus::class.java)!!.delivered)
-                            messageStatusImageView.setImageResource(R.drawable.ic_delivered_tick)
+                            messageStatusImageView.setImageResource(R.drawable.ic_delivered_round)
                         else
-                            messageStatusImageView.setImageResource(R.drawable.ic_tick_sent_grey_24dp)
+                            messageStatusImageView.setImageResource(R.drawable.ic_sent_round)
 
                     }
                     else{

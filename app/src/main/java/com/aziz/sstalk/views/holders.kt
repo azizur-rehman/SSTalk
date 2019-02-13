@@ -21,6 +21,7 @@ object holders {
         val container = itemView.container_left!!
         val messageLayout = itemView.message_layout_text_left!!
         val senderIcon = itemView.circle_sender_text!!
+        val bubbleContainer = itemView.bubble_container_left_text!!
 
     }
     class MyTextMsgHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
@@ -30,6 +31,7 @@ object holders {
         val headerDateTime = itemView.header_right!!
         val container = itemView.container_right!!
         val messageLayout = itemView.message_layout_text_right!!
+        val bubbleContainer = itemView.bubble_container_right_text!!
 
 
     }

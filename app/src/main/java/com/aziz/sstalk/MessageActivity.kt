@@ -812,6 +812,8 @@ class MessageActivity : AppCompatActivity() {
                         container = holder.container
 
                         loadMap(holder.mapView, LatLng(latitude,longitude))
+                        FirebaseUtils.setDeliveryStatusTick(targetUid, messageID, holder.messageStatus)
+
 
                     }
 
@@ -926,6 +928,7 @@ class MessageActivity : AppCompatActivity() {
 
                 val emojiProcessed = EmojiCompat.get().process(messageTextView!!.text)
                 messageTextView.text = emojiProcessed
+                messageTextView.setLinkTextColor(Color.RED)
 
                 //set date Header
                 when {

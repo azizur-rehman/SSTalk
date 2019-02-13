@@ -13,6 +13,8 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.graphics.drawable.Drawable
+import android.graphics.drawable.GradientDrawable
 import android.inputmethodservice.InputMethodService
 import android.media.MediaMetadataRetriever
 import android.media.ThumbnailUtils
@@ -21,6 +23,7 @@ import android.os.*
 import android.provider.ContactsContract
 import android.provider.MediaStore
 import android.support.v4.app.ActivityCompat
+import android.support.v4.content.ContextCompat
 import android.support.v4.content.FileProvider
 import android.text.SpannableString
 import android.text.style.BackgroundColorSpan
@@ -164,7 +167,7 @@ object utils {
 
         sdf.timeZone = TimeZone.getDefault()
 
-        return sdf.format(calendar.time)
+        return sdf.format(calendar.time).toUpperCase().replace(".","")
     }
 
     fun getLocalDate(timeInMillis: Long): String{
@@ -616,4 +619,6 @@ object utils {
         ( context.getSystemService(VIBRATOR_SERVICE) as Vibrator).vibrate(200)
     }
 }
+
+
 }

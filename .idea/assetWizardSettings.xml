@@ -145,7 +145,7 @@
                                 <PersistentState>
                                   <option name="values">
                                     <map>
-                                      <entry key="url" value="jar:file:/home/aziz/android-studio/plugins/android/lib/android.jar!/images/material_design_icons/notification/ic_vibration_black_24dp.xml" />
+                                      <entry key="url" value="jar:file:/home/aziz/android-studio/plugins/android/lib/android.jar!/images/material_design_icons/action/ic_check_circle_black_24dp.xml" />
                                     </map>
                                   </option>
                                 </PersistentState>
@@ -155,8 +155,8 @@
                         </option>
                         <option name="values">
                           <map>
-                            <entry key="color" value="ffffff" />
-                            <entry key="outputName" value="ic_vibration_white_24dp" />
+                            <entry key="color" value="38be55" />
+                            <entry key="outputName" value="ic_message_read_24dp" />
                             <entry key="sourceFile" value="$USER_HOME$/C:\Users\Shanu\C:\Users\Shanu" />
                           </map>
                         </option>
