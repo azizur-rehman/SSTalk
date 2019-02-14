@@ -54,9 +54,9 @@
 
 
             <com.skyline.widget.layout.RoundCornerLayout
-                    android:layout_width="210dp"
+                    android:layout_width="240dp"
                     android:id="@+id/map_container_left_card"
-                    android:layout_height="180dp"
+                    android:layout_height="210dp"
                     app:cornerRadius="35dp"
                     app:topLeftEnabled="false"
                     app:topRightEnabled="true"
@@ -84,15 +84,12 @@
         <TextView
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:paddingBottom="10dp"
-                android:paddingTop="10dp"
+                android:padding="10dp"
                 android:gravity="center"
-                android:layout_marginRight="15dp"
                 android:layout_weight="1"
-                android:maxWidth="200dp"
-                android:autoLink="all"
+                android:maxWidth="240dp"
+                android:text="Caption is sed for image"
                 android:id="@+id/messageText_map_left"
-                android:text="Caption"
             />
 
 

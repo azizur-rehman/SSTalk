@@ -110,11 +110,9 @@
                         android:paddingBottom="10dp"
                         android:paddingTop="10dp"
                         android:gravity="center"
-                        android:layout_marginRight="15dp"
                         android:layout_weight="1"
-                        android:maxWidth="230dp"
-                        android:autoLink="all"
-                        android:text="Caption is used for image"
+                        android:maxWidth="240dp"
+                        android:text="Caption is sed for image"
                         android:id="@+id/messageText_image_left"
                 />
 

@@ -44,7 +44,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         setSupportActionBar(toolbar)
 
         //storing firebase token, if updated
-        FirebaseUtils.storeFCMToken(this)
+        FirebaseUtils.updateFCMToken()
 
         val toggle = ActionBarDrawerToggle(
             this, drawer_layout, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close

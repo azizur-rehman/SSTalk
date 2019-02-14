@@ -82,7 +82,7 @@
                         android:layout_gravity="center"
                         android:cursorVisible="true"
                         android:hint="Hint."
-                        android:inputType="text"
+                        android:inputType="number"
                         android:textColor="@color/colorPrimary"
                         android:textSize="18sp"
                         android:textStyle="bold"
@@ -104,7 +104,7 @@
                     android:layout_marginBottom="16dp"
                     android:layout_marginTop="16dp"
                     android:fontFamily="@font/gotham"
-                    android:text="Don't recieve the OTP?"
+                    android:text="Didn't receive the OTP?"
                     android:textAlignment="center"
                     android:textColor="#a3a3a3"
                     android:textSize="16sp" />
@@ -115,6 +115,7 @@
                     android:fontFamily="@font/gotham"
                     android:text="RESEND OTP"
                     android:id="@+id/resendBtn"
+                    style="@style/TextViewHeading"
                     android:textAlignment="center"
                     android:textColor="@color/colorAccent"
                     android:textSize="16sp" />
@@ -122,6 +123,7 @@
 
                 <Button
                     android:id="@+id/verify"
+                    style="@style/RoundButton"
                     android:onClick="onVerifyClick"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -130,7 +132,6 @@
                     android:layout_marginLeft="16dp"
                     android:layout_marginRight="16dp"
                     android:layout_marginTop="24dp"
-                    android:background="@drawable/buttonshape"
                     android:fontFamily="@font/gotham"
                     android:text="VERIFY"
                     android:textAllCaps="false"

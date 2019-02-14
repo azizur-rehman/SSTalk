@@ -1,15 +1,22 @@
 package com.aziz.sstalk.fragments
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import com.aziz.sstalk.EditProfile
+import com.aziz.sstalk.HomeActivity
+import com.aziz.sstalk.MobileLoginActivity
 import com.aziz.sstalk.R
+import com.aziz.sstalk.models.Models
+import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.utils
 import com.google.firebase.FirebaseException
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.PhoneAuthProvider
 import kotlinx.android.synthetic.main.input_otp.view.*
@@ -19,25 +26,33 @@ class FragmentOTP : Fragment() {
 
     var mobile_no:String? = null
     var lastGenerated:Long? = System.currentTimeMillis()
+    var otp = ""
+    var verificationID = ""
+    var mResendToken:PhoneAuthProvider.ForceResendingToken? = null
+    var userInfoBundle:Bundle? = null
 
-    var verificationStateChangedCallbacks = object  : PhoneAuthProvider.OnVerificationStateChangedCallbacks(){
+    private var verificationStateChangedCallbacks = object  : PhoneAuthProvider.OnVerificationStateChangedCallbacks(){
         override fun onVerificationCompleted(p0: PhoneAuthCredential?) {
-            val otp = p0!!.smsCode.toString()
+             otp = p0!!.smsCode.toString()
+            utils.toast(context, "otp sent to $mobile_no")
+
         }
 
         override fun onVerificationFailed(p0: FirebaseException?) {
             utils.toast(context, p0!!.message.toString())
-            println(p0.message.toString())
+            Log.d("FragmentOTP", "onVerificationFailed: ${p0.message.toString()}")
 
-            Log.d("tag", p0.toString())
 
 
         }
 
         override fun onCodeSent(p0: String?, p1: PhoneAuthProvider.ForceResendingToken?) {
             super.onCodeSent(p0, p1)
-            utils.toast(context, "otp sent to $mobile_no")
+
+            verificationID = p0!!
+            mResendToken = p1!!
         }
+
 
     }
 
@@ -56,13 +71,19 @@ class FragmentOTP : Fragment() {
 
     private fun bindViews(view: View){
 
-        mobile_no = arguments!!.getString("phone")
-        println("mob = $mobile_no")
+        mobile_no = arguments!!.getString(MobileLoginActivity.KEY.PHONE)
+        Log.d("FragmentOTP", "bindViews: mob = $mobile_no")
 
         view.pinView.setAnimationEnable(true)
         view.verify.setOnClickListener{
-            val otp = view.pinView.text.toString()
-               utils.toast(context, "$otp on $mobile_no")
+            val inputOtp = view.pinView.text.toString()
+
+            if(inputOtp == otp){
+                signInWithCredential(PhoneAuthProvider.getCredential(verificationID, otp))
+            }
+            else{
+                utils.toast(context, "Incorrect OTP")
+            }
 
 //            activity!!.supportFragmentManager.beginTransaction()
 //                .remove(this)
@@ -79,8 +100,45 @@ class FragmentOTP : Fragment() {
 
     private fun generateOTP(){
         lastGenerated = System.currentTimeMillis()
+        mobile_no = arguments!!.getString(MobileLoginActivity.KEY.PHONE)
+
+        Log.d("FragmentOTP", "generateOTP: sending OTP to ----> ${mobile_no.toString()}")
+
         PhoneAuthProvider.getInstance()
             .verifyPhoneNumber(mobile_no.toString(),60, TimeUnit.SECONDS,this.activity!!, verificationStateChangedCallbacks)
+    }
+
+
+    private fun signInWithCredential(credential: PhoneAuthCredential) {
+        FirebaseAuth.getInstance().signInWithCredential(credential)
+            .addOnCompleteListener {
+                if(it.isSuccessful){
+                    //utils.toast(context, "Sign in successfully")
+
+                    userInfoBundle = arguments
+
+                    val countryCode = arguments!!.getString(MobileLoginActivity.KEY.COUNTRY_CODE)!!
+                    val countryName = arguments!!.getString(MobileLoginActivity.KEY.COUNTRY)!!
+                    val countryLocale = arguments!!.getString(MobileLoginActivity.KEY.COUNTRY_LOCALE_CODE)!!
+
+
+                    val user = it.result!!.user
+                    FirebaseUtils.ref.getUserRef(user.uid)
+                        .setValue(Models.User("",user.metadata!!.creationTimestamp,
+                            user.metadata!!.lastSignInTimestamp,
+                            user.phoneNumber!!,
+                            "",
+                            user.uid, countryName,
+                            countryCode, countryLocale
+                            ))
+                        .addOnSuccessListener {
+                                startActivity(Intent(context, EditProfile::class.java)
+                                    .putExtra(utils.constants.KEY_IS_ON_ACCOUNT_CREATION, true)
+                                    .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP))
+                        }
+
+                }
+            }
     }
 }
 

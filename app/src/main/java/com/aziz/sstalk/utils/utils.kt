@@ -64,6 +64,9 @@ object utils {
         val KEY_CAPTION = "caption"
         val KEY_LOCAL_PATH = "local_path"
 
+        val KEY_IS_ON_ACCOUNT_CREATION = "on_acc_creation"
+        val KEY_IS_ONCE = "is_once"
+
         val KEY_MSG_MODEL = "msg_model"
 
         val KEY_LATITUDE = "lat"

@@ -1,6 +1,5 @@
 package com.aziz.sstalk.firebase
 
-import android.app.Notification
 import android.app.PendingIntent
 import android.content.Intent
 import android.support.v4.app.NotificationCompat
@@ -24,8 +23,10 @@ class MessagingService: FirebaseMessagingService() {
     private val KEY_SENDER = "senderUID"
     private val KEY_RECEIVER = "receiverUID"
     private val KEY_MSG_IDs = "messageIDs"
-    val NotificationID = 13213
 
+    object NotificationDetail {
+        val ID = 13213
+    }
 
 
     override fun onMessageReceived(p0: RemoteMessage?) {
@@ -36,8 +37,10 @@ class MessagingService: FirebaseMessagingService() {
 
         //todo change to FirebaseUtils.getUid
 
+        if(FirebaseUtils.getUid() != data!![KEY_RECEIVER]!!)
+            return
 
-        setAllMessageFromUserAsDelivered(data!![KEY_RECEIVER]!!, data[KEY_SENDER]!!, data[KEY_MSG_IDs]!!)
+        setAllMessageFromUserAsDelivered(data[KEY_RECEIVER]!!, data[KEY_SENDER]!!, data[KEY_MSG_IDs]!!)
 
 
 
@@ -47,9 +50,11 @@ class MessagingService: FirebaseMessagingService() {
                 }
 
                 override fun onDataChange(snapshot: DataSnapshot) {
-                    if(snapshot.exists()){
-                        if(snapshot.getValue(Boolean::class.java)!!)
+                    if(snapshot.exists()) {
+                        if (snapshot.getValue(Boolean::class.java)!!) {
+                            Log.d("MessagingService", "onDataChange: muted")
                             return
+                        }
                     }
                     if(utils.isAppIsInBackground(this@MessagingService)){
                         //app is in background show notification
@@ -57,7 +62,8 @@ class MessagingService: FirebaseMessagingService() {
                     }
                     else {
 
-                        if(Pref.Notification.hasVibrationEnabled(this@MessagingService))
+                        if(Pref.Notification.hasVibrationEnabled(this@MessagingService)
+                        )
                             utils.vibrate(this@MessagingService)
                     }
                 }
@@ -96,6 +102,7 @@ class MessagingService: FirebaseMessagingService() {
                         val intent = Intent(this@MessagingService, MessageActivity::class.java).apply {
                             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                             putExtra(FirebaseUtils.KEY_UID, sender)
+                            putExtra(utils.constants.KEY_IS_ONCE, true)
                         }
 
                         notify(title, intent)
@@ -109,34 +116,34 @@ class MessagingService: FirebaseMessagingService() {
 
 
     private fun notify(title:String, intent: Intent){
-        val pendingIntent: PendingIntent = PendingIntent.getActivity(this@MessagingService, NotificationID, intent, 0)
+        val pendingIntent: PendingIntent = PendingIntent.getActivity(this@MessagingService, NotificationDetail.ID, intent, 0)
 
         val notification = NotificationCompat.Builder(this@MessagingService)
             .setContentTitle(title)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentText("Tap to read")
-            .setDefaults(Notification.DEFAULT_ALL)
+            .setDefaults(android.app.Notification.DEFAULT_ALL)
             .setStyle(NotificationCompat.BigTextStyle()
                 .setBigContentTitle(title)
                 .bigText("Tap to Read"))
             .setContentIntent(pendingIntent)
-            .setPriority(Notification.PRIORITY_MAX)
+            .setPriority(android.app.Notification.PRIORITY_MAX)
             .setAutoCancel(true)
 
 
 
-//        if(!Pref.Notification.hasVibrationEnabled(this@MessagingService)) {
+//        if(!Pref.NotificationDetail.hasVibrationEnabled(this@MessagingService)) {
 //            //if(Build.VERSION.SDK_INT<Build.VERSION_CODES.O)
 //            notification.setVibrate(longArrayOf(0L))
 //
 //        }
 //
-//        if(Pref.Notification.hasSoundEnabled(this@MessagingService))
+//        if(Pref.NotificationDetail.hasSoundEnabled(this@MessagingService))
 //            notification.setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
 
 
         with(NotificationManagerCompat.from(this@MessagingService)){
-            notify(NotificationID, notification.build())
+            notify(NotificationDetail.ID, notification.build())
         }
 
         getAllUnreadMessages(notification)
@@ -173,16 +180,23 @@ class MessagingService: FirebaseMessagingService() {
                                         if(index == 0)
                                             return
 
+
+
+                                        if(unreadConversation<=1)
+                                            return
+
+
+                                        val title = "$unreadCount messages from $unreadConversation conversations"
+
+
                                         val intent = Intent(this@MessagingService, HomeActivity::class.java).apply {
                                             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                                         }
-
-                                        val title = "$unreadCount messages from $unreadConversation conversations"
                                         with(NotificationManagerCompat.from(this@MessagingService)){
-                                            notify(NotificationID, notificationCompatBuilder.setStyle(NotificationCompat.BigTextStyle()
+                                            notify(NotificationDetail.ID, notificationCompatBuilder.setStyle(NotificationCompat.BigTextStyle()
                                                 .setBigContentTitle(title)
                                                 .bigText("Tap to Read"))
-                                                .setContentIntent(PendingIntent.getActivity(this@MessagingService, NotificationID, intent, 0))
+                                                .setContentIntent(PendingIntent.getActivity(this@MessagingService, NotificationDetail.ID, intent, 0))
                                                 .setContentTitle(title)
                                                 .build())
                                         }
@@ -216,6 +230,7 @@ class MessagingService: FirebaseMessagingService() {
 
 
         Pref.storeToken(this, token!!)
+        FirebaseUtils.updateFCMToken()
 
 
         super.onNewToken(p0)

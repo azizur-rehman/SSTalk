@@ -1,11 +1,9 @@
 package com.aziz.sstalk.utils
 
-import android.app.ProgressDialog
 import android.content.Context
 import android.content.Intent
 import android.graphics.Typeface
 import android.graphics.drawable.BitmapDrawable
-import android.net.Uri
 import android.support.v4.content.ContextCompat
 import android.util.Log
 import android.view.View
@@ -19,12 +17,9 @@ import com.google.firebase.database.*
 import com.squareup.picasso.Picasso
 import com.aziz.sstalk.R
 import com.aziz.sstalk.utils.FirebaseUtils.ref.getAllMessageStatusRef
-import com.google.android.gms.tasks.Continuation
-import com.google.android.gms.tasks.Task
 import com.google.firebase.iid.FirebaseInstanceId
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
-import com.google.firebase.storage.UploadTask
 import com.nex3z.notificationbadge.NotificationBadge
 import com.squareup.picasso.Callback
 import com.squareup.picasso.MemoryPolicy
@@ -160,69 +155,6 @@ object FirebaseUtils {
         }
 
 
-    fun uploadProfilePic(context: Context, file: File, storageRef: StorageReference,
-        dbRef: DatabaseReference,
-        toastAfterUploadIfAny: String){
-
-
-        val dialog = ProgressDialog(context)
-        dialog.setMessage("Wait a moment...")
-        dialog.setCancelable(false)
-        dialog.show()
-
-
-
-        Log.d("FirebaseUtils", "uploadImage: File size = "+file.length()/1024)
-
-
-
-
-        val uploadTask = storageRef.putFile(utils.getUriFromFile(context, file))
-
-        uploadTask.continueWithTask(Continuation<UploadTask.TaskSnapshot, Task<Uri>> { task ->
-            if (!task.isSuccessful) {
-                task.exception?.let {
-                    throw it
-                }
-            }
-            Log.d("FirebaseUtils", "uploadedImage: size = "+task.result!!.bytesTransferred/1024)
-            return@Continuation storageRef.downloadUrl
-        })
-            .addOnCompleteListener { task ->
-                dialog.dismiss()
-                if(task.isSuccessful) {
-                    val link = task.result
-
-
-
-                    dbRef.setValue(link.toString())
-                        .addOnSuccessListener {
-                         //   isProfileChanged = false
-                            if(toastAfterUploadIfAny.isNotEmpty())
-                               utils.toast(context, toastAfterUploadIfAny) }
-
-
-
-
-                }
-                else
-                    utils.toast(context, task.exception!!.message.toString())
-            }
-
-            .addOnSuccessListener {
-                dialog.dismiss()
-
-
-            }
-            .addOnFailureListener{
-                dialog.dismiss()
-            }
-
-
-
-    }
-
-
     fun loadProfilePic(context: Context, uid: String, imageView: ImageView){
 
 
@@ -269,6 +201,9 @@ object FirebaseUtils {
 
                             }
                             else {
+
+                                if(link!!.isEmpty())
+                                    return
 
                                     Picasso.get().load(link)
                                         .placeholder(R.drawable.contact_placeholder)
@@ -356,6 +291,10 @@ object FirebaseUtils {
                         else {
                             //download profile pic
                             Log.d("FirebaseUtils", "onDataChange:,  profile url has changed, loading from web")
+
+                            if(link!!.isEmpty())
+                                return
+
                             Picasso.get().load(link)
                                 .placeholder(R.drawable.contact_placeholder)
                                 .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
@@ -604,15 +543,13 @@ object FirebaseUtils {
     }
 
 
-    fun storeFCMToken(context: Context){
+    fun updateFCMToken() {
         FirebaseInstanceId.getInstance()
             .instanceId
             .addOnCompleteListener {
                  if(!it.isSuccessful)
                      return@addOnCompleteListener
 
-
-                    if(Pref.getStoredToken(context) != it.result!!.token)
                     ref.getFCMTokenRef(FirebaseUtils.getUid()).child(it.result!!.id)
                         .setValue(it.result!!.token)
             }

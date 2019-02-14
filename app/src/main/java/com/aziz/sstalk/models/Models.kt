@@ -23,7 +23,10 @@ class Models {
                     var lastModifiedOn: Long = createdOn,
                     var phone:String = "",
                     var profile_pic_url:String = "",
-                    var uid:String = "")
+                    var uid:String = "",
+                    var country:String="",
+                    var countryCode:String="",
+                    var countryLocaleCode:String="")
 
 
     data class LastMessageDetail(var timeInMillis: Long = System.currentTimeMillis(), var reverseTimeStamp: Long = timeInMillis  * -1)

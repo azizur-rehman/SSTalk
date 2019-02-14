@@ -5,6 +5,7 @@ import android.animation.ArgbEvaluator
 import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.NotificationManager
 import android.content.*
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -35,6 +36,7 @@ import android.view.*
 import android.view.ViewGroup
 import android.support.v7.widget.SearchView
 import android.widget.*
+import com.aziz.sstalk.firebase.MessagingService
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.DateFormatter
 import com.aziz.sstalk.utils.FirebaseUtils
@@ -148,6 +150,10 @@ class MessageActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_message)
 
+        //cancel any notification, if any
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.cancel(MessagingService.NotificationDetail.ID)
+
         setSupportActionBar(toolbar)
         targetUid = intent.getStringExtra(FirebaseUtils.KEY_UID)
         myUID = FirebaseUtils.getUid()
@@ -176,7 +182,11 @@ class MessageActivity : AppCompatActivity() {
             )
         }
 
-        back_layout_toolbar_message.setOnClickListener { finish() }
+        back_layout_toolbar_message.setOnClickListener {
+            if(intent.getBooleanExtra(utils.constants.KEY_IS_ONCE, false))
+            startActivity(Intent(context, HomeActivity::class.java))
+            finish()
+        }
 
 
         messageInputField.setTypingListener(object : MessageInput.TypingListener {
@@ -1837,30 +1847,23 @@ class MessageActivity : AppCompatActivity() {
         else{
             Picasso.get()
                 .load(model.message.toString())
-                .tag(model.message.toString())
                 .centerCrop()
                 .resize(600,400)
                 .error(R.drawable.error_placeholder2)
                 .placeholder(R.drawable.placeholder_image)
-                .into( object : Target{
-                    override fun onPrepareLoad(placeHolderDrawable: Drawable?) {
+                .error(R.drawable.error_placeholder2)
+                .placeholder(R.drawable.placeholder_image)
+                .tag(model.message.toString())
+                .into(holder.imageView, object: Callback {
+                    override fun onSuccess() {
+                        saveBitmapFromPicasso(model.message.toString(), messageID, false)
+
                     }
 
-                    override fun onBitmapFailed(e: Exception?, errorDrawable: Drawable?) {
+                    override fun onError(e: Exception?) {
                     }
-
-                    override fun onBitmapLoaded(bitmap: Bitmap?, from: Picasso.LoadedFrom?) {
-                        val savedPath = utils.saveBitmapToReceived(context, bitmap!!, messageID)
-                        Log.d("MessageActivity", "onBitmapLoaded: saved path = $savedPath")
-                        holder.imageView.setImageBitmap(bitmap)
-
-                        FirebaseUtils.ref.getChatRef(myUID,targetUid)
-                            .child(messageID)
-                            .child(FirebaseUtils.KEY_FILE_LOCAL_PATH)
-                            .setValue(savedPath)
-                    }
-
-                })
+                }
+                )
         }
     }
 
@@ -2058,9 +2061,14 @@ class MessageActivity : AppCompatActivity() {
             }
             else
                 attachment_menu.visibility = View.GONE
-        else
+        else {
+            if(intent.getBooleanExtra(utils.constants.KEY_IS_ONCE, false))
+                startActivity(Intent(context, HomeActivity::class.java))
+
+
             finish()
 
+        }
     }
 
     private var blockItem: MenuItem? = null
@@ -2273,6 +2281,9 @@ class MessageActivity : AppCompatActivity() {
 
         return super.onOptionsItemSelected(item)
     }
+
+
+
 
 
     private fun saveBitmapFromPicasso(url:String, messageID: String, isSent:Boolean){
