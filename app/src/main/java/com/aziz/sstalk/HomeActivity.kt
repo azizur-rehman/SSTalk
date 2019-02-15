@@ -14,15 +14,19 @@ import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.view.*
+import android.widget.TextView
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.utils
 import com.firebase.ui.database.FirebaseRecyclerAdapter
 import com.firebase.ui.database.FirebaseRecyclerOptions
+import com.google.firebase.auth.FirebaseAuth
+import de.hdodenhof.circleimageview.CircleImageView
 import kotlinx.android.synthetic.main.activity_home.*
 import kotlinx.android.synthetic.main.app_bar_home.*
 import kotlinx.android.synthetic.main.content_home.*
 import kotlinx.android.synthetic.main.item_contact_list.view.*
+import kotlinx.android.synthetic.main.nav_header_home.*
 import java.lang.Exception
 
 class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
@@ -75,6 +79,14 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         FirebaseUtils.setMeAsOnline()
 
 
+        //setting update navigation drawer
+         if(FirebaseUtils.isLoggedIn()) {
+
+            nav_view.getHeaderView(0).findViewById<TextView>(R.id.nav_header_title).text = FirebaseAuth.getInstance().currentUser!!.displayName
+            nav_view.getHeaderView(0).findViewById<TextView>(R.id.nav_header_subtitle).text = FirebaseAuth.getInstance().currentUser!!.phoneNumber
+            FirebaseUtils.loadProfileThumbnail(this, FirebaseUtils.getUid(),
+                nav_view.getHeaderView(0).findViewById<CircleImageView>(R.id.drawer_profile_image_view))
+        }
     }
 
 
@@ -285,11 +297,4 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
 
-    override fun onCreateContextMenu(menu: ContextMenu?, v: View?, menuInfo: ContextMenu.ContextMenuInfo?) {
-
-        menuInflater.inflate(R.menu.converstation_option_menu, menu)
-        menu!!.setHeaderTitle("Options")
-
-        super.onCreateContextMenu(menu, v, menuInfo)
-    }
 }

@@ -14,7 +14,13 @@ import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.utils
 import com.google.android.gms.tasks.Continuation
 import com.google.android.gms.tasks.Task
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.UserProfileChangeRequest
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.StorageReference
 import com.google.firebase.storage.UploadTask
 import com.mvc.imagepicker.ImagePicker
@@ -64,6 +70,14 @@ class EditProfile : AppCompatActivity() {
                 .child(FirebaseUtils.KEY_NAME)
                 .setValue(profile_name.text.toString())
 
+            if(profile_name.text.isNotEmpty()){
+                if(FirebaseUtils.isLoggedIn()) {
+                    FirebaseAuth.getInstance().currentUser!!.updateProfile(
+                    UserProfileChangeRequest.Builder()
+                        .setDisplayName(profile_name.text.toString().trim()).build())
+                }
+            }
+
 
             if(intent.getBooleanExtra(utils.constants.KEY_IS_ON_ACCOUNT_CREATION, false)
                 and !isProfileChanged){
@@ -74,12 +88,24 @@ class EditProfile : AppCompatActivity() {
 
         }
 
+        //load profile name
+        FirebaseUtils.ref.getUserRef(FirebaseUtils.getUid())
+            .child(FirebaseUtils.KEY_NAME)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onCancelled(p0: DatabaseError) {
+                }
+
+                override fun onDataChange(p0: DataSnapshot) {
+                    profile_name.setText( p0.value.toString().trim() )
+                }
+            })
+
     }
 
 
-    fun uploadProfilePic(context: Context, file: File, storageRef: StorageReference,
-                         dbRef: DatabaseReference,
-                         toastAfterUploadIfAny: String){
+    private fun uploadProfilePic(context: Context, file: File, storageRef: StorageReference,
+                                 dbRef: DatabaseReference,
+                                 toastAfterUploadIfAny: String){
 
 
         val dialog = ProgressDialog(context)
