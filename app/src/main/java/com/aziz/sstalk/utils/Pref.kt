@@ -9,6 +9,7 @@ object Pref {
     const val KEY_VIBRATION = "vibration"
     const val FILE = "settings"
     const val FILE_PROFILE = "profile"
+    const val KEY_CURRENT_TARGET = "current"
 
     fun storeToken(context: Context, token:String){
         context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
@@ -60,5 +61,18 @@ object Pref {
                 .getString(uid,"") == providedURL
 
         }
+    }
+
+   fun setCurrentTargetUID(context: Context, targetUID:String){
+       context.getSharedPreferences(KEY_CURRENT_TARGET, Context.MODE_PRIVATE)
+           .edit()
+           .putString(KEY_CURRENT_TARGET, targetUID)
+           .apply()
+   }
+
+
+    fun getCurrentTargetUID(context: Context):String? {
+        return context.getSharedPreferences(KEY_CURRENT_TARGET, Context.MODE_PRIVATE)
+            .getString(KEY_CURRENT_TARGET,"")
     }
 }

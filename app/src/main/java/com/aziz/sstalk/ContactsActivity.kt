@@ -61,7 +61,7 @@ class ContactsActivity : AppCompatActivity(){
                 if(grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults.isNotEmpty())
                     loadRegisteredUsers()
                 else {
-                    utils.longToast(this, "Permission not granted exiting")
+                    utils.longToast(this, "Permission not granted, exiting...")
                     finish()
                 }
             }
@@ -101,7 +101,7 @@ class ContactsActivity : AppCompatActivity(){
                         for((index, item) in numberList.withIndex()) {
                             if (item.number == number) {
                                 numberList[index].uid = uid
-                                if(uid!=FirebaseUtils.getUid())
+                                if(uid!=FirebaseUtils.getUid() && !registeredAvailableUser.contains(numberList[index]))
                                 registeredAvailableUser.add(numberList[index])
                             }
 
@@ -148,9 +148,11 @@ class ContactsActivity : AppCompatActivity(){
             val uid = registeredAvailableUser.get(index = position).uid
 
             FirebaseUtils.loadProfilePic(this@ContactsActivity, uid, holder.pic)
+            holder.pic.setPadding(0,0,0,0)
 
             if(position == registeredAvailableUser.size - 1) {
                 holder.pic.setImageResource(android.R.drawable.ic_menu_share)
+                holder.pic.setPadding(20,20,20,20)
                 holder.number.visibility = View.GONE
                 holder.pic.borderWidth = 0
             }
@@ -159,12 +161,12 @@ class ContactsActivity : AppCompatActivity(){
             holder.itemView.setOnClickListener {
                 if(position != registeredAvailableUser.size - 1){
 
-
-                    utils.longToast(this@ContactsActivity, uid)
-
                     startActivity(Intent(this@ContactsActivity, MessageActivity::class.java).putExtra(FirebaseUtils.KEY_UID, uid))
                     finish()
 
+                }
+                else{
+                    utils.shareInviteText(this@ContactsActivity)
                 }
             }
 

@@ -40,6 +40,7 @@ import com.aziz.sstalk.firebase.MessagingService
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.DateFormatter
 import com.aziz.sstalk.utils.FirebaseUtils
+import com.aziz.sstalk.utils.Pref
 import com.aziz.sstalk.utils.utils
 import com.aziz.sstalk.views.holders
 import com.firebase.ui.database.FirebaseRecyclerAdapter
@@ -158,6 +159,9 @@ class MessageActivity : AppCompatActivity() {
         targetUid = intent.getStringExtra(FirebaseUtils.KEY_UID)
         myUID = FirebaseUtils.getUid()
 
+        //setting current target for notification
+        Pref.setCurrentTargetUID(context, targetUid)
+
 
 
         FirebaseUtils.setUserDetailFromUID(this, target_name_textview, targetUid, utils.hasContactPermission(context))
@@ -221,7 +225,7 @@ class MessageActivity : AppCompatActivity() {
 
 
          if(attachment_menu.visibility != View.VISIBLE) {
-             utils.setEnterRevealEffect(attachment_menu)
+             utils.setEnterRevealEffect(this, attachment_menu)
            //  messagesList.alpha = 0.6f
 
          }
@@ -248,7 +252,7 @@ class MessageActivity : AppCompatActivity() {
 
         camera_btn.setOnClickListener {
 
-            if(attachment_menu.visibility != View.VISIBLE) utils.setEnterRevealEffect(attachment_menu) else utils.setExitRevealEffect(attachment_menu)
+            if(attachment_menu.visibility != View.VISIBLE) utils.setEnterRevealEffect(this, attachment_menu) else utils.setExitRevealEffect(attachment_menu)
 
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -276,7 +280,7 @@ class MessageActivity : AppCompatActivity() {
 
         gallery_btn.setOnClickListener {
 
-            if(attachment_menu.visibility != View.VISIBLE) utils.setEnterRevealEffect(attachment_menu) else utils.setExitRevealEffect(attachment_menu)
+            if(attachment_menu.visibility != View.VISIBLE) utils.setEnterRevealEffect(this, attachment_menu) else utils.setExitRevealEffect(attachment_menu)
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 if (ActivityCompat.checkSelfPermission(
@@ -304,7 +308,7 @@ class MessageActivity : AppCompatActivity() {
 
         location_btn.setOnClickListener {
 
-            if(attachment_menu.visibility != View.VISIBLE) utils.setEnterRevealEffect(attachment_menu) else utils.setExitRevealEffect(attachment_menu)
+            if(attachment_menu.visibility != View.VISIBLE) utils.setEnterRevealEffect(this, attachment_menu) else utils.setExitRevealEffect(attachment_menu)
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 if (ActivityCompat.checkSelfPermission(
@@ -322,7 +326,7 @@ class MessageActivity : AppCompatActivity() {
 
 
         video_pick_btn.setOnClickListener {
-            if(attachment_menu.visibility != View.VISIBLE) utils.setEnterRevealEffect(attachment_menu)
+            if(attachment_menu.visibility != View.VISIBLE) utils.setEnterRevealEffect(this, attachment_menu)
             else utils.setExitRevealEffect(attachment_menu)
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -675,7 +679,7 @@ class MessageActivity : AppCompatActivity() {
                 val date = Date(model.timeInMillis)
 
 
-                FirebaseUtils.setMessageStatusToDB(messageID, myUID, targetUid, true, true)
+                FirebaseUtils.setMessageStatusToDB(messageID, myUID, targetUid, true, isRead = true)
 
 
                 if(model.messageType == utils.constants.FILE_TYPE_LOCATION){
@@ -1046,8 +1050,12 @@ class MessageActivity : AppCompatActivity() {
             override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
 
 
-                if(adapter.getItem(positionStart).from == myUID)
-                    messagesList.scrollToPosition(adapter.itemCount - 1)
+                messagesList.scrollToPosition(adapter.itemCount - 1)
+
+                if(adapter.snapshots[itemCount - 1].from == myUID){
+                    FirebaseUtils.setMessageStatusToDB(adapter.getRef(itemCount - 1).key!!,
+                        myUID, targetUid, true, true)
+                }
 
                 super.onItemRangeInserted(positionStart, itemCount)
             }
@@ -1063,7 +1071,7 @@ class MessageActivity : AppCompatActivity() {
 
        adapter.startListening()
 
-       findIndexOfFirstUnreadMessage()
+       //findIndexOfFirstUnreadMessage()
 
 
 
@@ -1618,6 +1626,8 @@ class MessageActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+
+        Pref.setCurrentTargetUID(context, "")
 
         try {
 
@@ -2313,5 +2323,6 @@ class MessageActivity : AppCompatActivity() {
 
 
     }
+
 
 }

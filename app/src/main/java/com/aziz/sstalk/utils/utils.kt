@@ -25,12 +25,14 @@ import android.provider.MediaStore
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v4.content.FileProvider
+import android.telephony.PhoneNumberUtils
 import android.text.SpannableString
 import android.text.style.BackgroundColorSpan
 import android.text.style.ForegroundColorSpan
 import android.util.Log
 import android.view.View
 import android.view.ViewAnimationUtils
+import android.view.WindowManager
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
@@ -42,6 +44,7 @@ import com.aziz.sstalk.models.Models
 import com.bumptech.glide.Glide
 import com.google.firebase.auth.FirebaseAuth
 import com.squareup.picasso.Picasso
+import io.michaelrocks.libphonenumber.android.PhoneNumberUtil
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -57,34 +60,38 @@ object utils {
 
     object constants {
 
-        val FILE_TYPE_IMAGE = "image"
-        val FILE_TYPE_LOCATION = "location"
-        val FILE_TYPE_VIDEO = "video"
-        val KEY_IMG_PATH = "path"
-        val KEY_CAPTION = "caption"
-        val KEY_LOCAL_PATH = "local_path"
+        const val FILE_TYPE_IMAGE = "image"
+        const val FILE_TYPE_LOCATION = "location"
+        const val FILE_TYPE_VIDEO = "video"
+        const val KEY_IMG_PATH = "path"
+        const val KEY_CAPTION = "caption"
+        const val KEY_LOCAL_PATH = "local_path"
 
-        val KEY_IS_ON_ACCOUNT_CREATION = "on_acc_creation"
-        val KEY_IS_ONCE = "is_once"
+        const val KEY_IS_ON_ACCOUNT_CREATION = "on_acc_creation"
+        const val KEY_IS_ONCE = "is_once"
 
-        val KEY_MSG_MODEL = "msg_model"
+        const val KEY_MSG_MODEL = "msg_model"
 
-        val KEY_LATITUDE = "lat"
-        val KEY_LONGITUDE = "lng"
-        val KEY_ADDRESS = "address"
+        const val KEY_LATITUDE = "lat"
+        const val KEY_LONGITUDE = "lng"
+        const val KEY_ADDRESS = "address"
 
-        val KEY_NAME = "name"
+        const val KEY_NAME = "name"
 
-        val IS_FOR_SINGLE_FILE = "isSingleFile"
-        val URI_AUTHORITY = "com.mvc.imagepicker.provider"
+        const val IS_FOR_SINGLE_FILE = "isSingleFile"
+        const val URI_AUTHORITY = "com.mvc.imagepicker.provider"
 
-        val KEY_FILE_TYPE = "type"
-        val debugUserID = "user---2"
-        val debugUserID2 = "user---1"
-        val KEY_UNREAD = "unread"
+        const val KEY_FILE_TYPE = "type"
+        const val debugUserID = "user---2"
+        const val debugUserID2 = "user---1"
+        const val KEY_UNREAD = "unread"
 
-        val REGEX_PATTERN_PHONE = "^(\\+\\d{1,2}\\s)?\\(?\\d{3}\\)?[\\s.-]?\\d{3}[\\s.-]?\\d{4}\$"
+        const val REGEX_PATTERN_PHONE = "^(\\+\\d{1,2}\\s)?\\(?\\d{3}\\)?[\\s.-]?\\d{3}[\\s.-]?\\d{4}\$"
 
+
+        const val APP_SHORT_LINK = "https://goo.gl/TzQgdm"
+        const val APP_LINK = "https://play.google.com/store/apps/details?id=${BuildConfig.APPLICATION_ID}"
+        const val SHARING_TEXT = "Download SS Talk - A completely free & realtime chat app\n\nClick to Download : $APP_SHORT_LINK"
 
     }
 
@@ -105,6 +112,7 @@ object utils {
 
         return out
     }
+
 
 
 
@@ -205,7 +213,7 @@ object utils {
     fun getBitmapFromByteArray(byteArray: ByteArray) : Bitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
 
 
-    fun setEnterRevealEffect(view:View): Animator? {
+    fun setEnterRevealEffect(activity:Activity, view:View): Animator? {
 
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
@@ -236,14 +244,18 @@ object utils {
             }
 
             override fun onAnimationCancel(animation: Animator?) {
+                activity.window.setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+                    WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE)
             }
 
             override fun onAnimationStart(animation: Animator?) {
                 view.visibility = View.VISIBLE
+                activity.window.clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE)
             }
 
         })
         animator.start()
+
 
         return animator
 
@@ -623,5 +635,16 @@ object utils {
     }
 }
 
+
+
+    fun shareInviteText(context: Context){
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, constants.SHARING_TEXT)
+            putExtra(Intent.EXTRA_SUBJECT, "SS Talk")
+        }
+
+        context.startActivity(intent)
+    }
 
 }

@@ -43,6 +43,9 @@ class MessagingService: FirebaseMessagingService() {
         setAllMessageFromUserAsDelivered(data[KEY_RECEIVER]!!, data[KEY_SENDER]!!, data[KEY_MSG_IDs]!!)
 
 
+        if(Pref.getCurrentTargetUID(this) == data[KEY_SENDER]!!)
+            return
+
 
         FirebaseUtils.ref.getNotificationMuteRef(data[KEY_SENDER]!!)
             .addListenerForSingleValueEvent(object : ValueEventListener {

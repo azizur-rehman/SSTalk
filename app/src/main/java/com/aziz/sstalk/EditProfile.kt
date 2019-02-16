@@ -10,6 +10,7 @@ import android.net.Uri
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.view.MenuItem
 import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.utils
 import com.google.android.gms.tasks.Continuation
@@ -41,6 +42,11 @@ class EditProfile : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_edit_profile)
+
+        if(supportActionBar!=null)
+            supportActionBar!!.setDisplayHomeAsUpEnabled(true)
+
+        title = "My Profile"
 
         myUID = FirebaseUtils.getUid()
 
@@ -209,6 +215,13 @@ class EditProfile : AppCompatActivity() {
         }
 
         super.onActivityResult(requestCode, resultCode, data)
+    }
+
+
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+        if(item!!.itemId == android.R.id.home)
+            finish()
+        return super.onOptionsItemSelected(item)
     }
 
 }

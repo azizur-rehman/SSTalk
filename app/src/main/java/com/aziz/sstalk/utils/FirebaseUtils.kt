@@ -72,8 +72,7 @@ object FirebaseUtils {
                         .child(NODE_MESSAGES)
                         .keepSynced(true)
                 }
-                catch (e:Exception){
-                    Log.e("ref", "getRootRef: "+e.message.toString() )}
+                catch (e:Exception){ }
 
                 return FirebaseDatabase.getInstance().reference
             }
@@ -152,6 +151,11 @@ object FirebaseUtils {
                         .child(FirebaseUtils.getUid())
                         .child(uid)
                         .child(KEY_ENABLED)
+
+            //this will return a snapshot array
+            fun getNotificationMuteRootRef():DatabaseReference =
+                getRootRef().child(NODE_INDIVIDUAL_NOTIFICATION_SETTING)
+                    .child(FirebaseUtils.getUid())
         }
 
 
@@ -543,6 +547,35 @@ object FirebaseUtils {
     }
 
 
+    fun setUserOnlineStatus(uid: String, imageView: ImageView){
+
+
+        imageView.visibility = View.GONE
+
+
+        ref.getUserStatusRef(uid)
+            .addValueEventListener(object : ValueEventListener {
+                override fun onCancelled(p0: DatabaseError) {
+                }
+
+                override fun onDataChange(p0: DataSnapshot) {
+
+
+                    imageView.visibility = View.GONE
+
+                    if(!p0.exists()){
+                        return
+                    }
+
+                    val userStatus = p0.getValue(Models.UserActivityStatus::class.java)!!
+
+                    if(userStatus.status == VAL_ONLINE || userStatus.status == VAL_TYPING){
+                        imageView.visibility = View.VISIBLE
+                    }
+
+                }
+            })
+    }
     fun updateFCMToken() {
         FirebaseInstanceId.getInstance()
             .instanceId

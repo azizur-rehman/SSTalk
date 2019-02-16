@@ -1,16 +1,20 @@
 package com.aziz.sstalk
 
 import android.annotation.SuppressLint
+import android.app.ProgressDialog
 import android.content.Intent
 import android.graphics.Color
+import android.net.Uri
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Parcelable
 import android.support.design.widget.Snackbar
 import android.support.v4.content.ContextCompat
 import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.Log
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import com.aziz.sstalk.models.Models
@@ -18,12 +22,18 @@ import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.utils
 import com.firebase.ui.database.FirebaseRecyclerAdapter
 import com.firebase.ui.database.FirebaseRecyclerOptions
+import com.google.android.gms.tasks.Continuation
+import com.google.android.gms.tasks.OnCompleteListener
+import com.google.android.gms.tasks.Task
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.UploadTask
 import kotlinx.android.synthetic.main.activity_forward.*
 import kotlinx.android.synthetic.main.item__forward_contact_list.view.*
 import kotlinx.android.synthetic.main.item_contact_layout.view.*
+import java.lang.Exception
 
 class ForwardActivity : AppCompatActivity() {
 
@@ -42,73 +52,155 @@ class ForwardActivity : AppCompatActivity() {
 
     var fwd_snackbar:Snackbar? = null
 
+    var messageModels: MutableList<Models.MessageModel>? = ArrayList()
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_forward)
 
+        setSupportActionBar(toolbar)
+
+        if(supportActionBar!=null)
+            supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
         fwd_snackbar = Snackbar.make(sendBtn, "", Snackbar.LENGTH_INDEFINITE)
+
 
         setFrequentAdapter()
 
         myUID = FirebaseUtils.getUid()
 
-        val messageModels = intent.getSerializableExtra(utils.constants.KEY_MSG_MODEL) as MutableList<Models.MessageModel>
+        try {
+            messageModels = intent.getSerializableExtra(utils.constants.KEY_MSG_MODEL) as MutableList<Models.MessageModel>
+        }
+        catch (e:Exception){ messageModels = ArrayList()}
+
+        if(messageModels!!.isEmpty())
+            handleIncomingIntents(intent)
+
 
         sendBtn.setOnClickListener {
 
 
 
             selectedUIDs.forEach {targetUID->
-                for(model in messageModels){
-                    val messageID = "MSG"+System.currentTimeMillis()
-                    model.from = myUID
-                    model.timeInMillis = System.currentTimeMillis()
-                    model.reverseTimeStamp = model.timeInMillis * -1
-                    model.to = targetUID
-                    model.caption = ""
 
-                    //send to my node
-                    FirebaseUtils.ref.getChatRef(myUID, targetUID)
-                        .child(messageID)
-                        .setValue(model)
-                        .addOnSuccessListener {
-                            FirebaseUtils.setMessageStatusToDB(messageID, myUID, targetUID,true, true)
 
-                            FirebaseUtils.ref.getLastMessageRef(myUID)
-                                .child(targetUID)
-                                .setValue(Models.LastMessageDetail())
-
-                        }
-
-                    //send to target node
-                    FirebaseUtils.ref.getChatRef(targetUID, FirebaseUtils.getUid())
-                        .child(messageID)
-                        .setValue(model)
-                        .addOnSuccessListener {
-                            FirebaseUtils.setMessageStatusToDB(messageID, targetUID, myUID,false, false)
-
-                            FirebaseUtils.ref.getLastMessageRef(targetUID)
-                                .child(myUID)
-                                .setValue(Models.LastMessageDetail())
-                        }
-                }
+                try {
+                    if (intent.type!!.startsWith("image/") && intent.action == Intent.ACTION_SEND) {
+                        uploadAndForward(targetUID)
+                    } else {
+                        onForward(targetUID)
+                    }
+                }catch (e:Exception) { onForward(targetUID) }
             }
 
-            if(selectedUIDs.size == 1)
-                startActivity(Intent(context, MessageActivity::class.java)
-                    .putExtra(FirebaseUtils.KEY_UID, selectedUIDs[0])
-                )
-            else
-                startActivity(Intent(context, HomeActivity::class.java)
-                    .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP))
 
-            finish()
         }
     }
 
 
+    private fun onForward(targetUID:String){
 
+        for(model in messageModels!!){
+            val messageID = "MSG"+System.currentTimeMillis()
+            model.from = myUID
+            model.timeInMillis = System.currentTimeMillis()
+            model.reverseTimeStamp = model.timeInMillis * -1
+            model.to = targetUID
+            model.caption = ""
+
+            //send to my node
+            FirebaseUtils.ref.getChatRef(myUID, targetUID)
+                .child(messageID)
+                .setValue(model)
+                .addOnSuccessListener {
+                    FirebaseUtils.setMessageStatusToDB(messageID, myUID, targetUID,true, true)
+
+                    FirebaseUtils.ref.getLastMessageRef(myUID)
+                        .child(targetUID)
+                        .setValue(Models.LastMessageDetail())
+
+                }
+
+            //send to target node
+            FirebaseUtils.ref.getChatRef(targetUID, FirebaseUtils.getUid())
+                .child(messageID)
+                .setValue(model)
+                .addOnSuccessListener {
+                    FirebaseUtils.setMessageStatusToDB(messageID, targetUID, myUID,false, false)
+
+                    FirebaseUtils.ref.getLastMessageRef(targetUID)
+                        .child(myUID)
+                        .setValue(Models.LastMessageDetail())
+                }
+        }
+
+        if(selectedUIDs.size == 1)
+            startActivity(Intent(context, MessageActivity::class.java)
+                .putExtra(FirebaseUtils.KEY_UID, selectedUIDs[0])
+            )
+        else
+            startActivity(Intent(context, HomeActivity::class.java)
+                .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP))
+
+        finish()
+    }
+
+
+    private fun handleIncomingIntents(intent: Intent){
+
+        if(intent.action == Intent.ACTION_SEND){
+            if(intent.type == "text/plain"){
+                val text = intent.getStringExtra(Intent.EXTRA_TEXT)
+                messageModels!!.add(Models.MessageModel(text ))
+            }
+
+            else if(intent.type.startsWith( "image/")){
+
+                if(!utils.hasStoragePermission(this)) {
+                    utils.toast(this, "App does not have storage permission")
+                    return
+                }
+
+            }
+        }
+    }
+
+
+    private fun uploadAndForward(targetUID: String){
+
+        val progressBar = ProgressDialog.show(context, "","Please wait...", true, false)
+
+        val imageURI = intent.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as Uri
+
+       val ref = FirebaseStorage.getInstance().getReference(utils.constants.FILE_TYPE_IMAGE)
+            .child("MSG"+System.currentTimeMillis())
+
+           val uploadTask = ref.putFile(imageURI)
+
+               uploadTask.continueWithTask(Continuation<UploadTask.TaskSnapshot, Task<Uri>> { task ->
+                   if (!task.isSuccessful) {
+                       task.exception?.let {
+                           throw it
+                       }
+                   }
+                   return@Continuation ref.downloadUrl
+               })
+
+            uploadTask.addOnCompleteListener {
+                progressBar.dismiss()
+
+                //todo here
+               // messageModels!!.add(Models.MessageModel(it.result!! ))
+                onForward(targetUID)
+            }
+
+
+
+        Log.d("ForwardActivity", "handleIncomingIntents: "+imageURI.path)
+    }
 
     private fun setFrequentAdapter(){
 
@@ -305,4 +397,9 @@ class ForwardActivity : AppCompatActivity() {
 
     }
 
+
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+        finish()
+        return super.onOptionsItemSelected(item)
+    }
 }
