@@ -1,5 +1,7 @@
 package com.aziz.sstalk.models
 
+import com.aziz.sstalk.utils.FirebaseUtils
+import com.google.firebase.auth.FirebaseAuth
 import java.io.Serializable
 
 class Models {
@@ -32,7 +34,8 @@ class Models {
     data class LastMessageDetail(var timeInMillis: Long = System.currentTimeMillis(), var reverseTimeStamp: Long = timeInMillis  * -1)
 
 
-    data class MessageStatus(var from: String = "", var read:Boolean = false, var delivered:Boolean = false, var messageID:String = "")
+    data class MessageStatus(var from: String = "", var read:Boolean = false, var delivered:Boolean = false, var messageID:String = "",
+                             var senderPhoneNumber:String = "")
 
     data class UserActivityStatus(var status:String = "offline", var timeInMillis: Long = System.currentTimeMillis())
 }

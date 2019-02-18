@@ -506,7 +506,8 @@ object FirebaseUtils {
 
     fun setMessageStatusToDB(messageID: String, uid: String,targetUID: String, isDelivered:Boolean, isRead:Boolean){
         ref.getMessageStatusRef(uid,targetUID,messageID)
-            .setValue(Models.MessageStatus(FirebaseUtils.getUid(), isRead, isDelivered, messageID))
+            .setValue(Models.MessageStatus(FirebaseUtils.getUid(), isRead, isDelivered, messageID,
+                if(FirebaseUtils.isLoggedIn()) FirebaseAuth.getInstance().currentUser!!.phoneNumber!! else "1234567890"))
 
     }
 

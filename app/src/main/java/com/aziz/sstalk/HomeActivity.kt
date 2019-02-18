@@ -19,6 +19,7 @@ import android.view.*
 import android.widget.TextView
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.FirebaseUtils
+import com.aziz.sstalk.utils.Pref
 import com.aziz.sstalk.utils.utils
 import com.firebase.ui.database.FirebaseRecyclerAdapter
 import com.firebase.ui.database.FirebaseRecyclerOptions
@@ -94,6 +95,12 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             FirebaseUtils.loadProfileThumbnail(this, FirebaseUtils.getUid(),
                 nav_view.getHeaderView(0).findViewById<CircleImageView>(R.id.drawer_profile_image_view))
         }
+    }
+
+
+    override fun onResume() {
+        Pref.setCurrentTargetUID(this, "")
+        super.onResume()
     }
 
 

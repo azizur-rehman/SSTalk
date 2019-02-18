@@ -308,15 +308,7 @@ object utils {
 
     fun saveBitmapToSent(context: Context?, bitmap: Bitmap, messageIdForName:String):String{
 
-        val fileName = "$messageIdForName.jpg"
-
-        val path = Environment.getExternalStorageDirectory().toString()+"/"+ context!!.getString(R.string.app_name).toString()+"" +
-                "/Images/Sent/"
-
-        if(!File(path).exists())
-            File(path).mkdirs()
-
-        val file = File(path, fileName)
+        val file = getSentBitmapFile(context, messageIdForName)
 
         try {
 
@@ -375,8 +367,20 @@ object utils {
         return file.path
     }
 
-    fun saveBitmapToReceived(context: Context?, bitmap: Bitmap, messageIdForName:String):String{
+    fun getSentBitmapFile(context: Context?, messageIdForName:String):File{
+        val fileName = "$messageIdForName.jpg"
 
+        val path = Environment.getExternalStorageDirectory().toString()+"/"+ context!!.getString(R.string.app_name).toString()+"" +
+                "/Images/Sent/"
+
+        if(!File(path).exists())
+            File(path).mkdirs()
+
+        return File(path, fileName)
+    }
+
+
+    fun getReceivedBitmapFile(context: Context?, messageIdForName:String):File{
         val fileName = "$messageIdForName.jpg"
 
         val path = Environment.getExternalStorageDirectory().toString()+"/"+ context!!.getString(R.string.app_name).toString()+"" +
@@ -385,7 +389,13 @@ object utils {
         if(!File(path).exists())
             File(path).mkdirs()
 
-        val file = File(path, fileName)
+        return File(path, fileName)
+    }
+
+    fun saveBitmapToReceived(context: Context?, bitmap: Bitmap, messageIdForName:String):String{
+
+
+        val file = getReceivedBitmapFile(context, messageIdForName)
 
         try {
 
@@ -398,7 +408,7 @@ object utils {
             values.put(MediaStore.Video.Media.TITLE, messageIdForName)
             values.put(MediaStore.Video.Media.MIME_TYPE, "image/*")
             values.put(MediaStore.Video.Media.DATA, file.absolutePath)
-            context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+            context!!.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
 
         }
         catch (e:Exception){
