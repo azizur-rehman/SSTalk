@@ -531,7 +531,7 @@ object utils {
     }
 
 
-    private fun addVideoToMediaStore(context:Context, messageIdForName: String, file: File){
+    public fun addVideoToMediaStore(context:Context, messageIdForName: String, file: File){
         val values = ContentValues(3)
         values.put(MediaStore.Video.Media.TITLE, messageIdForName)
         values.put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")

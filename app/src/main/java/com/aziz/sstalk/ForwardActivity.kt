@@ -5,16 +5,13 @@ import android.app.ProgressDialog
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
-import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Parcelable
 import android.provider.MediaStore
 import android.support.design.widget.Snackbar
-import android.support.v4.content.ContextCompat
 import android.support.v7.widget.DividerItemDecoration
-import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.view.MenuItem
@@ -26,7 +23,6 @@ import com.aziz.sstalk.utils.utils
 import com.firebase.ui.database.FirebaseRecyclerAdapter
 import com.firebase.ui.database.FirebaseRecyclerOptions
 import com.google.android.gms.tasks.Continuation
-import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.gms.tasks.Task
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -60,12 +56,15 @@ class ForwardActivity : AppCompatActivity() {
 
     var messageModels: MutableList<Models.MessageModel>? = ArrayList()
 
+    var progressDialog:ProgressDialog? = null
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_forward)
 
         setSupportActionBar(toolbar)
+
 
         if(supportActionBar!=null)
             supportActionBar?.setDisplayHomeAsUpEnabled(true)
@@ -88,55 +87,64 @@ class ForwardActivity : AppCompatActivity() {
 
         sendBtn.setOnClickListener {
 
-            selectedUIDs.forEach {targetUID->
 
-                val messageID = "MSG"+System.currentTimeMillis()
 
-                try {
+                if (intent.type!!.startsWith("image/") && intent.action == Intent.ACTION_SEND) {
+                    //image is sent via intent
 
-                    if (intent.type!!.startsWith("image/") && intent.action == Intent.ACTION_SEND) {
+                    if(bitmap!=null){
+                        val messageID = "MSG${System.currentTimeMillis()}"
+                        val currentFile = utils.saveBitmapToSent(context, bitmap!!, messageID)
+                        Luban.compress(context, File(currentFile))
+                            .putGear(Luban.THIRD_GEAR)
+                            .launch(object : OnCompressListener{
+                                override fun onSuccess(file: File?) {
+                                    uploadAndForward(messageID, file!!, File(currentFile),
+                                        utils.constants.FILE_TYPE_IMAGE)
+                                }
 
-                        if(bitmap != null) {
-                            val currentFile = utils.saveBitmapToSent(context, bitmap!!, messageID)
-                            Luban.compress(context, File(currentFile))
-                                .putGear(Luban.THIRD_GEAR)
-                                .launch(object : OnCompressListener {
-                                    override fun onSuccess(file: File?) {
-                                        uploadAndForward(targetUID, messageID, file!!,
-                                            File(currentFile),
-                                            utils.constants.FILE_TYPE_IMAGE)
-                                    }
+                                override fun onError(e: Throwable?) {
+                                    uploadAndForward(messageID, File(currentFile), File(currentFile),
+                                        utils.constants.FILE_TYPE_IMAGE)
+                                    Log.d(
+                                        "ForwardActivity",
+                                        "onError: failed to compress original image, uploading original image"
+                                    )
+                                }
 
-                                    override fun onError(e: Throwable?) {
-                                        utils.toast(context, "Failed to compress an image...")
-                                        uploadAndForward(targetUID, messageID, File(currentFile),
-                                            File(currentFile),
-                                            utils.constants.FILE_TYPE_IMAGE)
-                                        e!!.printStackTrace()
-                                        Log.d("ForwardActivity", "onError: ${e.message}")
-                                    }
+                                override fun onStart() {
+                                    progressDialog!!.setMessage("Please wait...")
+                                    progressDialog!!.show()
+                                }
 
-                                    override fun onStart() {
-                                    }
+                            })
 
-                                })
-
-                        }
-
-                    } else {
-                        onForward(targetUID, messageID)
                     }
-                }catch (e:Exception) { onForward(targetUID, messageID) }
-            }
+                    else{
+                        utils.toast(context, "Image might be corrupted")
+                        finish()
+                    }
+
+                }
+
+            else{
+                    onForwardToSelectedUIDs()
+                }
 
 
         }
     }
 
 
-    private fun onForward(targetUID:String, messageID:String){
+    private fun onForwardToSelectedUIDs() {
 
-        for(model in messageModels!!){
+
+        selectedUIDs.forEach {
+
+            val messageID = "MSG${System.currentTimeMillis()}"
+            val targetUID = it
+
+        for (model in messageModels!!) {
             model.from = myUID
             model.timeInMillis = System.currentTimeMillis()
             model.reverseTimeStamp = model.timeInMillis * -1
@@ -148,7 +156,7 @@ class ForwardActivity : AppCompatActivity() {
                 .child(messageID)
                 .setValue(model)
                 .addOnSuccessListener {
-                    FirebaseUtils.setMessageStatusToDB(messageID, myUID, targetUID,true, isRead = true)
+                    FirebaseUtils.setMessageStatusToDB(messageID, myUID, targetUID, true, isRead = true)
 
                     FirebaseUtils.ref.getLastMessageRef(myUID)
                         .child(targetUID)
@@ -161,14 +169,14 @@ class ForwardActivity : AppCompatActivity() {
                 .child(messageID)
                 .setValue(model)
                 .addOnSuccessListener {
-                    FirebaseUtils.setMessageStatusToDB(messageID, targetUID, myUID,false, isRead = false)
+                    FirebaseUtils.setMessageStatusToDB(messageID, targetUID, myUID, false, isRead = false)
 
                     FirebaseUtils.ref.getLastMessageRef(targetUID)
                         .child(myUID)
                         .setValue(Models.LastMessageDetail())
                 }
         }
-
+    }
 
         if(selectedUIDs.size == 1)
             startActivities(arrayOf(
@@ -190,30 +198,48 @@ class ForwardActivity : AppCompatActivity() {
 
     private fun handleIncomingIntents(intent: Intent){
 
+        progressDialog = ProgressDialog(this)
+        progressDialog!!.setCancelable(false)
+
         if(intent.action == Intent.ACTION_SEND){
-            if(intent.type == "text/plain"){
-                val text = intent.getStringExtra(Intent.EXTRA_TEXT)
-                messageModels!!.add(Models.MessageModel(text ))
-            }
-
-            else if(intent.type!!.startsWith( "image/")){
-
-                if(!utils.hasStoragePermission(this)) {
-                    utils.toast(this, "App does not have storage permission")
-                    return
+            when {
+                intent.type == "text/plain" -> {
+                    val text = intent.getStringExtra(Intent.EXTRA_TEXT)
+                    messageModels!!.add(Models.MessageModel(text ))
                 }
-                val imageURI = intent.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as Uri
-                 bitmap = MediaStore.Images.Media.getBitmap(contentResolver, imageURI)
+                intent.type!!.startsWith( "image/") -> {
+
+                    if(!utils.hasStoragePermission(this)) {
+                        utils.toast(this, "App does not have storage permission")
+                        return
+                    }
+                    val imageURI = intent.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as Uri
+                    bitmap = MediaStore.Images.Media.getBitmap(contentResolver, imageURI)
 
 
+                }
+                intent.type!!.startsWith("video/") -> {
+                    if(!utils.hasStoragePermission(this)){
+                        utils.toast(this, "App does not have storage permission")
+                        return
+                    }
+
+                    val videoUri = intent.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as Uri
+                    Log.d("ForwardActivity", "handleIncomingIntents: ${videoUri.path}")
+                }
             }
         }
     }
 
 
-    private fun uploadAndForward(targetUID: String, messageID: String, file:File, originalFile:File, fileType:String){
+    private fun uploadAndForward(
+        messageID:String,
+        file: File,
+        originalFile: File,
+        fileType: String
+    ){
 
-        val progressBar = ProgressDialog.show(context, "","Please wait...", true, false)
+
 
 
        val ref = FirebaseStorage.getInstance().reference
@@ -226,7 +252,7 @@ class ForwardActivity : AppCompatActivity() {
                    .addOnProgressListener {
                        val percentage:Double = (100.0 * it.bytesTransferred) / it.totalByteCount
                        val percent = String.format("%.2f",percentage)
-                       progressBar.setMessage("Uploading media $percent%")
+                       progressDialog!!.setMessage("Uploading media $percent%")
 
                    }
                    .continueWithTask(Continuation<UploadTask.TaskSnapshot, Task<Uri>> { task ->
@@ -239,12 +265,12 @@ class ForwardActivity : AppCompatActivity() {
                })
 
                .addOnCompleteListener { task->
-                progressBar.dismiss()
+                progressDialog!!.dismiss()
 
                 messageModels!!.add(Models.MessageModel(task.result.toString(), isFile = true,
                     file_local_path = originalFile.path, file_size_in_bytes = file.length(),
                     messageType = fileType))
-                onForward(targetUID, messageID)
+                onForwardToSelectedUIDs()
             }
 
 

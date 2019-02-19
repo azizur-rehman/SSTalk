@@ -244,10 +244,12 @@ class MessageActivity : AppCompatActivity() {
 
         val galleryIntent = Intent(context, ImagePickActivity::class.java)
         galleryIntent.putExtra(ImagePickActivity.IS_NEED_CAMERA, true)
+        galleryIntent.putExtra(ImagePickActivity.IS_NEED_FOLDER_LIST, true)
         galleryIntent.putExtra(Constant.MAX_NUMBER,5)
 
         val videoIntent = Intent(context, VideoPickActivity::class.java)
         videoIntent.putExtra(VideoPickActivity.IS_NEED_CAMERA, true)
+        videoIntent.putExtra(VideoPickActivity.IS_NEED_FOLDER_LIST, true)
         videoIntent.putExtra(Constant.MAX_NUMBER, 5)
 
         camera_btn.setOnClickListener {
@@ -1597,6 +1599,8 @@ class MessageActivity : AppCompatActivity() {
                     progressBar.visibility = View.GONE
                 }
                 .addOnSuccessListener {
+
+                    utils.addVideoToMediaStore(context, messageID, videoFile)
 
                     FirebaseUtils.ref.getChatRef(myUID,targetUid)
                         .child(messageID)
