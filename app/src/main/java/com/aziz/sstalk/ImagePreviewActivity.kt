@@ -69,7 +69,7 @@ class ImagePreviewActivity : AppCompatActivity() {
         if(File(imgLocalPath).exists()){
 
 
-            Log.d("ImagePreviewActivity", "onCreate: file exists")
+//            Log.d("ImagePreviewActivity", "onCreate: file exists")
 
             Picasso.get()
                 .load(File(imgLocalPath))

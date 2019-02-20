@@ -2,7 +2,9 @@ package com.aziz.sstalk
 
 import android.annotation.SuppressLint
 import android.app.ProgressDialog
+import android.content.Context
 import android.content.Intent
+import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.net.Uri
@@ -57,6 +59,8 @@ class ForwardActivity : AppCompatActivity() {
     var messageModels: MutableList<Models.MessageModel>? = ArrayList()
 
     var progressDialog:ProgressDialog? = null
+
+    var currentMessageID = ""
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -127,6 +131,18 @@ class ForwardActivity : AppCompatActivity() {
 
                 }
 
+                else if(intent.type!!.startsWith("video/") && intent.action == Intent.ACTION_SEND){
+
+                    if(currentVideoFile!=null){
+                        val messageID = "MSG${System.currentTimeMillis()}"
+                        progressDialog!!.setMessage("Please wait...")
+                        progressDialog!!.show()
+                        uploadAndForward(messageID, currentVideoFile!!, currentVideoFile!!,
+                            utils.constants.FILE_TYPE_VIDEO)
+                    }
+
+                }
+
             else{
                     onForwardToSelectedUIDs()
                 }
@@ -141,7 +157,11 @@ class ForwardActivity : AppCompatActivity() {
 
         selectedUIDs.forEach {
 
-            val messageID = "MSG${System.currentTimeMillis()}"
+            var messageID = "MSG${System.currentTimeMillis()}"
+
+            if(currentMessageID.isNotEmpty())
+                messageID = currentMessageID
+
             val targetUID = it
 
         for (model in messageModels!!) {
@@ -151,10 +171,12 @@ class ForwardActivity : AppCompatActivity() {
             model.to = targetUID
             model.caption = ""
 
+            val currentModel = model
+
             //send to my node
             FirebaseUtils.ref.getChatRef(myUID, targetUID)
                 .child(messageID)
-                .setValue(model)
+                .setValue(currentModel)
                 .addOnSuccessListener {
                     FirebaseUtils.setMessageStatusToDB(messageID, myUID, targetUID, true, isRead = true)
 
@@ -164,10 +186,12 @@ class ForwardActivity : AppCompatActivity() {
 
                 }
 
+            currentModel.file_local_path = ""
+
             //send to target node
             FirebaseUtils.ref.getChatRef(targetUID, FirebaseUtils.getUid())
                 .child(messageID)
-                .setValue(model)
+                .setValue(currentModel)
                 .addOnSuccessListener {
                     FirebaseUtils.setMessageStatusToDB(messageID, targetUID, myUID, false, isRead = false)
 
@@ -195,6 +219,7 @@ class ForwardActivity : AppCompatActivity() {
 
 
     var bitmap:Bitmap? = null
+    var currentVideoFile:File? = null
 
     private fun handleIncomingIntents(intent: Intent){
 
@@ -225,7 +250,19 @@ class ForwardActivity : AppCompatActivity() {
                     }
 
                     val videoUri = intent.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as Uri
-                    Log.d("ForwardActivity", "handleIncomingIntents: ${videoUri.path}")
+                    val videoFile =  File(utils.getRealPathFromURI(this, videoUri))
+
+                    if(!videoFile.exists()){
+                        utils.toast(context, "Something went wrong in video file")
+                        finish()
+                    }
+
+                    if(videoFile.length() > (16 * 1024 * 1024)){
+                        utils.toast(context, "Please choose a file smaller than 16 MB")
+                        finish()
+                    }
+
+                    currentVideoFile = videoFile
                 }
             }
         }
@@ -240,6 +277,7 @@ class ForwardActivity : AppCompatActivity() {
     ){
 
 
+        currentMessageID = messageID
 
 
        val ref = FirebaseStorage.getInstance().reference
@@ -270,6 +308,8 @@ class ForwardActivity : AppCompatActivity() {
                 messageModels!!.add(Models.MessageModel(task.result.toString(), isFile = true,
                     file_local_path = originalFile.path, file_size_in_bytes = file.length(),
                     messageType = fileType))
+
+
                 onForwardToSelectedUIDs()
             }
 
@@ -477,4 +517,7 @@ class ForwardActivity : AppCompatActivity() {
         finish()
         return super.onOptionsItemSelected(item)
     }
+
+
+
 }

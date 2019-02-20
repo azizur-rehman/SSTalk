@@ -583,10 +583,10 @@ class MessageActivity : AppCompatActivity() {
        messagesList.drawingCacheQuality = View.DRAWING_CACHE_QUALITY_HIGH
 
        val linearLayoutManager = LinearLayoutManager(this)
-
         linearLayoutManager.stackFromEnd = true
-
         messagesList.layoutManager = linearLayoutManager
+
+       setScrollingListener()
 
 
         val options = FirebaseRecyclerOptions.Builder<Models.MessageModel>()
@@ -681,6 +681,7 @@ class MessageActivity : AppCompatActivity() {
                 val date = Date(model.timeInMillis)
 
 
+                Log.d("MessageActivity", "--------- onBindViewHolder: created ------ $messageID")
                 FirebaseUtils.setMessageStatusToDB(messageID, myUID, targetUid, true, isRead = true)
 
 
@@ -1052,12 +1053,14 @@ class MessageActivity : AppCompatActivity() {
             override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
 
 
+
+                if(adapter.snapshots[itemCount - 1].from == myUID)
                 messagesList.scrollToPosition(adapter.itemCount - 1)
 
-                if(adapter.snapshots[itemCount - 1].from == myUID){
-                    FirebaseUtils.setMessageStatusToDB(adapter.getRef(itemCount - 1).key!!,
-                        myUID, targetUid, true, true)
-                }
+//                if(adapter.snapshots[itemCount - 1].from == myUID){
+//                    FirebaseUtils.setMessageStatusToDB(adapter.getRef(itemCount - 1).key!!,
+//                        myUID, targetUid, true, true)
+//                }
 
                 super.onItemRangeInserted(positionStart, itemCount)
             }
@@ -1581,6 +1584,8 @@ class MessageActivity : AppCompatActivity() {
 
 
             val videoFile = utils.getVideoFile(context, messageID)
+
+        Log.d("MessageActivity", "downloadVideo: downloading video to location = ${videoFile.path}")
 
             storageRef.getFile(videoFile)
                 .addOnProgressListener {
@@ -2326,6 +2331,34 @@ class MessageActivity : AppCompatActivity() {
 
 
 
+    }
+
+
+
+    private fun setScrollingListener(){
+
+        bottomScrollButton.hide()
+
+        FirebaseUtils.setUnreadCount(targetUid, unreadCount)
+
+        bottomScrollButton.setOnClickListener {
+
+            messagesList.scrollToPosition(adapter.itemCount - 1)
+        }
+
+        messagesList.setOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+
+                if(layoutManager.findLastVisibleItemPosition() == adapter.itemCount - 1)
+                    bottomScrollButton.hide()
+                else
+                    bottomScrollButton.show()
+
+                super.onScrolled(recyclerView, dx, dy)
+            }
+
+        })
     }
 
 

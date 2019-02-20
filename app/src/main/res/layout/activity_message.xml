@@ -120,11 +120,53 @@
         android:layout_height="match_parent" />
 
 
+
+
+      <FrameLayout
+
+              android:layout_margin="15sp"
+              android:layout_width="wrap_content"
+                   android:layout_height="wrap_content"
+                   android:layout_gravity="end|bottom"
+
+      >
+
+          <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent">
+
+            <android.support.design.widget.FloatingActionButton
+                android:layout_width="match_parent"
+            android:src="@drawable/ic_down_arrow_white"
+            android:layout_height="match_parent"
+                android:id="@+id/bottomScrollButton"
+                android:layout_marginLeft="8dp"
+                android:layout_marginTop="8dp"
+
+                />
+          </FrameLayout>
+
+
+          <com.nex3z.notificationbadge.NotificationBadge
+                  android:layout_width="28dp"
+                  android:layout_height="28dp"
+                  android:layout_gravity="end|top"
+                  app:nbAnimationEnabled="true"
+                  app:nbAnimationDuration="200"
+                  app:nbEllipsizeText="99+"
+                  app:nbMaxTextLength="2"
+                  android:id="@+id/unreadCount"
+                  android:textColor="@color/white"
+                  android:textSize="10sp"
+          />
+
+      </FrameLayout>
+
+
         <io.codetail.widget.RevealLinearLayout
                 android:layout_width="match_parent"
                   android:orientation="horizontal"
                   android:id="@+id/attachment_menu"
                       android:padding="15dp"
+                android:visibility="gone"
                         android:layout_margin="2dp"
                       android:background="@drawable/button_round_with_transparency"
                       android:layout_gravity="bottom"
