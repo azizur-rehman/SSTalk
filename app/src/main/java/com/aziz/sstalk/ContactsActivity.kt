@@ -36,7 +36,7 @@ class ContactsActivity : AppCompatActivity(){
         setContentView(R.layout.contact_screen)
 
         contacts_list.layoutManager = LinearLayoutManager(this@ContactsActivity)
-        contacts_list.addItemDecoration(DividerItemDecoration(this, DividerItemDecoration.VERTICAL))
+//        contacts_list.addItemDecoration(DividerItemDecoration(this, DividerItemDecoration.VERTICAL))
 
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {

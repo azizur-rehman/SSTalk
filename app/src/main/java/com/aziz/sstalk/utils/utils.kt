@@ -624,15 +624,20 @@ object utils {
     fun getNameFromNumber(context: Context, number: String):String{
 
 
+        try {
 
-        val list = utils.getContactList(context)
+            val list = utils.getContactList(context)
 
 
-        for(item in list){
-            val formattedNumber = utils.getFormattedTenDigitNumber(item.number)
-            if(getFormattedTenDigitNumber(number) == formattedNumber){
-                return item.name
+            for (item in list) {
+                val formattedNumber = utils.getFormattedTenDigitNumber(item.number)
+                if (getFormattedTenDigitNumber(number) == formattedNumber) {
+                    return item.name
+                }
             }
+        }
+        catch (e:Exception){
+            return number
         }
         return number
     }

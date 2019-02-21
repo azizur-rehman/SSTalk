@@ -3,7 +3,6 @@
               android:layout_width="match_parent"
               android:layout_height="wrap_content"
               xmlns:app="http://schemas.android.com/apk/res-auto"
-              android:padding="5dp"
               android:background="?attr/selectableItemBackground"
               android:orientation="vertical">
 
@@ -12,6 +11,7 @@
         android:layout_height="wrap_content"
         android:layout_margin="8dp"
         android:gravity="center"
+        android:padding="5dp"
         android:orientation="horizontal"
         >
 
@@ -146,5 +146,13 @@
 
 
     </LinearLayout>
+
+
+    <View android:layout_width="match_parent"
+          android:layout_height="0.01dp"
+    android:background="@color/black"
+          android:layout_marginRight="10dp"
+          android:layout_marginLeft="90dp"
+    />
 
 </LinearLayout>

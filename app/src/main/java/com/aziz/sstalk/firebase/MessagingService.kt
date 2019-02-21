@@ -22,6 +22,7 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.aziz.sstalk.R
 import com.aziz.sstalk.models.Models
+import com.google.firebase.auth.FirebaseAuth
 import java.io.File
 
 class MessagingService: FirebaseMessagingService() {
@@ -31,9 +32,14 @@ class MessagingService: FirebaseMessagingService() {
     private val KEY_RECEIVER = "receiverUID"
     private val KEY_MSG_IDs = "messageIDs"
     private val KEY_SENDER_PHONE = "senderPhoneNumber"
+    private val KEY_SENDER_PIC_URL = "senderPhotoURL"
+    private val KEY_MESSAGES = "messages"
+
+    private val MESSAGE_SEPERATOR = "<--MESSAGE_SEPERATOR-->"
 
     object NotificationDetail {
-        val ID = 13213
+        val SINGLE_ID = 123456
+        val MUlTIPLE_ID = 654321
     }
 
 
@@ -47,6 +53,7 @@ class MessagingService: FirebaseMessagingService() {
 
         if(FirebaseUtils.getUid() != data!![KEY_RECEIVER]!!)
             return
+
 
         setAllMessageFromUserAsDelivered(data[KEY_RECEIVER]!!, data[KEY_SENDER]!!, data[KEY_MSG_IDs]!!)
 
@@ -119,7 +126,7 @@ class MessagingService: FirebaseMessagingService() {
 
 
     private fun notify(title:String, intent: Intent, remoteMessage: RemoteMessage){
-        val pendingIntent: PendingIntent = PendingIntent.getActivity(this@MessagingService, NotificationDetail.ID, intent, 0)
+        val pendingIntent: PendingIntent = PendingIntent.getActivity(this@MessagingService, NotificationDetail.SINGLE_ID, intent, 0)
 
         val data = remoteMessage.data
 
@@ -147,11 +154,13 @@ class MessagingService: FirebaseMessagingService() {
 //            notification.setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
 
 
-        with(NotificationManagerCompat.from(this@MessagingService)){
-            notify(  NotificationDetail.ID, notification.build())
-        }
+//        with(NotificationManagerCompat.from(this@MessagingService)){
+//            notify(  NotificationDetail.SINGLE_ID, notification.build())
+//        }
 
+        // for single message
         updateNotificationWithBigText(remoteMessage, notification)
+
         getAllUnreadMessages(notification, remoteMessage)
 
     }
@@ -193,7 +202,7 @@ class MessagingService: FirebaseMessagingService() {
 
 
                                         if(unreadConversation<=1) {
-                                           // updateNotificationWithBigText(remoteMessage, notificationCompatBuilder)
+                                            //updateNotificationWithBigText(remoteMessage, notificationCompatBuilder)
                                             return
                                         }
 
@@ -205,10 +214,10 @@ class MessagingService: FirebaseMessagingService() {
                                             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                                         }
                                         with(NotificationManagerCompat.from(this@MessagingService)){
-                                            notify( NotificationDetail.ID, notificationCompatBuilder.setStyle(NotificationCompat.BigTextStyle()
+                                            notify( NotificationDetail.MUlTIPLE_ID, notificationCompatBuilder.setStyle(NotificationCompat.BigTextStyle()
                                                 .setBigContentTitle(title)
                                                 .bigText("Tap to Read"))
-                                                .setContentIntent(PendingIntent.getActivity(this@MessagingService, NotificationDetail.ID, intent, 0))
+                                                .setContentIntent(PendingIntent.getActivity(this@MessagingService, NotificationDetail.MUlTIPLE_ID, intent, 0))
                                                 .setContentTitle(title)
                                                 .build())
                                         }
@@ -231,6 +240,9 @@ class MessagingService: FirebaseMessagingService() {
 
         val profilePicFile = File(utils.getProfilePicPath(this)+remoteMessage.data[KEY_SENDER]!!+".jpg")
 
+        val messages = getMessages(remoteMessage.data[KEY_MESSAGES]!!)
+
+//        Log.d("MessagingService", "updateNotificationWithBigText: ")
 
 
         val person = Person.Builder().setName(utils.getNameFromNumber(this,
@@ -239,51 +251,29 @@ class MessagingService: FirebaseMessagingService() {
            if(utils.hasStoragePermission(this)) {
                if(profilePicFile.exists()) {
                    person.setIcon(IconCompat.createWithBitmap(BitmapFactory.decodeFile(profilePicFile.path)))
+//                   Log.d("MessagingService", "updateNotificationWithBigText: setting profile pic from location = ${profilePicFile.path}")
                    notificationCompatBuilder.setLargeIcon(BitmapFactory.decodeFile(profilePicFile.path))
                } //.createWithBitmap(BitmapFactory.decodeFile(profilePicFile.path)))
            }
 
         val style = NotificationCompat.MessagingStyle(person.build())
 
-        messageIDs.forEachIndexed { index, item ->
-            FirebaseUtils.ref.getChatRef(FirebaseUtils.getUid(), remoteMessage.data[KEY_SENDER]!!)
-                .child(item)
-                .addListenerForSingleValueEvent(object : ValueEventListener{
-                    override fun onCancelled(p0: DatabaseError) {}
 
-                    override fun onDataChange(p0: DataSnapshot) {
-                        if(!p0.exists())
-                            return
-
-                        val model = p0.getValue(Models.MessageModel::class.java)
-                          var message=model!!.message
-
-                        if(model.messageType == utils.constants.FILE_TYPE_IMAGE)
-                            message = "\uD83D\uDDBC Image"
-                        else if(model.messageType == utils.constants.FILE_TYPE_VIDEO)
-                            message = "\uD83C\uDFA5 Video"
-                        else if(model.messageType == utils.constants.FILE_TYPE_LOCATION)
-                            message = "\uD83D\uDCCC Location"
-
-                        style.addMessage(message, model.timeInMillis, utils.getNameFromNumber(this@MessagingService,
-                            remoteMessage.data[KEY_SENDER_PHONE]!!))
-
-                        Log.d("MessagingService", "onDataChange: updating notification with messages = $message")
-
-                        if(index == messageIDs.lastIndex){
-                            notificationCompatBuilder.setStyle(style)
-                           // notificationCompatBuilder.setOnlyAlertOnce(true)
-
-
-                            with(NotificationManagerCompat.from(this@MessagingService)){
-                                notify( NotificationDetail.ID, notificationCompatBuilder.build())
-                            }
-                        }
-
-                    }
-
-                })
+        messages.forEach {
+            if(it.isNotEmpty() && messages.size<=5)
+            style.addMessage(
+                it.replace(MESSAGE_SEPERATOR,""), System.currentTimeMillis(), person.build()
+            )
         }
+
+
+        notificationCompatBuilder.setStyle(style)
+
+        notificationCompatBuilder.setNumber(messages.size)
+        with(NotificationManagerCompat.from(this@MessagingService)){
+            notify( NotificationDetail.SINGLE_ID, notificationCompatBuilder.build())
+        }
+
 
     }
 
@@ -301,6 +291,10 @@ class MessagingService: FirebaseMessagingService() {
 
     fun getIDs(msgIDsString: String): List<String> =
         msgIDsString.replace(",", " ").trim().split(" ")
+
+    fun getMessages(messageString: String): List<String> =
+        messageString.split(MESSAGE_SEPERATOR)
+    //should remove message seperator on last value
 
     override fun onNewToken(p0: String?) {
 

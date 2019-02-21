@@ -298,7 +298,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         conversationRecycler.layoutManager = LinearLayoutManager(context) as RecyclerView.LayoutManager?
         conversationRecycler.adapter = adapter
-        conversationRecycler.addItemDecoration(DividerItemDecoration(this, DividerItemDecoration.VERTICAL))
+//        conversationRecycler.addItemDecoration(DividerItemDecoration(this, DividerItemDecoration.VERTICAL))
 
         adapter.startListening()
         setonDisconnectListener()

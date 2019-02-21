@@ -124,22 +124,24 @@
 
       <FrameLayout
 
-              android:layout_margin="15sp"
+              android:padding="18sp"
               android:layout_width="wrap_content"
                    android:layout_height="wrap_content"
-                   android:layout_gravity="end|bottom"
+                   android:layout_gravity="bottom"
 
       >
 
-          <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent">
+          <FrameLayout
+                  android:layout_width="match_parent"
+                  android:layout_height="match_parent">
 
             <android.support.design.widget.FloatingActionButton
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
             android:src="@drawable/ic_down_arrow_white"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
+                android:visibility="gone"
                 android:id="@+id/bottomScrollButton"
-                android:layout_marginLeft="8dp"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="12dp"
 
                 />
           </FrameLayout>
@@ -153,6 +155,7 @@
                   app:nbAnimationDuration="200"
                   app:nbEllipsizeText="99+"
                   app:nbMaxTextLength="2"
+                  android:visibility="gone"
                   android:id="@+id/unreadCount"
                   android:textColor="@color/white"
                   android:textSize="10sp"

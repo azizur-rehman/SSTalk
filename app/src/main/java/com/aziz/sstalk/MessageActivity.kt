@@ -153,7 +153,8 @@ class MessageActivity : AppCompatActivity() {
 
         //cancel any notification, if any
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.cancel(MessagingService.NotificationDetail.ID)
+        notificationManager.cancel(MessagingService.NotificationDetail.SINGLE_ID)
+        notificationManager.cancel(MessagingService.NotificationDetail.MUlTIPLE_ID)
 
         setSupportActionBar(toolbar)
         targetUid = intent.getStringExtra(FirebaseUtils.KEY_UID)
@@ -1054,7 +1055,7 @@ class MessageActivity : AppCompatActivity() {
 
 
 
-                if(adapter.snapshots[itemCount - 1].from == myUID)
+     //           if(adapter.snapshots[itemCount - 1].from == myUID)
                 messagesList.scrollToPosition(adapter.itemCount - 1)
 
 //                if(adapter.snapshots[itemCount - 1].from == myUID){
@@ -2339,7 +2340,14 @@ class MessageActivity : AppCompatActivity() {
 
         bottomScrollButton.hide()
 
+        unreadCount.visibility = View.GONE
+
         FirebaseUtils.setUnreadCount(targetUid, unreadCount)
+        val layoutManager = messagesList.layoutManager as LinearLayoutManager
+
+        val textView = TextView(this)
+        textView.text = "Sample text"
+
 
         bottomScrollButton.setOnClickListener {
 
@@ -2348,12 +2356,13 @@ class MessageActivity : AppCompatActivity() {
 
         messagesList.setOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                val layoutManager = recyclerView.layoutManager as LinearLayoutManager
 
-                if(layoutManager.findLastVisibleItemPosition() == adapter.itemCount - 1)
+                if(layoutManager.findLastVisibleItemPosition() == adapter.itemCount - 1 )
                     bottomScrollButton.hide()
-                else
+                else if(adapter.itemCount > 5)
                     bottomScrollButton.show()
+
+
 
                 super.onScrolled(recyclerView, dx, dy)
             }

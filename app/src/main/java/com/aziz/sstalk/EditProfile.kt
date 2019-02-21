@@ -151,6 +151,11 @@ class EditProfile : AppCompatActivity() {
                                 utils.toast(context, toastAfterUploadIfAny) }
 
 
+                    FirebaseAuth.getInstance().currentUser!!
+                        .updateProfile(UserProfileChangeRequest.Builder()
+                            .setPhotoUri(link).build())
+
+
                     if(intent.getBooleanExtra(utils.constants.KEY_IS_ON_ACCOUNT_CREATION, false)){
                         startActivity(Intent(context, HomeActivity::class.java))
                         finish()

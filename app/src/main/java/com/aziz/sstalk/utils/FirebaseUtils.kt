@@ -161,9 +161,12 @@ object FirebaseUtils {
 
     fun loadProfilePic(context: Context, uid: String, imageView: ImageView){
 
+        imageView.setImageResource(R.drawable.contact_placeholder)
 
             if(uid.isEmpty())
                 return
+
+
 
         if(utils.hasStoragePermission(context)){
 
@@ -249,6 +252,8 @@ object FirebaseUtils {
 
 
     fun loadProfileThumbnail(context: Context, uid:String, imageView: ImageView){
+
+        imageView.setImageResource(R.drawable.contact_placeholder)
 
 
         if(uid.isEmpty())
@@ -507,7 +512,8 @@ object FirebaseUtils {
     fun setMessageStatusToDB(messageID: String, uid: String,targetUID: String, isDelivered:Boolean, isRead:Boolean){
         ref.getMessageStatusRef(uid,targetUID,messageID)
             .setValue(Models.MessageStatus(FirebaseUtils.getUid(), isRead, isDelivered, messageID,
-                if(FirebaseUtils.isLoggedIn()) FirebaseAuth.getInstance().currentUser!!.phoneNumber!! else "1234567890"))
+                if(FirebaseUtils.isLoggedIn()) FirebaseAuth.getInstance().currentUser!!.phoneNumber!! else "1234567890",
+                if(FirebaseUtils.isLoggedIn()) FirebaseAuth.getInstance().currentUser!!.photoUrl.toString() else ""))
 
     }
 
@@ -588,4 +594,7 @@ object FirebaseUtils {
                         .setValue(it.result!!.token)
             }
     }
+
+
+
 }
