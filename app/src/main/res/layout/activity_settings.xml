@@ -4,6 +4,7 @@
 <LinearLayout android:layout_height="match_parent"
               android:layout_width="match_parent"
               android:orientation="vertical"
+              android:background="@color/white"
               xmlns:android="http://schemas.android.com/apk/res/android">
 
 
@@ -35,6 +36,8 @@
               android:drawablePadding="20dp"
               android:textSize="22sp"
               android:text="Logout"
+              android:background="?selectableItemBackground"
+              android:onClick="onLogoutClick"
               style="@style/TextViewHeading"
               android:textColor="@color/dark_gray"
               android:layout_marginBottom="20dp"

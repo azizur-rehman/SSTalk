@@ -11,9 +11,7 @@ import android.content.Context.VIBRATOR_SERVICE
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.database.Cursor
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Color
+import android.graphics.*
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.inputmethodservice.InputMethodService
@@ -42,6 +40,7 @@ import android.widget.Toast
 import com.aziz.sstalk.BuildConfig
 import com.aziz.sstalk.R
 import com.aziz.sstalk.models.Models
+import com.aziz.sstalk.utils.utils.toast
 import com.bumptech.glide.Glide
 import com.google.firebase.auth.FirebaseAuth
 import com.squareup.picasso.Picasso
@@ -196,7 +195,7 @@ object utils {
     fun getUtcTimeFromMillis(timeInMillis:Long) : String{
 
         val calendar = Calendar.getInstance()
-        calendar.setTimeInMillis(timeInMillis)
+        calendar.timeInMillis = timeInMillis
         val sdf = SimpleDateFormat("hh:mm a")
 
         sdf.timeZone = TimeZone.getDefault()
@@ -532,7 +531,7 @@ object utils {
     }
 
 
-    public fun addVideoToMediaStore(context:Context, messageIdForName: String, file: File){
+    fun addVideoToMediaStore(context:Context, messageIdForName: String, file: File){
         val values = ContentValues(3)
         values.put(MediaStore.Video.Media.TITLE, messageIdForName)
         values.put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
@@ -596,7 +595,7 @@ object utils {
     }
 
     fun isAppIsInBackground(context: Context):Boolean {
-        var isInBackground = true;
+        var isInBackground = true
         val am =  context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.KITKAT_WATCH) {
             val runningProcesses = am.runningAppProcesses
@@ -645,7 +644,7 @@ object utils {
 
     fun vibrate(context: Context) {
     if (Build.VERSION.SDK_INT >= 26) {
-        (context.getSystemService(VIBRATOR_SERVICE) as Vibrator).vibrate(VibrationEffect.createOneShot(200, VibrationEffect.DEFAULT_AMPLITUDE));
+        (context.getSystemService(VIBRATOR_SERVICE) as Vibrator).vibrate(VibrationEffect.createOneShot(200, VibrationEffect.DEFAULT_AMPLITUDE))
     } else {
         ( context.getSystemService(VIBRATOR_SERVICE) as Vibrator).vibrate(200)
     }
@@ -676,6 +675,59 @@ object utils {
                 cursor.close()
             }
         }
+    }
+
+
+    fun Context.toast(message: String){
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+
+    fun Context.longToast(message: String){
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+
+    }
+
+
+    fun getCircleBitmap( bitmap:Bitmap):Bitmap {
+         var output:Bitmap? = null
+            val srcRect: Rect?
+            var dstRect:Rect? = null
+        var r:Float = 0.0f
+        val width = bitmap.width
+            val height = bitmap.height
+
+            if (width > height){
+            output = Bitmap.createBitmap(height, height, Bitmap.Config.ARGB_8888)
+            val left = (width - height) / 2
+            val right = left + height
+            srcRect =  Rect(left, 0, right, height)
+            dstRect =  Rect(0, 0, height, height)
+            r = (height / 2).toFloat()
+        }else{
+            output = Bitmap.createBitmap(width, width, Bitmap.Config.ARGB_8888)
+            val top = (height - width)/2
+            val bottom = top + width
+            srcRect =  Rect(0, top, width, bottom)
+            dstRect =  Rect(0, 0, width, width)
+            r = (width / 2).toFloat()
+        }
+
+        val canvas =  Canvas(output!!)
+
+            val color = 0xff424242
+            val paint =  Paint()
+
+            paint.isAntiAlias = true
+            canvas.drawARGB(0, 0, 0, 0)
+            paint.color = color.toInt()
+            canvas.drawCircle(r, r, r, paint)
+            paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
+            canvas.drawBitmap(bitmap, srcRect, dstRect, paint)
+
+            bitmap.recycle()
+
+            return output
+
     }
 
 }

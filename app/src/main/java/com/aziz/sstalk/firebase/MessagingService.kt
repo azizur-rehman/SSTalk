@@ -3,11 +3,11 @@ package com.aziz.sstalk.firebase
 import android.app.Notification
 import android.app.PendingIntent
 import android.content.Intent
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.support.v4.app.NotificationCompat
 import android.support.v4.app.NotificationManagerCompat
 import android.support.v4.app.Person
+import android.support.v4.content.ContextCompat
 import android.support.v4.graphics.drawable.IconCompat
 import android.util.Log
 import com.aziz.sstalk.HomeActivity
@@ -21,8 +21,6 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.aziz.sstalk.R
-import com.aziz.sstalk.models.Models
-import com.google.firebase.auth.FirebaseAuth
 import java.io.File
 
 class MessagingService: FirebaseMessagingService() {
@@ -51,20 +49,25 @@ class MessagingService: FirebaseMessagingService() {
 
         //todo change to FirebaseUtils.getUid
 
-        if(FirebaseUtils.getUid() != data!![KEY_RECEIVER]!!)
+
+
+        val sender = data!![KEY_SENDER]!!
+        val receiver = data[KEY_RECEIVER]!!
+
+        if(FirebaseUtils.getUid() != receiver)
             return
 
 
-        setAllMessageFromUserAsDelivered(data[KEY_RECEIVER]!!, data[KEY_SENDER]!!, data[KEY_MSG_IDs]!!)
+        setAllMessageFromUserAsDelivered(receiver, sender, data[KEY_MSG_IDs]!!)
 
 
-        if(Pref.getCurrentTargetUID(this) == data[KEY_SENDER]!!) {
-            Log.d("MessagingService", "onMessageReceived: currently chatting with -> ${data[KEY_SENDER]}]")
+        if(Pref.getCurrentTargetUID(this) == sender) {
+            Log.d("MessagingService", "onMessageReceived: currently chatting with -> $sender")
             return
         }
 
 
-        FirebaseUtils.ref.getNotificationMuteRef(data[KEY_SENDER]!!)
+        FirebaseUtils.ref.getNotificationMuteRef(sender)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onCancelled(p0: DatabaseError) {
                 }
@@ -76,17 +79,14 @@ class MessagingService: FirebaseMessagingService() {
                             return
                         }
                     }
-                    if(//true
-                        utils.isAppIsInBackground(this@MessagingService)
-                    ){
+                    if( utils.isAppIsInBackground(this@MessagingService)
+                        || Pref.getCurrentTargetUID(this@MessagingService) != sender){
                         //app is in background show notification
-                        Log.d("MessagingService", "onDataChange: is in background")
                         showNotification(p0)
                     }
                     else {
 
-                        if(Pref.Notification.hasVibrationEnabled(this@MessagingService)
-                        )
+                        if(Pref.Notification.hasVibrationEnabled(this@MessagingService))
                             utils.vibrate(this@MessagingService)
                     }
                 }
@@ -107,16 +107,15 @@ class MessagingService: FirebaseMessagingService() {
 
 
         val name = utils.getNameFromNumber(this@MessagingService, senderPhone!!)
-        val title = "$totalMessage ${if(totalMessage!!.toInt()==1) "message" else "messages"} from $name"
 
-        Log.d("MessagingService", "onDataChange: sending notification with title = $title")
+        Log.d("MessagingService", "onDataChange: sending notification with title = $name")
         val intent = Intent(this@MessagingService, MessageActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             putExtra(FirebaseUtils.KEY_UID, sender)
             putExtra(utils.constants.KEY_IS_ONCE, true)
         }
 
-        notify(title, intent, remoteMessage)
+        notify(name, intent, remoteMessage)
 
         Log.d("MessagingService", "showNotification: sender = $sender")
 
@@ -138,8 +137,9 @@ class MessagingService: FirebaseMessagingService() {
             .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setContentIntent(pendingIntent)
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
-            .setLargeIcon(BitmapFactory.decodeResource(resources, R.mipmap.ic_launcher))
-            //.setPriority(android.app.Notification.PRIORITY_MAX)
+            .setColor(ContextCompat.getColor(this@MessagingService, R.color.colorPrimary))
+            .setLargeIcon((BitmapFactory.decodeResource(resources, R.mipmap.ic_launcher)))
+            .setPriority(android.app.Notification.PRIORITY_MAX)
             .setAutoCancel(true)
             .setOnlyAlertOnce(true)
 
@@ -169,6 +169,8 @@ class MessagingService: FirebaseMessagingService() {
     private fun getAllUnreadMessages(notificationCompatBuilder: NotificationCompat.Builder, remoteMessage: RemoteMessage){
         var unreadCount = 0
         var unreadConversation = 0
+
+
 
 
 
@@ -217,6 +219,10 @@ class MessagingService: FirebaseMessagingService() {
                                             notify( NotificationDetail.MUlTIPLE_ID, notificationCompatBuilder.setStyle(NotificationCompat.BigTextStyle()
                                                 .setBigContentTitle(title)
                                                 .bigText("Tap to Read"))
+                                                .setDefaults(Notification.DEFAULT_LIGHTS)
+                                                .setSmallIcon(R.mipmap.ic_launcher_round)
+                                                .setColor(ContextCompat.getColor(this@MessagingService, R.color.colorPrimary))
+                                                .setLargeIcon((BitmapFactory.decodeResource(resources, R.mipmap.ic_launcher)))
                                                 .setContentIntent(PendingIntent.getActivity(this@MessagingService, NotificationDetail.MUlTIPLE_ID, intent, 0))
                                                 .setContentTitle(title)
                                                 .build())
@@ -236,13 +242,10 @@ class MessagingService: FirebaseMessagingService() {
         notificationCompatBuilder: NotificationCompat.Builder
     ){
 
-        val messageIDs = getIDs(remoteMessage.data[KEY_MSG_IDs]!!)
 
         val profilePicFile = File(utils.getProfilePicPath(this)+remoteMessage.data[KEY_SENDER]!!+".jpg")
 
         val messages = getMessages(remoteMessage.data[KEY_MESSAGES]!!)
-
-//        Log.d("MessagingService", "updateNotificationWithBigText: ")
 
 
         val person = Person.Builder().setName(utils.getNameFromNumber(this,
@@ -250,19 +253,19 @@ class MessagingService: FirebaseMessagingService() {
 
            if(utils.hasStoragePermission(this)) {
                if(profilePicFile.exists()) {
-                   person.setIcon(IconCompat.createWithBitmap(BitmapFactory.decodeFile(profilePicFile.path)))
-//                   Log.d("MessagingService", "updateNotificationWithBigText: setting profile pic from location = ${profilePicFile.path}")
-                   notificationCompatBuilder.setLargeIcon(BitmapFactory.decodeFile(profilePicFile.path))
-               } //.createWithBitmap(BitmapFactory.decodeFile(profilePicFile.path)))
+                   person.setIcon(IconCompat.createWithBitmap(utils.getCircleBitmap(BitmapFactory.decodeFile(profilePicFile.path))))
+//                   notificationCompatBuilder.setLargeIcon(utils.getCircleBitmap(BitmapFactory.decodeFile(profilePicFile.path)))
+               }
            }
 
         val style = NotificationCompat.MessagingStyle(person.build())
 
 
         messages.forEach {
-            if(it.isNotEmpty() && messages.size<=5)
+            Log.d("MessagingService", "updateNotificationWithBigText: messages = $it")
+            if(it.trim().isNotEmpty() && messages.size<=5)
             style.addMessage(
-                it.replace(MESSAGE_SEPERATOR,""), System.currentTimeMillis(), person.build()
+                it.replace(MESSAGE_SEPERATOR,"").trim(), System.currentTimeMillis(), person.build()
             )
         }
 
@@ -270,6 +273,7 @@ class MessagingService: FirebaseMessagingService() {
         notificationCompatBuilder.setStyle(style)
 
         notificationCompatBuilder.setNumber(messages.size)
+
         with(NotificationManagerCompat.from(this@MessagingService)){
             notify( NotificationDetail.SINGLE_ID, notificationCompatBuilder.build())
         }
@@ -307,4 +311,6 @@ class MessagingService: FirebaseMessagingService() {
 
         super.onNewToken(p0)
     }
+
+
 }

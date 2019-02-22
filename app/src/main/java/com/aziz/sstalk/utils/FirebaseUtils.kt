@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Typeface
 import android.graphics.drawable.BitmapDrawable
+import android.os.Handler
 import android.support.v4.content.ContextCompat
 import android.util.Log
 import android.view.View
@@ -441,12 +442,12 @@ object FirebaseUtils {
 
                 override fun onDataChange(p0: DataSnapshot) {
 
-                    Log.d("FirebaseUtils", "onDataChange: unread count = ${p0.childrenCount}")
+//                    Log.d("FirebaseUtils", "onDataChange: unread count = ${p0.childrenCount}")
 
                     if(p0.childrenCount.toInt() == 0) {
+                        notificationBadge.visibility = View.INVISIBLE
                         boldTextViews.forEach {
                             it.setTypeface(null, Typeface.NORMAL)
-                            notificationBadge.visibility = View.INVISIBLE
                         }
                     } else {
                         boldTextViews.forEach {
@@ -510,12 +511,44 @@ object FirebaseUtils {
 
 
     fun setMessageStatusToDB(messageID: String, uid: String,targetUID: String, isDelivered:Boolean, isRead:Boolean){
+        Log.d(
+            "FirebaseUtils",
+            "setMessageStatusToDB: setting values to $uid -> $targetUID as $isDelivered, $isRead on $messageID"
+        )
+
         ref.getMessageStatusRef(uid,targetUID,messageID)
             .setValue(Models.MessageStatus(FirebaseUtils.getUid(), isRead, isDelivered, messageID,
                 if(FirebaseUtils.isLoggedIn()) FirebaseAuth.getInstance().currentUser!!.phoneNumber!! else "1234567890",
                 if(FirebaseUtils.isLoggedIn()) FirebaseAuth.getInstance().currentUser!!.photoUrl.toString() else ""))
-
     }
+
+
+    fun setReadStatusToMessage(messageID: String, targetUID: String){
+
+
+        try {
+
+          Handler().postDelayed({
+              Log.d(
+                  "FirebaseUtils",
+                  "setReadStatusToMessage: setting read status to  -> $targetUID as  $messageID " +
+                          "after 1 sec delay"
+              )
+              ref.getMessageStatusRef(FirebaseUtils.getUid(), targetUID, messageID)
+                  .child("read")
+                  .setValue(true)
+
+              ref.getMessageStatusRef(FirebaseUtils.getUid(), targetUID, messageID)
+                  .child("delivered")
+                  .setValue(true)
+          },1000)
+
+        }
+        catch (e:Exception){
+            Log.d("FirebaseUtils", "setReadStatusToMessage: error = ${e.message}")
+        }
+    }
+
 
 
     fun setUserOnlineStatus(context: Context, uid: String, textView: TextView){
@@ -592,6 +625,21 @@ object FirebaseUtils {
 
                     ref.getFCMTokenRef(FirebaseUtils.getUid()).child(it.result!!.id)
                         .setValue(it.result!!.token)
+            }
+    }
+
+
+    fun deleteCurrentToken(){
+        FirebaseInstanceId.getInstance()
+            .instanceId
+            .addOnCompleteListener {
+                if(!it.isSuccessful)
+                    return@addOnCompleteListener
+
+                ref.getFCMTokenRef(FirebaseUtils.getUid()).child(it.result!!.id)
+                    .removeValue().addOnSuccessListener {
+                        Log.d("FirebaseUtils", "deleteCurrentToken: token removed")
+                    }
             }
     }
 

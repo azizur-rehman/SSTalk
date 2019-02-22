@@ -17,6 +17,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.os.Environment.DIRECTORY_DCIM
+import android.os.Handler
 import android.provider.MediaStore
 import android.support.design.widget.Snackbar
 import android.support.text.emoji.EmojiCompat
@@ -683,8 +684,19 @@ class MessageActivity : AppCompatActivity() {
 
 
                 Log.d("MessageActivity", "--------- onBindViewHolder: created ------ $messageID")
-                FirebaseUtils.setMessageStatusToDB(messageID, myUID, targetUid, true, isRead = true)
+                try {
 
+
+                    if(model.from != FirebaseUtils.getUid())
+                        FirebaseUtils.setReadStatusToMessage(messageID, targetUid)
+
+                    Handler().postDelayed({
+                        //setting status after one second
+                     //   FirebaseUtils.setMessageStatusToDB(messageID, myUID, targetUid, true, isRead = true)
+                    },1000)
+                }
+                catch (e:Exception){
+                    Log.d("MessageActivity", "onBindViewHolder: ${e.message}")}
 
                 if(model.messageType == utils.constants.FILE_TYPE_LOCATION){
 
@@ -1053,15 +1065,17 @@ class MessageActivity : AppCompatActivity() {
         adapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
             override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
 
-
-
-     //           if(adapter.snapshots[itemCount - 1].from == myUID)
                 messagesList.scrollToPosition(adapter.itemCount - 1)
 
-//                if(adapter.snapshots[itemCount - 1].from == myUID){
-//                    FirebaseUtils.setMessageStatusToDB(adapter.getRef(itemCount - 1).key!!,
-//                        myUID, targetUid, true, true)
-//                }
+//                Log.d("MessageActivity", "onItemRangeInserted: start = $positionStart, count = $itemCount")
+
+                val model = adapter.snapshots[positionStart]
+
+//                if(model.from!= FirebaseUtils.getUid())
+//                    FirebaseUtils.setReadStatusToMessage(adapter.getRef(positionStart).key!!,
+//                         model.from)
+
+
 
                 super.onItemRangeInserted(positionStart, itemCount)
             }

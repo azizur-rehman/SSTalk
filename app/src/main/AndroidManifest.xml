@@ -36,6 +36,7 @@
         </activity>
         <activity
                 android:name=".ForwardActivity"
+                android:launchMode="singleTop"
                 android:theme="@style/AppTheme.NoActionBar">
 
             <intent-filter>
@@ -62,7 +63,7 @@
         <activity
                 android:name=".UserProfileActivity"
                 android:label="@string/title_activity_user_profile"
-                android:theme="@style/AppTheme.NoActionBar">
+                android:theme="@style/AppTheme.NoActionBar.Translucent">
         </activity>
         <!--
              The API key for Google Maps-based APIs is defined as a string resource.

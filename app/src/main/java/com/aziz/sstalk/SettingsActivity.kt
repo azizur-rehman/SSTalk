@@ -3,9 +3,14 @@ package com.aziz.sstalk
 import android.content.Intent
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.view.MenuItem
+import android.view.View
 import android.widget.Switch
+import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.Pref
+import com.aziz.sstalk.utils.utils.longToast
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.android.synthetic.main.activity_settings.*
 
 class SettingsActivity : AppCompatActivity() {
@@ -54,6 +59,22 @@ class SettingsActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
         finish()
         return super.onOptionsItemSelected(item)
+    }
+
+
+    fun onLogoutClick(view: View){
+
+        FirebaseAuth.getInstance().signOut()
+        FirebaseUtils.deleteCurrentToken()
+        val intent = Intent(this@SettingsActivity, SplashActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+
+
+        longToast("You have been logged out")
+
+        startActivity(intent)
+        finish()
     }
 
 }
