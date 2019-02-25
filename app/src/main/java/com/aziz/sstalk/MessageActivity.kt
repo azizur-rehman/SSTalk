@@ -871,6 +871,8 @@ class MessageActivity : AppCompatActivity() {
                             }
                         }
 
+                        holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
+
 
                     }
                 }
@@ -1134,6 +1136,13 @@ class MessageActivity : AppCompatActivity() {
 
 
     private fun findIndexOfFirstUnreadMessage(){
+
+        FirebaseUtils.ref.allMessageStatus(myUID, targetUid)
+            .orderByChild("read")
+            .equalTo(true)
+
+        //todo work here
+
         FirebaseUtils.ref.allMessageStatus(myUID, targetUid)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onCancelled(p0: DatabaseError) {
