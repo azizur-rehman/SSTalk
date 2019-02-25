@@ -21,6 +21,7 @@ import android.net.Uri
 import android.os.*
 import android.provider.ContactsContract
 import android.provider.MediaStore
+import android.support.design.widget.FloatingActionButton
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v4.content.FileProvider
@@ -352,11 +353,11 @@ object utils {
             Log.d("utils", "saveBitmap: file saved to ${file.path}")
 
 
-            val values = ContentValues(3)
-            values.put(MediaStore.Video.Media.TITLE, messageIdForName)
-            values.put(MediaStore.Video.Media.MIME_TYPE, "image/*")
-            values.put(MediaStore.Video.Media.DATA, file.absolutePath)
-            context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+//            val values = ContentValues(3)
+//            values.put(MediaStore.Video.Media.TITLE, messageIdForName)
+//            values.put(MediaStore.Video.Media.MIME_TYPE, "image/*")
+//            values.put(MediaStore.Video.Media.DATA, file.absolutePath)
+//            context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
 
 
         }
@@ -650,6 +651,18 @@ object utils {
     }
 }
 
+
+    fun hideFabs(vararg fabs:FloatingActionButton){
+        fabs.forEach {
+            it.hide()
+        }
+    }
+
+    fun showFabs(vararg fabs:FloatingActionButton){
+        fabs.forEach {
+            it.show()
+        }
+    }
 
 
     fun shareInviteText(context: Context){

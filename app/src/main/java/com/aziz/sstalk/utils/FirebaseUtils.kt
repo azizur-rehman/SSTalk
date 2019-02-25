@@ -12,12 +12,12 @@ import android.widget.ImageView
 import android.widget.TextView
 import com.aziz.sstalk.ImagePreviewActivity
 import com.aziz.sstalk.models.Models
-import com.aziz.sstalk.utils.FirebaseUtils.ref.getUserRef
+import com.aziz.sstalk.utils.FirebaseUtils.ref.user
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import com.squareup.picasso.Picasso
 import com.aziz.sstalk.R
-import com.aziz.sstalk.utils.FirebaseUtils.ref.getAllMessageStatusRef
+import com.aziz.sstalk.utils.FirebaseUtils.ref.allMessageStatus
 import com.google.firebase.iid.FirebaseInstanceId
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
@@ -43,6 +43,8 @@ object FirebaseUtils {
         val VAL_OFFLINE = "Offline"
         val VAL_TYPING = "Typing..."
 
+        val NODE_FILE = "Files"
+
 
         val KEY_STATUS = "status"
         val KEY_ENABLED = "enabled"
@@ -65,7 +67,7 @@ object FirebaseUtils {
 
         object ref {
 
-            private fun getRootRef() : DatabaseReference {
+            private fun root() : DatabaseReference {
 
                 try{
                     FirebaseDatabase.getInstance().setPersistenceEnabled(true)
@@ -78,8 +80,10 @@ object FirebaseUtils {
                 return FirebaseDatabase.getInstance().reference
             }
 
+            fun fileRef(): DatabaseReference = root().child(NODE_FILE)
+
             fun getChatQuery(uid :String, targetUID: String) : Query{
-                return getRootRef()
+                return root()
                     .child(NODE_MESSAGES)
                     .child(uid)
                     .child(targetUID)
@@ -87,75 +91,75 @@ object FirebaseUtils {
             }
 
             fun getChatRef(uid :String, targetUID: String) : DatabaseReference{
-                return getRootRef()
+                return root()
                     .child(NODE_MESSAGES)
                     .child(uid)
                     .child(targetUID)
 
             }
 
-            fun getLastMessageRef( uid :String) : DatabaseReference{
-                return getRootRef()
+            fun lastMessage(uid :String) : DatabaseReference{
+                return root()
                     .child(NODE_LAST_MESSAGE)
                     .child(uid)
             }
 
 
-            fun getUserRef(uid : String): DatabaseReference  = getRootRef().child(NODE_USER).child(uid)
+            fun user(uid : String): DatabaseReference  = root().child(NODE_USER).child(uid)
 
-            fun getAllUserRef(): DatabaseReference  = getRootRef().child(NODE_USER)
+            fun allUser(): DatabaseReference  = root().child(NODE_USER)
 
 
-            fun getProfilePicStorageRef(uid: String): StorageReference = FirebaseStorage.getInstance()
+            fun profilePicStorageRef(uid: String): StorageReference = FirebaseStorage.getInstance()
                 .reference.child("profile_pics").child(uid)
 
-            fun getFCMTokenRef(uid: String):DatabaseReference =
-                getRootRef()
+            fun FCMToken(uid: String):DatabaseReference =
+                root()
                     .child(NODE_TOKEN)
                     .child(uid)
 
 
             //will return a boolean snapshot
-            fun getBlockedUserRef(uid: String, targetUID: String): DatabaseReference = getRootRef()
+            fun blockedUser(uid: String, targetUID: String): DatabaseReference = root()
                 .child(NODE_BLOCKED_LIST)
                 .child(uid)
                 .child(targetUID)
                 .child(KEY_BLOCKED)
 
             //will return a boolean snapshot
-            fun getBlockedUserListQuery(uid: String): Query = getRootRef()
+            fun getBlockedUserListQuery(uid: String): Query = root()
                 .child(NODE_BLOCKED_LIST)
                 .child(uid)
                 .orderByChild(KEY_BLOCKED).equalTo(true)
 
-            fun getAllMessageStatusRef(uid: String, targetUID: String):DatabaseReference =
-                getRootRef()
+            fun allMessageStatus(uid: String, targetUID: String):DatabaseReference =
+                root()
                     .child(NODE_MESSAGE_STATUS)
                     .child(uid)
                     .child(targetUID)
 
-            fun getMyAllMessageStatusRootRef():DatabaseReference =
-                    getRootRef().child(NODE_MESSAGE_STATUS)
+            fun allMessageStatusRootRef():DatabaseReference =
+                    root().child(NODE_MESSAGE_STATUS)
                         .child(FirebaseUtils.getUid())
                     //.child("vHv8TSqbS2YBHZJXS5X5Saz4acC2")
 
-            fun getMessageStatusRef(uid: String, targetUID: String, messageID: String):DatabaseReference =
-                getAllMessageStatusRef(uid, targetUID)
+            fun messageStatus(uid: String, targetUID: String, messageID: String):DatabaseReference =
+                allMessageStatus(uid, targetUID)
                 .child(messageID)
 
-            fun getUserStatusRef(uid: String):DatabaseReference = getRootRef().child(NODE_USER_ACTIVITY_STATUS)
+            fun userStatus(uid: String):DatabaseReference = root().child(NODE_USER_ACTIVITY_STATUS)
                 .child(uid)
 
             //this will return a boolean snapshot
-            fun getNotificationMuteRef(uid: String):DatabaseReference =
-                    getRootRef().child(NODE_INDIVIDUAL_NOTIFICATION_SETTING)
+            fun notificationMute(uid: String):DatabaseReference =
+                    root().child(NODE_INDIVIDUAL_NOTIFICATION_SETTING)
                         .child(FirebaseUtils.getUid())
                         .child(uid)
                         .child(KEY_ENABLED)
 
             //this will return a snapshot array
             fun getNotificationMuteRootRef():DatabaseReference =
-                getRootRef().child(NODE_INDIVIDUAL_NOTIFICATION_SETTING)
+                root().child(NODE_INDIVIDUAL_NOTIFICATION_SETTING)
                     .child(FirebaseUtils.getUid())
         }
 
@@ -184,7 +188,7 @@ object FirebaseUtils {
 
         }
 
-            ref.getUserRef(uid)
+            ref.user(uid)
                 .child(KEY_PROFILE_PIC_URL)
                 .addValueEventListener(object : ValueEventListener {
 
@@ -276,7 +280,7 @@ object FirebaseUtils {
 
 
 
-        ref.getUserRef(uid)
+        ref.user(uid)
             .child(KEY_PROFILE_PIC_URL)
             .addValueEventListener(object : ValueEventListener {
 
@@ -344,7 +348,7 @@ object FirebaseUtils {
             uid: String,
             shouldQueryFromContacts: Boolean){
 
-            getUserRef(uid)
+            user(uid)
                 .child(KEY_PHONE)
                 .addValueEventListener(object : ValueEventListener {
                     override fun onCancelled(p0: DatabaseError) {}
@@ -433,7 +437,7 @@ object FirebaseUtils {
             initialTypeface = boldTextViews[0].typeface
 
 
-        getAllMessageStatusRef(FirebaseUtils.getUid(), targetUID)
+        allMessageStatus(FirebaseUtils.getUid(), targetUID)
             .orderByChild("read")
             .equalTo(false)
             .addValueEventListener(object : ValueEventListener {
@@ -462,17 +466,17 @@ object FirebaseUtils {
     }
 
     fun setMeAsOnline(){
-        FirebaseUtils.ref.getUserStatusRef(FirebaseUtils.getUid())
+        FirebaseUtils.ref.userStatus(FirebaseUtils.getUid())
             .setValue(Models.UserActivityStatus(FirebaseUtils.VAL_ONLINE, System.currentTimeMillis()))
     }
 
     fun setMeAsOffline(){
-        FirebaseUtils.ref.getUserStatusRef(FirebaseUtils.getUid())
+        FirebaseUtils.ref.userStatus(FirebaseUtils.getUid())
             .setValue(Models.UserActivityStatus(FirebaseUtils.VAL_OFFLINE, System.currentTimeMillis()))
     }
 
     fun setMeAsTyping(){
-        FirebaseUtils.ref.getUserStatusRef(FirebaseUtils.getUid())
+        FirebaseUtils.ref.userStatus(FirebaseUtils.getUid())
             .setValue(Models.UserActivityStatus(FirebaseUtils.VAL_TYPING, System.currentTimeMillis()))
     }
 
@@ -483,7 +487,7 @@ object FirebaseUtils {
 
         messageStatusImageView.alpha = 0.8f
 
-        ref.getMessageStatusRef(targetUID,FirebaseUtils.getUid(), messageID)
+        ref.messageStatus(targetUID,FirebaseUtils.getUid(), messageID)
             .addValueEventListener(object : ValueEventListener{
                 override fun onCancelled(p0: DatabaseError) {
 
@@ -516,7 +520,7 @@ object FirebaseUtils {
             "setMessageStatusToDB: setting values to $uid -> $targetUID as $isDelivered, $isRead on $messageID"
         )
 
-        ref.getMessageStatusRef(uid,targetUID,messageID)
+        ref.messageStatus(uid,targetUID,messageID)
             .setValue(Models.MessageStatus(FirebaseUtils.getUid(), isRead, isDelivered, messageID,
                 if(FirebaseUtils.isLoggedIn()) FirebaseAuth.getInstance().currentUser!!.phoneNumber!! else "1234567890",
                 if(FirebaseUtils.isLoggedIn()) FirebaseAuth.getInstance().currentUser!!.photoUrl.toString() else ""))
@@ -534,11 +538,11 @@ object FirebaseUtils {
                   "setReadStatusToMessage: setting read status to  -> $targetUID as  $messageID " +
                           "after 1 sec delay"
               )
-              ref.getMessageStatusRef(FirebaseUtils.getUid(), targetUID, messageID)
+              ref.messageStatus(FirebaseUtils.getUid(), targetUID, messageID)
                   .child("read")
                   .setValue(true)
 
-              ref.getMessageStatusRef(FirebaseUtils.getUid(), targetUID, messageID)
+              ref.messageStatus(FirebaseUtils.getUid(), targetUID, messageID)
                   .child("delivered")
                   .setValue(true)
           },1000)
@@ -556,7 +560,7 @@ object FirebaseUtils {
         if(textView.text == VAL_ONLINE)
             return
 
-        ref.getUserStatusRef(uid)
+        ref.userStatus(uid)
             .addValueEventListener(object : ValueEventListener {
                 override fun onCancelled(p0: DatabaseError) {
                 }
@@ -593,7 +597,7 @@ object FirebaseUtils {
         imageView.visibility = View.GONE
 
 
-        ref.getUserStatusRef(uid)
+        ref.userStatus(uid)
             .addValueEventListener(object : ValueEventListener {
                 override fun onCancelled(p0: DatabaseError) {
                 }
@@ -623,7 +627,7 @@ object FirebaseUtils {
                  if(!it.isSuccessful)
                      return@addOnCompleteListener
 
-                    ref.getFCMTokenRef(FirebaseUtils.getUid()).child(it.result!!.id)
+                    ref.FCMToken(FirebaseUtils.getUid()).child(it.result!!.id)
                         .setValue(it.result!!.token)
             }
     }
@@ -636,7 +640,7 @@ object FirebaseUtils {
                 if(!it.isSuccessful)
                     return@addOnCompleteListener
 
-                ref.getFCMTokenRef(FirebaseUtils.getUid()).child(it.result!!.id)
+                ref.FCMToken(FirebaseUtils.getUid()).child(it.result!!.id)
                     .removeValue().addOnSuccessListener {
                         Log.d("FirebaseUtils", "deleteCurrentToken: token removed")
                     }
@@ -644,5 +648,10 @@ object FirebaseUtils {
     }
 
 
+    fun storeFileMetaData(fileID: String, any: Any){
+        FirebaseUtils.ref.fileRef()
+            .child(fileID)
+            .setValue(any)
+    }
 
 }

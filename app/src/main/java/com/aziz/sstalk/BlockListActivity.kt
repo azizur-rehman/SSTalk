@@ -1,19 +1,13 @@
 package com.aziz.sstalk
 
-import android.annotation.SuppressLint
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.support.v7.app.AlertDialog
-import android.util.Log
 import android.view.MenuItem
 import android.view.View
-import android.view.ViewGroup
 import com.aziz.sstalk.utils.FirebaseUtils
-import com.aziz.sstalk.utils.utils
 import com.firebase.ui.database.FirebaseListAdapter
 import com.firebase.ui.database.FirebaseListOptions
-import com.firebase.ui.database.FirebaseRecyclerAdapter
-import com.google.firebase.database.DatabaseReference
 import kotlinx.android.synthetic.main.activity_block_list.*
 import kotlinx.android.synthetic.main.item_contact_layout.view.*
 
@@ -62,7 +56,7 @@ class BlockListActivity : AppCompatActivity() {
 
             AlertDialog.Builder(this@BlockListActivity).setMessage("Unblock this user")
                 .setPositiveButton("Yes") { _, _ ->
-                    FirebaseUtils.ref.getBlockedUserRef(FirebaseUtils.getUid(), uid)
+                    FirebaseUtils.ref.blockedUser(FirebaseUtils.getUid(), uid)
                         .setValue(false)
                 }
                 .setNegativeButton("No", null)

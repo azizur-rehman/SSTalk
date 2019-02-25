@@ -1,8 +1,10 @@
 package com.aziz.sstalk
 
+import android.content.DialogInterface
 import android.content.Intent
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.support.v7.app.AlertDialog
 import android.util.Log
 import android.view.MenuItem
 import android.view.View
@@ -64,17 +66,26 @@ class SettingsActivity : AppCompatActivity() {
 
     fun onLogoutClick(view: View){
 
-        FirebaseAuth.getInstance().signOut()
-        FirebaseUtils.deleteCurrentToken()
-        val intent = Intent(this@SettingsActivity, SplashActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
-        }
+
+        AlertDialog.Builder(this)
+            .setMessage("Logout from this account")
+            .setPositiveButton("Yes") { _, _ ->
+                FirebaseAuth.getInstance().signOut()
+                FirebaseUtils.deleteCurrentToken()
+                val intent = Intent(this@SettingsActivity, SplashActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
+                }
 
 
-        longToast("You have been logged out")
+                longToast("You have been logged out")
 
-        startActivity(intent)
-        finish()
+                startActivity(intent)
+                finish()
+            }
+            .setNegativeButton("No",null)
+            .show()
+
+
     }
 
 }

@@ -2,9 +2,7 @@ package com.aziz.sstalk
 
 import android.annotation.SuppressLint
 import android.app.ProgressDialog
-import android.content.Context
 import android.content.Intent
-import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.net.Uri
@@ -180,7 +178,7 @@ class ForwardActivity : AppCompatActivity() {
                 .addOnSuccessListener {
                     FirebaseUtils.setMessageStatusToDB(messageID, myUID, targetUID, true, isRead = true)
 
-                    FirebaseUtils.ref.getLastMessageRef(myUID)
+                    FirebaseUtils.ref.lastMessage(myUID)
                         .child(targetUID)
                         .setValue(Models.LastMessageDetail())
 
@@ -195,7 +193,7 @@ class ForwardActivity : AppCompatActivity() {
                 .addOnSuccessListener {
                     FirebaseUtils.setMessageStatusToDB(messageID, targetUID, myUID, false, isRead = false)
 
-                    FirebaseUtils.ref.getLastMessageRef(targetUID)
+                    FirebaseUtils.ref.lastMessage(targetUID)
                         .child(myUID)
                         .setValue(Models.LastMessageDetail())
                 }
@@ -298,6 +296,8 @@ class ForwardActivity : AppCompatActivity() {
                        task.exception?.let {
                            throw it
                        }
+//                       FirebaseUtils.storeFileMetaData(messageID, task.result!!.metadata!!)
+
                    }
                    return@Continuation ref.downloadUrl
                })
@@ -319,7 +319,7 @@ class ForwardActivity : AppCompatActivity() {
 
     private fun setFrequentAdapter(){
 
-        val lastMsgQuery = FirebaseUtils.ref.getLastMessageRef(FirebaseUtils.getUid())
+        val lastMsgQuery = FirebaseUtils.ref.lastMessage(FirebaseUtils.getUid())
                 .orderByChild(FirebaseUtils.KEY_REVERSE_TIMESTAMP)
 
         val options = FirebaseRecyclerOptions.Builder<Models.LastMessageDetail>()
@@ -410,7 +410,7 @@ class ForwardActivity : AppCompatActivity() {
         holder.title.setTextColor(Color.BLACK)
 
         //check if user is blocked
-        FirebaseUtils.ref.getBlockedUserRef(myUID, uid)
+        FirebaseUtils.ref.blockedUser(myUID, uid)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onCancelled(p0: DatabaseError) {}
 
@@ -461,7 +461,7 @@ class ForwardActivity : AppCompatActivity() {
 
         numberList = utils.getContactList(this)
 
-        FirebaseUtils.ref.getAllUserRef()
+        FirebaseUtils.ref.allUser()
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(p0: DataSnapshot) {
 

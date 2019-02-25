@@ -11,7 +11,6 @@ import android.support.v7.app.ActionBarDrawerToggle
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.view.ActionMode
-import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.Log
@@ -156,7 +155,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private fun setAdapter(){
 
         val options = FirebaseRecyclerOptions.Builder<Models.LastMessageDetail>()
-            .setQuery(FirebaseUtils.ref.getLastMessageRef(FirebaseUtils.getUid())
+            .setQuery(FirebaseUtils.ref.lastMessage(FirebaseUtils.getUid())
                     //todo dont forget to change it
                 .orderByChild(FirebaseUtils.KEY_REVERSE_TIMESTAMP),Models.LastMessageDetail::class.java)
             .build()
@@ -334,7 +333,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private fun setonDisconnectListener(){
 
-        FirebaseUtils.ref.getUserStatusRef(FirebaseUtils.getUid())
+        FirebaseUtils.ref.userStatus(FirebaseUtils.getUid())
             .onDisconnect()
             .setValue(Models.UserActivityStatus(FirebaseUtils.VAL_OFFLINE, System.currentTimeMillis()))
     }
@@ -372,7 +371,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private fun muteSelectedConversations(){
         selectedItemPosition.forEach {
-            FirebaseUtils.ref.getNotificationMuteRef(adapter.getRef(it).key!!)
+            FirebaseUtils.ref.notificationMute(adapter.getRef(it).key!!)
                 .setValue(!isAnyMuted)
         }
     }
@@ -380,7 +379,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private fun markAllAsRead(itemPositions:MutableList<Int>){
         itemPositions.forEach {
-            FirebaseUtils.ref.getAllMessageStatusRef( FirebaseUtils.getUid(),
+            FirebaseUtils.ref.allMessageStatus( FirebaseUtils.getUid(),
                 adapter.getRef(it).key!!)
                 .orderByChild("read").equalTo(false)
                 .addListenerForSingleValueEvent(object : ValueEventListener {
@@ -403,7 +402,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private fun checkIfAnyMuted(targetUID:String){
 
         //set switch initial value
-        FirebaseUtils.ref.getNotificationMuteRef(targetUID)
+        FirebaseUtils.ref.notificationMute(targetUID)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onCancelled(p0: DatabaseError) {
                 }

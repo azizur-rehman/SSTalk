@@ -9,7 +9,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import com.aziz.sstalk.EditProfile
-import com.aziz.sstalk.HomeActivity
 import com.aziz.sstalk.MobileLoginActivity
 import com.aziz.sstalk.R
 import com.aziz.sstalk.models.Models
@@ -123,7 +122,7 @@ class FragmentOTP : Fragment() {
 
 
                     val user = it.result!!.user
-                    FirebaseUtils.ref.getUserRef(user.uid)
+                    FirebaseUtils.ref.user(user.uid)
                         .setValue(Models.User("",user.metadata!!.creationTimestamp,
                             user.metadata!!.lastSignInTimestamp,
                             user.phoneNumber!!,
@@ -132,9 +131,13 @@ class FragmentOTP : Fragment() {
                             countryCode, countryLocale
                             ))
                         .addOnSuccessListener {
-                                startActivity(Intent(context, EditProfile::class.java)
-                                    .putExtra(utils.constants.KEY_IS_ON_ACCOUNT_CREATION, true)
-                                    .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP))
+
+                            val intent = Intent(context, EditProfile::class.java).apply {
+                                flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
+                                putExtra(utils.constants.KEY_IS_ON_ACCOUNT_CREATION, true)
+                            }
+
+                                startActivity(intent)
                         }
 
                 }

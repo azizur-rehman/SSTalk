@@ -27,7 +27,6 @@ import android.support.v4.content.ContextCompat
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.view.ActionMode
-import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.Log
@@ -219,6 +218,7 @@ class MessageActivity : AppCompatActivity() {
 
         attachment_menu.visibility = View.INVISIBLE
 
+//        utils.hideFabs(fab_camera, fab_gallery, fab_video, fab_location)
         messageInputField.setAttachmentsListener {
 
 
@@ -228,12 +228,15 @@ class MessageActivity : AppCompatActivity() {
 
          if(attachment_menu.visibility != View.VISIBLE) {
              utils.setEnterRevealEffect(this, attachment_menu)
+//             utils.showFabs(fab_camera, fab_gallery, fab_video, fab_location)
            //  messagesList.alpha = 0.6f
 
          }
          else {
              utils.setExitRevealEffect(attachment_menu)
             // messagesList.alpha = 1f
+//             utils.hideFabs(fab_camera, fab_gallery, fab_video, fab_location)
+
          }
 
 
@@ -1131,7 +1134,7 @@ class MessageActivity : AppCompatActivity() {
 
 
     private fun findIndexOfFirstUnreadMessage(){
-        FirebaseUtils.ref.getAllMessageStatusRef(myUID, targetUid)
+        FirebaseUtils.ref.allMessageStatus(myUID, targetUid)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onCancelled(p0: DatabaseError) {
                 }
@@ -1273,7 +1276,7 @@ class MessageActivity : AppCompatActivity() {
 
                 FirebaseUtils.setMessageStatusToDB(messageID, myUID, targetUid, true, true)
 
-                FirebaseUtils.ref.getLastMessageRef(myUID)
+                FirebaseUtils.ref.lastMessage(myUID)
                     .child(targetUid)
                     .setValue(Models.LastMessageDetail())
 
@@ -1293,7 +1296,7 @@ class MessageActivity : AppCompatActivity() {
 
                 FirebaseUtils.setMessageStatusToDB(messageID, targetUid, myUID,false, false)
 
-                FirebaseUtils.ref.getLastMessageRef(targetUid)
+                FirebaseUtils.ref.lastMessage(targetUid)
                     .child(myUID)
                     .setValue(Models.LastMessageDetail())
 
@@ -1526,6 +1529,8 @@ class MessageActivity : AppCompatActivity() {
                         throw it
                     }
                 }
+
+//                FirebaseUtils.storeFileMetaData(messageID, task.result!!.metadata!!)
                 return@Continuation ref.downloadUrl
             })
             .addOnCanceledListener {
@@ -1540,14 +1545,15 @@ class MessageActivity : AppCompatActivity() {
 
                 isUploading[messageID] = false
 
-
-
                 if (task.isSuccessful) {
                     val link = task.result
+                    val time = System.currentTimeMillis()
                     val targetModel = Models.MessageModel(
                         link.toString(),
                         myUID, targetUid, isFile = true, caption = caption, messageType = messageType,
-                        file_size_in_bytes = file.length()
+                        file_size_in_bytes = file.length(),
+                        timeInMillis = time,
+                        reverseTimeStamp = time * -1
                     )
 
                     if (BuildConfig.DEBUG)
@@ -1562,7 +1568,9 @@ class MessageActivity : AppCompatActivity() {
                         myUID, targetUid,
                         isFile = true, caption = caption, messageType = messageType,
                         file_local_path = originalFinalPath,
-                        file_size_in_bytes = file.length()
+                        file_size_in_bytes = file.length(),
+                        timeInMillis = time,
+                        reverseTimeStamp = time * -1
                     )
 
                     addMessageToMyNode(messageID, myModel)
@@ -1670,7 +1678,7 @@ class MessageActivity : AppCompatActivity() {
 
 
         //check if i have blocked
-        FirebaseUtils.ref.getBlockedUserRef(myUID, targetUID)
+        FirebaseUtils.ref.blockedUser(myUID, targetUID)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
 
@@ -1700,7 +1708,7 @@ class MessageActivity : AppCompatActivity() {
             })
         //check i am blocked by user
 
-        FirebaseUtils.ref.getBlockedUserRef(targetUID, myUID)
+        FirebaseUtils.ref.blockedUser(targetUID, myUID)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
 
@@ -2289,7 +2297,7 @@ class MessageActivity : AppCompatActivity() {
 
                 AlertDialog.Builder(context).setMessage("${if (isBlockedByMe) "Unblock" else "Block"} this user")
                     .setPositiveButton("Yes") { _, _ ->
-                        FirebaseUtils.ref.getBlockedUserRef(myUID, targetUid)
+                        FirebaseUtils.ref.blockedUser(myUID, targetUid)
                             .setValue(!isBlockedByMe)
                     }
                     .setNegativeButton("No", null)
@@ -2355,8 +2363,11 @@ class MessageActivity : AppCompatActivity() {
         bottomScrollButton.hide()
 
         unreadCount.visibility = View.GONE
+        Handler().postDelayed({
+            FirebaseUtils.setUnreadCount(targetUid, unreadCount)
+        },2000)
 
-        FirebaseUtils.setUnreadCount(targetUid, unreadCount)
+
         val layoutManager = messagesList.layoutManager as LinearLayoutManager
 
         val textView = TextView(this)

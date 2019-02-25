@@ -16,7 +16,6 @@ import com.aziz.sstalk.utils.utils
 import com.google.android.gms.tasks.Continuation
 import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -57,9 +56,9 @@ class EditProfile : AppCompatActivity() {
         updateProfileBtn.setOnClickListener {
             if(isProfileChanged) {
 
-                val storageRef = FirebaseUtils.ref.getProfilePicStorageRef(myUID)
+                val storageRef = FirebaseUtils.ref.profilePicStorageRef(myUID)
 
-                val dbRef = FirebaseUtils.ref.getUserRef(myUID)
+                val dbRef = FirebaseUtils.ref.user(myUID)
                     .child(FirebaseUtils.KEY_PROFILE_PIC_URL)
 
                uploadProfilePic(context, imageFile, storageRef, dbRef, "Profile updated")
@@ -72,7 +71,7 @@ class EditProfile : AppCompatActivity() {
 
 
 
-            FirebaseUtils.ref.getUserRef(myUID)
+            FirebaseUtils.ref.user(myUID)
                 .child(FirebaseUtils.KEY_NAME)
                 .setValue(profile_name.text.toString())
 
@@ -95,7 +94,7 @@ class EditProfile : AppCompatActivity() {
         }
 
         //load profile name
-        FirebaseUtils.ref.getUserRef(FirebaseUtils.getUid())
+        FirebaseUtils.ref.user(FirebaseUtils.getUid())
             .child(FirebaseUtils.KEY_NAME)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onCancelled(p0: DatabaseError) {

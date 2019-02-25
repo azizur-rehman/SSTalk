@@ -24,8 +24,9 @@
               android:paddingLeft="10dp"
               android:paddingRight="10dp"
               android:layout_marginBottom="20dp"
+              android:fontFamily="@font/raleway_regular"
               android:textColor="@color/gray_dark"
-              android:text="SS talk helps you connect with your friends"
+              android:text="Experience Fast and reliable chat experience"
     />
 
 

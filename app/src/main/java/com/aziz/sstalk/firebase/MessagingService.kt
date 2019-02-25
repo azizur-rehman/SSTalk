@@ -32,6 +32,7 @@ class MessagingService: FirebaseMessagingService() {
     private val KEY_SENDER_PHONE = "senderPhoneNumber"
     private val KEY_SENDER_PIC_URL = "senderPhotoURL"
     private val KEY_MESSAGES = "messages"
+    private val KEY_IS_MUTED = "isMuted"
 
     private val MESSAGE_SEPERATOR = "<--MESSAGE_SEPERATOR-->"
 
@@ -60,6 +61,11 @@ class MessagingService: FirebaseMessagingService() {
 
         setAllMessageFromUserAsDelivered(receiver, sender, data[KEY_MSG_IDs]!!)
 
+        if(!data.containsKey(KEY_MESSAGES)){
+            Log.d("MessagingService", "onMessageReceived: a silent notification has been generated")
+            return
+        }
+
 
         if(Pref.getCurrentTargetUID(this) == sender) {
             Log.d("MessagingService", "onMessageReceived: currently chatting with -> $sender")
@@ -67,18 +73,7 @@ class MessagingService: FirebaseMessagingService() {
         }
 
 
-        FirebaseUtils.ref.getNotificationMuteRef(sender)
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onCancelled(p0: DatabaseError) {
-                }
 
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    if(snapshot.exists()) {
-                        if (snapshot.getValue(Boolean::class.java)!!) {
-                            Log.d("MessagingService", "onDataChange: muted")
-                            return
-                        }
-                    }
                     if( utils.isAppIsInBackground(this@MessagingService)
                         || Pref.getCurrentTargetUID(this@MessagingService) != sender){
                         //app is in background show notification
@@ -89,8 +84,7 @@ class MessagingService: FirebaseMessagingService() {
                         if(Pref.Notification.hasVibrationEnabled(this@MessagingService))
                             utils.vibrate(this@MessagingService)
                     }
-                }
-            })
+
 
 
 
@@ -108,7 +102,6 @@ class MessagingService: FirebaseMessagingService() {
 
         val name = utils.getNameFromNumber(this@MessagingService, senderPhone!!)
 
-        Log.d("MessagingService", "onDataChange: sending notification with title = $name")
         val intent = Intent(this@MessagingService, MessageActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             putExtra(FirebaseUtils.KEY_UID, sender)
@@ -141,22 +134,29 @@ class MessagingService: FirebaseMessagingService() {
             .setLargeIcon((BitmapFactory.decodeResource(resources, R.mipmap.ic_launcher)))
             .setPriority(android.app.Notification.PRIORITY_MAX)
             .setAutoCancel(true)
-            .setOnlyAlertOnce(true)
 
 
-//        if(!Pref.NotificationDetail.hasVibrationEnabled(this@MessagingService)) {
-//            //if(Build.VERSION.SDK_INT<Build.VERSION_CODES.O)
-//            notification.setVibrate(longArrayOf(0L))
-//
-//        }
-//
-//        if(Pref.NotificationDetail.hasSoundEnabled(this@MessagingService))
-//            notification.setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
+        val isSoundEnabled = Pref.Notification.hasSoundEnabled(this)
+        val isVibrationEnabled = Pref.Notification.hasVibrationEnabled(this)
 
 
-//        with(NotificationManagerCompat.from(this@MessagingService)){
-//            notify(  NotificationDetail.SINGLE_ID, notification.build())
-//        }
+        Log.d("MessagingService", "notify: sound = $isSoundEnabled , vibration = $isVibrationEnabled")
+
+
+        if(isSoundEnabled && isVibrationEnabled){
+            notification.setDefaults(Notification.DEFAULT_ALL)
+        }
+
+        else if(isSoundEnabled && !isVibrationEnabled){
+            notification.setDefaults(Notification.DEFAULT_SOUND)
+        }
+
+        else if(!isSoundEnabled && isVibrationEnabled){
+            notification.setDefaults(Notification.DEFAULT_VIBRATE)
+        }
+        else{
+            notification.setDefaults(Notification.DEFAULT_LIGHTS)
+        }
 
         // for single message
         updateNotificationWithBigText(remoteMessage, notification)
@@ -174,7 +174,7 @@ class MessagingService: FirebaseMessagingService() {
 
 
 
-        FirebaseUtils.ref.getMyAllMessageStatusRootRef()
+        FirebaseUtils.ref.allMessageStatusRootRef()
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onCancelled(p0: DatabaseError) {
                 }
@@ -262,7 +262,7 @@ class MessagingService: FirebaseMessagingService() {
 
 
         messages.forEach {
-            Log.d("MessagingService", "updateNotificationWithBigText: messages = $it")
+//            Log.d("MessagingService", "updateNotificationWithBigText: messages = $it")
             if(it.trim().isNotEmpty() && messages.size<=5)
             style.addMessage(
                 it.replace(MESSAGE_SEPERATOR,"").trim(), System.currentTimeMillis(), person.build()
@@ -287,7 +287,7 @@ class MessagingService: FirebaseMessagingService() {
         val ids = getIDs(msgIDs)
 
         ids.forEach {
-            FirebaseUtils.ref.getMessageStatusRef(uid, targetUID, it)
+            FirebaseUtils.ref.messageStatus(uid, targetUID, it)
                 .child("delivered")
                 .setValue(true)
         }

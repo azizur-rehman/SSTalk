@@ -16,7 +16,6 @@ import android.view.ViewGroup
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.utils
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
@@ -63,7 +62,7 @@ class UserProfileActivity : AppCompatActivity() {
         title = name
 
 
-        FirebaseUtils.ref.getAllUserRef()
+        FirebaseUtils.ref.allUser()
             .child(targetUID)
             .child(FirebaseUtils.KEY_PHONE)
             .addValueEventListener(object : ValueEventListener{
@@ -191,7 +190,7 @@ class UserProfileActivity : AppCompatActivity() {
 
             AlertDialog.Builder(this@UserProfileActivity).setMessage("${if (isBlockedByMe) "Unblock" else "Block"} this user")
                 .setPositiveButton("Yes") { _, _ ->
-                    FirebaseUtils.ref.getBlockedUserRef(myUID, targetUID)
+                    FirebaseUtils.ref.blockedUser(myUID, targetUID)
                         .setValue(!isBlockedByMe)
                 }
                 .setNegativeButton("No", null)
@@ -203,12 +202,12 @@ class UserProfileActivity : AppCompatActivity() {
 
         //set notification switch enable/disable
         notification_switch.setOnCheckedChangeListener { _, isChecked ->
-            FirebaseUtils.ref.getNotificationMuteRef(targetUID)
+            FirebaseUtils.ref.notificationMute(targetUID)
                 .setValue(isChecked)
         }
 
         //set switch initial value
-        FirebaseUtils.ref.getNotificationMuteRef(targetUID)
+        FirebaseUtils.ref.notificationMute(targetUID)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onCancelled(p0: DatabaseError) {
                 }
@@ -250,7 +249,7 @@ class UserProfileActivity : AppCompatActivity() {
 
     private fun checkIfBlocked(){
         //check if i have blocked
-        FirebaseUtils.ref.getBlockedUserRef(myUID, targetUID)
+        FirebaseUtils.ref.blockedUser(myUID, targetUID)
             .addValueEventListener(object : ValueEventListener {
                 @SuppressLint("SetTextI18n")
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
