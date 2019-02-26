@@ -451,7 +451,7 @@ object utils {
 
 
     fun getDurationString(duration: Long): String {
-        //        long days = duration / (1000 * 60 * 60 * 24);
+
         val hours = duration % (1000 * 60 * 60 * 24) / (1000 * 60 * 60)
         val minutes = duration % (1000 * 60 * 60) / (1000 * 60)
         val seconds = duration % (1000 * 60) / 1000

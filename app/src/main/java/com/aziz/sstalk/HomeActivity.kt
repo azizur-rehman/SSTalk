@@ -83,7 +83,6 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             setAdapter()
 
 
-        FirebaseUtils.setMeAsOnline()
 
 
         //setting update navigation drawer
@@ -99,7 +98,15 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     override fun onResume() {
         Pref.setCurrentTargetUID(this, "")
+        FirebaseUtils.setMeAsOnline()
         super.onResume()
+    }
+
+    override fun onPause() {
+
+        if(utils.isAppIsInBackground(this))
+            FirebaseUtils.setMeAsOffline()
+        super.onPause()
     }
 
 

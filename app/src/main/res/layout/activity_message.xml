@@ -121,8 +121,7 @@
 
 
                 <FrameLayout
-
-                        android:padding="18sp"
+                        android:layout_margin="20dp"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="bottom|end"
@@ -137,9 +136,9 @@
                                 android:src="@drawable/ic_fast_scroll_arrow_down"
                                 android:layout_height="wrap_content"
                                 android:scaleType="center"
+                                app:elevation="7dp"
                                 app:backgroundTint="@color/ivory_dark"
                                 android:id="@+id/bottomScrollButton"
-                                android:layout_marginTop="12dp"
                                 app:fabSize="mini"
 
                         />
@@ -154,6 +153,7 @@
                             app:nbAnimationDuration="200"
                             app:nbEllipsizeText="99+"
                             app:nbMaxTextLength="2"
+
                             app:nbBackground="@drawable/shape_bubble_online"
                             android:id="@+id/unreadCount"
                             android:textColor="@color/white"
@@ -168,6 +168,7 @@
                         android:orientation="horizontal"
                         android:id="@+id/attachment_menu"
                         android:padding="15dp"
+                        android:visibility="gone"
                         android:layout_margin="2dp"
                         android:background="@drawable/button_round_with_transparency"
                         android:layout_gravity="bottom"
