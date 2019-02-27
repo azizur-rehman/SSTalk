@@ -39,4 +39,15 @@ class Models {
                              var senderPhotoURL:String = "")
 
     data class UserActivityStatus(var status:String = "offline", var timeInMillis: Long = System.currentTimeMillis())
+
+    data class File(var fileID:String = "",
+                    var uploadTime:Long = System.currentTimeMillis(),
+                    var uploadedBy:String = FirebaseUtils.getUid(),
+                    var reverseTimeStamp: Long = uploadTime * -1,
+                    var fileType:String = "",
+                    var fileSizeInBytes:Long = 0,
+                    var bucket_path:String = "",
+                    var file_url:String = "")
+
+
 }

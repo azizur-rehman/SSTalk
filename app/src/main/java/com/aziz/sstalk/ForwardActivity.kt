@@ -305,10 +305,18 @@ class ForwardActivity : AppCompatActivity() {
                .addOnCompleteListener { task->
                 progressDialog!!.dismiss()
 
-                messageModels!!.add(Models.MessageModel(task.result.toString(), isFile = true,
+                val model = (Models.MessageModel(task.result.toString(), isFile = true,
                     file_local_path = originalFile.path, file_size_in_bytes = file.length(),
                     messageType = fileType))
+                   messageModels!!.add(model)
 
+
+                   FirebaseUtils.storeFileMetaData(
+                       Models.File(messageID,
+                           model.timeInMillis, fileType = fileType,
+                           fileSizeInBytes = file.length(),
+                           bucket_path = ref.bucket,
+                           file_url = task.result.toString()))
 
                 onForwardToSelectedUIDs()
             }

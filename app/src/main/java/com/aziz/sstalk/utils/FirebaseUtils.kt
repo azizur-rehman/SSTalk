@@ -648,10 +648,10 @@ object FirebaseUtils {
     }
 
 
-    fun storeFileMetaData(fileID: String, any: Any){
+    fun storeFileMetaData(file:Models.File){
         FirebaseUtils.ref.fileRef()
-            .child(fileID)
-            .setValue(any)
+            .child(file.fileID)
+            .setValue(file)
     }
 
 }

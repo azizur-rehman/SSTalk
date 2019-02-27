@@ -1607,6 +1607,13 @@ class MessageActivity : AppCompatActivity() {
 
                     addMessageToMyNode(messageID, myModel)
 
+                    FirebaseUtils.storeFileMetaData(
+                        Models.File(messageID,
+                        time, fileType = messageType,
+                            fileSizeInBytes = file.length(),
+                            bucket_path = ref.bucket,
+                            file_url = link.toString()))
+
 
                 } else {
 
