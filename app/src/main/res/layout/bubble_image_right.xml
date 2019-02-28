@@ -66,6 +66,19 @@
                          android:src="@drawable/placeholder_image"
                          android:id="@+id/imageview_image_right"
                          />
+
+                     <ImageView
+                             android:layout_width="60dp"
+                             android:layout_height="60dp"
+                             android:clickable="true"
+                             android:scaleType="centerInside"
+                             android:layout_gravity="center"
+                             android:visibility="gone"
+                             android:src="@drawable/ic_clear_white_24dp"
+                             android:id="@+id/imageview_image_control_right"
+                     />
+
+
                          <com.mikhaellopez.circularprogressbar.CircularProgressBar
                              android:layout_width="60dp"
                              android:layout_gravity="center"

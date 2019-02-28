@@ -1,6 +1,7 @@
 package com.aziz.sstalk
 
 import android.Manifest
+import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -27,6 +28,8 @@ class ContactsActivity : AppCompatActivity(){
     var numberList:MutableList<Models.Contact> = mutableListOf()
     var registeredAvailableUser:MutableList<Models.Contact> = mutableListOf()
 
+    var isForSelection = false
+
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -36,7 +39,7 @@ class ContactsActivity : AppCompatActivity(){
 
         contacts_list.layoutManager = LinearLayoutManager(this@ContactsActivity)
 //        contacts_list.addItemDecoration(DividerItemDecoration(this, DividerItemDecoration.VERTICAL))
-
+        isForSelection = intent.getBooleanExtra(utils.constants.KEY_IS_FOR_SELECTION, false)
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 
@@ -110,13 +113,13 @@ class ContactsActivity : AppCompatActivity(){
 
                     contacts_list.adapter = adapter
 
+                    if(isForSelection)
+                        return
 
                     registeredAvailableUser.add(Models.Contact("Invite Users"))
 
                     adapter.notifyDataSetChanged()
 
-                    for(item in registeredAvailableUser)
-                        Log.d("ContactsActivity", "onDataChange: available user = ${item.name} , ${item.number}")
 
                 }
 
@@ -158,6 +161,17 @@ class ContactsActivity : AppCompatActivity(){
 
 
             holder.itemView.setOnClickListener {
+
+                if(isForSelection){
+                    setResult(Activity.RESULT_OK, intent.apply {
+                        putExtra(FirebaseUtils.KEY_UID, uid )
+                    })
+                    finish()
+                    return@setOnClickListener
+                }
+
+
+
                 if(position != registeredAvailableUser.size - 1){
 
                     startActivity(Intent(this@ContactsActivity, MessageActivity::class.java).putExtra(FirebaseUtils.KEY_UID, uid))

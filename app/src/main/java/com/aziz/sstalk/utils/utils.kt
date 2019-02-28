@@ -35,6 +35,7 @@ import android.view.ViewAnimationUtils
 import android.view.WindowManager
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.inputmethod.InputMethodManager
+import android.webkit.MimeTypeMap
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -70,6 +71,9 @@ object utils {
 
         const val KEY_IS_ON_ACCOUNT_CREATION = "on_acc_creation"
         const val KEY_IS_ONCE = "is_once"
+
+        val KEY_IS_FOR_SELECTION = "for_selection"
+
 
         const val KEY_MSG_MODEL = "msg_model"
 
@@ -741,6 +745,15 @@ object utils {
 
             return output
 
+    }
+
+    fun getFileExtension(file:File):String {
+        return try {
+            val path = file.path
+            path.substring(path.lastIndexOf("."))
+        } catch (e:Exception){
+            ""
+        }
     }
 
 }

@@ -140,8 +140,8 @@ class MessageActivity : AppCompatActivity() {
 
 
     val isUploading:HashMap<String,Boolean> = HashMap()
-    val CircularProgressBarsAt:HashMap<String,CircularProgressBar> = HashMap()
-    val mediaControlImageViewAt:HashMap<String,ImageView> = HashMap()
+    private val CircularProgressBarsAt:HashMap<String,CircularProgressBar> = HashMap()
+    private val mediaControlImageViewAt:HashMap<String,ImageView> = HashMap()
 
     lateinit var adapter:FirebaseRecyclerAdapter<Models.MessageModel, RecyclerView.ViewHolder>
 
@@ -1071,19 +1071,15 @@ class MessageActivity : AppCompatActivity() {
         adapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
             override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
 
-
-
-//                Log.d("MessageActivity", "onItemRangeInserted: start = $positionStart, count = $itemCount")
-
                 val model = adapter.snapshots[positionStart]
+                Log.d("MessageActivity", "onItemRangeInserted: positionStart = $positionStart, count = $itemCount")
 
-                if(model.from == FirebaseUtils.getUid())
+                val layoutManager = messagesList.layoutManager as LinearLayoutManager
+                val lastVisiblePosition = layoutManager.findLastVisibleItemPosition()
+
+                //todo work at here
+                if(model.from == FirebaseUtils.getUid() && lastVisiblePosition != adapter.itemCount - 1)
                     messagesList.scrollToPosition(adapter.itemCount - 1)
-
-
-//                    FirebaseUtils.setReadStatusToMessage(adapter.getRef(positionStart).key!!,
-//                         model.from)
-
 
 
                 super.onItemRangeInserted(positionStart, itemCount)
@@ -1531,9 +1527,10 @@ class MessageActivity : AppCompatActivity() {
                 if(mediaControlImageViewAt[messageID]!=null){
 
                     val btnView = mediaControlImageViewAt[messageID]
+                    btnView!!.visibility = View.VISIBLE
 
 
-                    btnView!!.setOnClickListener {
+                    btnView.setOnClickListener {
 
 
                         if(percentage >= 100)
@@ -1576,6 +1573,13 @@ class MessageActivity : AppCompatActivity() {
             .addOnCompleteListener { task ->
 
                 isUploading[messageID] = false
+                if(mediaControlImageViewAt.containsKey(messageID)) {
+                    if (mediaControlImageViewAt[messageID] != null) {
+                        val btnView = mediaControlImageViewAt[messageID]
+                        btnView!!.visibility = View.GONE
+                    }
+                }
+
 
                 if (task.isSuccessful) {
                     val link = task.result
@@ -1612,7 +1616,9 @@ class MessageActivity : AppCompatActivity() {
                         time, fileType = messageType,
                             fileSizeInBytes = file.length(),
                             bucket_path = ref.bucket,
-                            file_url = link.toString()))
+                            file_url = link.toString(),
+                        file_extension = utils.getFileExtension(file)
+                    ))
 
 
                 } else {
@@ -1796,6 +1802,7 @@ class MessageActivity : AppCompatActivity() {
 
         holder.progressBar.visibility = View.VISIBLE
         CircularProgressBarsAt[messageID] = holder.progressBar
+        mediaControlImageViewAt[messageID] = holder.imageUploadControl
 
         holder.cardContainer.setCornerEnabled(true,true, model.caption.isEmpty(), false)
 
@@ -2025,19 +2032,9 @@ class MessageActivity : AppCompatActivity() {
                             when (p1!!.itemId) {
 
                                 R.id.action_delete -> {
-                                    for ((index, itemPosition) in selectedItemPosition.withIndex()) {
 
+                                   deleteSelectedMessages(p0)
 
-                                        FirebaseUtils.ref.getChatRef(myUID, targetUid)
-                                            .child(adapter.getRef(itemPosition).key.toString())
-                                            .removeValue()
-                                            .addOnCompleteListener {
-                                                if (index == selectedItemPosition.size - 1) {
-                                                    headerPosition.clear()
-                                                    p0!!.finish()
-                                                }
-                                            }
-                                    }
                                 }
 
                                 R.id.action_copy -> {
@@ -2443,4 +2440,27 @@ class MessageActivity : AppCompatActivity() {
     }
 
 
+    private fun deleteSelectedMessages(actionMode: ActionMode?){
+
+
+        AlertDialog.Builder(context)
+            .setMessage("Delete selected messages?")
+            .setPositiveButton("Yes") { _, _ ->
+                for ((index, itemPosition) in selectedItemPosition.withIndex()) {
+                    FirebaseUtils.ref.getChatRef(myUID, targetUid)
+                        .child(adapter.getRef(itemPosition).key.toString())
+                        .removeValue()
+                        .addOnCompleteListener {
+                            if (index == selectedItemPosition.size - 1) {
+                                headerPosition.clear()
+                                actionMode!!.finish()
+                            }
+                        }
+                }
+            }
+            .setNegativeButton("No", null)
+            .show()
+
+
+    }
 }

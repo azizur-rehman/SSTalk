@@ -127,22 +127,20 @@
                         android:layout_gravity="bottom|end"
                 >
 
-                    <FrameLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content">
+                    <android.support.design.widget.FloatingActionButton
+                            android:layout_width="match_parent"
+                            android:src="@drawable/ic_fast_scroll_arrow_down"
+                            android:layout_height="match_parent"
+                            android:scaleType="center"
+                            app:elevation="0dp"
+                            android:layout_marginRight="10dp"
+                            android:layout_marginTop="10dp"
+                            android:layout_gravity="bottom|start"
+                            app:backgroundTint="@color/ivory_dark"
+                            android:id="@+id/bottomScrollButton"
+                            app:fabSize="mini"
 
-                        <android.support.design.widget.FloatingActionButton
-                                android:layout_width="wrap_content"
-                                android:src="@drawable/ic_fast_scroll_arrow_down"
-                                android:layout_height="wrap_content"
-                                android:scaleType="center"
-                                app:elevation="7dp"
-                                app:backgroundTint="@color/ivory_dark"
-                                android:id="@+id/bottomScrollButton"
-                                app:fabSize="mini"
-
-                        />
-                    </FrameLayout>
+                    />
 
 
                     <com.nex3z.notificationbadge.NotificationBadge
@@ -153,8 +151,6 @@
                             app:nbAnimationDuration="200"
                             app:nbEllipsizeText="99+"
                             app:nbMaxTextLength="2"
-
-                            app:nbBackground="@drawable/shape_bubble_online"
                             android:id="@+id/unreadCount"
                             android:textColor="@color/white"
                             android:textSize="10sp"

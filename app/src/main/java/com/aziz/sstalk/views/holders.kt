@@ -50,6 +50,8 @@ object holders {
         val messageLayout = itemView.message_layout_image_right!!
 
         val cardContainer = itemView.image_container_right_card!!
+
+        val imageUploadControl = itemView.imageview_image_control_right!!
     }
 
     class TargetImageMsgHolder(itemView: View) : RecyclerView.ViewHolder(itemView){

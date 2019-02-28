@@ -1,11 +1,16 @@
 package com.aziz.sstalk
 
+import android.app.Activity
+import android.content.Intent
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.support.v7.app.AlertDialog
+import android.util.Log
+import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import com.aziz.sstalk.utils.FirebaseUtils
+import com.aziz.sstalk.utils.utils
 import com.firebase.ui.database.FirebaseListAdapter
 import com.firebase.ui.database.FirebaseListOptions
 import kotlinx.android.synthetic.main.activity_block_list.*
@@ -69,7 +74,34 @@ class BlockListActivity : AppCompatActivity() {
 
 
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+        if(item!!.itemId == android.R.id.home)
         finish()
+        else{
+            startActivityForResult(Intent(this, ContactsActivity::class.java).apply {
+                putExtra(utils.constants.KEY_IS_FOR_SELECTION, true)
+            },111)
+        }
         return super.onOptionsItemSelected(item)
     }
+
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+            menuInflater.inflate(R.menu.user_profile_menu, menu)
+        return super.onCreateOptionsMenu(menu)
+    }
+
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+
+        if(requestCode == 111 && resultCode == Activity.RESULT_OK){
+
+            val uid = data!!.getStringExtra(FirebaseUtils.KEY_UID)
+            Log.d("BlockListActivity", "onActivityResult: blocking -> $uid")
+            FirebaseUtils.ref.blockedUser(FirebaseUtils.getUid(), uid)
+                .setValue(true)
+        }
+
+        super.onActivityResult(requestCode, resultCode, data)
+    }
+
 }

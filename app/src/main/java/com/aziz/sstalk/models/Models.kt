@@ -47,7 +47,8 @@ class Models {
                     var fileType:String = "",
                     var fileSizeInBytes:Long = 0,
                     var bucket_path:String = "",
-                    var file_url:String = "")
+                    var file_url:String = "",
+                    var file_extension:String = "")
 
 
 }

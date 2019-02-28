@@ -316,7 +316,9 @@ class ForwardActivity : AppCompatActivity() {
                            model.timeInMillis, fileType = fileType,
                            fileSizeInBytes = file.length(),
                            bucket_path = ref.bucket,
-                           file_url = task.result.toString()))
+                           file_url = task.result.toString(),
+                        file_extension = utils.getFileExtension(file)
+                       ))
 
                 onForwardToSelectedUIDs()
             }
