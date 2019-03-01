@@ -1,5 +1,6 @@
 package com.aziz.sstalk.fragments
 
+import android.app.ProgressDialog
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -14,6 +15,7 @@ import com.aziz.sstalk.R
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.utils
+import com.futuremind.recyclerviewfastscroll.Utils
 import com.google.firebase.FirebaseException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.PhoneAuthCredential
@@ -25,23 +27,17 @@ class FragmentOTP : Fragment() {
 
     var mobile_no:String? = null
     var lastGenerated:Long? = System.currentTimeMillis()
-    var otp = ""
     var verificationID = ""
     var mResendToken:PhoneAuthProvider.ForceResendingToken? = null
     var userInfoBundle:Bundle? = null
 
     private var verificationStateChangedCallbacks = object  : PhoneAuthProvider.OnVerificationStateChangedCallbacks(){
         override fun onVerificationCompleted(p0: PhoneAuthCredential?) {
-             otp = p0!!.smsCode.toString()
-            utils.toast(context, "otp sent to $mobile_no")
-
         }
 
         override fun onVerificationFailed(p0: FirebaseException?) {
             utils.toast(context, p0!!.message.toString())
             Log.d("FragmentOTP", "onVerificationFailed: ${p0.message.toString()}")
-
-
 
         }
 
@@ -77,16 +73,12 @@ class FragmentOTP : Fragment() {
         view.verify.setOnClickListener{
             val inputOtp = view.pinView.text.toString()
 
-            if(inputOtp == otp){
-                signInWithCredential(PhoneAuthProvider.getCredential(verificationID, otp))
-            }
-            else{
-                utils.toast(context, "Incorrect OTP")
+            if(inputOtp.length != 6){
+                return@setOnClickListener
             }
 
-//            activity!!.supportFragmentManager.beginTransaction()
-//                .remove(this)
-//                .commit()
+            signInWithCredential(PhoneAuthProvider.getCredential(verificationID, inputOtp))
+
         }
 
         view.resendBtn.setOnClickListener {
@@ -109,8 +101,12 @@ class FragmentOTP : Fragment() {
 
 
     private fun signInWithCredential(credential: PhoneAuthCredential) {
+
+        val progressDialog = ProgressDialog.show(context, "", "Please wait...", false, false)
+
         FirebaseAuth.getInstance().signInWithCredential(credential)
             .addOnCompleteListener {
+                progressDialog.dismiss()
                 if(it.isSuccessful){
                     //utils.toast(context, "Sign in successfully")
 
@@ -140,6 +136,9 @@ class FragmentOTP : Fragment() {
                                 startActivity(intent)
                         }
 
+                }
+                else{
+                    utils.toast(context, "Incorrect OTP")
                 }
             }
     }

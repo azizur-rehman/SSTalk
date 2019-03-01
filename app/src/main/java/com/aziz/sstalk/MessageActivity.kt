@@ -35,6 +35,7 @@ import android.view.MenuItem
 import android.view.*
 import android.view.ViewGroup
 import android.support.v7.widget.SearchView
+import android.view.animation.AnimationUtils
 import android.widget.*
 import com.aziz.sstalk.firebase.MessagingService
 import com.aziz.sstalk.models.Models
@@ -68,6 +69,7 @@ import com.vincent.filepicker.activity.VideoPickActivity
 import com.vincent.filepicker.filter.entity.ImageFile
 import com.vincent.filepicker.filter.entity.VideoFile
 import kotlinx.android.synthetic.main.activity_message.*
+import kotlinx.android.synthetic.main.layout_attachment_menu.*
 import kotlinx.android.synthetic.main.unread_header.view.*
 import me.shaohui.advancedluban.Luban
 import me.shaohui.advancedluban.OnCompressListener
@@ -1072,13 +1074,12 @@ class MessageActivity : AppCompatActivity() {
             override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
 
                 val model = adapter.snapshots[positionStart]
-                Log.d("MessageActivity", "onItemRangeInserted: positionStart = $positionStart, count = $itemCount")
 
                 val layoutManager = messagesList.layoutManager as LinearLayoutManager
                 val lastVisiblePosition = layoutManager.findLastVisibleItemPosition()
 
                 //todo work at here
-                if(model.from == FirebaseUtils.getUid() && lastVisiblePosition != adapter.itemCount - 1)
+                if(model.from == FirebaseUtils.getUid() && lastVisiblePosition == adapter.itemCount - 1)
                     messagesList.scrollToPosition(adapter.itemCount - 1)
 
 
@@ -2424,6 +2425,9 @@ class MessageActivity : AppCompatActivity() {
         }
 
         messagesList.setOnScrollListener(object : RecyclerView.OnScrollListener() {
+
+
+
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
 
                 if(layoutManager.findLastVisibleItemPosition() == adapter.itemCount - 1 )
@@ -2461,6 +2465,17 @@ class MessageActivity : AppCompatActivity() {
             .setNegativeButton("No", null)
             .show()
 
+
+    }
+
+
+    private fun bindAttachmentWindow(){
+        val layout = layoutInflater.inflate(R.layout.layout_attachment_menu, null)
+
+        val optionspu =  PopupWindow(layout, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+
+        optionspu.setFocusable(true);
+        optionspu.showAtLocation(layout, Gravity.TOP, 0, 0);
 
     }
 }

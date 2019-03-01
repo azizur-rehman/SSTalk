@@ -72,6 +72,7 @@ class UserProfileActivity : AppCompatActivity() {
                 override fun onDataChange(p0: DataSnapshot) {
                     phone_textview.text = p0.getValue(String::class.java)
                     isPhoneLoaded = true
+                    invalidateOptionsMenu()
                 }
 
             })
@@ -225,6 +226,7 @@ class UserProfileActivity : AppCompatActivity() {
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
 
+        if(phone_textview.text.toString() == name)
         menuInflater.inflate(R.menu.user_profile_menu, menu)
 
         return super.onCreateOptionsMenu(menu)
@@ -237,7 +239,6 @@ class UserProfileActivity : AppCompatActivity() {
             R.id.action_contact -> {
                 val contactIntent = Intent(Intent.ACTION_INSERT)
                 contactIntent.putExtra(ContactsContract.Intents.Insert.PHONE, phone_textview.text)
-                contactIntent.putExtra(ContactsContract.Intents.Insert.NAME, name)
                 contactIntent.type = ContactsContract.RawContacts.CONTENT_TYPE
                 startActivity(contactIntent)
             }
