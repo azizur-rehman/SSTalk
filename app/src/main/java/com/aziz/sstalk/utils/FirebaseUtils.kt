@@ -432,6 +432,7 @@ object FirebaseUtils {
     fun setUnreadCount(targetUID: String, notificationBadge: NotificationBadge, vararg boldTextViews: TextView ){
 
         var initialTypeface:Typeface? = null
+        notificationBadge.visibility = View.INVISIBLE
 
         if(boldTextViews.isNotEmpty())
             initialTypeface = boldTextViews[0].typeface

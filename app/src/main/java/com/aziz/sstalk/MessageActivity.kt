@@ -35,7 +35,6 @@ import android.view.MenuItem
 import android.view.*
 import android.view.ViewGroup
 import android.support.v7.widget.SearchView
-import android.view.animation.AnimationUtils
 import android.widget.*
 import com.aziz.sstalk.firebase.MessagingService
 import com.aziz.sstalk.models.Models
@@ -46,7 +45,6 @@ import com.aziz.sstalk.utils.utils
 import com.aziz.sstalk.views.holders
 import com.firebase.ui.database.FirebaseRecyclerAdapter
 import com.firebase.ui.database.FirebaseRecyclerOptions
-import com.futuremind.recyclerviewfastscroll.Utils
 import com.google.android.gms.maps.*
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
@@ -85,6 +83,7 @@ class MessageActivity : AppCompatActivity() {
 
 
     var unreadHeaderPosition = 0
+    var unreadMessageCount = 0
     var unreadFirstMessageID = ""
     var TYPE_MINE = 0
     var TYPE_TARGET = 1
@@ -154,17 +153,12 @@ class MessageActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_message)
 
-        //cancel any notification, if any
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.cancel(MessagingService.NotificationDetail.SINGLE_ID)
-        notificationManager.cancel(MessagingService.NotificationDetail.MUlTIPLE_ID)
+
 
         setSupportActionBar(toolbar)
         targetUid = intent.getStringExtra(FirebaseUtils.KEY_UID)
         myUID = FirebaseUtils.getUid()
 
-        //setting current target for notification
-        Pref.setCurrentTargetUID(context, targetUid)
 
 
 
@@ -584,6 +578,7 @@ class MessageActivity : AppCompatActivity() {
 
        }
 
+       unreadMessageCount = intent.getIntExtra(utils.constants.KEY_UNREAD, 0)
 
        messagesList.setHasFixedSize(true)
        messagesList.setItemViewCacheSize(20)
@@ -664,6 +659,8 @@ class MessageActivity : AppCompatActivity() {
 
 
                 messagesList.setBackgroundColor(Color.WHITE)
+
+                setObserver()
 
 
                 var messageImage:ImageView? = null
@@ -885,11 +882,15 @@ class MessageActivity : AppCompatActivity() {
 
                 if(container!=null) {
                     // add unread header
-                    if (unreadHeaderPosition > 0) {
-                        val unreadView = (layoutInflater.inflate(R.layout.unread_header, container, false))
-                        unreadView.header_unread_textView.text = "${itemCount - unreadHeaderPosition - 1} unread messages"
+                    val unreadView = (layoutInflater.inflate(R.layout.unread_header, container, false))
+                    container.removeView(unreadView)
+                    if (unreadMessageCount > 0 && (adapter.itemCount - unreadMessageCount - 1) == position) {
+                        unreadView.header_unread_textView.text = "$unreadMessageCount unread messages"
                         Log.d("MessageActivity", "onBindViewHolder: adding unread view")
-                        container.addView(unreadView)
+//                        if(container.getChildAt(0)!=unreadView)
+//                        container.addView(unreadView)
+                        unreadHeaderPosition = position
+                        unreadMessageCount = 0
                     }
                 }
 
@@ -1070,30 +1071,7 @@ class MessageActivity : AppCompatActivity() {
         messagesList.adapter = adapter
 
 
-        adapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
-            override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
 
-                val model = adapter.snapshots[positionStart]
-
-                val layoutManager = messagesList.layoutManager as LinearLayoutManager
-                val lastVisiblePosition = layoutManager.findLastVisibleItemPosition()
-
-                //todo work at here
-                if(model.from == FirebaseUtils.getUid() && lastVisiblePosition == adapter.itemCount - 1)
-                    messagesList.scrollToPosition(adapter.itemCount - 1)
-
-
-                super.onItemRangeInserted(positionStart, itemCount)
-            }
-
-            override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) {
-                val oldPos = unreadHeaderPosition
-                unreadHeaderPosition = 0
-                unreadFirstMessageID = ""
-                adapter.notifyItemChanged(oldPos)
-                super.onItemRangeRemoved(positionStart, itemCount)
-            }
-        })
 
        adapter.startListening()
 
@@ -1103,6 +1081,39 @@ class MessageActivity : AppCompatActivity() {
 
     }
 
+
+    private fun setObserver(){
+        adapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
+            override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
+
+
+                val model = adapter.snapshots[positionStart]
+
+                val layoutManager = messagesList.layoutManager as LinearLayoutManager
+                val lastVisiblePosition = layoutManager.findLastCompletelyVisibleItemPosition()
+
+                // If the recycler view is initially being loaded or the
+                // user is at the bottom of the list, scroll to the bottom
+                // of the list to show the newly added message.
+
+                if (lastVisiblePosition == -1 ||
+                    (positionStart >= (adapter.itemCount - 1) &&
+                            lastVisiblePosition == (positionStart - 1))) {
+                        messagesList.scrollToPosition(adapter.itemCount - 1 - unreadMessageCount)
+                }
+
+                if(model.from == myUID)
+                    messagesList.scrollToPosition(adapter.itemCount - 1 - unreadMessageCount)
+
+
+
+                super.onItemRangeInserted(positionStart, itemCount)
+            }
+
+
+        })
+
+    }
 
 
 
@@ -1133,64 +1144,6 @@ class MessageActivity : AppCompatActivity() {
             true
         }
 
-    }
-
-
-    private fun findIndexOfFirstUnreadMessage(){
-
-        FirebaseUtils.ref.allMessageStatus(myUID, targetUid)
-            .orderByChild("read")
-            .equalTo(true)
-            .addListenerForSingleValueEvent(object : ValueEventListener{
-                override fun onCancelled(p0: DatabaseError) {}
-
-                override fun onDataChange(p0: DataSnapshot) {
-                    val totalReadMessages = p0.childrenCount
-                    val totalUnread = adapter.itemCount - totalReadMessages
-                    unreadHeaderPosition = totalUnread.toInt()
-                    if (adapter.itemCount > 1 && unreadHeaderPosition > 0) {
-                        messagesList.scrollToPosition(unreadHeaderPosition)
-                        adapter.notifyItemChanged(unreadHeaderPosition)
-
-                    }
-                }
-
-            })
-
-
-        if(true)
-            return
-
-        //todo work here
-
-        FirebaseUtils.ref.allMessageStatus(myUID, targetUid)
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onCancelled(p0: DatabaseError) {
-                }
-
-                override fun onDataChange(p0: DataSnapshot) {
-
-
-                    try {
-
-                        for ((index, snapshot) in p0.children.withIndex()) {
-                            val model = snapshot.getValue(Models.MessageStatus::class.java)
-                            if (!model!!.read && index < (p0.childrenCount.toInt() - 1)) {
-                                Log.d("MessageActivity", "onDataChange: first unread data ${snapshot.value}")
-                                Log.d("MessageActivity", "onDataChange: first unread found at $index")
-                                unreadHeaderPosition = index
-                                unreadFirstMessageID = model.messageID
-                                adapter.notifyItemChanged(unreadHeaderPosition)
-                                messagesList.scrollToPosition(index)
-                                break
-                            }
-                        }
-                    }
-                    catch (e:Exception){
-                        Log.d("MessageActivity", "onDataChange: error parsing this model = $p0")
-                    }
-                }
-            })
     }
 
 
@@ -1293,9 +1246,11 @@ class MessageActivity : AppCompatActivity() {
     private fun addMessageToMyNode(messageID: String , messageModel: Models.MessageModel){
 
         //setting my message
+        unreadMessageCount = 0
 
-        adapter.notifyItemChanged(unreadHeaderPosition)
-        unreadHeaderPosition = 0
+//        Log.d("MessageActivity", "addMessageToMyNode: refreshed position = $unreadHeaderPosition")
+//        adapter.notifyItemChanged(unreadHeaderPosition)
+//        adapter.notifyDataSetChanged()
         unreadFirstMessageID = ""
 
         FirebaseUtils.ref.getChatRef(myUID, targetUid)
@@ -1489,11 +1444,9 @@ class MessageActivity : AppCompatActivity() {
 
         //setting initial value
         if(CircularProgressBarsAt.containsKey(messageID)){
-            if(CircularProgressBarsAt[messageID]!=null){
-                CircularProgressBarsAt[messageID]!!.progress = 0f
-                CircularProgressBarsAt[messageID]!!.enableIndeterminateMode(true)
+                CircularProgressBarsAt[messageID]?.progress = 0f
+                CircularProgressBarsAt[messageID]?.enableIndeterminateMode(true)
 
-            }
         }
 
 
@@ -1507,17 +1460,16 @@ class MessageActivity : AppCompatActivity() {
 
 
                 if(CircularProgressBarsAt.containsKey(messageID)){
-                    if(CircularProgressBarsAt[messageID]!=null){
+
                         if(percentage.toInt() < 5){
-                            CircularProgressBarsAt[messageID]!!.enableIndeterminateMode(true)
+                            CircularProgressBarsAt[messageID]?.enableIndeterminateMode(true)
                         }
                         else{
-                            CircularProgressBarsAt[messageID]!!.enableIndeterminateMode(false)
+                            CircularProgressBarsAt[messageID]?.enableIndeterminateMode(false)
                         }
 
-                        CircularProgressBarsAt[messageID]!!.progress = percentage.toFloat()
+                        CircularProgressBarsAt[messageID]?.progress = percentage.toFloat()
 
-                    }
 
                 }
 
@@ -1786,13 +1738,26 @@ class MessageActivity : AppCompatActivity() {
     override fun onResume() {
         invalidateOptionsMenu()
         FirebaseUtils.setMeAsOnline()
+        //cancel any notification, if any
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.cancel(MessagingService.NotificationDetail.SINGLE_ID)
+        notificationManager.cancel(MessagingService.NotificationDetail.MUlTIPLE_ID)
+
+        //setting current target for notification
+        Pref.setCurrentTargetUID(context, targetUid)
+
         super.onResume()
     }
 
 
     override fun onPause() {
-        if(utils.isAppIsInBackground(this))
+
+
+        if(utils.isAppIsInBackground(this)) {
             FirebaseUtils.setMeAsOffline()
+            Pref.setCurrentTargetUID(context,"")
+        }
+
         super.onPause()
     }
 
@@ -2407,6 +2372,8 @@ class MessageActivity : AppCompatActivity() {
 
         bottomScrollButton.hide()
 
+//        findIndexOfFirstUnreadMessage()
+
         unreadCount.visibility = View.GONE
         Handler().postDelayed({
             FirebaseUtils.setUnreadCount(targetUid, unreadCount)
@@ -2420,7 +2387,7 @@ class MessageActivity : AppCompatActivity() {
 
 
         bottomScrollButton.setOnClickListener {
-
+            unreadCount.visibility = View.INVISIBLE
             messagesList.scrollToPosition(adapter.itemCount - 1)
         }
 

@@ -48,10 +48,6 @@ class MessagingService: FirebaseMessagingService() {
         Log.d("MessagingService", "onMessageReceived: ${p0!!.data.toString()}")
         val data: MutableMap<String, String>? = p0.data ?: return
 
-        //todo change to FirebaseUtils.getUid
-
-
-
         val sender = data!![KEY_SENDER]!!
         val receiver = data[KEY_RECEIVER]!!
 
@@ -255,6 +251,9 @@ class MessagingService: FirebaseMessagingService() {
                if(profilePicFile.exists()) {
                    person.setIcon(IconCompat.createWithBitmap(utils.getCircleBitmap(BitmapFactory.decodeFile(profilePicFile.path))))
 //                   notificationCompatBuilder.setLargeIcon(utils.getCircleBitmap(BitmapFactory.decodeFile(profilePicFile.path)))
+               }
+               else{
+                   Log.d("MessagingService", "updateNotificationWithBigText: profile doesn't exists")
                }
            }
 

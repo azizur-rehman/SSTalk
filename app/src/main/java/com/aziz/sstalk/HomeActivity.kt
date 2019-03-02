@@ -219,7 +219,14 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                         return@setOnClickListener
                     }
 
-                    startActivity(Intent(context, MessageActivity::class.java).putExtra(FirebaseUtils.KEY_UID, uid))
+                    val unreadCount = try { holder.unreadCount.getTextView().text.toString().toInt() }
+                    catch (e:Exception){ 0 }
+
+
+                    startActivity(Intent(context, MessageActivity::class.java)
+                        .apply { putExtra(FirebaseUtils.KEY_UID, uid)
+                        putExtra(utils.constants.KEY_UNREAD, 5)}
+                    )
                 }
 
 
