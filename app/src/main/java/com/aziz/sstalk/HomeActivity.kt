@@ -17,6 +17,7 @@ import android.util.Log
 import android.view.*
 import android.widget.TextView
 import com.aziz.sstalk.models.Models
+import com.aziz.sstalk.utils.DateFormatter
 import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.Pref
 import com.aziz.sstalk.utils.utils
@@ -30,8 +31,13 @@ import de.hdodenhof.circleimageview.CircleImageView
 import kotlinx.android.synthetic.main.activity_home.*
 import kotlinx.android.synthetic.main.app_bar_home.*
 import kotlinx.android.synthetic.main.content_home.*
-import kotlinx.android.synthetic.main.item_contact_list.view.*
+import kotlinx.android.synthetic.main.item_conversation_layout.view.*
+import org.jetbrains.anko.doAsyncResult
+import org.jetbrains.anko.onComplete
+import org.jetbrains.anko.uiThread
 import java.lang.Exception
+import java.util.*
+import java.util.concurrent.Future
 
 class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
@@ -48,6 +54,8 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     var actionMode:ActionMode? = null
 
     var isContextToolbarActive = false
+    private var asyncLoader: Future<Boolean>? = null
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,30 +76,42 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             startActivity(Intent(context, ContactsActivity::class.java))
         }
 
-        nav_view.setNavigationItemSelectedListener(this)
 
-          hasPermission = utils.hasContactPermission(this)
+        initComponents()
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                if(!hasPermission) {
-                    requestPermissions(arrayOf(Manifest.permission.READ_CONTACTS), 101)
+    }
+
+    private fun initComponents(){
+        asyncLoader = doAsyncResult {
+
+            onComplete { conversation_progressbar.visibility = View.GONE }
+
+            uiThread {
+                nav_view.setNavigationItemSelectedListener(this@HomeActivity )
+
+                hasPermission = utils.hasContactPermission(this@HomeActivity)
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    if(!hasPermission) {
+                        requestPermissions(arrayOf(Manifest.permission.READ_CONTACTS), 101)
+                    }
+                    else
+                        setAdapter()
                 }
                 else
                     setAdapter()
+
+
+
+                //setting update navigation drawer
+                if(FirebaseUtils.isLoggedIn()) {
+
+                    (nav_view.getHeaderView(0).findViewById(R.id.nav_header_title) as TextView).text = FirebaseAuth.getInstance().currentUser!!.displayName
+                    (nav_view.getHeaderView(0).findViewById(R.id.nav_header_subtitle) as TextView).text = FirebaseAuth.getInstance().currentUser!!.phoneNumber
+                    FirebaseUtils.loadProfileThumbnail(this@HomeActivity, FirebaseUtils.getUid(),
+                        nav_view.getHeaderView(0).findViewById<CircleImageView>(R.id.drawer_profile_image_view))
+                }
             }
-            else
-            setAdapter()
-
-
-
-
-        //setting update navigation drawer
-         if(FirebaseUtils.isLoggedIn()) {
-
-             (nav_view.getHeaderView(0).findViewById(R.id.nav_header_title) as TextView).text = FirebaseAuth.getInstance().currentUser!!.displayName
-             (nav_view.getHeaderView(0).findViewById(R.id.nav_header_subtitle) as TextView).text = FirebaseAuth.getInstance().currentUser!!.phoneNumber
-            FirebaseUtils.loadProfileThumbnail(this, FirebaseUtils.getUid(),
-                nav_view.getHeaderView(0).findViewById<CircleImageView>(R.id.drawer_profile_image_view))
         }
     }
 
@@ -149,7 +169,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             }
 
             R.id.nav_share -> {
-
+                utils.shareInviteText(context)
             }
 
         }
@@ -168,7 +188,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             .build()
 
          adapter = object : FirebaseRecyclerAdapter<Models.LastMessageDetail, ViewHolder>(options){
-            override fun onCreateViewHolder(p0: ViewGroup, p1: Int): ViewHolder = ViewHolder(layoutInflater.inflate(R.layout.item_contact_list, p0, false))
+            override fun onCreateViewHolder(p0: ViewGroup, p1: Int): ViewHolder = ViewHolder(layoutInflater.inflate(R.layout.item_conversation_layout, p0, false))
 
             override fun onBindViewHolder(holder: ViewHolder, position: Int, model: Models.LastMessageDetail) {
 
@@ -177,6 +197,8 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 holder.name.text = uid
 
                 FirebaseUtils.loadProfilePic(this@HomeActivity, uid, holder.pic)
+
+                FirebaseUtils.setMuteImageIcon(uid, holder.muteIcon)
 
                 FirebaseUtils.setLastMessage(uid, holder.lastMessage, holder.deliveryTick)
 
@@ -188,6 +210,14 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
                 holder.time.text = utils.getLocalTime(model.timeInMillis)
                 holder.time.visibility = View.VISIBLE
+
+                //modifying date according to time
+                when {
+                    DateFormatter.isToday(Date(model.timeInMillis)) -> holder.time.text = "Today"
+                    DateFormatter.isYesterday(Date(model.timeInMillis)) -> holder.time.text = "Yesterday"
+                    DateFormatter.isCurrentYear(Date(model.timeInMillis)) -> holder.time.text = utils.getLocalDate(model.timeInMillis)
+                    else -> holder.time.visibility = View.VISIBLE
+                }
 
                 FirebaseUtils.setUnreadCount(uid, holder.unreadCount, holder.name, holder.lastMessage, holder.time)
 
@@ -212,6 +242,9 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                             selectedItemPosition.remove(position)
                         }
 
+                        if(selectedItemPosition.size==2)
+                            actionMode?.invalidate()
+
                         actionMode!!.title = selectedItemPosition.size.toString()
                         if(selectedItemPosition.isEmpty() && actionMode!=null)
                             actionMode!!.finish()
@@ -225,7 +258,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
                     startActivity(Intent(context, MessageActivity::class.java)
                         .apply { putExtra(FirebaseUtils.KEY_UID, uid)
-                        putExtra(utils.constants.KEY_UNREAD, 5)}
+                        putExtra(utils.constants.KEY_UNREAD, unreadCount)}
                     )
                 }
 
@@ -257,7 +290,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                                 }
 
                                 R.id.action_mute -> {
-                                  //  muteSelectedConversations()
+                                    muteSelectedConversation()
                                 }
 
                                 R.id.action_mark_as_read -> {
@@ -275,12 +308,16 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                             p0!!.menuInflater.inflate(R.menu.converstation_option_menu, p1)
                             isContextToolbarActive = true
 
-                            //p0.menu.findItem(R.id.action_mute).isVisible = selectedItemPosition.size == 1
 
                             return true
                         }
 
-                        override fun onPrepareActionMode(p0: ActionMode?, p1: Menu?): Boolean = true
+                        override fun onPrepareActionMode(p0: ActionMode?, p1: Menu?): Boolean {
+                             p1?.findItem(R.id.action_mute)?.isVisible = selectedItemPosition.size == 1
+                            p0?.title = selectedItemPosition.size.toString()
+
+                            return true
+                        }
 
                         override fun onDestroyActionMode(p0: ActionMode?) {
                             isContextToolbarActive = false
@@ -331,10 +368,13 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         val onlineStatus = itemView.online_status_imageview!!
         val checkbox = itemView.contact_checkbox!!
         val deliveryTick = itemView.delivery_status_last_msg!!
+        val muteIcon = itemView.conversation_mute_icon!!
 
     }
 
     override fun onDestroy() {
+        if(asyncLoader?.isDone!!)
+            asyncLoader?.cancel(true)
         try {
             adapter.stopListening()
             FirebaseUtils.setMeAsOffline()
@@ -382,11 +422,10 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
 
-
-    private fun muteSelectedConversations(){
+    private fun muteSelectedConversation(){
         selectedItemPosition.forEach {
             FirebaseUtils.ref.notificationMute(adapter.getRef(it).key!!)
-                .setValue(!isAnyMuted)
+                .setValue(true)
         }
     }
 

@@ -34,8 +34,12 @@ import kotlinx.android.synthetic.main.item__forward_contact_list.view.*
 import kotlinx.android.synthetic.main.item_contact_layout.view.*
 import me.shaohui.advancedluban.Luban
 import me.shaohui.advancedluban.OnCompressListener
+import org.jetbrains.anko.doAsyncResult
+import org.jetbrains.anko.onComplete
+import org.jetbrains.anko.uiThread
 import java.io.File
 import java.lang.Exception
+import java.util.concurrent.Future
 
 class ForwardActivity : AppCompatActivity() {
 
@@ -59,6 +63,7 @@ class ForwardActivity : AppCompatActivity() {
     var progressDialog:ProgressDialog? = null
 
     var currentMessageID = ""
+    private var asyncLoader: Future<Unit>? = null
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -74,7 +79,12 @@ class ForwardActivity : AppCompatActivity() {
         fwd_snackbar = Snackbar.make(sendBtn, "", Snackbar.LENGTH_INDEFINITE)
 
 
-        setFrequentAdapter()
+        recyclerLayout.visibility = View.GONE
+        asyncLoader = doAsyncResult {
+            uiThread { setFrequentAdapter() }
+            onComplete { uiThread { recyclerLayout.visibility = View.VISIBLE } }
+
+        }
 
         myUID = FirebaseUtils.getUid()
 
@@ -371,7 +381,6 @@ class ForwardActivity : AppCompatActivity() {
                     }
                 }
 
-
                 loadRegisteredUsers()
             }
 
@@ -406,6 +415,9 @@ class ForwardActivity : AppCompatActivity() {
     @SuppressLint("RestrictedApi")
     private fun bindHolder(holder: ViewHolder, uid:String, phone:String){
 
+
+        if(forward_progressbar.visibility == View.VISIBLE)
+            forward_progressbar.visibility = View.GONE
 
         holder.title.text = uid
 
@@ -467,8 +479,6 @@ class ForwardActivity : AppCompatActivity() {
 
     private fun loadRegisteredUsers(){
 
-
-
         numberList = utils.getContactList(this)
 
         FirebaseUtils.ref.allUser()
@@ -529,5 +539,9 @@ class ForwardActivity : AppCompatActivity() {
     }
 
 
+    override fun onDestroy() {
+        asyncLoader?.cancel(true)
+        super.onDestroy()
+    }
 
 }

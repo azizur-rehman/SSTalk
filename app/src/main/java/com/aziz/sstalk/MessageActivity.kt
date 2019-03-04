@@ -13,11 +13,8 @@ import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.net.Uri
-import android.os.Build
-import android.os.Bundle
-import android.os.Environment
+import android.os.*
 import android.os.Environment.DIRECTORY_DCIM
-import android.os.Handler
 import android.provider.MediaStore
 import android.support.design.widget.Snackbar
 import android.support.text.emoji.EmojiCompat
@@ -68,14 +65,17 @@ import com.vincent.filepicker.filter.entity.ImageFile
 import com.vincent.filepicker.filter.entity.VideoFile
 import kotlinx.android.synthetic.main.activity_message.*
 import kotlinx.android.synthetic.main.layout_attachment_menu.*
+import kotlinx.android.synthetic.main.layout_include_message_activity_toolbar.*
 import kotlinx.android.synthetic.main.unread_header.view.*
 import me.shaohui.advancedluban.Luban
 import me.shaohui.advancedluban.OnCompressListener
+import org.jetbrains.anko.*
 import java.io.File
 import java.io.Serializable
 import java.lang.Exception
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.concurrent.Future
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
@@ -139,6 +139,8 @@ class MessageActivity : AppCompatActivity() {
 
     val allMessages:HashMap<Models.MessageModel, Int> = HashMap()
 
+    private var asyncLoader: Future<Boolean>? = null
+
 
     val isUploading:HashMap<String,Boolean> = HashMap()
     private val CircularProgressBarsAt:HashMap<String,CircularProgressBar> = HashMap()
@@ -161,6 +163,27 @@ class MessageActivity : AppCompatActivity() {
 
 
 
+
+        asyncLoader= doAsyncResult {
+            uiThread {
+                message_progressbar.visibility = View.VISIBLE
+                initComponents()
+                
+                onComplete {
+                    message_progressbar.visibility = View.GONE
+                }
+            }
+
+
+        }
+
+
+        
+        
+    }
+
+
+    private fun initComponents(){
 
         FirebaseUtils.setUserDetailFromUID(this, target_name_textview, targetUid, utils.hasContactPermission(context))
         FirebaseUtils.loadProfileThumbnail(context, targetUid, profile_circleimageview)
@@ -186,7 +209,7 @@ class MessageActivity : AppCompatActivity() {
 
         back_layout_toolbar_message.setOnClickListener {
             if(intent.getBooleanExtra(utils.constants.KEY_IS_ONCE, false))
-            startActivity(Intent(context, HomeActivity::class.java))
+                startActivity(Intent(context, HomeActivity::class.java))
             finish()
         }
 
@@ -201,8 +224,8 @@ class MessageActivity : AppCompatActivity() {
         })
 
 
-        Log.d("MessageActivity", "onCreate: myUID = "+myUID)
-        Log.d("MessageActivity", "onCreate: target UID = "+targetUid)
+        Log.d("MessageActivity", "onCreate: myUID = $myUID")
+        Log.d("MessageActivity", "onCreate: target UID = $targetUid")
 
         setSendMessageListener()
 
@@ -223,22 +246,21 @@ class MessageActivity : AppCompatActivity() {
                 return@setAttachmentsListener
 
 
-         if(attachment_menu.visibility != View.VISIBLE) {
-             utils.setEnterRevealEffect(this, attachment_menu)
+            if(attachment_menu.visibility != View.VISIBLE) {
+                utils.setEnterRevealEffect(this, attachment_menu)
 //             utils.showFabs(fab_camera, fab_gallery, fab_video, fab_location)
-           //  messagesList.alpha = 0.6f
+                //  messagesList.alpha = 0.6f
 
-         }
-         else {
-             utils.setExitRevealEffect(attachment_menu)
-            // messagesList.alpha = 1f
+            }
+            else {
+                utils.setExitRevealEffect(attachment_menu)
+                // messagesList.alpha = 1f
 //             utils.hideFabs(fab_camera, fab_gallery, fab_video, fab_location)
 
-         }
+            }
 
 
         }
-
     }
 
 
@@ -513,17 +535,6 @@ class MessageActivity : AppCompatActivity() {
                 .putExtra(utils.constants.KEY_FILE_TYPE, utils.constants.FILE_TYPE_VIDEO)
                 , RQ_PREVIEW_IMAGE)
 
-
-            for(videoFile in videoPaths){
-                Log.d("MessageActivity", "onActivityResult: path = "+videoFile.path)
-                Log.d("MessageActivity", "onActivityResult: duration = "+videoFile.duration)
-                Log.d("MessageActivity", "onActivityResult: size = "+videoFile.size / (1024) +" KB")
-                messageID = "MSG" +System.currentTimeMillis()
-
-               // uploadFile(messageID, File(videoFile.path), "", utils.constants.FILE_TYPE_VIDEO, false)
-
-
-            }
         }
 
 
@@ -1659,6 +1670,9 @@ class MessageActivity : AppCompatActivity() {
 
         Pref.setCurrentTargetUID(context, "")
 
+        if(!asyncLoader?.isDone!!)
+            asyncLoader?.cancel(true)
+
         try {
 
             adapter.stopListening()
@@ -1990,6 +2004,7 @@ class MessageActivity : AppCompatActivity() {
 
                 if (!selectedItemPosition.contains(position)) {
                     selectedItemPosition.add(position)
+                    selectedMessageModel.add(model)
                 }
 
 
@@ -2045,16 +2060,21 @@ class MessageActivity : AppCompatActivity() {
                             return true
                         }
 
-                        override fun onPrepareActionMode(p0: ActionMode?, p1: Menu?): Boolean = false
+                        override fun onPrepareActionMode(p0: ActionMode?, p1: Menu?): Boolean {
+                            val models = selectedMessageModel
+                            val isContainsFile = models.any {
+                                it.isFile
+                            }
+
+                            p1?.findItem(R.id.action_copy)?.isVisible = !isContainsFile
+                            p0?.title = selectedItemPosition.size.toString()
+
+                            return true
+                        }
 
                         override fun onDestroyActionMode(p0: ActionMode?) {
                             for (pos in selectedItemPosition)
                                 adapter.notifyItemChanged(pos)
-
-                            Log.d(
-                                "MessageActivity",
-                                "onDestroyActionMode: selected pos = ${selectedItemPosition.toString()}"
-                            )
 
                             selectedItemPosition.clear()
                             isContextMenuActive = false
@@ -2081,13 +2101,17 @@ class MessageActivity : AppCompatActivity() {
                 if(selectedItemPosition.contains(position)){
                     itemView.background = unselectedDrawable
                     selectedItemPosition.remove(position)
+                    selectedMessageModel.remove(model)
+
                 }
                 else{
                     itemView.background = selectedDrawable
                     selectedItemPosition.add(position)
+                    selectedMessageModel.add(model)
                 }
 
                 actionMode!!.title = selectedItemPosition.size.toString()
+                actionMode?.invalidate()
 
                 if(selectedItemPosition.isEmpty()){
                         actionMode!!.finish()
@@ -2422,8 +2446,7 @@ class MessageActivity : AppCompatActivity() {
                         .child(adapter.getRef(itemPosition).key.toString())
                         .removeValue()
                         .addOnCompleteListener {
-                            if (index == selectedItemPosition.size - 1) {
-                                headerPosition.clear()
+                            if (index == selectedItemPosition.lastIndex) {
                                 actionMode!!.finish()
                             }
                         }

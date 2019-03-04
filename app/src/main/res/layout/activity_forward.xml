@@ -34,11 +34,6 @@
             android:layout_width="match_parent"
                  android:layout_height="match_parent">
 
-        <ProgressBar android:layout_width="wrap_content"
-                     android:layout_gravity="center"
-                     android:layout_height="wrap_content"
-                     style="@android:style/Widget.DeviceDefault.Light.ProgressBar.Large"
-        />
 
 
         <android.support.v4.widget.NestedScrollView
@@ -91,9 +86,16 @@
         </android.support.v4.widget.NestedScrollView>
 
 
+        <ProgressBar android:layout_width="wrap_content"
+                     android:layout_gravity="center"
+                     android:id="@+id/forward_progressbar"
+                     android:layout_height="wrap_content"
+                     style="@android:style/Widget.DeviceDefault.Light.ProgressBar.Large"
+        />
 
 
-        </FrameLayout>
+
+    </FrameLayout>
 
 
     <android.support.design.widget.FloatingActionButton

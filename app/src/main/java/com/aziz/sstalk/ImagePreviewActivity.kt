@@ -32,12 +32,9 @@ class ImagePreviewActivity : AppCompatActivity() {
         if(imgLocalPath == null)
             imgLocalPath = ""
 
-        Log.d("ImagePreviewActivity", "onCreate: url = $imgURL")
-        Log.d("ImagePreviewActivity", "onCreate: local path = $imgLocalPath")
 
         if(imgURL.isEmpty() && imgLocalPath.isEmpty()){
             utils.toast(this@ImagePreviewActivity, "Failed to load image")
-            Log.d("ImagePreviewActivity", "onCreate: path empty")
             finish()
         }
 
@@ -68,8 +65,6 @@ class ImagePreviewActivity : AppCompatActivity() {
 
         if(File(imgLocalPath).exists()){
 
-
-//            Log.d("ImagePreviewActivity", "onCreate: file exists")
 
             Picasso.get()
                 .load(File(imgLocalPath))

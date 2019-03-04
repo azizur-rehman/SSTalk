@@ -25,8 +25,12 @@ import kotlinx.android.synthetic.main.activity_user_profile.*
 import kotlinx.android.synthetic.main.content_user_profile.*
 import kotlinx.android.synthetic.main.item_image.view.*
 import kotlinx.android.synthetic.main.item_video.view.*
+import org.jetbrains.anko.doAsyncResult
+import org.jetbrains.anko.onComplete
+import org.jetbrains.anko.uiThread
 import java.io.File
 import java.util.ArrayList
+import java.util.concurrent.Future
 
 class UserProfileActivity : AppCompatActivity() {
 
@@ -37,6 +41,9 @@ class UserProfileActivity : AppCompatActivity() {
     var isPhoneLoaded = false
     var name = ""
 
+    private var asyncLoader: Future<Boolean>? = null
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_user_profile)
@@ -46,12 +53,6 @@ class UserProfileActivity : AppCompatActivity() {
             supportActionBar!!.setDisplayHomeAsUpEnabled(true)
             supportActionBar!!.setHomeButtonEnabled(true)
         }
-
-
-
-
-        var user1 = "user---1"
-        var user2 = "user---2"
 
 
         myUID = FirebaseUtils.getUid()
@@ -78,7 +79,6 @@ class UserProfileActivity : AppCompatActivity() {
             })
 
 
-        FirebaseUtils.loadProfilePic(this, targetUID, user_profile_imageview)
 
         val layoutManager = GridLayoutManager(this, 4)
         mediaRecyclerView.addItemDecoration(DividerGridItemDecoration(this))
@@ -86,100 +86,105 @@ class UserProfileActivity : AppCompatActivity() {
 
         mediaRecyclerView.layoutManager = layoutManager as RecyclerView.LayoutManager?
 
-        FirebaseUtils.ref.getChatRef(myUID,targetUID)
-            .orderByChild(FirebaseUtils.KEY_REVERSE_TIMESTAMP)
-            .addValueEventListener(object:ValueEventListener {
-                override fun onCancelled(p0: DatabaseError) {
-                }
-
-                override fun onDataChange(p0: DataSnapshot) {
 
 
-                    messageModels.clear()
+        asyncLoader = doAsyncResult {
 
-                    if(!p0.exists())
-                        return
+            uiThread {
 
-                    p0.children.forEach {
-                        val model = it.getValue(Models.MessageModel ::class.java)
+                FirebaseUtils.loadProfilePic(this@UserProfileActivity, targetUID, user_profile_imageview)
 
-                        if(model!!.file_local_path.isNotEmpty() && File(model.file_local_path).exists())
-                            messageModels.add(it.getValue(Models.MessageModel ::class.java)!!)
-                    }
-
-
-                    if(messageModels.isEmpty())
-                        return
-
-                    if(mediaRecyclerView.adapter != null)
-                        mediaRecyclerView.adapter!!.notifyDataSetChanged()
-                    else {
-
-                        mediaRecyclerView.adapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-                            override fun onCreateViewHolder(p0: ViewGroup, p1: Int): RecyclerView.ViewHolder {
-                                //0 for image
-                                //1 for video right now
-
-                                return if (p1 == 0) imageHolder(layoutInflater.inflate(R.layout.item_image, p0, false))
-                                else videoHolder(layoutInflater.inflate(R.layout.item_video, p0, false))
-
-
-                            }
-
-                            override fun getItemCount(): Int = messageModels.size
-
-                            override fun getItemViewType(position: Int): Int {
-                                return if (messageModels[position].messageType == utils.constants.FILE_TYPE_IMAGE) 0 else 1
-                            }
-
-                            override fun onBindViewHolder(holder: RecyclerView.ViewHolder, p1: Int) {
-
-                                if (holder is imageHolder) {
-                                    Picasso.get().load(File(messageModels[p1].file_local_path))
-                                        .fit()
-                                        .centerCrop()
-                                        .into(holder.imageView)
-                                  //  holder.imageView.setImageBitmap(BitmapFactory.decodeFile(messageModels[p1].file_local_path))
-
-                                    holder.imageView.setOnClickListener {
-                                        startActivity(
-                                            Intent(this@UserProfileActivity, ImagePreviewActivity::class.java)
-                                                .putExtra(
-                                                    utils.constants.KEY_LOCAL_PATH,
-                                                    messageModels[p1].file_local_path
-                                                )
-                                        )
-                                    }
-                                } else if (holder is videoHolder) {
-//                                    holder.imageView.setImageBitmap(
-//                                        ThumbnailUtils.createVideoThumbnail(
-//                                            messageModels[p1].file_local_path,
-//                                            MediaStore.Video.Thumbnails.MICRO_KIND
-//                                        )
-//                                    )
-                                    utils.loadVideoThumbnailFromLocalAsync(this@UserProfileActivity, holder.imageView, messageModels[p1].file_local_path)
-
-                                    holder.length.text = utils.getVideoLength(
-                                        this@UserProfileActivity,
-                                        messageModels[p1].file_local_path
-                                    )
-
-                                    holder.imageView.setOnClickListener {
-                                        utils.startVideoIntent(
-                                            this@UserProfileActivity,
-                                            messageModels[p1].file_local_path
-                                        )
-                                    }
-                                }
-                            }
-
+                FirebaseUtils.ref.getChatRef(myUID,targetUID)
+                    .orderByChild(FirebaseUtils.KEY_REVERSE_TIMESTAMP)
+                    .addValueEventListener(object:ValueEventListener {
+                        override fun onCancelled(p0: DatabaseError) {
                         }
 
-                    }
-                }
+                        override fun onDataChange(p0: DataSnapshot) {
 
-            })
 
+                            messageModels.clear()
+
+                            if(!p0.exists())
+                                return
+
+                            p0.children.forEach {
+                                val model = it.getValue(Models.MessageModel ::class.java)
+
+                                if(model!!.file_local_path.isNotEmpty() && File(model.file_local_path).exists())
+                                    messageModels.add(it.getValue(Models.MessageModel ::class.java)!!)
+                            }
+
+
+                            if(messageModels.isEmpty())
+                                return
+
+                            if(mediaRecyclerView.adapter != null)
+                                mediaRecyclerView.adapter!!.notifyDataSetChanged()
+                            else {
+
+                                mediaRecyclerView.adapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+                                    override fun onCreateViewHolder(p0: ViewGroup, p1: Int): RecyclerView.ViewHolder {
+                                        //0 for image
+                                        //1 for video right now
+
+                                        return if (p1 == 0) imageHolder(layoutInflater.inflate(R.layout.item_image, p0, false))
+                                        else videoHolder(layoutInflater.inflate(R.layout.item_video, p0, false))
+
+
+                                    }
+
+                                    override fun getItemCount(): Int = messageModels.size
+
+                                    override fun getItemViewType(position: Int): Int {
+                                        return if (messageModels[position].messageType == utils.constants.FILE_TYPE_IMAGE) 0 else 1
+                                    }
+
+                                    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, p1: Int) {
+
+                                        if (holder is imageHolder) {
+                                            Picasso.get().load(File(messageModels[p1].file_local_path))
+                                                .fit()
+                                                .centerCrop()
+                                                .into(holder.imageView)
+                                            //  holder.imageView.setImageBitmap(BitmapFactory.decodeFile(messageModels[p1].file_local_path))
+
+                                            holder.imageView.setOnClickListener {
+                                                startActivity(
+                                                    Intent(this@UserProfileActivity, ImagePreviewActivity::class.java)
+                                                        .putExtra(
+                                                            utils.constants.KEY_LOCAL_PATH,
+                                                            messageModels[p1].file_local_path
+                                                        )
+                                                )
+                                            }
+                                        } else if (holder is videoHolder) {
+
+                                            utils.loadVideoThumbnailFromLocalAsync(this@UserProfileActivity, holder.imageView, messageModels[p1].file_local_path)
+                                            holder.length.text = utils.getVideoLength(
+                                                this@UserProfileActivity,
+                                                messageModels[p1].file_local_path
+                                            )
+
+                                            holder.imageView.setOnClickListener {
+                                                utils.startVideoIntent(
+                                                    this@UserProfileActivity,
+                                                    messageModels[p1].file_local_path
+                                                )
+                                            }
+                                        }
+                                    }
+
+                                }
+
+                            }
+                        }
+
+                    })
+
+            }
+
+        }
 
         phone_textview.setOnClickListener {
             if(isPhoneLoaded && phone_textview.text.isNotEmpty())
@@ -223,6 +228,13 @@ class UserProfileActivity : AppCompatActivity() {
             })
     }
 
+
+    override fun onDestroy() {
+
+        asyncLoader?.cancel(true)
+
+        super.onDestroy()
+    }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
 

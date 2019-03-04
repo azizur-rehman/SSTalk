@@ -59,6 +59,10 @@
                 <data android:mimeType="video/*" />
             </intent-filter>
 
+            <meta-data
+                    android:name="android.service.chooser.chooser_target_service"
+                    android:value=".ShareIntentChooserService" />
+
         </activity>
         <activity
                 android:name=".UserProfileActivity"
@@ -149,6 +153,18 @@
         <meta-data
                 android:name="com.google.firebase.messaging.default_notification_color"
                 android:resource="@color/colorAccent"/>
+
+
+        <service
+                android:name=".utils.ShareIntentChooserService"
+                android:label="@string/app_name"
+                android:permission="android.permission.BIND_CHOOSER_TARGET_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.chooser.ChooserTargetService" />
+            </intent-filter>
+        </service>
+
+
     </application>
 
 </manifest>

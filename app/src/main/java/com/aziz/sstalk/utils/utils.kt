@@ -190,7 +190,7 @@ object utils {
 
         val calendar = Calendar.getInstance()
         calendar.timeInMillis = timeInMillis
-        val sdf = SimpleDateFormat("dd MMM yy")
+        val sdf = SimpleDateFormat("MMM dd")
 
         sdf.timeZone = TimeZone.getDefault()
 
@@ -676,7 +676,7 @@ object utils {
             putExtra(Intent.EXTRA_SUBJECT, "SS Talk")
         }
 
-        context.startActivity(intent)
+        context.startActivity(Intent.createChooser(intent, "Share via"))
     }
 
     fun getRealPathFromURI(context: Context, contentUri: Uri): String {

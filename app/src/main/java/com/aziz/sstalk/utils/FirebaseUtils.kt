@@ -432,7 +432,7 @@ object FirebaseUtils {
     fun setUnreadCount(targetUID: String, notificationBadge: NotificationBadge, vararg boldTextViews: TextView ){
 
         var initialTypeface:Typeface? = null
-        notificationBadge.visibility = View.INVISIBLE
+        notificationBadge.visibility = View.GONE
 
         if(boldTextViews.isNotEmpty())
             initialTypeface = boldTextViews[0].typeface
@@ -450,7 +450,7 @@ object FirebaseUtils {
 //                    Log.d("FirebaseUtils", "onDataChange: unread count = ${p0.childrenCount}")
 
                     if(p0.childrenCount.toInt() == 0) {
-                        notificationBadge.visibility = View.INVISIBLE
+                        notificationBadge.visibility = View.GONE
                         boldTextViews.forEach {
                             it.setTypeface(null, Typeface.NORMAL)
                         }
@@ -653,6 +653,27 @@ object FirebaseUtils {
         FirebaseUtils.ref.fileRef()
             .child(file.fileID)
             .setValue(file)
+    }
+
+
+    fun setMuteImageIcon(uid: String, imageView: ImageView){
+        imageView.visibility = View.GONE
+        ref.notificationMute(uid)
+            .addValueEventListener(object : ValueEventListener {
+                override fun onCancelled(p0: DatabaseError) {
+                }
+
+                override fun onDataChange(p0: DataSnapshot) {
+                    if(p0.exists()){
+                        if(p0.getValue(Boolean::class.java)!!) {
+                            imageView.visibility = View.VISIBLE
+                            return
+                        }
+                    }
+                    imageView.visibility = View.GONE
+
+                }
+            })
     }
 
 }

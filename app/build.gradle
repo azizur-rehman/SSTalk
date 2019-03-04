@@ -32,13 +32,13 @@ dependencies {
     implementation 'com.android.support:appcompat-v7:28.0.0'
     implementation 'com.android.support:design:28.0.0'
     implementation 'com.android.support.constraint:constraint-layout:1.1.3'
-    implementation 'com.google.firebase:firebase-core:16.0.6'
+    implementation 'com.google.firebase:firebase-core:16.0.7'
     implementation 'com.github.stfalcon:chatkit:0.3.3'
-    implementation 'com.google.firebase:firebase-messaging:17.3.4'
+    implementation 'com.google.firebase:firebase-messaging:17.4.0'
     implementation 'com.google.firebase:firebase-auth:16.1.0'
-    implementation 'com.google.firebase:firebase-database:16.0.6'
-    implementation 'com.google.firebase:firebase-firestore:18.0.0'
-    implementation 'com.google.firebase:firebase-storage:16.0.5'
+    implementation 'com.google.firebase:firebase-database:16.1.0'
+    implementation 'com.google.firebase:firebase-firestore:18.1.0'
+    implementation 'com.google.firebase:firebase-storage:16.1.0'
     // FirebaseUI for Firebase Realtime Database
     implementation 'com.firebaseui:firebase-ui-database:4.3.0'
     implementation 'com.android.support:multidex:1.0.3'
@@ -49,8 +49,8 @@ dependencies {
 
     implementation 'de.hdodenhof:circleimageview:3.0.0'
     implementation 'com.squareup.picasso:picasso:2.71828'
-    implementation 'com.github.bumptech.glide:glide:4.8.0'
-    annotationProcessor 'com.github.bumptech.glide:compiler:4.8.0'
+    implementation 'com.github.bumptech.glide:glide:4.9.0'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.9.0'
 
     //for image compression
     implementation 'me.shaohui.advancedluban:library:1.3.5'
@@ -58,7 +58,7 @@ dependencies {
     implementation 'com.nex3z:notification-badge:1.0.2'
 
     implementation 'com.google.android.gms:play-services-location:16.0.0'
-    implementation 'com.google.android.gms:play-services-maps:16.0.0'
+    implementation 'com.google.android.gms:play-services-maps:16.1.0'
 
     implementation('com.github.ozodrukh:CircularReveal:1.3.1@aar') {
         transitive = true
@@ -72,5 +72,9 @@ dependencies {
     implementation 'com.skyline.widget:round-corner-layout:1.0.1'
 
     implementation 'com.hbb20:ccp:2.2.4'
+
+    implementation "org.jetbrains.anko:anko-commons:0.10.4"
+
+    implementation 'com.github.medyo:android-about-page:1.2.5'
 
 }

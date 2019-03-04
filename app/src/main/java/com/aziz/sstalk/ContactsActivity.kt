@@ -20,7 +20,11 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import kotlinx.android.synthetic.main.contact_screen.*
-import kotlinx.android.synthetic.main.item_contact_list.view.*
+import kotlinx.android.synthetic.main.item_conversation_layout.view.*
+import org.jetbrains.anko.doAsyncResult
+import org.jetbrains.anko.onComplete
+import org.jetbrains.anko.uiThread
+import java.util.concurrent.Future
 
 class ContactsActivity : AppCompatActivity(){
 
@@ -29,6 +33,7 @@ class ContactsActivity : AppCompatActivity(){
     var registeredAvailableUser:MutableList<Models.Contact> = mutableListOf()
 
     var isForSelection = false
+    private var asyncLoader: Future<Unit>? = null
 
 
 
@@ -38,23 +43,38 @@ class ContactsActivity : AppCompatActivity(){
         setContentView(R.layout.contact_screen)
 
         contacts_list.layoutManager = LinearLayoutManager(this@ContactsActivity)
-//        contacts_list.addItemDecoration(DividerItemDecoration(this, DividerItemDecoration.VERTICAL))
+
         isForSelection = intent.getBooleanExtra(utils.constants.KEY_IS_FOR_SELECTION, false)
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        asyncLoader = doAsyncResult {
 
-                if(ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED)
-                    requestPermissions(arrayOf(Manifest.permission.READ_CONTACTS), 101)
+            uiThread {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+
+                    if(ActivityCompat.checkSelfPermission(this@ContactsActivity, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED)
+                        requestPermissions(arrayOf(Manifest.permission.READ_CONTACTS), 101)
+                    else
+                        loadRegisteredUsers()
+
+                }
                 else
                     loadRegisteredUsers()
-
-                return
             }
 
-        loadRegisteredUsers()
+            onComplete { contact_progressbar.visibility = View.GONE  }
+        }
+
+
+
+
 
     }
 
+
+    override fun onDestroy() {
+        asyncLoader?.cancel(true)
+        super.onDestroy()
+    }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
 
@@ -74,6 +94,7 @@ class ContactsActivity : AppCompatActivity(){
 
 
     private fun loadRegisteredUsers(){
+
 
 
 
@@ -119,6 +140,7 @@ class ContactsActivity : AppCompatActivity(){
                     registeredAvailableUser.add(Models.Contact("Invite Users"))
 
                     adapter.notifyDataSetChanged()
+                    contact_progressbar.visibility = View.GONE
 
 
                 }
@@ -135,7 +157,7 @@ class ContactsActivity : AppCompatActivity(){
     val adapter = object : RecyclerView.Adapter<ViewHolder>() {
 
         override fun onCreateViewHolder(p0: ViewGroup, p1: Int): ViewHolder
-                = ViewHolder(layoutInflater.inflate(R.layout.item_contact_list, p0, false))
+                = ViewHolder(layoutInflater.inflate(R.layout.item_conversation_layout, p0, false))
 
         override fun getItemCount(): Int = registeredAvailableUser.size
 
