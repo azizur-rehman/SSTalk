@@ -216,7 +216,7 @@ class MessagingService: FirebaseMessagingService() {
                                                 .setBigContentTitle(title)
                                                 .bigText("Tap to Read"))
                                                 .setDefaults(Notification.DEFAULT_LIGHTS)
-                                                .setSmallIcon(R.mipmap.ic_launcher_round)
+                                                .setSmallIcon(R.mipmap.ic_launcher)
                                                 .setColor(ContextCompat.getColor(this@MessagingService, R.color.colorPrimary))
                                                 .setLargeIcon((BitmapFactory.decodeResource(resources, R.mipmap.ic_launcher)))
                                                 .setContentIntent(PendingIntent.getActivity(this@MessagingService, NotificationDetail.MUlTIPLE_ID, intent, 0))
