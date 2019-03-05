@@ -29,13 +29,27 @@
                                           </PersistentState>
                                         </value>
                                       </entry>
+                                      <entry key="image">
+                                        <value>
+                                          <PersistentState>
+                                            <option name="values">
+                                              <map>
+                                                <entry key="color" value="000000" />
+                                                <entry key="paddingPercent" value="-10" />
+                                              </map>
+                                            </option>
+                                          </PersistentState>
+                                        </value>
+                                      </entry>
                                     </map>
                                   </option>
                                   <option name="values">
                                     <map>
-                                      <entry key="outputName" value="ic_location" />
+                                      <entry key="assetType" value="IMAGE" />
+                                      <entry key="imageAsset" value="$USER_HOME$/Pictures/ic_mute_light_2.png" />
+                                      <entry key="outputName" value="ic_mute_green" />
                                       <entry key="theme" value="CUSTOM" />
-                                      <entry key="themeColor" value="2bbd17" />
+                                      <entry key="themeColor" value="38be55" />
                                     </map>
                                   </option>
                                 </PersistentState>
@@ -62,7 +76,7 @@
                                   </option>
                                   <option name="values">
                                     <map>
-                                      <entry key="foregroundImage" value="C:\Users\Shanu\Desktop\SS Talk\app_icon.png" />
+                                      <entry key="foregroundImage" value="$USER_HOME$/C:\Users\Shanu\Desktop\SS Talk\app_icon.png" />
                                     </map>
                                   </option>
                                 </PersistentState>
@@ -102,7 +116,7 @@
                                     <map>
                                       <entry key="assetType" value="IMAGE" />
                                       <entry key="iconShape" value="CIRCLE" />
-                                      <entry key="imageAsset" value="C:\Users\Shanu\Desktop\SS Talk\app_icon2.png" />
+                                      <entry key="imageAsset" value="$USER_HOME$/C:\Users\Shanu\Desktop\SS Talk\app_icon2.png" />
                                     </map>
                                   </option>
                                 </PersistentState>
@@ -133,7 +147,7 @@
                         </option>
                         <option name="values">
                           <map>
-                            <entry key="outputIconType" value="LAUNCHER_LEGACY" />
+                            <entry key="outputIconType" value="ACTIONBAR" />
                           </map>
                         </option>
                       </PersistentState>

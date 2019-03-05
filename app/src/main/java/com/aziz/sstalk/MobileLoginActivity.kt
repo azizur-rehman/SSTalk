@@ -7,14 +7,18 @@ import com.aziz.sstalk.fragments.FragmentOTP
 import com.aziz.sstalk.utils.utils
 import com.hbb20.CountryCodePicker
 import kotlinx.android.synthetic.main.input_phone.*
+import org.jetbrains.anko.alert
 
 class MobileLoginActivity : AppCompatActivity() {
 
+
+    private var fragmentOTP: FragmentOTP? = null
+
     object KEY {
-        val PHONE = "phone"
-        val COUNTRY = "country"
-        val COUNTRY_CODE = "countryCode"
-        val COUNTRY_LOCALE_CODE = "locale"
+        const val PHONE = "phone"
+        const val COUNTRY = "country"
+        const val COUNTRY_CODE = "countryCode"
+        const val COUNTRY_LOCALE_CODE = "locale"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -32,8 +36,7 @@ class MobileLoginActivity : AppCompatActivity() {
             }
 
 
-            utils.toast(this, "Generating OTP")
-            val fragmentOTP = FragmentOTP()
+            fragmentOTP = FragmentOTP()
             val bundle = Bundle()
             val countryCode = country_picker.selectedCountryCode
             val countryName = country_picker.selectedCountryName
@@ -47,13 +50,33 @@ class MobileLoginActivity : AppCompatActivity() {
 
 
 
-            fragmentOTP.arguments = bundle
+            fragmentOTP?.arguments = bundle
 
             Log.d("MobileLoginActivity", "onCreate: bundle = ${bundle.toString()}")
 
-            supportFragmentManager.beginTransaction()
-                .replace(R.id.container, fragmentOTP)
-                .commit()
+
+            alert {
+                message = "Is ${country_picker.fullNumberWithPlus} your phone number?"
+                positiveButton("Yes"){
+                    supportFragmentManager.beginTransaction()
+                        .replace(R.id.container, fragmentOTP!!)
+                        .commit()
+            }
+            negativeButton("No"){
+
+            }
+
+            }.show()
+
+
         }
     }
+
+
+    override fun onBackPressed() {
+
+        if(!supportFragmentManager.fragments.contains(fragmentOTP))
+            super.onBackPressed()
+    }
+
 }

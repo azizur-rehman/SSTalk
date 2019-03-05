@@ -37,12 +37,16 @@ class EditProfile : AppCompatActivity() {
     var isProfileChanged = false
     lateinit var bitmap:Bitmap
     lateinit var imageFile:File
+    var isForAccountCreation = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_edit_profile)
 
-        if(supportActionBar!=null)
+
+        isForAccountCreation = intent.getBooleanExtra(utils.constants.KEY_IS_ON_ACCOUNT_CREATION, false)
+
+        if(supportActionBar!=null && !isForAccountCreation)
             supportActionBar!!.setDisplayHomeAsUpEnabled(true)
 
         title = "My Profile"
@@ -53,7 +57,19 @@ class EditProfile : AppCompatActivity() {
 
         profile_pick_btn.setOnClickListener { ImagePicker.pickImage(context) }
 
+        if(FirebaseUtils.isLoggedIn()) {
+            val name = FirebaseAuth.getInstance().currentUser!!.displayName!!
+            profile_name.setText(name)
+        }
+
         updateProfileBtn.setOnClickListener {
+
+            if(profile_name.text.isEmpty()){
+                profile_name.error = "Cannot be empty"
+                return@setOnClickListener
+            }
+
+
             if(isProfileChanged) {
 
                 val storageRef = FirebaseUtils.ref.profilePicStorageRef(myUID)

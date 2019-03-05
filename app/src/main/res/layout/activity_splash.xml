@@ -14,17 +14,18 @@
                android:layout_weight="1"
                android:layout_height="0dp"
         android:layout_gravity="center"
-    android:src="@mipmap/ic_launcher"
+    android:src="@drawable/app_logo"
     />
 
     <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
     style="@style/TextViewHeading"
               android:textSize="22sp"
               android:gravity="center"
+              android:textStyle="normal"
               android:paddingLeft="10dp"
               android:paddingRight="10dp"
               android:layout_marginBottom="20dp"
-              android:fontFamily="@font/raleway_regular"
+              android:fontFamily="@font/roboto_regular"
               android:textColor="@color/gray_dark"
               android:text="Experience Fast and reliable chat experience"
     />

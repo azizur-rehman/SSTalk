@@ -117,12 +117,9 @@ class ContactsActivity : AppCompatActivity(){
                         val number = utils.getFormattedTenDigitNumber(userModel!!.phone)
                         val uid = userModel.uid
 
-                        Log.d("ContactsActivity", "onDataChange: uid = $uid")
-
-                        Log.d("ContactsActivity", "onDataChange: number = $number")
 
                         for((index, item) in numberList.withIndex()) {
-                            if (item.number == number) {
+                            if (item.number == number || item.number.contains(number)) {
                                 numberList[index].uid = uid
                                 if(uid!=FirebaseUtils.getUid() && !registeredAvailableUser.contains(numberList[index]))
                                 registeredAvailableUser.add(numberList[index])
@@ -216,5 +213,10 @@ class ContactsActivity : AppCompatActivity(){
                 val name = itemView.name
                 val number = itemView.mobile_number
                 val pic = itemView.pic
+                private val time = itemView.messageTime!!
+
+                init {
+                    time.visibility = View.GONE
+                }
             }
 }

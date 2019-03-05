@@ -71,7 +71,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="@color/black"
-                android:fontFamily="@font/calibri"
+                android:fontFamily="@font/roboto_regular"
                 android:text="User name"
                 android:textSize="16sp" />
 
@@ -79,13 +79,14 @@
             <LinearLayout android:layout_width="match_parent"
                           android:orientation="horizontal"
                           android:layout_marginTop="5dp"
+                          android:gravity="center"
                           android:layout_height="wrap_content">
 
-                <ImageView android:layout_width="10dp"
+                <ImageView android:layout_width="12dp"
                            android:scaleType="centerInside"
-                           android:layout_height="10dp"
-                           android:visibility="gone"
+                           android:layout_height="12dp"
                            android:layout_marginRight="5dp"
+                           android:visibility="gone"
                            android:id="@+id/delivery_status_last_msg"
                            android:src="@drawable/ic_message_pending_gray_24dp"
                            android:layout_gravity="center"
@@ -101,7 +102,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:text="Phone no."
-                android:fontFamily="@font/calibri"
+                android:fontFamily="@font/roboto_light"
                 android:textSize="14sp" />
 
             </LinearLayout>
@@ -125,8 +126,7 @@
                       android:layout_height="wrap_content"
                       android:gravity="center"
                       android:id="@+id/messageTime"
-                      android:visibility="gone"
-                      android:fontFamily="@font/lato_light"
+                      android:fontFamily="@font/roboto_thin"
                         android:text="12:00 PM"
                       android:textSize="12sp"
             />
@@ -141,7 +141,8 @@
                 <ImageView android:layout_width="24dp"
                            android:layout_height="24dp"
                            android:visibility="gone"
-                           android:src="@drawable/ic_mute_light"
+                           android:scaleType="fitXY"
+                           android:src="@drawable/ic_mute_green"
                            android:tint="@color/colorPrimaryDark"
                            android:id="@+id/conversation_mute_icon"
                 />

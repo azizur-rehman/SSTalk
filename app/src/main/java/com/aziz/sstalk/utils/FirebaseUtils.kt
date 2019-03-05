@@ -26,6 +26,7 @@ import com.squareup.picasso.Callback
 import com.squareup.picasso.MemoryPolicy
 import java.io.File
 import java.lang.Exception
+import java.util.*
 
 
 object FirebaseUtils {
@@ -447,7 +448,6 @@ object FirebaseUtils {
 
                 override fun onDataChange(p0: DataSnapshot) {
 
-//                    Log.d("FirebaseUtils", "onDataChange: unread count = ${p0.childrenCount}")
 
                     if(p0.childrenCount.toInt() == 0) {
                         notificationBadge.visibility = View.GONE
@@ -458,6 +458,9 @@ object FirebaseUtils {
                         boldTextViews.forEach {
                             it.setTypeface(null, Typeface.BOLD)
                         }
+
+                        //setting current message to delivered if haven't
+                        p0.ref.child("delivered").setValue(true)
 
                         notificationBadge.visibility = View.VISIBLE
                         notificationBadge.setNumber(p0.childrenCount.toInt(), true)
@@ -497,13 +500,16 @@ object FirebaseUtils {
                 override fun onDataChange(p0: DataSnapshot) {
 
 
+                    val isForConversation = (messageStatusImageView.id == R.id.delivery_status_last_msg)
+
                     if(p0.exists()){
-                        if(p0.getValue(Models.MessageStatus::class.java)!!.read)
-                            messageStatusImageView.setImageResource(R.drawable.ic_read_round)
-                        else if(p0.getValue(Models.MessageStatus::class.java)!!.delivered)
-                            messageStatusImageView.setImageResource(R.drawable.ic_delivered_round)
-                        else
-                            messageStatusImageView.setImageResource(R.drawable.ic_sent_round)
+                        when {
+                            p0.getValue(Models.MessageStatus::class.java)!!.read ->
+                                messageStatusImageView.setImageResource(if(isForConversation) R.drawable.ic_read_green else R.drawable.ic_read_round)
+                            p0.getValue(Models.MessageStatus::class.java)!!.delivered ->
+                                messageStatusImageView.setImageResource(if(isForConversation) R.drawable.ic_delivered_tick else R.drawable.ic_delivered_round)
+                            else -> messageStatusImageView.setImageResource(if(isForConversation) R.drawable.ic_tick_sent_grey_24dp else R.drawable.ic_sent_round)
+                        }
 
                     }
                     else{
@@ -585,7 +591,19 @@ object FirebaseUtils {
                             null, null,null)
                     }
                     else{
-                        textView.text = "last seen at ${utils.getLocalTime(userStatus.timeInMillis)}"
+                        val time = utils.getLocalTime(userStatus.timeInMillis)
+                        var timeString = time
+
+                        timeString = if(DateFormatter.isYesterday(Date(userStatus.timeInMillis)))
+                            "on Yesterday $time"
+                        else if(DateFormatter.isToday(Date(userStatus.timeInMillis)))
+                            "at $time"
+                        else if(DateFormatter.isCurrentYear(Date(userStatus.timeInMillis)))
+                            "on "+utils.getLocalDate(userStatus.timeInMillis)
+                        else
+                            "on "+utils.getLocalDateWithYear(userStatus.timeInMillis)
+
+                        textView.text = "last seen $timeString"
                     }
                 }
             })

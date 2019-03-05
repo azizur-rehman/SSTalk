@@ -52,6 +52,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         mMap.isMyLocationEnabled = true
         mMap.uiSettings.isMyLocationButtonEnabled = false
+
         mMap.uiSettings.setAllGesturesEnabled(true)
 
         LocationServices.getFusedLocationProviderClient(this@MapsActivity)

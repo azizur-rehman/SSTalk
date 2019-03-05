@@ -89,11 +89,12 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             uiThread {
                 nav_view.setNavigationItemSelectedListener(this@HomeActivity )
 
-                hasPermission = utils.hasContactPermission(this@HomeActivity)
+                hasPermission = utils.hasContactPermission(this@HomeActivity) && utils.hasStoragePermission(context)
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     if(!hasPermission) {
-                        requestPermissions(arrayOf(Manifest.permission.READ_CONTACTS), 101)
+                        requestPermissions(arrayOf(Manifest.permission.READ_CONTACTS, Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                            Manifest.permission.READ_EXTERNAL_STORAGE), 101)
                     }
                     else
                         setAdapter()
@@ -136,7 +137,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             101 -> {
                 hasPermission = grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults.isNotEmpty()
 
-                if(hasPermission)
+                if(hasPermission && utils.hasStoragePermission(context))
                     //reset the adapter
                     setAdapter()
             }
@@ -170,6 +171,10 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
             R.id.nav_share -> {
                 utils.shareInviteText(context)
+            }
+
+            R.id.nav_about -> {
+                startActivity(Intent(this@HomeActivity, AboutTheDeveloperActivity::class.java))
             }
 
         }

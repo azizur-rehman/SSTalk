@@ -197,6 +197,17 @@ object utils {
         return sdf.format(calendar.time)
     }
 
+    fun getLocalDateWithYear(timeInMillis: Long): String{
+
+        val calendar = Calendar.getInstance()
+        calendar.timeInMillis = timeInMillis
+        val sdf = SimpleDateFormat("MMM dd yyyy")
+
+        sdf.timeZone = TimeZone.getDefault()
+
+        return sdf.format(calendar.time)
+    }
+
     fun getUtcTimeFromMillis(timeInMillis:Long) : String{
 
         val calendar = Calendar.getInstance()

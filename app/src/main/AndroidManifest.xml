@@ -23,7 +23,7 @@
             android:supportsRtl="true"
             android:theme="@style/AppTheme"
             tools:ignore="GoogleAppIndexingWarning">
-        <activity android:name=".SplashActivity">
+        <activity android:name=".SplashActivity" android:theme="@style/AppTheme.NoActionBar">
             <!--<intent-filter>-->
                 <!--<action android:name="android.intent.action.MAIN"/>-->
 
@@ -133,6 +133,9 @@
                 android:name=".ImagePreviewActivity"
                 android:theme="@style/AppTheme.NoActionBar">
         </activity>
+        <activity android:name=".AboutTheDeveloperActivity"
+        android:theme="@style/AppTheme.NoActionBar"
+        />
 
         <service android:name=".firebase.MessagingService">
             <intent-filter>

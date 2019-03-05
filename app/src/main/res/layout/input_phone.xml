@@ -1,43 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#ffffff">
 
-    <android.support.design.widget.AppBarLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@null"
-        android:theme="@style/AppTheme.AppBarOverlay"
-        app:elevation="0dp">
-
-        <android.support.v7.widget.Toolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            app:popupTheme="@style/AppTheme.PopupOverlay"
-            app:theme="@style/AppTheme.NoActionBar" />
-
-    </android.support.design.widget.AppBarLayout>
 
 
     <FrameLayout android:layout_width="match_parent"
                  android:id="@+id/container"
-                 android:layout_height="wrap_content">
+                 android:layout_gravity="center"
+                 android:layout_height="match_parent">
 
 
         <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginTop="-16dp"
+        android:layout_height="wrap_content"
         android:orientation="vertical"
+        android:layout_gravity="center"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="match_parent">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -58,10 +44,10 @@
                     android:layout_marginBottom="8dp"
                     android:layout_marginTop="16dp"
                     android:fontFamily="@font/gotham"
-                    android:text="OTP Verification"
+                    android:text="Connect with your phone"
                     android:textAlignment="center"
                     android:textColor="#000000"
-                    android:textSize="28sp"
+                    android:textSize="24sp"
                     android:textStyle="bold" />
 
                 <TextView
@@ -81,7 +67,7 @@
                     android:layout_marginBottom="16dp"
                     android:layout_marginTop="16dp"
                     android:fontFamily="@font/gotham"
-                    android:text="Enter Mobile Number"
+                    android:text="Enter your Mobile Number"
                     android:textAlignment="center"
                     android:textColor="#a3a3a3"
                     android:textSize="16sp" />
@@ -148,7 +134,7 @@
                     android:layout_marginTop="24dp"
                     style="@style/RoundButton"
                     android:fontFamily="@font/gotham"
-                    android:text="Generate OTP"
+                    android:text="Continue"
                     android:textAllCaps="false"
                     android:textColor="#ffffff"
                     android:textSize="16sp" />
@@ -167,4 +153,4 @@
 
 
     </FrameLayout>
-</android.support.design.widget.CoordinatorLayout>
+</LinearLayout>

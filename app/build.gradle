@@ -7,7 +7,10 @@ apply plugin: 'kotlin-android-extensions'
 apply plugin: 'com.google.gms.google-services'
 
 android {
+    signingConfigs {
+    }
     compileSdkVersion 28
+    flavorDimensions "versionCode"
     defaultConfig {
         applicationId "com.aziz.sstalk"
         minSdkVersion 16
@@ -22,6 +25,8 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+    }
+    productFlavors {
     }
 }
 
@@ -44,37 +49,26 @@ dependencies {
     implementation 'com.android.support:multidex:1.0.3'
     implementation 'com.chaos.view:pinview:1.4.2'
     implementation 'com.github.Mariovc:ImagePicker:1.2.2'
-
     implementation 'com.vincent.filepicker:MultiTypeFilePicker:1.0.8'
-
     implementation 'de.hdodenhof:circleimageview:3.0.0'
     implementation 'com.squareup.picasso:picasso:2.71828'
-    implementation 'com.github.bumptech.glide:glide:4.9.0'
-    annotationProcessor 'com.github.bumptech.glide:compiler:4.9.0'
+    // do not update this library or else file picker library will crash
+    implementation 'com.github.bumptech.glide:glide:4.8.0'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.8.0'
 
     //for image compression
     implementation 'me.shaohui.advancedluban:library:1.3.5'
-
     implementation 'com.nex3z:notification-badge:1.0.2'
-
     implementation 'com.google.android.gms:play-services-location:16.0.0'
     implementation 'com.google.android.gms:play-services-maps:16.1.0'
-
     implementation('com.github.ozodrukh:CircularReveal:1.3.1@aar') {
         transitive = true
     }
-
     implementation 'com.mikhaellopez:circularprogressbar:2.0.0'
     implementation 'com.android.support:support-emoji-bundled:28.0.0'
-
     implementation 'com.github.lguipeng:AnimCheckBox:1.0.1'
-
     implementation 'com.skyline.widget:round-corner-layout:1.0.1'
-
     implementation 'com.hbb20:ccp:2.2.4'
-
-    implementation "org.jetbrains.anko:anko-commons:0.10.4"
-
+    implementation 'org.jetbrains.anko:anko-commons:0.10.4'
     implementation 'com.github.medyo:android-about-page:1.2.5'
-
 }
