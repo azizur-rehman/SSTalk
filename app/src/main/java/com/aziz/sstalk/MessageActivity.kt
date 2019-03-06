@@ -32,6 +32,7 @@ import android.view.MenuItem
 import android.view.*
 import android.view.ViewGroup
 import android.support.v7.widget.SearchView
+import android.view.animation.AnimationUtils
 import android.widget.*
 import com.aziz.sstalk.firebase.MessagingService
 import com.aziz.sstalk.models.Models
@@ -981,11 +982,9 @@ class MessageActivity : AppCompatActivity() {
                 messageTextView.setLinkTextColor(Color.RED)
 
                 //set date Header
-                when {
-                    DateFormatter.isToday(date) -> dateHeader!!.text ="Today"
-                    DateFormatter.isYesterday(date) -> dateHeader!!.text ="Yesterday"
-                    else -> dateHeader!!.text = utils.getLocalDate(model.timeInMillis)
-                }
+
+                dateHeader!!.text = utils.getHeaderFormattedDate(model.timeInMillis)
+
                 if(position>0){
 
                     val previousDate = Date(snapshots[position - 1].timeInMillis)
@@ -2395,8 +2394,7 @@ class MessageActivity : AppCompatActivity() {
     private fun setScrollingListener(){
 
         bottomScrollButton.hide()
-
-//        findIndexOfFirstUnreadMessage()
+        dateStickyHeader.visibility = View.INVISIBLE
 
         unreadCount.visibility = View.GONE
         Handler().postDelayed({
@@ -2404,7 +2402,7 @@ class MessageActivity : AppCompatActivity() {
         },2000)
 
 
-        val layoutManager = messagesList.layoutManager as LinearLayoutManager
+        var layoutManager = messagesList.layoutManager as LinearLayoutManager
 
         val textView = TextView(this)
         textView.text = "Sample text"
@@ -2418,6 +2416,24 @@ class MessageActivity : AppCompatActivity() {
         messagesList.setOnScrollListener(object : RecyclerView.OnScrollListener() {
 
 
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+
+
+                if(newState == RecyclerView.SCROLL_STATE_IDLE || newState == RecyclerView.SCROLL_STATE_SETTLING) {
+
+                    if(dateStickyHeader.visibility == View.VISIBLE)
+                    Handler().postDelayed({
+                        runOnUiThread {
+                            dateStickyHeader.visibility = View.GONE }
+                    },1500)
+                }
+
+                if(newState == RecyclerView.SCROLL_STATE_DRAGGING){
+                    dateStickyHeader.visibility = View.VISIBLE
+                }
+
+                super.onScrollStateChanged(recyclerView, newState)
+            }
 
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
 
@@ -2425,6 +2441,15 @@ class MessageActivity : AppCompatActivity() {
                     bottomScrollButton.hide()
                 else if(adapter.itemCount > 5)
                     bottomScrollButton.show()
+
+                if(layoutManager.findFirstVisibleItemPosition() <= 1) {
+                    dateStickyHeader.visibility = View.GONE
+                    return
+                }
+
+                dateStickyHeader.text = utils.getHeaderFormattedDate(adapter.getItem(layoutManager.findFirstVisibleItemPosition())
+                    .timeInMillis)
+
 
 
 
@@ -2441,13 +2466,14 @@ class MessageActivity : AppCompatActivity() {
         AlertDialog.Builder(context)
             .setMessage("Delete selected messages?")
             .setPositiveButton("Yes") { _, _ ->
+                actionMode!!.finish()
                 for ((index, itemPosition) in selectedItemPosition.withIndex()) {
                     FirebaseUtils.ref.getChatRef(myUID, targetUid)
                         .child(adapter.getRef(itemPosition).key.toString())
                         .removeValue()
                         .addOnCompleteListener {
                             if (index == selectedItemPosition.lastIndex) {
-                                actionMode!!.finish()
+                                toast("Message deleted")
                             }
                         }
                 }

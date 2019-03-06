@@ -108,6 +108,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             if(!enable_address_checkbox.isChecked)
                 address = ""
 
+
+
             setResult(Activity.RESULT_OK, intent.putExtra(utils.constants.KEY_LATITUDE, latitude)
                 .putExtra(utils.constants.KEY_LONGITUDE, longitude)
                 .putExtra(utils.constants.KEY_ADDRESS, address)
@@ -125,7 +127,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
 
-    fun loadLocation(latLng: LatLng){
+    private fun loadLocation(latLng: LatLng){
 
         currentLatLng = latLng
 
@@ -138,7 +140,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             .draggable(true)
         )
 
-        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 12f))
+            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 13f))
 
     }
 

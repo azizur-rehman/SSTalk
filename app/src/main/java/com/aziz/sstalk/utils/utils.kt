@@ -34,6 +34,7 @@ import android.view.View
 import android.view.ViewAnimationUtils
 import android.view.WindowManager
 import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.TranslateAnimation
 import android.view.inputmethod.InputMethodManager
 import android.webkit.MimeTypeMap
 import android.widget.ImageView
@@ -206,6 +207,17 @@ object utils {
         sdf.timeZone = TimeZone.getDefault()
 
         return sdf.format(calendar.time)
+    }
+
+
+    fun getHeaderFormattedDate(timeInMillis: Long): String{
+       return when{
+            DateFormatter.isToday(Date(timeInMillis)) -> "Today"
+           DateFormatter.isYesterday(Date(timeInMillis)) -> "Yesterday"
+           DateFormatter.isCurrentYear(Date(timeInMillis)) -> getLocalDate(timeInMillis)
+           else -> getLocalDateWithYear(timeInMillis)
+
+        }
     }
 
     fun getUtcTimeFromMillis(timeInMillis:Long) : String{
@@ -767,4 +779,30 @@ object utils {
         }
     }
 
+
+    // slide the view from below itself to the current position
+    fun slideUp(view:View){
+        view.visibility = View.VISIBLE
+        val animate = TranslateAnimation(
+                0f,                 // fromXDelta
+                0f,                 // toXDelta
+            view.height.toFloat(),  // fromYDelta
+                0f)                // toYDelta
+        animate.duration = 500
+        animate.fillAfter = false
+        view.startAnimation(animate)
+    }
+
+    // slide the view from its current position to below itself
+    fun slideDown(view:View){
+        val animate =  TranslateAnimation(
+                0f,                 // fromXDelta
+                0f,                 // toXDelta
+                0f,                 // fromYDelta
+            view.height.toFloat()
+        ) // toYDelta
+        animate.duration = 500
+        animate.fillAfter = false
+        view.startAnimation(animate)
+    }
 }

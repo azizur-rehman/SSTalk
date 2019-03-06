@@ -62,6 +62,13 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         setContentView(R.layout.activity_home)
         setSupportActionBar(toolbar)
 
+
+//        if(!FirebaseUtils.isLoggedIn()){
+//            startActivity(Intent(context, SplashActivity::class.java))
+//            finish()
+//            return
+//        }
+
         //storing firebase token, if updated
         FirebaseUtils.updateFCMToken()
 
@@ -213,16 +220,11 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
                 holder.messageInfo.visibility = View.VISIBLE
 
-                holder.time.text = utils.getLocalTime(model.timeInMillis)
                 holder.time.visibility = View.VISIBLE
 
                 //modifying date according to time
-                when {
-                    DateFormatter.isToday(Date(model.timeInMillis)) -> holder.time.text = "Today"
-                    DateFormatter.isYesterday(Date(model.timeInMillis)) -> holder.time.text = "Yesterday"
-                    DateFormatter.isCurrentYear(Date(model.timeInMillis)) -> holder.time.text = utils.getLocalDate(model.timeInMillis)
-                    else -> holder.time.visibility = View.VISIBLE
-                }
+
+                holder.time.text = utils.getHeaderFormattedDate(model.timeInMillis)
 
                 FirebaseUtils.setUnreadCount(uid, holder.unreadCount, holder.name, holder.lastMessage, holder.time)
 
@@ -378,9 +380,12 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     override fun onDestroy() {
-        if(asyncLoader?.isDone!!)
-            asyncLoader?.cancel(true)
+
         try {
+            if(asyncLoader?.isDone!!)
+                asyncLoader?.cancel(true)
+
+
             adapter.stopListening()
             FirebaseUtils.setMeAsOffline()
         }

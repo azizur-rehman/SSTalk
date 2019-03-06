@@ -11,6 +11,7 @@ import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.Log
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import com.aziz.sstalk.models.Models
@@ -64,6 +65,8 @@ class ContactsActivity : AppCompatActivity(){
             onComplete { contact_progressbar.visibility = View.GONE  }
         }
 
+
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
 
 
@@ -149,6 +152,10 @@ class ContactsActivity : AppCompatActivity(){
     }
 
 
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+        finish()
+        return super.onOptionsItemSelected(item)
+    }
 
 
     val adapter = object : RecyclerView.Adapter<ViewHolder>() {
@@ -208,8 +215,7 @@ class ContactsActivity : AppCompatActivity(){
 
     }
 
-
-            class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
+    class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
                 val name = itemView.name
                 val number = itemView.mobile_number
                 val pic = itemView.pic
