@@ -72,6 +72,9 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         //storing firebase token, if updated
         FirebaseUtils.updateFCMToken()
 
+        //check for update
+        FirebaseUtils.checkForUpdate(context)
+
         val toggle = ActionBarDrawerToggle(
             this, drawer_layout, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close
         )

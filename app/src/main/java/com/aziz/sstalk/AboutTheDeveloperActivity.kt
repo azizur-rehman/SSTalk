@@ -3,6 +3,7 @@ package com.aziz.sstalk
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.view.MenuItem
+import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.utils
 import mehdi.sakout.aboutpage.AboutPage
 import mehdi.sakout.aboutpage.Element
@@ -18,13 +19,15 @@ class AboutTheDeveloperActivity : AppCompatActivity(){
             .isRTL(false)
             .setImage(R.mipmap.ic_launcher)
             .setDescription("SS Talk\n\nAn Open Source Chat Project for Android")
-            .addItem(Element("Version "+BuildConfig.VERSION_NAME,R.mipmap.ic_launcher).setOnClickListener { browse(utils.constants.APP_SHORT_LINK) })
+            .addItem(Element("Version "+BuildConfig.VERSION_NAME,R.mipmap.ic_launcher))
             .addGroup("Connect with us")
             .addEmail("azizur.rehman007@gmail.com")
             .addWebsite("https://azizur-rehman.github.io/", "Visit my website")
             .addFacebook("shanu.siddiqui.568","Connect on Facebook")
             .addPlayStore(BuildConfig.APPLICATION_ID)
             .addGitHub("azizur-rehman")
+            .addItem(Element("Check for update",R.mipmap.ic_launcher).setOnClickListener
+            { FirebaseUtils.checkForUpdate(this@AboutTheDeveloperActivity) })
             .create()
 
         setContentView(aboutView)

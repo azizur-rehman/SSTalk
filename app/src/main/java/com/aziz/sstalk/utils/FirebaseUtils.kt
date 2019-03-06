@@ -24,6 +24,9 @@ import com.google.firebase.storage.StorageReference
 import com.nex3z.notificationbadge.NotificationBadge
 import com.squareup.picasso.Callback
 import com.squareup.picasso.MemoryPolicy
+import org.jetbrains.anko.alert
+import org.jetbrains.anko.browse
+import org.jetbrains.anko.toast
 import java.io.File
 import java.lang.Exception
 import java.util.*
@@ -692,6 +695,46 @@ object FirebaseUtils {
 
                 }
             })
+    }
+
+
+
+    fun checkForUpdate(context: Context){
+        val key_app_code = "App_Version_Code"
+
+        //this will return an int
+        FirebaseDatabase.getInstance().getReference(key_app_code)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onCancelled(p0: DatabaseError) {
+                }
+
+                override fun onDataChange(p0: DataSnapshot) {
+
+                    val versionCode = p0.getValue(Int::class.java)!!
+                    Log.d("FirebaseUtils", "onDataChange: current version = ${com.aziz.sstalk.BuildConfig.VERSION_CODE}")
+                    Log.d("FirebaseUtils", "onDataChange: available version = $versionCode")
+
+                    if(versionCode > com.aziz.sstalk.BuildConfig.VERSION_CODE){
+                        //show update dialog
+                        context.alert {
+                            positiveButton("Yes"){
+                                context.browse(utils.constants.APP_LINK)
+                            }
+                            negativeButton("No"){
+                            }
+                            title = "Update available"
+                            message = "A New update has been available for SS Talk"
+                            isCancelable = false
+                        }
+                            .show()
+                    }
+                    else{
+                        context.toast("No update available")
+                    }
+
+                }
+            })
+
     }
 
 }
