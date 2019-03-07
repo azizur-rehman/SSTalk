@@ -170,6 +170,11 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         // Handle navigation view item clicks here.
         when (item.itemId) {
+
+            R.id.nav_create_group -> {
+                startActivity(Intent(context, CreateGroupActivity::class.java))
+            }
+
             R.id.nav_my_profile -> {
 
                 startActivity(Intent(context, EditProfile::class.java))

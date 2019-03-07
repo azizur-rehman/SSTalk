@@ -31,7 +31,9 @@ class Models {
                     var countryLocaleCode:String="")
 
 
-    data class LastMessageDetail(var timeInMillis: Long = System.currentTimeMillis(), var reverseTimeStamp: Long = timeInMillis  * -1)
+    data class LastMessageDetail(var timeInMillis: Long = System.currentTimeMillis(),
+                                 var type:String = "", // single or group
+                                 var reverseTimeStamp: Long = timeInMillis  * -1)
 
 
     data class MessageStatus(var from: String = "", var read:Boolean = false, var delivered:Boolean = false, var messageID:String = "",
@@ -49,6 +51,21 @@ class Models {
                     var bucket_path:String = "",
                     var file_url:String = "",
                     var file_extension:String = "")
+
+
+    data class Group(var name:String ="",
+                     var createdOn:Long = System.currentTimeMillis(),
+                     var createdBy:String = "",
+                     var groupID:String = "",
+                     var reverseTimeStamp: Long = createdOn * -1
+                     )
+
+    data class GroupParticipant(var uid:String="",
+                                var addedBy:String = "",
+                                var addedByPhoneNumber:String = "",
+                                var phoneNumber:String = "",
+                                var addedOn:Long = System.currentTimeMillis(),
+                                var reverseTimeStamp: Long = addedOn * -1)
 
 
 }
