@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Parcelable
 import android.support.v4.app.ActivityCompat
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
@@ -32,6 +33,7 @@ import org.jetbrains.anko.alert
 import org.jetbrains.anko.doAsyncResult
 import org.jetbrains.anko.onComplete
 import org.jetbrains.anko.uiThread
+import java.io.Serializable
 import java.util.concurrent.Future
 
 class MultiContactChooserActivity : AppCompatActivity(){
@@ -147,6 +149,7 @@ class MultiContactChooserActivity : AppCompatActivity(){
 
                     }
 
+
                     contacts_list.adapter = adapter
                     participant_recyclerview.adapter = horizontalAdapter
 
@@ -167,6 +170,12 @@ class MultiContactChooserActivity : AppCompatActivity(){
         if(item?.itemId == R.id.action_confirm)
         {
 
+            val selectedUIDs:MutableList<String> = ArrayList()
+            selectedUsers.forEach { selectedUIDs.add(it.uid) }
+
+            setResult(Activity.RESULT_OK, intent.putParcelableArrayListExtra(utils.constants.KEY_SELECTED,
+                selectedUsers as java.util.ArrayList<out Parcelable>))
+            finish()
         }
         else
         finish()
@@ -197,15 +206,16 @@ class MultiContactChooserActivity : AppCompatActivity(){
 
                 if(holder.checkBox.isChecked) {
                     selectedUsers.add(registeredAvailableUser[holder.adapterPosition])
-                    horizontalAdapter.notifyItemInserted(holder.adapterPosition)
+                    horizontalAdapter.notifyItemInserted(selectedUsers.lastIndex)
 
                 }else {
                     selectedUsers.remove(registeredAvailableUser[holder.adapterPosition])
-                    horizontalAdapter.notifyItemRemoved(holder.adapterPosition)
+                    horizontalAdapter.notifyItemRemoved(selectedUsers.lastIndex)
 
                 }
 
-                participant_recyclerview.smoothScrollToPosition(selectedUsers.size - 1)
+                if(selectedUsers.isNotEmpty())
+                participant_recyclerview.smoothScrollToPosition(selectedUsers.lastIndex)
 
             }
 

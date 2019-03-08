@@ -6,7 +6,9 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.provider.ContactsContract
 import android.support.v4.app.ActivityCompat
+import android.support.v4.content.ContextCompat
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
@@ -14,13 +16,16 @@ import android.util.Log
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.utils
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
+import de.hdodenhof.circleimageview.CircleImageView
 import kotlinx.android.synthetic.main.contact_screen.*
+import kotlinx.android.synthetic.main.content_user_profile.*
 import kotlinx.android.synthetic.main.item_conversation_layout.view.*
 import org.jetbrains.anko.doAsyncResult
 import org.jetbrains.anko.onComplete
@@ -138,6 +143,8 @@ class ContactsActivity : AppCompatActivity(){
                         return
 
                     registeredAvailableUser.add(Models.Contact("Invite Users"))
+                    registeredAvailableUser.add(0,Models.Contact("New Contact"))
+                    registeredAvailableUser.add(1,Models.Contact("New Group"))
 
                     adapter.notifyDataSetChanged()
                     contact_progressbar.visibility = View.GONE
@@ -178,11 +185,25 @@ class ContactsActivity : AppCompatActivity(){
             FirebaseUtils.loadProfilePic(this@ContactsActivity, uid, holder.pic)
             holder.pic.setPadding(0,0,0,0)
 
-            if(position == registeredAvailableUser.size - 1) {
-                holder.pic.setImageResource(android.R.drawable.ic_menu_share)
-                holder.pic.setPadding(20,20,20,20)
+            if(position == registeredAvailableUser.size - 1 || position == 0 || position == 1) {
                 holder.number.visibility = View.GONE
                 holder.pic.borderWidth = 0
+            }
+
+            when(position){
+                0 -> {
+                    holder.pic.setImageResource(R.drawable.ic_person_add_white_24dp)
+                    holder.pic.circleBackgroundColor = ContextCompat.getColor(this@ContactsActivity, R.color.colorPrimary)
+                }
+
+                1-> {
+                    holder.pic.setImageResource(R.drawable.ic_group_add_white_24dp)
+                    holder.pic.circleBackgroundColor = ContextCompat.getColor(this@ContactsActivity, R.color.colorPrimary)
+                }
+                registeredAvailableUser.size - 1 -> {
+                    holder.pic.setPadding(20,20,20,20)
+                    holder.pic.setImageResource(android.R.drawable.ic_menu_share)
+                }
             }
 
 
@@ -198,21 +219,45 @@ class ContactsActivity : AppCompatActivity(){
 
 
 
-                if(position != registeredAvailableUser.size - 1){
-
-                    startActivity(Intent(this@ContactsActivity, MessageActivity::class.java).putExtra(FirebaseUtils.KEY_UID, uid))
-                    finish()
-
+                when (position) {
+                    0 -> {
+                        // new contact
+                        val contactIntent = Intent(Intent.ACTION_INSERT)
+                        contactIntent.type = ContactsContract.RawContacts.CONTENT_TYPE
+                        startActivityForResult(contactIntent,1024)
+                    }
+                    1 -> {
+                        //new group
+                        startActivity(Intent(this@ContactsActivity, CreateGroupActivity::class.java))
+                        finish()
+                    }
+                    registeredAvailableUser.size - 1 -> utils.shareInviteText(this@ContactsActivity)
+                    
+                    else -> {
+                        startActivity(Intent(this@ContactsActivity, MessageActivity::class.java)
+                            .putExtra(FirebaseUtils.KEY_UID, uid))
+                        finish()
+                    }
                 }
-                else{
-                    utils.shareInviteText(this@ContactsActivity)
-                }
+
+
             }
 
 
         }
 
 
+    }
+
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+
+        if(resultCode == Activity.RESULT_OK) {
+            Log.d("ContactsActivity", "onActivityResult: ")
+            //refresh list
+            loadRegisteredUsers()
+        }
+        super.onActivityResult(requestCode, resultCode, data)
     }
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView){

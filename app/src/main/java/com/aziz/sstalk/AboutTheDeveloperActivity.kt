@@ -27,7 +27,7 @@ class AboutTheDeveloperActivity : AppCompatActivity(){
             .addPlayStore(BuildConfig.APPLICATION_ID)
             .addGitHub("azizur-rehman")
             .addItem(Element("Check for update",R.mipmap.ic_launcher).setOnClickListener
-            { FirebaseUtils.checkForUpdate(this@AboutTheDeveloperActivity) })
+            { FirebaseUtils.checkForUpdate(this@AboutTheDeveloperActivity, true) })
             .create()
 
         setContentView(aboutView)

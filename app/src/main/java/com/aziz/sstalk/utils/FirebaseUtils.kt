@@ -42,6 +42,8 @@ object FirebaseUtils {
         val NODE_USER_ACTIVITY_STATUS = "User_Status"
         val NODE_TOKEN = "FCM_Tokens"
         val NODE_INDIVIDUAL_NOTIFICATION_SETTING = "Mute_Notification"
+        val NODE_GROUP_INFO = "GroupInfo"
+        val NODE_GROUP_MEMBER = "GroupMember"
 
         val VAL_ONLINE = "Online"
         val VAL_OFFLINE = "Offline"
@@ -60,7 +62,11 @@ object FirebaseUtils {
         val KEY_PROFILE_PIC_URL = "profile_pic_url"
         val KEY_NAME = "name"
 
-        val KEY_BLOCKED = "blocked"
+        val KEY_CONVERSATION_SINGLE = "single"
+        val KEY_CONVERSATION_GROUP = "group"
+
+
+    val KEY_BLOCKED = "blocked"
 
         val KEY_FILE_LOCAL_PATH = "file_local_path"
 
@@ -165,6 +171,13 @@ object FirebaseUtils {
             fun getNotificationMuteRootRef():DatabaseReference =
                 root().child(NODE_INDIVIDUAL_NOTIFICATION_SETTING)
                     .child(FirebaseUtils.getUid())
+
+            fun groupInfo(groupID:String):DatabaseReference =
+                    FirebaseUtils.ref.root().child(NODE_GROUP_INFO).child(groupID)
+
+
+            fun groupMember(groupID:String, uid: String):DatabaseReference =
+                FirebaseUtils.ref.root().child(NODE_GROUP_MEMBER).child(groupID).child(uid)
         }
 
 
@@ -346,6 +359,9 @@ object FirebaseUtils {
     //todo Remove this else condition when production
     //below is the id for my mobile number(Shanu)
     fun getUid() : String = if (isLoggedIn())  FirebaseAuth.getInstance().uid.toString() else utils.constants.debugUserID
+
+    fun getPhoneNumber() : String = if(FirebaseUtils.isLoggedIn()) FirebaseAuth.getInstance().currentUser!!.phoneNumber!! else "1234567890"
+
 
     fun setUserDetailFromUID(context : Context,
             textView: TextView,
@@ -699,7 +715,7 @@ object FirebaseUtils {
 
 
 
-    fun checkForUpdate(context: Context){
+    fun checkForUpdate(context: Context, shouldShowToast:Boolean){
         val key_app_code = "App_Version_Code"
 
         //this will return an int
@@ -728,7 +744,7 @@ object FirebaseUtils {
                         }
                             .show()
                     }
-                    else{
+                    else if(shouldShowToast){
                         context.toast("No update available")
                     }
 

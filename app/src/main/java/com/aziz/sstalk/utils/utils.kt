@@ -70,10 +70,12 @@ object utils {
         const val KEY_CAPTION = "caption"
         const val KEY_LOCAL_PATH = "local_path"
 
+        const val KEY_SELECTED = "selected"
+
         const val KEY_IS_ON_ACCOUNT_CREATION = "on_acc_creation"
         const val KEY_IS_ONCE = "is_once"
 
-        val KEY_IS_FOR_SELECTION = "for_selection"
+        const val KEY_IS_FOR_SELECTION = "for_selection"
 
 
         const val KEY_MSG_MODEL = "msg_model"

@@ -1,7 +1,10 @@
 package com.aziz.sstalk.models
 
+import android.os.Parcelable
+import androidx.versionedparcelable.ParcelField
 import com.aziz.sstalk.utils.FirebaseUtils
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.android.parcel.Parcelize
 import java.io.Serializable
 
 class Models {
@@ -18,7 +21,9 @@ class Models {
                             var file_size_in_bytes:Long = 0,
                             var message_deleted:Boolean = false) : Serializable
 
-    data class Contact(var name:String = "", var number:String = "", var photoURI:String = "" , var uid: String = "")
+    @Parcelize
+    data class Contact(var name:String = "", var number:String = "", var photoURI:String = "" , var uid: String = "") :
+        Parcelable
 
     data class User(var name:String = "",
                     var createdOn:Long = System.currentTimeMillis(),
@@ -32,7 +37,7 @@ class Models {
 
 
     data class LastMessageDetail(var timeInMillis: Long = System.currentTimeMillis(),
-                                 var type:String = "", // single or group
+                                 var type:String = FirebaseUtils.KEY_CONVERSATION_SINGLE, // single or group
                                  var reverseTimeStamp: Long = timeInMillis  * -1)
 
 
@@ -57,13 +62,15 @@ class Models {
                      var createdOn:Long = System.currentTimeMillis(),
                      var createdBy:String = "",
                      var groupID:String = "",
-                     var reverseTimeStamp: Long = createdOn * -1
+                     var reverseTimeStamp: Long = createdOn * -1,
+                     var profile_pic_url: String = ""
                      )
 
-    data class GroupParticipant(var uid:String="",
+    data class GroupMember(var uid:String="",
                                 var addedBy:String = "",
                                 var addedByPhoneNumber:String = "",
                                 var phoneNumber:String = "",
+                                var admin:Boolean = false,
                                 var addedOn:Long = System.currentTimeMillis(),
                                 var reverseTimeStamp: Long = addedOn * -1)
 

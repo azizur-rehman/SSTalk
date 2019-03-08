@@ -28,6 +28,9 @@ android {
     }
     productFlavors {
     }
+    androidExtensions {
+        experimental = true
+    }
 }
 
 dependencies {
