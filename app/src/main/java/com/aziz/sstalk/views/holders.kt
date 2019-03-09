@@ -10,6 +10,7 @@ import kotlinx.android.synthetic.main.bubble_map_right.view.*
 import kotlinx.android.synthetic.main.bubble_right.view.*
 import kotlinx.android.synthetic.main.bubble_video_left.view.*
 import kotlinx.android.synthetic.main.bubble_video_right.view.*
+import kotlinx.android.synthetic.main.text_header.view.*
 
 object holders {
 
@@ -142,6 +143,11 @@ object holders {
         val container = itemView.container_map_right!!
 
 
+    }
+
+
+    class TextHeaderHolder(itemView: View):RecyclerView.ViewHolder(itemView){
+        val text = itemView.header_textView!!
     }
 
 }

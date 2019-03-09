@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.provider.ContactsContract
@@ -16,16 +17,13 @@ import android.util.Log
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.utils
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
-import de.hdodenhof.circleimageview.CircleImageView
 import kotlinx.android.synthetic.main.contact_screen.*
-import kotlinx.android.synthetic.main.content_user_profile.*
 import kotlinx.android.synthetic.main.item_conversation_layout.view.*
 import org.jetbrains.anko.doAsyncResult
 import org.jetbrains.anko.onComplete
@@ -192,7 +190,7 @@ class ContactsActivity : AppCompatActivity(){
 
             when(position){
                 0 -> {
-                    holder.pic.setImageResource(R.drawable.ic_person_add_white_24dp)
+                    holder.pic.setImageResource(R.drawable.ic_person_add_white_padded_24dp)
                     holder.pic.circleBackgroundColor = ContextCompat.getColor(this@ContactsActivity, R.color.colorPrimary)
                 }
 
@@ -200,8 +198,9 @@ class ContactsActivity : AppCompatActivity(){
                     holder.pic.setImageResource(R.drawable.ic_group_add_white_24dp)
                     holder.pic.circleBackgroundColor = ContextCompat.getColor(this@ContactsActivity, R.color.colorPrimary)
                 }
-                registeredAvailableUser.size - 1 -> {
+                registeredAvailableUser.lastIndex -> {
                     holder.pic.setPadding(20,20,20,20)
+                    holder.pic.circleBackgroundColor = Color.TRANSPARENT
                     holder.pic.setImageResource(android.R.drawable.ic_menu_share)
                 }
             }
@@ -231,11 +230,12 @@ class ContactsActivity : AppCompatActivity(){
                         startActivity(Intent(this@ContactsActivity, CreateGroupActivity::class.java))
                         finish()
                     }
-                    registeredAvailableUser.size - 1 -> utils.shareInviteText(this@ContactsActivity)
+                    registeredAvailableUser.lastIndex -> utils.shareInviteText(this@ContactsActivity)
                     
                     else -> {
                         startActivity(Intent(this@ContactsActivity, MessageActivity::class.java)
-                            .putExtra(FirebaseUtils.KEY_UID, uid))
+                            .putExtra(FirebaseUtils.KEY_UID, uid)
+                            .putExtra(utils.constants.KEY_NAME_OR_NUMBER, registeredAvailableUser[position].number)                        )
                         finish()
                     }
                 }

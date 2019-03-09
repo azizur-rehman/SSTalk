@@ -32,7 +32,6 @@ import android.view.MenuItem
 import android.view.*
 import android.view.ViewGroup
 import android.support.v7.widget.SearchView
-import android.view.animation.AnimationUtils
 import android.widget.*
 import com.aziz.sstalk.firebase.MessagingService
 import com.aziz.sstalk.models.Models
@@ -67,7 +66,7 @@ import com.vincent.filepicker.filter.entity.VideoFile
 import kotlinx.android.synthetic.main.activity_message.*
 import kotlinx.android.synthetic.main.layout_attachment_menu.*
 import kotlinx.android.synthetic.main.layout_include_message_activity_toolbar.*
-import kotlinx.android.synthetic.main.unread_header.view.*
+import kotlinx.android.synthetic.main.text_header.view.*
 import me.shaohui.advancedluban.Luban
 import me.shaohui.advancedluban.OnCompressListener
 import org.jetbrains.anko.*
@@ -95,6 +94,8 @@ class MessageActivity : AppCompatActivity() {
     val TYPE_MY_VIDEO = 6
     val TYPE_TARGET_VIDEO = 7
 
+    val TYPE_EVENT = 10
+
 
     val RQ_CAMERA = 100
     val RQ_GALLERY = 101
@@ -110,7 +111,10 @@ class MessageActivity : AppCompatActivity() {
     val RP_INITAL_STORAGE_PERMISSION = 105
 
     var targetUid : String = ""
+    var targetType:String = FirebaseUtils.KEY_CONVERSATION_SINGLE
     var myUID : String = ""
+    var isGroup = false
+    var nameOrNumber = ""
 
     var imageFile:File? = null
      var cameraImagePath  = ""
@@ -127,18 +131,11 @@ class MessageActivity : AppCompatActivity() {
     val context = this@MessageActivity
     var loadedPosition:HashMap<Int,Boolean> = HashMap()
 
-    var myLastMessagePosition = 0
-
-    var selectedMessageIDs:MutableList<String> = ArrayList()
     var selectedMessageModel:MutableList<Models.MessageModel> = ArrayList()
-    var selectedItemViews:MutableList<View> = ArrayList()
     val selectedItemPosition:MutableList<Int> = ArrayList()
 
     var searchFilterItemPosition:MutableList<Int> = ArrayList()
-
-    var headerPosition:MutableList<Int> = ArrayList()
-
-    val allMessages:HashMap<Models.MessageModel, Int> = HashMap()
+    var groupMembers:MutableList<Models.GroupMember> = ArrayList()
 
     private var asyncLoader: Future<Boolean>? = null
 
@@ -160,7 +157,24 @@ class MessageActivity : AppCompatActivity() {
 
         setSupportActionBar(toolbar)
         targetUid = intent.getStringExtra(FirebaseUtils.KEY_UID)
+        val type:String? = intent.getStringExtra(utils.constants.KEY_TARGET_TYPE)
+
+
+        nameOrNumber = intent.getStringExtra(utils.constants.KEY_NAME_OR_NUMBER)
+
+        targetType = if(type.isNullOrEmpty()) FirebaseUtils.KEY_CONVERSATION_SINGLE
+        else type
+
+        Log.d("MessageActivity", "onCreate: type = $targetType")
+        Log.d("MessageActivity", "onCreate: name or number = $nameOrNumber")
+
+        isGroup = targetType == FirebaseUtils.KEY_CONVERSATION_GROUP
+
         myUID = FirebaseUtils.getUid()
+
+        loadGroupMembers()
+
+        blockedSnackbar =   Snackbar.make(messageInputField, "You cannot reply to this conversation anymore", Snackbar.LENGTH_INDEFINITE)
 
 
 
@@ -186,9 +200,15 @@ class MessageActivity : AppCompatActivity() {
 
     private fun initComponents(){
 
-        FirebaseUtils.setUserDetailFromUID(this, target_name_textview, targetUid, utils.hasContactPermission(context))
-        FirebaseUtils.loadProfileThumbnail(context, targetUid, profile_circleimageview)
-        FirebaseUtils.setUserOnlineStatus(this, targetUid, user_online_status)
+        if(isGroup) {
+            target_name_textview.text = nameOrNumber
+            FirebaseUtils.loadGroupPicThumbnail(context, targetUid, profile_circleimageview)
+        }
+        else {
+            target_name_textview.text = (utils.getNameFromNumber(context, nameOrNumber))
+            FirebaseUtils.loadProfileThumbnail(context, targetUid, profile_circleimageview)
+            FirebaseUtils.setUserOnlineStatus(this, targetUid, user_online_status)
+        }
 
         val emojiConfig = BundledEmojiCompatConfig(this)
         EmojiCompat.init(emojiConfig)
@@ -204,7 +224,7 @@ class MessageActivity : AppCompatActivity() {
         layout_toolbar_title.setOnClickListener {
             startActivity(Intent(this, UserProfileActivity::class.java)
                 .putExtra(FirebaseUtils.KEY_UID, targetUid)
-                .putExtra(FirebaseUtils.KEY_NAME, target_name_textview.text)
+                .putExtra(FirebaseUtils.KEY_NAME, nameOrNumber)
             )
         }
 
@@ -647,7 +667,8 @@ class MessageActivity : AppCompatActivity() {
                        holders.TargetVideoMsgHolder(LayoutInflater.from(this@MessageActivity)
                            .inflate(R.layout.bubble_video_left, p0, false))
 
-
+                   TYPE_EVENT ->
+                       holders.TextHeaderHolder(LayoutInflater.from(context).inflate(R.layout.text_header, p0, false))
 
                    else -> holders.TargetTextMsgHolder(LayoutInflater.from(this@MessageActivity)
                            .inflate(R.layout.bubble_left, p0, false))
@@ -663,12 +684,34 @@ class MessageActivity : AppCompatActivity() {
              }
 
 
-            @SuppressLint("ObjectAnimatorBinding")
+            @SuppressLint("ObjectAnimatorBinding", "SetTextI18n")
             override fun onBindViewHolder(
                 holder: RecyclerView.ViewHolder,
                 position: Int,
                 model: Models.MessageModel) {
 
+
+
+                if(getItemViewType(position) == TYPE_EVENT){
+
+                    val textHolder = holder as holders.TextHeaderHolder
+
+                    when(model.messageType) {
+                         FirebaseUtils.EVENT_TYPE_ADDED -> {
+                            textHolder.text.text = model.from +" added " +utils.getNameFromNumber(context, model.message)
+                        }
+                        FirebaseUtils.EVENT_TYPE_REMOVED -> {
+                            textHolder.text.text = model.from +" removed " +utils.getNameFromNumber(context, model.message)
+
+                        }
+                        FirebaseUtils.EVENT_TYPE_LEFT -> {
+                            textHolder.text.text = utils.getNameFromNumber(context, model.message) +" left"
+
+                        }
+                    }
+
+                    return
+                }
 
                 messagesList.setBackgroundColor(Color.WHITE)
 
@@ -894,10 +937,10 @@ class MessageActivity : AppCompatActivity() {
 
                 if(container!=null) {
                     // add unread header
-                    val unreadView = (layoutInflater.inflate(R.layout.unread_header, container, false))
+                    val unreadView = (layoutInflater.inflate(R.layout.text_header, container, false))
                     container.removeView(unreadView)
                     if (unreadMessageCount > 0 && (adapter.itemCount - unreadMessageCount - 1) == position) {
-                        unreadView.header_unread_textView.text = "$unreadMessageCount unread messages"
+                        unreadView.header_textView.text = "$unreadMessageCount unread messages"
                         Log.d("MessageActivity", "onBindViewHolder: adding unread view")
 //                        if(container.getChildAt(0)!=unreadView)
 //                        container.addView(unreadView)
@@ -1040,33 +1083,27 @@ class MessageActivity : AppCompatActivity() {
 
                 val viewType: Int
 
+                if(model.messageType == FirebaseUtils.EVENT_TYPE_REMOVED ||
+                        model.messageType == FirebaseUtils.EVENT_TYPE_LEFT ||
+                        model.messageType == FirebaseUtils.EVENT_TYPE_ADDED)
+                    return TYPE_EVENT
+
+
                 viewType = if(model.from == myUID){
 
-                    if(model.messageType == utils.constants.FILE_TYPE_LOCATION.toString()) {
-                        TYPE_MY_MAP
-                    }
-                    else if(model.messageType == utils.constants.FILE_TYPE_IMAGE.toString()) {
-                        TYPE_MY_IMAGE
-                    }
-                    else if(model.messageType == utils.constants.FILE_TYPE_VIDEO.toString()) {
-                        TYPE_MY_VIDEO
-                    }
-
-                    else{
-                        TYPE_MINE
+                    when {
+                        model.messageType == utils.constants.FILE_TYPE_LOCATION -> TYPE_MY_MAP
+                        model.messageType == utils.constants.FILE_TYPE_IMAGE -> TYPE_MY_IMAGE
+                        model.messageType == utils.constants.FILE_TYPE_VIDEO -> TYPE_MY_VIDEO
+                        else -> TYPE_MINE
                     }
                 } else{
-                    if(model.messageType == utils.constants.FILE_TYPE_LOCATION.toString())
-                            TYPE_TARGET_MAP
-
-                    else if(model.messageType == utils.constants.FILE_TYPE_IMAGE.toString()) {
-                        TYPE_TARGET_IMAGE
+                    when {
+                        model.messageType == utils.constants.FILE_TYPE_LOCATION -> TYPE_TARGET_MAP
+                        model.messageType == utils.constants.FILE_TYPE_IMAGE -> TYPE_TARGET_IMAGE
+                        model.messageType == utils.constants.FILE_TYPE_VIDEO -> TYPE_TARGET_VIDEO
+                        else -> TYPE_TARGET
                     }
-                    else if(model.messageType == utils.constants.FILE_TYPE_VIDEO.toString()) {
-                        TYPE_TARGET_VIDEO
-                    }
-                    else
-                            TYPE_TARGET
 
                 }
 
@@ -1247,7 +1284,8 @@ class MessageActivity : AppCompatActivity() {
 
         addMessageToMyNode(messageID, messageModel)
 
-        addMessageToTargetNode(messageID, messageModel)
+        if(isGroup) addMessageToGroupMembers(messageID, messageModel)
+        else addMessageToTargetNode(messageID, messageModel)
 
 
     }
@@ -1258,12 +1296,9 @@ class MessageActivity : AppCompatActivity() {
         //setting my message
         unreadMessageCount = 0
 
-//        Log.d("MessageActivity", "addMessageToMyNode: refreshed position = $unreadHeaderPosition")
-//        adapter.notifyItemChanged(unreadHeaderPosition)
-//        adapter.notifyDataSetChanged()
         unreadFirstMessageID = ""
 
-        FirebaseUtils.ref.getChatRef(myUID, targetUid)
+        FirebaseUtils.ref.getChatRef(myUID, targetUid) // if it is group then targetUid is group id
             .child(messageID)
             .setValue(messageModel)
             .addOnSuccessListener {
@@ -1272,7 +1307,25 @@ class MessageActivity : AppCompatActivity() {
 
                 FirebaseUtils.ref.lastMessage(myUID)
                     .child(targetUid)
-                    .setValue(Models.LastMessageDetail())
+                    .setValue(Models.LastMessageDetail(type = targetType, nameOrNumber = nameOrNumber))
+
+
+                // for a rare case
+                if(nameOrNumber.isEmpty()){
+                    FirebaseUtils.ref.user(targetUid).child(FirebaseUtils.KEY_PHONE)
+                        .addListenerForSingleValueEvent(object : ValueEventListener {
+                            override fun onCancelled(p0: DatabaseError) {}
+
+                            override fun onDataChange(p0: DataSnapshot) {
+                                val phoneNumber = p0.getValue(String::class.java)
+                                if(p0.exists())
+                                FirebaseUtils.ref.lastMessage(myUID)
+                                    .child(targetUid).child("nameOrNumber").setValue(phoneNumber)
+                            }
+                        })
+                }
+
+
 
                 print("Message sent to $targetUid") }
 
@@ -1283,7 +1336,7 @@ class MessageActivity : AppCompatActivity() {
     private fun addMessageToTargetNode(messageID: String , messageModel: Models.MessageModel) {
 
         //setting  message to target
-        FirebaseUtils.ref.getChatRef(targetUid, myUID)
+        FirebaseUtils.ref.getChatRef(targetUid, myUID)  // must be (participant, groupID)
             .child(messageID)
             .setValue(messageModel)
             .addOnSuccessListener {
@@ -1292,9 +1345,43 @@ class MessageActivity : AppCompatActivity() {
 
                 FirebaseUtils.ref.lastMessage(targetUid)
                     .child(myUID)
-                    .setValue(Models.LastMessageDetail())
+                    .setValue(Models.LastMessageDetail(nameOrNumber = FirebaseUtils.getPhoneNumber()))
 
                 print("Message added to mine") }
+
+    }
+
+
+    //for group members
+    private fun addMessageToGroupMembers(messageID: String , messageModel: Models.MessageModel
+                                       ) {
+
+        groupMembers.forEach {
+            val memberID = it.uid
+
+            //setting  message to target
+            if(memberID != myUID) {
+
+                Log.d("MessageActivity", "addMessageToGroupMembers: targets -> $memberID")
+
+                FirebaseUtils.ref.getChatRef(memberID, targetUid)  // must be (participant, groupID)
+                    .child(messageID)
+                    .setValue(messageModel)
+                    .addOnSuccessListener {
+
+                        FirebaseUtils.setMessageStatusToDB(messageID, memberID, targetUid, false, false)
+
+                        FirebaseUtils.ref.lastMessage(memberID)
+                            .child(targetUid)
+                            .setValue(Models.LastMessageDetail(type = FirebaseUtils.KEY_CONVERSATION_GROUP,
+                                nameOrNumber = nameOrNumber ))
+
+                    }
+            }
+        }
+
+
+
 
     }
 
@@ -1431,9 +1518,6 @@ class MessageActivity : AppCompatActivity() {
 
     }
 
-    private fun onImageCompressed(){
-
-    }
 
 
     private fun fileUpload(
@@ -1549,7 +1633,8 @@ class MessageActivity : AppCompatActivity() {
                     val time = System.currentTimeMillis()
                     val targetModel = Models.MessageModel(
                         link.toString(),
-                        myUID, targetUid, isFile = true, caption = caption, messageType = messageType,
+                        myUID, targetUid,
+                        isFile = true, caption = caption, messageType = messageType,
                         file_size_in_bytes = file.length(),
                         timeInMillis = time,
                         reverseTimeStamp = time * -1
@@ -1559,7 +1644,8 @@ class MessageActivity : AppCompatActivity() {
                         utils.toast(context, "Uploaded")
 
 
-                    addMessageToTargetNode(messageID, targetModel)
+                    if(isGroup) addMessageToGroupMembers(messageID, targetModel)
+                    else addMessageToTargetNode(messageID, targetModel)
 
 
                     val myModel = Models.MessageModel(
@@ -1685,7 +1771,6 @@ class MessageActivity : AppCompatActivity() {
 
     private fun checkIfBlocked(targetUID:String) {
 
-        blockedSnackbar =   Snackbar.make(messageInputField, "You cannot reply to this conversation anymore", Snackbar.LENGTH_INDEFINITE)
 
 
         //check if i have blocked
@@ -2484,6 +2569,33 @@ class MessageActivity : AppCompatActivity() {
 
     }
 
+
+    //load members if group
+    private fun loadGroupMembers(){
+        Log.d("MessageActivity", "loadGroupMembers: is group = $isGroup")
+        if(!isGroup)
+            return
+
+
+        FirebaseUtils.ref.groupMembers(targetUid)
+            .addValueEventListener(object : ValueEventListener {
+                override fun onCancelled(p0: DatabaseError) {
+                }
+
+                override fun onDataChange(p0: DataSnapshot) {
+                    groupMembers.clear()
+                    for(post in p0.children){
+                        groupMembers.add(post.getValue(Models.GroupMember::class.java)!!)
+                        Log.d("MessageActivity", "onDataChange: members = ${p0.value}")
+                    }
+
+                    if(groupMembers.any { it.uid == myUID })
+                        blockedSnackbar?.dismiss()
+                    else
+                        blockedSnackbar?.show()
+                }
+            })
+    }
 
     private fun bindAttachmentWindow(){
         val layout = layoutInflater.inflate(R.layout.layout_attachment_menu, null)

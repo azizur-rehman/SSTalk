@@ -355,7 +355,9 @@ class ForwardActivity : AppCompatActivity() {
 
                 val uid = super.getRef(position).key.toString()
 
-                bindHolder(holder, uid,"")
+                val type = model.type
+
+                bindHolder(holder, uid,model.nameOrNumber)
 
 
             }
@@ -366,7 +368,7 @@ class ForwardActivity : AppCompatActivity() {
 
 
         frequentRecyclerView.adapter = adapter
-        frequentRecyclerView.addItemDecoration(DividerItemDecoration(this, DividerItemDecoration.VERTICAL))
+//        frequentRecyclerView.addItemDecoration(DividerItemDecoration(this, DividerItemDecoration.VERTICAL))
 
         lastMsgQuery.addListenerForSingleValueEvent(object : ValueEventListener{
             override fun onCancelled(p0: DatabaseError) {

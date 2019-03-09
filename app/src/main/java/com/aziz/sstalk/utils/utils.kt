@@ -70,6 +70,9 @@ object utils {
         const val KEY_CAPTION = "caption"
         const val KEY_LOCAL_PATH = "local_path"
 
+        const val KEY_TARGET_TYPE = "target_type"
+        const val KEY_NAME_OR_NUMBER = "group_name"
+
         const val KEY_SELECTED = "selected"
 
         const val KEY_IS_ON_ACCOUNT_CREATION = "on_acc_creation"

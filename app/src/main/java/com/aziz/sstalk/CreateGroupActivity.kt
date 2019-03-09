@@ -20,7 +20,6 @@ import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.utils
 import com.google.android.gms.tasks.Continuation
 import com.google.android.gms.tasks.Task
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.storage.UploadTask
 import com.mvc.imagepicker.ImagePicker
 import kotlinx.android.synthetic.main.activity_create_group.*
@@ -180,7 +179,9 @@ class CreateGroupActivity : AppCompatActivity() {
     private fun createGroup(groupID: String){
 
 
-        val groupInfo = Models.Group(group_name_edittext.text.toString(),
+        val groupName = group_name_edittext.text.toString()
+
+        val groupInfo = Models.Group(groupName,
             createdBy = FirebaseUtils.getUid(),
             groupID = groupID)
 
@@ -200,9 +201,15 @@ class CreateGroupActivity : AppCompatActivity() {
 
                     FirebaseUtils.ref.groupMember(groupID, it.uid)
                         .setValue(groupMember)
+
+
+                    // add member in message node
+                    FirebaseUtils.addedMemberEvent(it.uid, groupID, it.number)
+
                     FirebaseUtils.ref.lastMessage(it.uid)
                         .child(groupID)
-                        .setValue(Models.LastMessageDetail(type = FirebaseUtils.KEY_CONVERSATION_GROUP))
+                        .setValue(Models.LastMessageDetail(type = FirebaseUtils.KEY_CONVERSATION_GROUP,
+                            nameOrNumber = groupName))
                 }
 
 
@@ -217,7 +224,8 @@ class CreateGroupActivity : AppCompatActivity() {
 
                 FirebaseUtils.ref.lastMessage(FirebaseUtils.getUid())
                     .child(groupID)
-                    .setValue(Models.LastMessageDetail(type = FirebaseUtils.KEY_CONVERSATION_GROUP))
+                    .setValue(Models.LastMessageDetail(type = FirebaseUtils.KEY_CONVERSATION_GROUP,
+                        nameOrNumber = groupName))
                     .addOnSuccessListener {
                         finish()
                     }
@@ -263,7 +271,9 @@ class CreateGroupActivity : AppCompatActivity() {
 
                     FirebaseUtils.ref.groupInfo(groupID)
                         .child(FirebaseUtils.KEY_PROFILE_PIC_URL)
-                        .setValue(link)
+                        .setValue(link.toString())
+
+                    Log.d("CreateGroupActivity", "uploadGroupProfilePicAndCreateGroup: profile updated ")
 
                     createGroup(groupID)
 

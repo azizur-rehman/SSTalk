@@ -45,6 +45,11 @@ object FirebaseUtils {
         val NODE_GROUP_INFO = "GroupInfo"
         val NODE_GROUP_MEMBER = "GroupMember"
 
+        val EVENT_TYPE_ADDED = "added"
+        val EVENT_TYPE_REMOVED = "removed"
+        val EVENT_TYPE_LEFT = "left"
+
+
         val VAL_ONLINE = "Online"
         val VAL_OFFLINE = "Offline"
         val VAL_TYPING = "Typing..."
@@ -175,6 +180,8 @@ object FirebaseUtils {
             fun groupInfo(groupID:String):DatabaseReference =
                     FirebaseUtils.ref.root().child(NODE_GROUP_INFO).child(groupID)
 
+            fun groupMembers(groupID:String):DatabaseReference =
+                FirebaseUtils.ref.root().child(NODE_GROUP_MEMBER).child(groupID)
 
             fun groupMember(groupID:String, uid: String):DatabaseReference =
                 FirebaseUtils.ref.root().child(NODE_GROUP_MEMBER).child(groupID).child(uid)
@@ -272,6 +279,97 @@ object FirebaseUtils {
                 })
         }
 
+    //for group
+    fun loadGroupPic(context: Context, groupId: String, imageView: ImageView){
+
+        imageView.setImageResource(R.drawable.ic_group_white_24dp)
+
+        if(groupId.isEmpty())
+            return
+
+
+
+        if(utils.hasStoragePermission(context)){
+
+
+            val file= File(utils.getProfilePicPath(context)+groupId+".jpg")
+            if(file.exists()){
+                Picasso.get().load(file)
+                    .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE).into(imageView)
+                imageView.setOnClickListener {
+                    context.startActivity(Intent(context, ImagePreviewActivity::class.java)
+                        .putExtra(utils.constants.KEY_LOCAL_PATH, file.path))
+                }
+            }
+
+        }
+
+        ref.groupInfo(groupId)
+            .child(KEY_PROFILE_PIC_URL)
+            .addValueEventListener(object : ValueEventListener {
+
+                override fun onDataChange(p0: DataSnapshot) {
+                    if (p0.exists()) {
+                        val link: String? = p0.getValue(String::class.java)
+
+                        if(Pref.Profile.isProfileUrlSame(context, groupId, link.toString())
+                            && utils.hasStoragePermission(context)){
+
+
+                            val file= File(utils.getProfilePicPath(context)+groupId+".jpg")
+                            if(file.exists()){
+                                Picasso.get().load(file)
+                                    .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE).into(imageView)
+                                imageView.setOnClickListener {
+                                    context.startActivity(Intent(context, ImagePreviewActivity::class.java)
+                                        .putExtra(utils.constants.KEY_LOCAL_PATH, file.path))
+                                }
+                                return
+                            }
+
+                        }
+                        else {
+
+                            if(link!!.isEmpty())
+                                return
+
+                            Picasso.get().load(link)
+                                .placeholder(R.drawable.contact_placeholder)
+                                .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
+                                .into(imageView, object : Callback {
+                                    override fun onSuccess() {
+                                        if (utils.hasStoragePermission(context)) {
+                                            utils.saveBitmapToProfileFolder(
+                                                context,
+                                                (imageView.drawable as BitmapDrawable).bitmap,
+                                                groupId
+                                            )
+                                            Pref.Profile.setProfileUrl(context, groupId, link.toString())
+                                        }
+                                    }
+
+                                    override fun onError(e: Exception?) {
+                                    }
+
+
+                                })
+
+
+                            imageView.setOnClickListener {
+                                context.startActivity(
+                                    Intent(context, ImagePreviewActivity::class.java)
+                                        .putExtra(utils.constants.KEY_IMG_PATH, link)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                override fun onCancelled(p0: DatabaseError) {
+
+                }
+            })
+    }
 
     fun loadProfileThumbnail(context: Context, uid:String, imageView: ImageView){
 
@@ -353,6 +451,87 @@ object FirebaseUtils {
             })
     }
 
+
+
+    fun loadGroupPicThumbnail(context: Context, groupId:String, imageView: ImageView){
+
+        imageView.setImageResource(R.drawable.ic_group_white_24dp)
+
+        if(groupId.isEmpty())
+            return
+
+
+        if(utils.hasStoragePermission(context)){
+            val file= File(utils.getProfilePicPath(context)+groupId+".jpg")
+            if(file.exists()){
+                Picasso.get().load(file)
+                    .resize(60,60)
+                    .centerCrop()
+                    .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
+                    .into(imageView)
+            }
+
+        }
+
+
+
+
+        ref.groupInfo(groupId)
+            .child(KEY_PROFILE_PIC_URL)
+            .addValueEventListener(object : ValueEventListener {
+
+                override fun onDataChange(p0: DataSnapshot) {
+                    if (p0.exists()) {
+                        val link: String? = p0.getValue(String::class.java)
+
+
+                        if(Pref.Profile.isProfileUrlSame(context, groupId, link.toString())
+                            && utils.hasStoragePermission(context)){
+                            val file= File(utils.getProfilePicPath(context)+groupId+".jpg")
+                            if(file.exists()){
+                                Picasso.get().load(file)
+                                    .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
+                                    .resize(60,60)
+                                    .centerCrop()
+                                    .into(imageView)
+                            }
+
+                            return
+                        }
+                        else {
+                            //download profile pic
+                            Log.d("FirebaseUtils", "onDataChange:,  profile url has changed, loading from web")
+
+                            if(link!!.isEmpty())
+                                return
+
+                            Picasso.get().load(link)
+                                .placeholder(R.drawable.contact_placeholder)
+                                .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
+                                .into(imageView, object : Callback {
+                                    override fun onSuccess() {
+                                        if (utils.hasStoragePermission(context)) {
+                                            utils.saveBitmapToProfileFolder(context,
+                                                (imageView.drawable as BitmapDrawable).bitmap,
+                                                groupId)
+                                            Pref.Profile.setProfileUrl(context, groupId, link.toString())
+                                        }
+                                    }
+
+                                    override fun onError(e: Exception?) {
+                                    }
+
+                                })
+                        }
+                    }
+                }
+
+                override fun onCancelled(p0: DatabaseError) {
+
+                }
+            })
+    }
+
     fun isLoggedIn() : Boolean = FirebaseAuth.getInstance().currentUser != null
 
 
@@ -411,13 +590,34 @@ object FirebaseUtils {
 
                 override fun onDataChange(p0: DataSnapshot) {
 
+
                     messageStatusImageView.visibility = View.GONE
                     var messageModel:Models.MessageModel? = null
                     var messageID = ""
+
+                    if(!p0.exists()) {
+                        textView.text = ""
+                        textView.visibility = View.GONE
+                        return
+                    }
+
                     for(item in p0.children) {
                         messageModel = item.getValue(Models.MessageModel::class.java)
                         messageID = item.key!!
                     }
+
+
+
+                    //.replace("\n"," ")
+                    when {
+                        messageModel!!.messageType == FirebaseUtils.EVENT_TYPE_LEFT -> textView.text = "A member left"
+                        messageModel.messageType == FirebaseUtils.EVENT_TYPE_ADDED -> textView.text = "A new member was added"
+                        messageModel.messageType == FirebaseUtils.EVENT_TYPE_LEFT -> textView.text = "A member was removed"
+                    }
+
+                    if(textView.text.isNotEmpty())
+                        return
+
 
                     if(p0.exists()) {
                         textView.text = messageModel!!.message//.replace("\n"," ")
@@ -432,19 +632,14 @@ object FirebaseUtils {
                             messageStatusImageView.visibility = View.GONE
                         }
 
-                        if(messageModel.messageType == utils.constants.FILE_TYPE_IMAGE){
-                            textView.text = ("\uD83D\uDDBC Image")
+                        when {
+                            messageModel.messageType == utils.constants.FILE_TYPE_IMAGE -> textView.text = ("\uD83D\uDDBC Image")
+                            messageModel.messageType == utils.constants.FILE_TYPE_VIDEO -> textView.text = "\uD83C\uDFA5 Video"
+                            messageModel.messageType == utils.constants.FILE_TYPE_LOCATION -> textView.text = "\uD83D\uDCCC ${if(messageModel.caption.isEmpty()) " Location" else messageModel.caption}"
                         }
-                        else if(messageModel.messageType == utils.constants.FILE_TYPE_VIDEO)
-                            textView.text = "\uD83C\uDFA5 Video"
-                        else if(messageModel.messageType == utils.constants.FILE_TYPE_LOCATION)
-                            textView.text = "\uD83D\uDCCC ${if(messageModel.caption.isEmpty()) " Location" else messageModel.caption}"
 
                     }
-                    else {
-                        textView.text = ""
-                        textView.visibility = View.GONE
-                    }
+
                 }
             })
     }
@@ -510,6 +705,12 @@ object FirebaseUtils {
 
         messageStatusImageView.alpha = 0.8f
 
+        if(targetUID.startsWith("GRP")){
+            messageStatusImageView.visibility = View.GONE
+            return
+        }
+
+
         ref.messageStatus(targetUID,FirebaseUtils.getUid(), messageID)
             .addValueEventListener(object : ValueEventListener{
                 override fun onCancelled(p0: DatabaseError) {
@@ -517,6 +718,8 @@ object FirebaseUtils {
                 }
 
                 override fun onDataChange(p0: DataSnapshot) {
+
+
 
 
                     val isForConversation = (messageStatusImageView.id == R.id.delivery_status_last_msg)
@@ -751,6 +954,39 @@ object FirebaseUtils {
                 }
             })
 
+    }
+
+
+    fun addedMemberEvent(uid:String, groupID: String, addingMemberPhoneNumber:String){
+
+        FirebaseUtils.ref.getChatRef(uid, groupID)
+            .child("MSG${System.currentTimeMillis()}")
+            .setValue(Models.MessageModel(addingMemberPhoneNumber,
+                FirebaseUtils.getPhoneNumber(), // this will use as adder
+                messageType = EVENT_TYPE_ADDED
+                ))
+    }
+
+
+    fun removedMemberEvent(uid:String, groupID: String, removedMember:String){
+
+        FirebaseUtils.ref.getChatRef(uid, groupID)
+            .child("MSG${System.currentTimeMillis()}")
+            .setValue(Models.MessageModel(removedMember,
+                FirebaseUtils.getPhoneNumber(),// this will use as remover
+                messageType = EVENT_TYPE_REMOVED
+            ))
+    }
+
+
+    fun leftMemberEvent(uid:String, groupID: String, leftMember:String){
+
+        FirebaseUtils.ref.getChatRef(uid, groupID)
+            .child("MSG${System.currentTimeMillis()}")
+            .setValue(Models.MessageModel(leftMember,
+                FirebaseUtils.getPhoneNumber(),// this will use as remover
+                messageType = EVENT_TYPE_LEFT
+            ))
     }
 
 }

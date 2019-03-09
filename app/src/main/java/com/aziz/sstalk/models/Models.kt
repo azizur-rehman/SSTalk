@@ -38,7 +38,8 @@ class Models {
 
     data class LastMessageDetail(var timeInMillis: Long = System.currentTimeMillis(),
                                  var type:String = FirebaseUtils.KEY_CONVERSATION_SINGLE, // single or group
-                                 var reverseTimeStamp: Long = timeInMillis  * -1)
+                                 var reverseTimeStamp: Long = timeInMillis  * -1,
+                                 var nameOrNumber:String="")
 
 
     data class MessageStatus(var from: String = "", var read:Boolean = false, var delivered:Boolean = false, var messageID:String = "",

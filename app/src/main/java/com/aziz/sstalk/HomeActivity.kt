@@ -17,7 +17,6 @@ import android.util.Log
 import android.view.*
 import android.widget.TextView
 import com.aziz.sstalk.models.Models
-import com.aziz.sstalk.utils.DateFormatter
 import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.Pref
 import com.aziz.sstalk.utils.utils
@@ -214,17 +213,22 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
                 val uid = super.getRef(position).key.toString()
 
-                holder.name.text = uid
+                if(model.type == FirebaseUtils.KEY_CONVERSATION_GROUP) {
+                    holder.name.text = model.nameOrNumber
+                    FirebaseUtils.loadGroupPic(context, uid, holder.pic)
+                }
+                else {
+                    holder.name.text = utils.getNameFromNumber(context, model.nameOrNumber)
+                    FirebaseUtils.loadProfilePic(this@HomeActivity, uid, holder.pic)
+                    FirebaseUtils.setUserOnlineStatus(uid, holder.onlineStatus)
+                }
 
-                FirebaseUtils.loadProfilePic(this@HomeActivity, uid, holder.pic)
+
 
                 FirebaseUtils.setMuteImageIcon(uid, holder.muteIcon)
 
                 FirebaseUtils.setLastMessage(uid, holder.lastMessage, holder.deliveryTick)
 
-                FirebaseUtils.setUserOnlineStatus(uid, holder.onlineStatus)
-
-                FirebaseUtils.setUserDetailFromUID(this@HomeActivity, holder.name, uid, hasPermission)
 
                 holder.messageInfo.visibility = View.VISIBLE
 
@@ -271,8 +275,11 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     catch (e:Exception){ 0 }
 
 
+
                     startActivity(Intent(context, MessageActivity::class.java)
                         .apply { putExtra(FirebaseUtils.KEY_UID, uid)
+                            putExtra(utils.constants.KEY_TARGET_TYPE, model.type)
+                            putExtra(utils.constants.KEY_NAME_OR_NUMBER, model.nameOrNumber)
                         putExtra(utils.constants.KEY_UNREAD, unreadCount)}
                     )
                 }
