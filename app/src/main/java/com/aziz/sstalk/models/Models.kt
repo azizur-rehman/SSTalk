@@ -72,6 +72,7 @@ class Models {
                                 var addedByPhoneNumber:String = "",
                                 var phoneNumber:String = "",
                                 var admin:Boolean = false,
+                                var removed:Boolean = false,
                                 var addedOn:Long = System.currentTimeMillis(),
                                 var reverseTimeStamp: Long = addedOn * -1)
 

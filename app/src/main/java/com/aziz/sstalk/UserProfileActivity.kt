@@ -40,6 +40,7 @@ class UserProfileActivity : AppCompatActivity() {
     var isBlockedByMe = false
     var isPhoneLoaded = false
     var name = ""
+    var isGroup = false
 
     private var asyncLoader: Future<Boolean>? = null
 
@@ -60,25 +61,31 @@ class UserProfileActivity : AppCompatActivity() {
         targetUID = intent.getStringExtra(FirebaseUtils.KEY_UID)
         name = intent.getStringExtra(FirebaseUtils.KEY_NAME)
 
-        title = name
+        isGroup = intent.getBooleanExtra(utils.constants.KEY_IS_GROUP, false)
 
+        title = if(isGroup) name else utils.getNameFromNumber(this, name)
 
-        FirebaseUtils.ref.allUser()
-            .child(targetUID)
-            .child(FirebaseUtils.KEY_PHONE)
-            .addValueEventListener(object : ValueEventListener{
-                override fun onCancelled(p0: DatabaseError) {
-                }
+        utils.printIntentKeyValues(intent)
 
-                override fun onDataChange(p0: DataSnapshot) {
-                    phone_textview.text = p0.getValue(String::class.java)
-                    isPhoneLoaded = true
-                    invalidateOptionsMenu()
-                }
+        if(!isGroup) phone_textview.text = name else phone_textview.visibility = View.GONE
 
-            })
+        if(phone_textview.text.isEmpty() && !isGroup) {
+            FirebaseUtils.ref.allUser()
+                .child(targetUID)
+                .child(FirebaseUtils.KEY_PHONE)
+                .addValueEventListener(object : ValueEventListener {
+                    override fun onCancelled(p0: DatabaseError) {
+                    }
 
+                    override fun onDataChange(p0: DataSnapshot) {
+                        phone_textview.text = p0.getValue(String::class.java)
+                        isPhoneLoaded = true
+                        invalidateOptionsMenu()
+                    }
 
+                })
+
+        }
 
         val layoutManager = GridLayoutManager(this, 4)
         mediaRecyclerView.addItemDecoration(DividerGridItemDecoration(this))
@@ -238,7 +245,7 @@ class UserProfileActivity : AppCompatActivity() {
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
 
-        if(phone_textview.text.toString() == name)
+        if(phone_textview.text.toString() == name && !isGroup)
         menuInflater.inflate(R.menu.user_profile_menu, menu)
 
         return super.onCreateOptionsMenu(menu)

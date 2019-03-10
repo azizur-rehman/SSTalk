@@ -46,6 +46,8 @@ class ContactsActivity : AppCompatActivity(){
 
         setContentView(R.layout.contact_screen)
 
+        title = "My Contacts"
+
         contacts_list.layoutManager = LinearLayoutManager(this@ContactsActivity)
 
         isForSelection = intent.getBooleanExtra(utils.constants.KEY_IS_FOR_SELECTION, false)

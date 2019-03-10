@@ -50,6 +50,20 @@
                 android:orientation="vertical"
                 android:layout_height="wrap_content">
 
+            <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="start"
+                    android:paddingBottom="5dp"
+                    android:paddingLeft="2dp"
+                    android:textSize="14sp"
+                    android:maxWidth="240dp"
+                    android:visibility="gone"
+                    android:autoLink="all"
+                    android:text="Sender"
+                    android:textColor="@color/red"
+                    android:id="@+id/messageText_sender_image_left"
+            />
 
             <LinearLayout
                     android:layout_width="wrap_content"
@@ -58,6 +72,8 @@
                     android:gravity="center"
                     android:background="@drawable/shape_bubble_left"
                     android:layout_height="wrap_content">
+
+
 
 
                 <com.skyline.widget.layout.RoundCornerLayout
@@ -71,6 +87,8 @@
                         app:bottomRightEnabled="true"
                         android:background="@drawable/shape_bubble_left"
                         android:orientation="vertical">
+
+
 
                     <ImageView
                             android:layout_width="match_parent"
@@ -100,6 +118,9 @@
                             android:id="@+id/time_image_left"
                             android:textColor="@color/transparent_white_10"
                     />
+
+
+
 
                 </com.skyline.widget.layout.RoundCornerLayout>
 

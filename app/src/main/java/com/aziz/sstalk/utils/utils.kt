@@ -71,9 +71,10 @@ object utils {
         const val KEY_LOCAL_PATH = "local_path"
 
         const val KEY_TARGET_TYPE = "target_type"
-        const val KEY_NAME_OR_NUMBER = "group_name"
+        const val KEY_NAME_OR_NUMBER = "name_or_number"
 
         const val KEY_SELECTED = "selected"
+        const val KEY_IS_GROUP = "isGroup"
 
         const val KEY_IS_ON_ACCOUNT_CREATION = "on_acc_creation"
         const val KEY_IS_ONCE = "is_once"
@@ -106,6 +107,9 @@ object utils {
 
     }
 
+    fun isGroupID(id:String):Boolean = id.startsWith("GRP") && id.replace("GRP","")
+        .matches(Regex("\\d+"))
+
 
     fun toast(context: Context?, message: CharSequence) =
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
@@ -125,6 +129,11 @@ object utils {
     }
 
 
+    fun printIntentKeyValues(intent:Intent){
+        intent.extras?.keySet()?.forEach {
+            Log.d("Intent values ", " passed value -> $it = ${intent.extras?.get(it)}")
+        }
+    }
 
 
     fun getContactList(context: Context?) : MutableList<Models.Contact>{
@@ -664,6 +673,10 @@ object utils {
             for (item in list) {
                 val formattedNumber = utils.getFormattedTenDigitNumber(item.number)
                 if (getFormattedTenDigitNumber(number) == formattedNumber) {
+
+                    if(formattedNumber == getFormattedTenDigitNumber(FirebaseUtils.getPhoneNumber()))
+                        return "You"
+
                     return item.name
                 }
             }

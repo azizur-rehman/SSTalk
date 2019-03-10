@@ -96,25 +96,37 @@ class MessagingService: FirebaseMessagingService() {
         val senderPhone = data[KEY_SENDER_PHONE]
 
 
-        val name = utils.getNameFromNumber(this@MessagingService, senderPhone!!)
+        var name = utils.getNameFromNumber(this@MessagingService, senderPhone!!)
+
+        if(utils.isGroupID(sender!!))
+            name = "New messages by $name in a group"
 
         val intent = Intent(this@MessagingService, MessageActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             putExtra(FirebaseUtils.KEY_UID, sender)
             putExtra(utils.constants.KEY_IS_ONCE, true)
+            putExtra(utils.constants.KEY_NAME_OR_NUMBER, senderPhone)
         }
+        if(utils.isGroupID(sender))
+            intent.putExtra(utils.constants.KEY_TARGET_TYPE, FirebaseUtils.KEY_CONVERSATION_GROUP)
+        else  intent.putExtra(utils.constants.KEY_TARGET_TYPE, FirebaseUtils.KEY_CONVERSATION_SINGLE)
+
 
         notify(name, intent, remoteMessage)
 
         Log.d("MessagingService", "showNotification: sender = $sender")
 
+        intent.extras?.keySet()?.forEach {
+            Log.d("MessagingService", "showNotification: passed value -> $it = ${intent.extras?.get(it)}")
+        }
 
 
     }
 
 
     private fun notify(title:String, intent: Intent, remoteMessage: RemoteMessage){
-        val pendingIntent: PendingIntent = PendingIntent.getActivity(this@MessagingService, NotificationDetail.SINGLE_ID, intent, 0)
+        val pendingIntent: PendingIntent = PendingIntent.getActivity(this@MessagingService, NotificationDetail.SINGLE_ID, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT)
 
         val data = remoteMessage.data
 
@@ -219,7 +231,7 @@ class MessagingService: FirebaseMessagingService() {
                                                 .setSmallIcon(R.mipmap.ic_launcher)
                                                 .setColor(ContextCompat.getColor(this@MessagingService, R.color.colorPrimary))
                                                 .setLargeIcon((BitmapFactory.decodeResource(resources, R.mipmap.ic_launcher)))
-                                                .setContentIntent(PendingIntent.getActivity(this@MessagingService, NotificationDetail.MUlTIPLE_ID, intent, 0))
+                                                .setContentIntent(PendingIntent.getActivity(this@MessagingService, NotificationDetail.MUlTIPLE_ID, intent, PendingIntent.FLAG_UPDATE_CURRENT))
                                                 .setContentTitle(title)
                                                 .build())
                                         }
@@ -244,8 +256,13 @@ class MessagingService: FirebaseMessagingService() {
         val messages = getMessages(remoteMessage.data[KEY_MESSAGES]!!)
 
 
-        val person = Person.Builder().setName(utils.getNameFromNumber(this,
-            remoteMessage.data[KEY_SENDER_PHONE]!!))
+        var name = utils.getNameFromNumber(this@MessagingService, remoteMessage.data[KEY_SENDER_PHONE]!!)
+        val sender = remoteMessage.data[KEY_SENDER]!!
+
+        if(utils.isGroupID(sender))
+            name = "New messages by $name in a group"
+
+        val person = Person.Builder().setName(name)
 
            if(utils.hasStoragePermission(this)) {
                if(profilePicFile.exists()) {

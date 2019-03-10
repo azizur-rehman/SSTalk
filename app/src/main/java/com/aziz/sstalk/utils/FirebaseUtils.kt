@@ -1,5 +1,6 @@
 package com.aziz.sstalk.utils
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.graphics.Typeface
@@ -11,12 +12,14 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import com.aziz.sstalk.ImagePreviewActivity
+import com.aziz.sstalk.MessageActivity
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.FirebaseUtils.ref.user
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import com.squareup.picasso.Picasso
 import com.aziz.sstalk.R
+import com.aziz.sstalk.UserProfileActivity
 import com.aziz.sstalk.utils.FirebaseUtils.ref.allMessageStatus
 import com.google.firebase.iid.FirebaseInstanceId
 import com.google.firebase.storage.FirebaseStorage
@@ -24,9 +27,7 @@ import com.google.firebase.storage.StorageReference
 import com.nex3z.notificationbadge.NotificationBadge
 import com.squareup.picasso.Callback
 import com.squareup.picasso.MemoryPolicy
-import org.jetbrains.anko.alert
-import org.jetbrains.anko.browse
-import org.jetbrains.anko.toast
+import org.jetbrains.anko.*
 import java.io.File
 import java.lang.Exception
 import java.util.*
@@ -610,9 +611,9 @@ object FirebaseUtils {
 
                     //.replace("\n"," ")
                     when {
-                        messageModel!!.messageType == FirebaseUtils.EVENT_TYPE_LEFT -> textView.text = "A member left"
-                        messageModel.messageType == FirebaseUtils.EVENT_TYPE_ADDED -> textView.text = "A new member was added"
-                        messageModel.messageType == FirebaseUtils.EVENT_TYPE_LEFT -> textView.text = "A member was removed"
+                        messageModel!!.messageType == FirebaseUtils.EVENT_TYPE_LEFT -> textView.text = "❗ A member left"
+                        messageModel.messageType == FirebaseUtils.EVENT_TYPE_ADDED -> textView.text = "❗ A new member was added"
+                        messageModel.messageType == FirebaseUtils.EVENT_TYPE_LEFT -> textView.text = "❗ A member was removed"
                     }
 
                     if(textView.text.isNotEmpty())
@@ -705,7 +706,7 @@ object FirebaseUtils {
 
         messageStatusImageView.alpha = 0.8f
 
-        if(targetUID.startsWith("GRP")){
+        if(utils.isGroupID(targetUID)){
             messageStatusImageView.visibility = View.GONE
             return
         }
@@ -959,10 +960,15 @@ object FirebaseUtils {
 
     fun addedMemberEvent(uid:String, groupID: String, addingMemberPhoneNumber:String){
 
+        Log.d(
+            "FirebaseUtils",
+            "addedMemberEvent: adding $addingMemberPhoneNumber to group $groupID and showing to $uid"
+        )
+
         FirebaseUtils.ref.getChatRef(uid, groupID)
             .child("MSG${System.currentTimeMillis()}")
-            .setValue(Models.MessageModel(addingMemberPhoneNumber,
-                FirebaseUtils.getPhoneNumber(), // this will use as adder
+            .setValue(Models.MessageModel(addingMemberPhoneNumber,  //"message" will contain number of the one who is added
+                FirebaseUtils.getPhoneNumber(), // "from"  will be phone number of adder
                 messageType = EVENT_TYPE_ADDED
                 ))
     }
@@ -987,6 +993,59 @@ object FirebaseUtils {
                 FirebaseUtils.getPhoneNumber(),// this will use as remover
                 messageType = EVENT_TYPE_LEFT
             ))
+    }
+
+    fun setGroupName(groupID: String, textView: TextView){
+
+        Log.d("FirebaseUtils", "setGroupName: loading group name for $groupID")
+
+        ref.groupInfo(groupID)
+            .child(utils.constants.KEY_NAME)
+            .addValueEventListener(object : ValueEventListener {
+                override fun onCancelled(p0: DatabaseError) {
+                }
+
+                override fun onDataChange(p0: DataSnapshot) {
+                    Log.d("FirebaseUtils", "onDataChange: group name = ${p0.value}")
+                    if(p0.exists())
+                    textView.text = p0.value.toString()
+                    else
+                        textView.text = "Unknown Group"
+                }
+            })
+    }
+
+
+    fun setTargetOptionMenu(context: Context, uid: String, phoneNumber:String, view: View){
+
+        view.setOnClickListener {
+         context.selector("", listOf("View Profile", "Message", "Make a call")) { _, i ->
+
+            when (i) {
+                1 -> {
+                    context.startActivity(Intent(context, MessageActivity::class.java).apply {
+                        putExtra(FirebaseUtils.KEY_UID, uid)
+                        putExtra(utils.constants.KEY_NAME_OR_NUMBER, phoneNumber)
+                        putExtra(utils.constants.KEY_TARGET_TYPE, FirebaseUtils.KEY_CONVERSATION_SINGLE)
+                        addFlags( Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                    })
+                }
+
+                0 -> {
+                    context.startActivity(Intent(context, UserProfileActivity::class.java).apply {
+                        putExtra(FirebaseUtils.KEY_UID, uid)
+                        putExtra(FirebaseUtils.KEY_NAME, phoneNumber)
+                        putExtra(utils.constants.KEY_IS_GROUP, false )
+                    })
+                }
+
+                2 -> {
+                    context.makeCall(phoneNumber)
+
+                }
+            }
+        }
+        }
     }
 
 }

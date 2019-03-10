@@ -36,6 +36,7 @@ class CreateGroupActivity : AppCompatActivity() {
 
     var isProfileChanged = false
     lateinit var bitmap: Bitmap
+    var profileURL = ""
     lateinit var imageFile:File
     val context = this@CreateGroupActivity
 
@@ -161,6 +162,11 @@ class CreateGroupActivity : AppCompatActivity() {
                 return false
             }
 
+            if(group_name_edittext.text.length <=3){
+                group_name_edittext.error = "Too short for a group name"
+                return false
+            }
+
 
             val groupID = "GRP${System.currentTimeMillis()}"
             if(isProfileChanged)
@@ -179,7 +185,7 @@ class CreateGroupActivity : AppCompatActivity() {
     private fun createGroup(groupID: String){
 
 
-        val groupName = group_name_edittext.text.toString()
+        val groupName = group_name_edittext.text.toString().trim()
 
         val groupInfo = Models.Group(groupName,
             createdBy = FirebaseUtils.getUid(),
@@ -197,7 +203,7 @@ class CreateGroupActivity : AppCompatActivity() {
                 participantList.forEach {
                     val groupMember = Models.GroupMember(it.uid,
                         FirebaseUtils.getUid(), FirebaseUtils.getPhoneNumber(),
-                        it.number,false, System.currentTimeMillis())
+                        it.number,false, false,System.currentTimeMillis())
 
                     FirebaseUtils.ref.groupMember(groupID, it.uid)
                         .setValue(groupMember)
@@ -217,7 +223,7 @@ class CreateGroupActivity : AppCompatActivity() {
                 val groupMember = Models.GroupMember(FirebaseUtils.getUid(),
                     FirebaseUtils.getUid(), FirebaseUtils.getPhoneNumber(),
                     FirebaseUtils.getPhoneNumber()
-                    ,true, System.currentTimeMillis())
+                    ,true,false,  System.currentTimeMillis())
 
                 FirebaseUtils.ref.groupMember(groupID, FirebaseUtils.getUid())
                     .setValue(groupMember)
@@ -227,7 +233,11 @@ class CreateGroupActivity : AppCompatActivity() {
                     .setValue(Models.LastMessageDetail(type = FirebaseUtils.KEY_CONVERSATION_GROUP,
                         nameOrNumber = groupName))
                     .addOnSuccessListener {
-                        finish()
+
+                        if(profileURL.isEmpty())
+                            finish()
+                        else
+                            updateProfileUrl(groupID, profileURL)
                     }
 
 
@@ -269,9 +279,7 @@ class CreateGroupActivity : AppCompatActivity() {
                 if(task.isSuccessful) {
                     val link = task.result
 
-                    FirebaseUtils.ref.groupInfo(groupID)
-                        .child(FirebaseUtils.KEY_PROFILE_PIC_URL)
-                        .setValue(link.toString())
+                    profileURL = link?.toString()!!
 
                     Log.d("CreateGroupActivity", "uploadGroupProfilePicAndCreateGroup: profile updated ")
 
@@ -293,6 +301,16 @@ class CreateGroupActivity : AppCompatActivity() {
 
 
 
+    }
+
+
+    private fun updateProfileUrl(groupID: String, url:String){
+        FirebaseUtils.ref.groupInfo(groupID)
+            .child(FirebaseUtils.KEY_PROFILE_PIC_URL)
+            .setValue(url)
+            .addOnSuccessListener {
+                finish()
+            }
     }
 
 }

@@ -110,7 +110,6 @@
         </activity>
         <activity
                 android:name=".MessageActivity"
-                android:launchMode="singleTop"
                 android:theme="@style/AppTheme.NoActionBar">
         </activity>
         <activity

@@ -43,10 +43,11 @@
                       android:layout_height="match_parent">
 
             <TextView android:layout_width="wrap_content"
-                      android:text=""
-                      android:textStyle="bold"
-                      android:id="@+id/target_name_textview"
+                      android:text="Loading..."
+                      android:textSize="16sp"
                       android:textColor="@color/white"
+                      android:id="@+id/target_name_textview"
+                      android:fontFamily="@font/roboto_medium"
                       android:layout_height="wrap_content"/>
 
 

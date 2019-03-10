@@ -72,6 +72,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="@color/black"
+                android:textAllCaps="false"
                 android:fontFamily="@font/roboto_regular"
                 android:text="User name"
                 android:textSize="16sp" />
@@ -118,7 +119,7 @@
 
         <LinearLayout android:layout_width="wrap_content"
                       android:orientation="vertical"
-                      android:gravity="center"
+                      android:gravity="end"
                       android:layout_marginTop="5dp"
                       android:id="@+id/messageInfoLayout"
                       android:layout_height="match_parent">
@@ -126,23 +127,24 @@
             <TextView android:layout_width="wrap_content"
                       android:layout_height="wrap_content"
                       android:gravity="center"
+                      android:layout_gravity="end"
                       android:id="@+id/messageTime"
                       android:fontFamily="@font/roboto_thin"
-                        android:text="12:00 PM"
+                        android:text="Yesterday"
                       android:textSize="12sp"
             />
 
 
             <LinearLayout android:layout_width="wrap_content"
                           android:orientation="horizontal"
-                          android:gravity="center"
+                          android:gravity="end|center"
                           android:layout_weight="1"
                           android:layout_height="0dp">
 
                 <ImageView android:layout_width="24dp"
                            android:layout_height="24dp"
-                           android:visibility="gone"
                            android:scaleType="fitXY"
+                           android:visibility="gone"
                            android:src="@drawable/ic_mute_green"
                            android:tint="@color/colorPrimaryDark"
                            android:id="@+id/conversation_mute_icon"
@@ -154,9 +156,9 @@
                         app:nbAnimationEnabled="true"
                         app:nbAnimationDuration="100"
                         android:layout_gravity="center"
-                        android:visibility="gone"
                         app:nbEllipsizeText="99+"
                         app:nbMaxTextLength="2"
+                        android:visibility="gone"
                         android:id="@+id/unreadCount"
                         android:textColor="@color/white"
                         android:textSize="12sp"

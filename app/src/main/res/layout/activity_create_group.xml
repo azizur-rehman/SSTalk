@@ -22,6 +22,7 @@
     <EditText android:layout_width="match_parent"
               android:layout_height="wrap_content"
               android:layout_margin="30dp"
+              android:maxLength="15"
               android:id="@+id/group_name_edittext"
               android:hint="Type the group name"
     />

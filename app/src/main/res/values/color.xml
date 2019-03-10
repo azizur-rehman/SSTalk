@@ -3,6 +3,12 @@
         <color name="colorPrimary">@color/green</color>
         <color name="colorPrimaryDark">@color/green_dark</color>
         <color name="colorAccent">@color/colorPrimary</color>
+
+    <color name="bubble_right_bottom">@color/colorAccent</color>
+    <color name="bubble_right_center">@color/md_green_300</color>
+    <color name="bubble_right_top">@color/md_green_400</color>
+
+
     <color name="cornflower_blue">#6274e2</color>
     <color name="cornflower_blue_dark">#303F9F</color>
     <color name="cornflower_blue_darkest">#2d3a93</color>

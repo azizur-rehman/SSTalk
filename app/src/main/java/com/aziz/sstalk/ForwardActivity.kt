@@ -34,6 +34,7 @@ import kotlinx.android.synthetic.main.item__forward_contact_list.view.*
 import kotlinx.android.synthetic.main.item_contact_layout.view.*
 import me.shaohui.advancedluban.Luban
 import me.shaohui.advancedluban.OnCompressListener
+import org.jetbrains.anko.collections.forEachWithIndex
 import org.jetbrains.anko.doAsyncResult
 import org.jetbrains.anko.onComplete
 import org.jetbrains.anko.uiThread
@@ -44,7 +45,17 @@ import java.util.concurrent.Future
 class ForwardActivity : AppCompatActivity() {
 
     val selectedUIDs:MutableList<String> = ArrayList()
+    val selectedTitles:MutableList<String> = ArrayList()
+    val selectedNumbers:MutableList<String> = ArrayList()
+
     val allFrequentUIDs:MutableList<String> = ArrayList()
+
+    var isImageFromIntent = false
+    var isVideoFromIntent = false
+    var isTextFromIntent = false
+
+    val allFrequentConverstation:MutableList<Models.LastMessageDetail> = ArrayList()
+
     //number list has 10 digit formatted number
     var numberList:MutableList<Models.Contact> = mutableListOf()
     var registeredAvailableUser:MutableList<Models.Contact> = mutableListOf()
@@ -97,11 +108,11 @@ class ForwardActivity : AppCompatActivity() {
             handleIncomingIntents(intent)
 
 
-        sendBtn.setOnClickListener {
+        sendBtn?.setOnClickListener {
 
 
 
-                if (intent.type!!.startsWith("image/") && intent.action == Intent.ACTION_SEND) {
+                if (isImageFromIntent) {
                     //image is sent via intent
 
                     if(bitmap!=null){
@@ -139,7 +150,7 @@ class ForwardActivity : AppCompatActivity() {
 
                 }
 
-                else if(intent.type!!.startsWith("video/") && intent.action == Intent.ACTION_SEND){
+                else if(isVideoFromIntent){
 
                     if(currentVideoFile!=null){
                         val messageID = "MSG${System.currentTimeMillis()}"
@@ -163,7 +174,7 @@ class ForwardActivity : AppCompatActivity() {
     private fun onForwardToSelectedUIDs() {
 
 
-        selectedUIDs.forEach {
+        selectedUIDs.forEachWithIndex { i, it->
 
             var messageID = "MSG${System.currentTimeMillis()}"
 
@@ -171,6 +182,9 @@ class ForwardActivity : AppCompatActivity() {
                 messageID = currentMessageID
 
             val targetUID = it
+
+            val positionInMainList = allFrequentUIDs.indexOf(it)
+
 
         for (model in messageModels!!) {
             model.from = myUID
@@ -181,6 +195,14 @@ class ForwardActivity : AppCompatActivity() {
 
             val currentModel = model
 
+            var nameOrNumber = allFrequentConverstation[positionInMainList].nameOrNumber
+            val type = allFrequentConverstation[positionInMainList].type
+
+            if(nameOrNumber.isEmpty()){
+                nameOrNumber = if(utils.isGroupID(targetUID)) selectedTitles[i]
+                else selectedNumbers[i]
+            }
+
             //send to my node
             FirebaseUtils.ref.getChatRef(myUID, targetUID)
                 .child(messageID)
@@ -190,34 +212,46 @@ class ForwardActivity : AppCompatActivity() {
 
                     FirebaseUtils.ref.lastMessage(myUID)
                         .child(targetUID)
-                        .setValue(Models.LastMessageDetail())
+                        .setValue(Models.LastMessageDetail(nameOrNumber = nameOrNumber, type = type))
 
                 }
 
             currentModel.file_local_path = ""
 
-            //send to target node
-            FirebaseUtils.ref.getChatRef(targetUID, FirebaseUtils.getUid())
-                .child(messageID)
-                .setValue(currentModel)
-                .addOnSuccessListener {
-                    FirebaseUtils.setMessageStatusToDB(messageID, targetUID, myUID, false, isRead = false)
 
-                    FirebaseUtils.ref.lastMessage(targetUID)
-                        .child(myUID)
-                        .setValue(Models.LastMessageDetail())
-                }
+            if(utils.isGroupID(targetUID)){
+                //send to group members
+                Log.d("ForwardActivity", "onForwardToSelectedUIDs: group id = $targetUID")
+                addMessageToGroupMembers(messageID, currentModel, targetUID, nameOrNumber)
+            }
+            else {
+                //send to target node
+                FirebaseUtils.ref.getChatRef(targetUID, FirebaseUtils.getUid())
+                    .child(messageID)
+                    .setValue(currentModel)
+                    .addOnSuccessListener {
+                        FirebaseUtils.setMessageStatusToDB(messageID, targetUID, myUID, false, isRead = false)
+
+                        FirebaseUtils.ref.lastMessage(targetUID)
+                            .child(myUID)
+                            .setValue(Models.LastMessageDetail(nameOrNumber = nameOrNumber, type = type))
+                    }
+            }
         }
     }
 
-        if(selectedUIDs.size == 1)
-            startActivities(arrayOf(
-                Intent(context, HomeActivity::class.java)
-                    .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP),
-                Intent(context, MessageActivity::class.java)
-                .putExtra(FirebaseUtils.KEY_UID, selectedUIDs[0]))
-            )
-        else
+//        if(selectedUIDs.size == 1)
+//            startActivities(arrayOf(
+//                Intent(context, HomeActivity::class.java)
+//                    .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP),
+//                Intent(context, MessageActivity::class.java).apply {
+//                    putExtra(FirebaseUtils.KEY_UID, selectedUIDs[0])
+//                    putExtra(utils.constants.KEY_NAME_OR_NUMBER , allFrequentConverstation[0].nameOrNumber)
+//                )
+//                }
+//                )
+//            )
+//        else
 
             startActivity(Intent(context, HomeActivity::class.java)
                 .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP))
@@ -239,21 +273,24 @@ class ForwardActivity : AppCompatActivity() {
                 intent.type == "text/plain" -> {
                     val text = intent.getStringExtra(Intent.EXTRA_TEXT)
                     messageModels!!.add(Models.MessageModel(text ))
+                    isTextFromIntent = true
                 }
                 intent.type!!.startsWith( "image/") -> {
 
                     if(!utils.hasStoragePermission(this)) {
                         utils.toast(this, "App does not have storage permission")
+                        finish()
                         return
                     }
                     val imageURI = intent.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as Uri
                     bitmap = MediaStore.Images.Media.getBitmap(contentResolver, imageURI)
-
+                    isImageFromIntent = true
 
                 }
                 intent.type!!.startsWith("video/") -> {
                     if(!utils.hasStoragePermission(this)){
                         utils.toast(this, "App does not have storage permission")
+                        finish()
                         return
                     }
 
@@ -271,6 +308,8 @@ class ForwardActivity : AppCompatActivity() {
                     }
 
                     currentVideoFile = videoFile
+                    isVideoFromIntent = true
+
                 }
             }
         }
@@ -357,15 +396,12 @@ class ForwardActivity : AppCompatActivity() {
 
                 val type = model.type
 
-                bindHolder(holder, uid,model.nameOrNumber)
+                bindHolder(holder, uid,model.nameOrNumber, type)
 
 
             }
 
         }
-
-
-
 
         frequentRecyclerView.adapter = adapter
 //        frequentRecyclerView.addItemDecoration(DividerItemDecoration(this, DividerItemDecoration.VERTICAL))
@@ -378,8 +414,10 @@ class ForwardActivity : AppCompatActivity() {
                 if(p0.exists()){
 
                     for (item in p0.children) {
-                        if (!allFrequentUIDs.contains(item.key))
+                        if (!allFrequentUIDs.contains(item.key)) {
                             allFrequentUIDs.add(item.key!!)
+                            allFrequentConverstation.add(item.getValue(Models.LastMessageDetail::class.java)!!)
+                        }
                     }
                 }
 
@@ -402,7 +440,7 @@ class ForwardActivity : AppCompatActivity() {
 
                 val uid = registeredAvailableUser[p1].uid
 
-                bindHolder(holder, uid, registeredAvailableUser[p1].number )
+                bindHolder(holder, uid, registeredAvailableUser[p1].number , FirebaseUtils.KEY_CONVERSATION_SINGLE)
 
             }
 
@@ -415,22 +453,32 @@ class ForwardActivity : AppCompatActivity() {
 
 
     @SuppressLint("RestrictedApi")
-    private fun bindHolder(holder: ViewHolder, uid:String, phone:String){
+    private fun bindHolder(holder: ViewHolder, uid:String, phone:String, type:String){
 
+        val isGroup = type == FirebaseUtils.KEY_CONVERSATION_GROUP
 
         if(forward_progressbar.visibility == View.VISIBLE)
             forward_progressbar.visibility = View.GONE
 
-        holder.title.text = uid
+        holder.title.text = phone
 
-        if(phone.isNotEmpty()){
-            holder.title.text = utils.getNameFromNumber(context, phone)
+
+
+        if(isGroup) {
+            FirebaseUtils.loadGroupPicThumbnail(context, uid, holder.pic)
+            if(phone.isEmpty())
+                FirebaseUtils.setGroupName(uid, holder.title)
         }
-        else{
-            FirebaseUtils.setUserDetailFromUID(context, holder.title, uid, true)
+        else {
+            FirebaseUtils.loadProfileThumbnail(context, uid, holder.pic)
+            if(phone.isNotEmpty()){
+                holder.title.text = utils.getNameFromNumber(context, phone)
+            }
+            else{
+                FirebaseUtils.setUserDetailFromUID(context, holder.title, uid, true)
+            }
         }
 
-        FirebaseUtils.loadProfileThumbnail(context, uid, holder.pic)
         holder.title.setTextColor(Color.BLACK)
 
         //check if user is blocked
@@ -457,14 +505,21 @@ class ForwardActivity : AppCompatActivity() {
             holder.checkBox.isChecked = !holder.checkBox.isChecked
 
 
+            Log.d("ForwardActivity", "bindHolder: selected => "+allFrequentConverstation[allFrequentUIDs.indexOf(uid)])
 
             if(holder.checkBox.isChecked) {
                 selectedUIDs.add(uid)
+                selectedTitles.add(holder.title.text.toString())
+                selectedNumbers.add(phone)
                 nameOfRecipient = nameOfRecipient + holder.title.text +" "
             }
             else {
                 selectedUIDs.remove(uid)
                 nameOfRecipient = nameOfRecipient.replace(holder.title.text.toString(),"")
+                selectedTitles.remove(holder.title.text.toString())
+                selectedNumbers.remove(phone)
+
+
             }
 
              fwd_snackbar!!.setText(">  ${nameOfRecipient.trim()}")
@@ -524,6 +579,57 @@ class ForwardActivity : AppCompatActivity() {
 
             })
     }
+
+
+    //for group members
+    private fun addMessageToGroupMembers(messageID: String , messageModel: Models.MessageModel, groupId:String
+    , groupName:String) {
+
+        FirebaseUtils.ref.groupMembers(groupId)
+            .orderByChild("removed").equalTo(false)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onCancelled(p0: DatabaseError) {
+            }
+
+            override fun onDataChange(p0: DataSnapshot) {
+                val groupMembers:MutableList<Models.GroupMember> = ArrayList()
+                for(post in p0.children){
+                    groupMembers.add(post.getValue(Models.GroupMember::class.java)!!)
+
+                    groupMembers.forEach {
+                        val memberID = it.uid
+
+                        //setting  message to target
+                        if(memberID != myUID) {
+
+                            Log.d("MessageActivity", "addMessageToGroupMembers: targets -> $memberID")
+
+                            FirebaseUtils.ref.getChatRef(memberID, groupId)  // must be (participant, groupID)
+                                .child(messageID)
+                                .setValue(messageModel)
+                                .addOnSuccessListener {
+
+                                    FirebaseUtils.setMessageStatusToDB(messageID, memberID, groupId, false, false)
+
+                                    FirebaseUtils.ref.lastMessage(memberID)
+                                        .child(groupId)
+                                        .setValue(Models.LastMessageDetail(type = FirebaseUtils.KEY_CONVERSATION_GROUP
+                                            , nameOrNumber = groupName
+                                        ))
+
+                                }
+                        }
+                    }
+                }
+            }
+        })
+
+
+
+
+
+    }
+
 
 
     class ViewHolder(view:View):RecyclerView.ViewHolder(view){

@@ -8,9 +8,9 @@
              android:topRightRadius="35dp"
              android:topLeftRadius="35dp"/>
     <gradient android:angle="45"
-              android:centerColor="@color/md_green_300"
-              android:endColor="@color/md_green_400"
-              android:startColor="@color/colorAccent"
+              android:centerColor="@color/bubble_right_center"
+              android:endColor="@color/bubble_right_top"
+              android:startColor="@color/bubble_right_bottom"
               />
 
 

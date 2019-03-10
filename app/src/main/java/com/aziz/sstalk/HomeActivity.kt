@@ -214,8 +214,10 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 val uid = super.getRef(position).key.toString()
 
                 if(model.type == FirebaseUtils.KEY_CONVERSATION_GROUP) {
-                    holder.name.text = model.nameOrNumber
+                    holder.name.text = model.nameOrNumber.trim()
                     FirebaseUtils.loadGroupPic(context, uid, holder.pic)
+                    if(holder.name.text.isEmpty())
+                        FirebaseUtils.setGroupName(uid, holder.name)
                 }
                 else {
                     holder.name.text = utils.getNameFromNumber(context, model.nameOrNumber)
