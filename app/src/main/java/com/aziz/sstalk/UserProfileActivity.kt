@@ -1,6 +1,8 @@
 package com.aziz.sstalk
 
 import android.annotation.SuppressLint
+import android.app.Activity
+import android.app.ProgressDialog
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -9,6 +11,7 @@ import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -23,11 +26,11 @@ import com.squareup.picasso.Picasso
 import com.vincent.filepicker.DividerGridItemDecoration
 import kotlinx.android.synthetic.main.activity_user_profile.*
 import kotlinx.android.synthetic.main.content_user_profile.*
+import kotlinx.android.synthetic.main.item_group_member_layout.view.*
 import kotlinx.android.synthetic.main.item_image.view.*
 import kotlinx.android.synthetic.main.item_video.view.*
-import org.jetbrains.anko.doAsyncResult
-import org.jetbrains.anko.onComplete
-import org.jetbrains.anko.uiThread
+import org.jetbrains.anko.*
+import org.jetbrains.anko.collections.forEachWithIndex
 import java.io.File
 import java.util.ArrayList
 import java.util.concurrent.Future
@@ -66,11 +69,13 @@ class UserProfileActivity : AppCompatActivity() {
         title = if(isGroup) name else utils.getNameFromNumber(this, name)
 
         utils.printIntentKeyValues(intent)
+        add_group_member_btn.visibility = View.GONE
 
         if(!isGroup) {
             phone_textview.text = name
         }else {
             phone_textview.visibility = View.GONE
+            loadGroupMembers()
         }
 
         if(phone_textview.text.isEmpty() && !isGroup) {
@@ -299,6 +304,10 @@ class UserProfileActivity : AppCompatActivity() {
         if(!isGroup)
             return
 
+        profile_heading.text = "Group Participants"
+
+
+
         FirebaseUtils.ref.groupMembers(targetUID)
             .orderByChild("addedOn")
             .addValueEventListener(object : ValueEventListener {
@@ -307,11 +316,119 @@ class UserProfileActivity : AppCompatActivity() {
                 override fun onDataChange(p0: DataSnapshot) {
 
                     val groupMembers:MutableList<Models.GroupMember> = ArrayList()
+                    for(post in p0.children){
+                        val member = post.getValue(Models.GroupMember::class.java)!!
+                        if(!member.removed)
+                        groupMembers.add(member)
 
-
-
+                    }
+                    setMemberAdapter(groupMembers)
                 }
             })
+    }
+
+    private fun setMemberAdapter(groupMembers:MutableList<Models.GroupMember>){
+
+        val excludedUIDs:MutableList<String> = ArrayList()
+        var isAdmin = groupMembers.any { it.uid == FirebaseUtils.getUid() && it.admin }
+
+        groupMembers.forEach { excludedUIDs.add(it.uid) }
+
+        if(isAdmin)
+            add_group_member_btn.visibility = View.VISIBLE
+
+        add_group_member_btn.setOnClickListener {
+            startActivityForResult(Intent(this, MultiContactChooserActivity::class.java)
+                .apply { putStringArrayListExtra(utils.constants.KEY_EXCLUDED_LIST, excludedUIDs as ArrayList<String>) }, 101)
+        }
+
+        class memberHolder(itemView: View):RecyclerView.ViewHolder(itemView){
+            var name = itemView.name!!
+            var profilePic = itemView.pic!!
+            var admin = itemView.admin_textview!!
+
+        }
+
+        group_member_recycler_view.adapter = object : RecyclerView.Adapter<memberHolder>() {
+            override fun onCreateViewHolder(p0: ViewGroup, p1: Int): memberHolder {
+                return memberHolder(layoutInflater.inflate(R.layout.item_group_member_layout, p0, false))
+            }
+
+            override fun getItemCount(): Int = groupMembers.size
+
+            override fun onBindViewHolder(p0: memberHolder, p1: Int) {
+
+                FirebaseUtils.loadProfileThumbnail(this@UserProfileActivity, groupMembers[p1].uid,
+                    p0.profilePic)
+                p0.name.text = utils.getNameFromNumber(this@UserProfileActivity, groupMembers[p1].phoneNumber)
+
+                p0.admin.visibility =  if(groupMembers[p1].admin)  View.VISIBLE else View.GONE
+
+
+                p0.itemView.setOnClickListener {
+                    if(groupMembers[p0.adapterPosition].uid == myUID)
+                        return@setOnClickListener
+
+                    if(!isAdmin)
+                        return@setOnClickListener
+
+                    alert { positiveButton("Yes") {
+                        FirebaseUtils.ref.groupMember(targetUID, groupMembers[p0.adapterPosition].uid)
+                            .child("removed").setValue(true).addOnSuccessListener {
+                                this.ctx.toast("Member removed")
+                            }
+                    }
+                    negativeButton("No"){
+
+                    }
+                        message = "Remove ${utils.getNameFromNumber(this@UserProfileActivity,groupMembers[p0.adapterPosition].phoneNumber)} from this group?"
+                    }
+                }
+            }
+
+        }
+
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+
+        if(requestCode == 101 && resultCode == Activity.RESULT_OK){
+            utils.printIntentKeyValues(intent)
+            //Now add members
+            val selectedUsers = data?.getParcelableArrayListExtra<Models.Contact>(utils.constants.KEY_SELECTED)
+                    as java.util.ArrayList<Models.Contact>?
+
+            val progressDialog = ProgressDialog.show(this, "", "Please wait...", true, false)
+
+            selectedUsers?.forEachWithIndex {index, it ->
+                val groupMember = Models.GroupMember(
+                    it.uid,
+                    FirebaseUtils.getUid(), FirebaseUtils.getPhoneNumber(),
+                    it.number, false, false, System.currentTimeMillis()
+                )
+
+                FirebaseUtils.ref.groupMember(targetUID, it.uid)
+                    .setValue(groupMember)
+
+                // add create event in message node
+                FirebaseUtils.createdGroupEvent(it.uid, targetUID, it.number)
+
+                // add member event in message node
+                FirebaseUtils.addedMemberEvent(it.uid, targetUID, it.number)
+
+                FirebaseUtils.ref.lastMessage(it.uid)
+                    .child(targetUID)
+                    .setValue(Models.LastMessageDetail(type = FirebaseUtils.KEY_CONVERSATION_GROUP,
+                        nameOrNumber = name))
+                    .addOnSuccessListener { if(index == selectedUsers.lastIndex) {
+                        progressDialog.dismiss()
+                        this.ctx.toast("New member added")
+                    }}
+
+            }
+            }
+
+        super.onActivityResult(requestCode, resultCode, data)
     }
 
     class imageHolder(itemView:View): RecyclerView.ViewHolder(itemView){

@@ -208,8 +208,10 @@ class CreateGroupActivity : AppCompatActivity() {
                     FirebaseUtils.ref.groupMember(groupID, it.uid)
                         .setValue(groupMember)
 
+                    // add create event in message node
+                    FirebaseUtils.createdGroupEvent(it.uid, groupID, it.number)
 
-                    // add member in message node
+                    // add member event in message node
                     FirebaseUtils.addedMemberEvent(it.uid, groupID, it.number)
 
                     FirebaseUtils.ref.lastMessage(it.uid)
@@ -225,9 +227,19 @@ class CreateGroupActivity : AppCompatActivity() {
                     FirebaseUtils.getPhoneNumber()
                     ,true,false,  System.currentTimeMillis())
 
+                //add in member
                 FirebaseUtils.ref.groupMember(groupID, FirebaseUtils.getUid())
                     .setValue(groupMember)
 
+                // add create event in message node
+                FirebaseUtils.createdGroupEvent(FirebaseUtils.getUid(), groupID, FirebaseUtils.getPhoneNumber())
+
+                participantList.forEach {
+                    // add member event in message node
+                    FirebaseUtils.addedMemberEvent(FirebaseUtils.getUid(), groupID, it.number)
+                }
+
+                //update last message
                 FirebaseUtils.ref.lastMessage(FirebaseUtils.getUid())
                     .child(groupID)
                     .setValue(Models.LastMessageDetail(type = FirebaseUtils.KEY_CONVERSATION_GROUP,

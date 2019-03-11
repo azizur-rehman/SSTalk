@@ -49,6 +49,7 @@ object FirebaseUtils {
         val EVENT_TYPE_ADDED = "added"
         val EVENT_TYPE_REMOVED = "removed"
         val EVENT_TYPE_LEFT = "left"
+        val EVENT_TYPE_CREATED = "created"
 
 
         val VAL_ONLINE = "Online"
@@ -971,6 +972,22 @@ object FirebaseUtils {
                 FirebaseUtils.getPhoneNumber(), // "from"  will be phone number of adder
                 messageType = EVENT_TYPE_ADDED
                 ))
+    }
+
+
+    fun createdGroupEvent(uid:String, groupID: String, addingMemberPhoneNumber:String){
+
+        Log.d(
+            "FirebaseUtils",
+            "addedMemberEvent: adding $addingMemberPhoneNumber to group $groupID and showing to $uid"
+        )
+
+        FirebaseUtils.ref.getChatRef(uid, groupID)
+            .child("MSG${System.currentTimeMillis()}")
+            .setValue(Models.MessageModel(addingMemberPhoneNumber,  //"message" will contain number of the one who is added
+                FirebaseUtils.getPhoneNumber(), // "from"  will be phone number of adder
+                messageType = EVENT_TYPE_CREATED
+            ))
     }
 
 

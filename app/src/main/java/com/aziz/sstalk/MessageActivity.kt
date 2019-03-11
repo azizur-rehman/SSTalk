@@ -717,7 +717,9 @@ class MessageActivity : AppCompatActivity() {
                         }
                         FirebaseUtils.EVENT_TYPE_LEFT -> {
                             textHolder.text.text = utils.getNameFromNumber(context, model.message) +" left"
-
+                        }
+                        FirebaseUtils.EVENT_TYPE_CREATED -> {
+                            textHolder.text.text = utils.getNameFromNumber(context, model.message) +" created this group"
                         }
                     }
 

@@ -29,10 +29,7 @@ import kotlinx.android.synthetic.main.contact_screen.*
 import kotlinx.android.synthetic.main.item__forward_contact_list.view.*
 import kotlinx.android.synthetic.main.item_conversation_layout.view.*
 import kotlinx.android.synthetic.main.item_grid_contact_layout.view.*
-import org.jetbrains.anko.alert
-import org.jetbrains.anko.doAsyncResult
-import org.jetbrains.anko.onComplete
-import org.jetbrains.anko.uiThread
+import org.jetbrains.anko.*
 import java.io.Serializable
 import java.util.concurrent.Future
 
@@ -41,6 +38,8 @@ class MultiContactChooserActivity : AppCompatActivity(){
     //number list has 10 digit formatted number
     var numberList:MutableList<Models.Contact> = mutableListOf()
     var registeredAvailableUser:MutableList<Models.Contact> = mutableListOf()
+
+    var excludedUIDs:MutableList<String> = ArrayList()
 
     var selectedUsers:MutableList<Models.Contact> = ArrayList()
 
@@ -52,6 +51,9 @@ class MultiContactChooserActivity : AppCompatActivity(){
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_multi_contact_chooser)
+
+        excludedUIDs = intent.getStringArrayListExtra(utils.constants.KEY_EXCLUDED_LIST)
+
 
         contacts_list.layoutManager = LinearLayoutManager(this@MultiContactChooserActivity)
         participant_recyclerview.layoutManager = LinearLayoutManager(this@MultiContactChooserActivity,
@@ -141,8 +143,10 @@ class MultiContactChooserActivity : AppCompatActivity(){
                         for((index, item) in numberList.withIndex()) {
                             if (item.number == number || item.number.contains(number)) {
                                 numberList[index].uid = uid
-                                if(uid!=FirebaseUtils.getUid() && !registeredAvailableUser.contains(numberList[index]))
-                                registeredAvailableUser.add(numberList[index])
+                                if(uid!=FirebaseUtils.getUid() && !registeredAvailableUser.contains(numberList[index])) {
+                                    if(excludedUIDs.isEmpty() || !excludedUIDs.contains(uid))
+                                    registeredAvailableUser.add(numberList[index])
+                                }
                             }
 
                         }
@@ -152,6 +156,9 @@ class MultiContactChooserActivity : AppCompatActivity(){
 
                     contacts_list.adapter = adapter
                     participant_recyclerview.adapter = horizontalAdapter
+
+                    if(registeredAvailableUser.isEmpty())
+                        utils.longToast(this@MultiContactChooserActivity, "No contacts available")
 
                     contact_progressbar.visibility = View.GONE
 
@@ -169,6 +176,11 @@ class MultiContactChooserActivity : AppCompatActivity(){
 
         if(item?.itemId == R.id.action_confirm)
         {
+            if(selectedUsers.isEmpty()){
+                setResult(Activity.RESULT_CANCELED)
+                finish()
+                return false
+            }
 
             val selectedUIDs:MutableList<String> = ArrayList()
             selectedUsers.forEach { selectedUIDs.add(it.uid) }

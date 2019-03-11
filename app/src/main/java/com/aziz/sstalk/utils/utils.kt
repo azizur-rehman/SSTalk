@@ -76,6 +76,8 @@ object utils {
         const val KEY_SELECTED = "selected"
         const val KEY_IS_GROUP = "isGroup"
 
+        const val KEY_EXCLUDED_LIST = "excluded_list"
+
         const val KEY_IS_ON_ACCOUNT_CREATION = "on_acc_creation"
         const val KEY_IS_ONCE = "is_once"
 
