@@ -279,7 +279,8 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
 
                     startActivity(Intent(context, MessageActivity::class.java)
-                        .apply { putExtra(FirebaseUtils.KEY_UID, uid)
+                        .apply {
+                            putExtra(FirebaseUtils.KEY_UID, uid)
                             putExtra(utils.constants.KEY_TARGET_TYPE, model.type)
                             putExtra(utils.constants.KEY_NAME_OR_NUMBER, model.nameOrNumber)
                         putExtra(utils.constants.KEY_UNREAD, unreadCount)}

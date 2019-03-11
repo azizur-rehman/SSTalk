@@ -15,6 +15,7 @@
     <TextView android:layout_width="match_parent"
               android:layout_height="wrap_content"
     style="@style/TextViewHeading"
+              android:id="@+id/profile_heading"
               android:text="Phone Number"
               android:padding="10dp"
               android:layout_marginLeft="5dp"
@@ -34,6 +35,13 @@
               android:drawableLeft="@drawable/ic_phone_green_24dp"
               android:id="@+id/phone_textview"
     />
+
+
+    <android.support.v7.widget.RecyclerView android:layout_width="match_parent"
+                                            android:padding="15dp"
+                                            android:id="@+id/group_member_recycler_view"
+                                            android:layout_marginBottom="5dp"
+                                            android:layout_height="wrap_content"/>
 
 
     <View android:layout_width="match_parent"

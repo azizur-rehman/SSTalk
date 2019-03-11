@@ -67,9 +67,14 @@ class UserProfileActivity : AppCompatActivity() {
 
         utils.printIntentKeyValues(intent)
 
-        if(!isGroup) phone_textview.text = name else phone_textview.visibility = View.GONE
+        if(!isGroup) {
+            phone_textview.text = name
+        }else {
+            phone_textview.visibility = View.GONE
+        }
 
         if(phone_textview.text.isEmpty() && !isGroup) {
+            // if phone number is not available
             FirebaseUtils.ref.allUser()
                 .child(targetUID)
                 .child(FirebaseUtils.KEY_PHONE)
@@ -289,6 +294,25 @@ class UserProfileActivity : AppCompatActivity() {
             })
     }
 
+
+    private fun loadGroupMembers(){
+        if(!isGroup)
+            return
+
+        FirebaseUtils.ref.groupMembers(targetUID)
+            .orderByChild("addedOn")
+            .addValueEventListener(object : ValueEventListener {
+                override fun onCancelled(p0: DatabaseError) {                }
+
+                override fun onDataChange(p0: DataSnapshot) {
+
+                    val groupMembers:MutableList<Models.GroupMember> = ArrayList()
+
+
+
+                }
+            })
+    }
 
     class imageHolder(itemView:View): RecyclerView.ViewHolder(itemView){
         val imageView = itemView.iv_thumbnail_image

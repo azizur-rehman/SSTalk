@@ -105,20 +105,21 @@ class MessagingService: FirebaseMessagingService() {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             putExtra(FirebaseUtils.KEY_UID, sender)
             putExtra(utils.constants.KEY_IS_ONCE, true)
-            putExtra(utils.constants.KEY_NAME_OR_NUMBER, senderPhone)
         }
-        if(utils.isGroupID(sender))
+        if(utils.isGroupID(sender)) {
             intent.putExtra(utils.constants.KEY_TARGET_TYPE, FirebaseUtils.KEY_CONVERSATION_GROUP)
-        else  intent.putExtra(utils.constants.KEY_TARGET_TYPE, FirebaseUtils.KEY_CONVERSATION_SINGLE)
+            intent.putExtra(utils.constants.KEY_NAME_OR_NUMBER, sender)
+        }else  {
+            intent.putExtra(utils.constants.KEY_NAME_OR_NUMBER, senderPhone)
+            intent.putExtra(utils.constants.KEY_TARGET_TYPE, FirebaseUtils.KEY_CONVERSATION_SINGLE)
+        }
 
 
         notify(name, intent, remoteMessage)
 
         Log.d("MessagingService", "showNotification: sender = $sender")
 
-        intent.extras?.keySet()?.forEach {
-            Log.d("MessagingService", "showNotification: passed value -> $it = ${intent.extras?.get(it)}")
-        }
+       utils.printIntentKeyValues(intent)
 
 
     }
