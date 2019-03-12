@@ -152,6 +152,7 @@ object holders {
 
     class TextHeaderHolder(itemView: View):RecyclerView.ViewHolder(itemView){
         val text = itemView.header_textView!!
+        val dateTextView = itemView.header_date_text!!
     }
 
 }

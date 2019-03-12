@@ -210,7 +210,6 @@ class MessageActivity : AppCompatActivity() {
         if(isGroup) {
             target_name_textview.text = nameOrNumber
             FirebaseUtils.loadGroupPicThumbnail(context, targetUid, profile_circleimageview)
-            user_online_status.visibility = View.GONE
             if(nameOrNumber.isEmpty())
                 FirebaseUtils.setGroupName(targetUid, target_name_textview)
         }
@@ -723,6 +722,23 @@ class MessageActivity : AppCompatActivity() {
                         }
                     }
 
+                    //setting header if event
+                    textHolder.dateTextView.text = utils.getHeaderFormattedDate(model.timeInMillis)
+                    if(position>0){
+
+                        val previousDate = Date(snapshots[position - 1].timeInMillis)
+
+                        textHolder.dateTextView.visibility =  if(!DateFormatter.isSameDay(Date(model.timeInMillis) ,  previousDate)){ View.VISIBLE }
+                        else{ View.GONE }
+
+                    }
+                    else{
+
+                        textHolder.dateTextView.visibility = View.VISIBLE
+
+                    }
+
+
                     return
                 }
 
@@ -1185,7 +1201,8 @@ class MessageActivity : AppCompatActivity() {
 
                 if(model.messageType == FirebaseUtils.EVENT_TYPE_REMOVED ||
                         model.messageType == FirebaseUtils.EVENT_TYPE_LEFT ||
-                        model.messageType == FirebaseUtils.EVENT_TYPE_ADDED)
+                        model.messageType == FirebaseUtils.EVENT_TYPE_ADDED ||
+                    model.messageType == FirebaseUtils.EVENT_TYPE_CREATED)
                     return TYPE_EVENT
 
 
@@ -2349,6 +2366,10 @@ class MessageActivity : AppCompatActivity() {
 
         setSearchView(searchView)
 
+        if(isGroup){
+            blockItem?.isVisible = false
+        }
+
 
 
         return super.onCreateOptionsMenu(menu)
@@ -2694,26 +2715,38 @@ class MessageActivity : AppCompatActivity() {
 
                 override fun onDataChange(p0: DataSnapshot) {
                     groupMembers.clear()
+                    var isMeRemoved = false
+                    var members = ""
+
                     for(post in p0.children){
-                        groupMembers.add(post.getValue(Models.GroupMember::class.java)!!)
-                        Log.d("MessageActivity", "onDataChange: members = ${p0.value}")
+                        val member = post.getValue(Models.GroupMember::class.java)!!
+                        groupMembers.add(member)
+                        members += utils.getNameFromNumber(context, member.phoneNumber) +", "
+
+                        if(member.uid == myUID) {
+                            Log.d("MessageActivity", "onDataChange: ${post.value}")
+                            isMeRemoved = member.removed
+                        }
                     }
 
-                    if(groupMembers.any { it.uid == myUID && !it.removed})
-                        blockedSnackbar?.dismiss()
+                    if(!p0.exists())
+                        isMeRemoved = true
+
+                    try {
+                        members = members.trim().substring(0, members.lastIndex - 1)
+                        user_online_status.text = members
+                        Log.d("MessageActivity", "onDataChange: member name = $members")
+                    }
+                    catch (e:Exception){}
+                    val snackbar = Snackbar.make(messageInputField, "You cannot reply to this conversation anymore", Snackbar.LENGTH_INDEFINITE)
+
+                    if(isMeRemoved)
+                        snackbar.show()
                     else
-                        blockedSnackbar?.show()
+                        snackbar.dismiss()
                 }
             })
     }
 
-    private fun bindAttachmentWindow(){
-        val layout = layoutInflater.inflate(R.layout.layout_attachment_menu, null)
 
-        val optionspu =  PopupWindow(layout, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-
-        optionspu.setFocusable(true);
-        optionspu.showAtLocation(layout, Gravity.TOP, 0, 0);
-
-    }
 }

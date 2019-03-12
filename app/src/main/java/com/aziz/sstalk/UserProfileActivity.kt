@@ -4,18 +4,18 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.ProgressDialog
 import android.content.Intent
+import android.graphics.Color
+import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Bundle
 import android.provider.ContactsContract
+import android.support.v4.content.ContextCompat
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.Log
-import android.view.Menu
-import android.view.MenuItem
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.utils
@@ -58,6 +58,9 @@ class UserProfileActivity : AppCompatActivity() {
             supportActionBar!!.setHomeButtonEnabled(true)
         }
 
+//        window.setFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS, WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
+
+        contentView?.setBackgroundColor(Color.TRANSPARENT)
 
         myUID = FirebaseUtils.getUid()
 
@@ -211,6 +214,47 @@ class UserProfileActivity : AppCompatActivity() {
 
         block_user.setOnClickListener {
 
+            if(isGroup){
+
+                alert { message = "Exit from this group? You will no longer be a part of this conversation."
+                positiveButton("Yes, Go on!"){
+
+                    FirebaseUtils.ref.groupMember(targetUID , myUID)
+                        .child("removed").setValue(true).addOnSuccessListener {
+                            this.ctx.toast("Group left")
+                            groupMembers.forEach {
+                                // only to notify others
+                                FirebaseUtils.removeMember(it.uid, targetUID,
+                                    FirebaseUtils.getPhoneNumber(), name, false)
+                            }
+
+                            // notify myself
+                            FirebaseUtils.removeMember(FirebaseUtils.getUid(),
+                                targetUID, FirebaseUtils.getPhoneNumber(),
+                                name, false)
+
+
+                            if(!groupMembers.any{ it.admin }){
+                                if(groupMembers.isNotEmpty()){
+                                    FirebaseUtils.ref.groupMember(targetUID, groupMembers[0].uid)
+                                        .child("admin")
+                                        .setValue(true)
+                                }
+                            }
+
+                            finish()
+                        }
+
+
+                }
+                    negativeButton("No, Don't"){
+
+                    }
+                }.show()
+
+                return@setOnClickListener
+            }
+
             AlertDialog.Builder(this@UserProfileActivity).setMessage("${if (isBlockedByMe) "Unblock" else "Block"} this user")
                 .setPositiveButton("Yes") { _, _ ->
                     FirebaseUtils.ref.blockedUser(myUID, targetUID)
@@ -220,7 +264,14 @@ class UserProfileActivity : AppCompatActivity() {
                 .show()
         }
 
+        if(!isGroup)
         checkIfBlocked()
+        else {
+            block_user.text = "Exit from group"
+            block_user.setCompoundDrawablesWithIntrinsicBounds(
+                ContextCompat.getDrawable(this, R.drawable.ic_logout_red)
+                ,null,null, null)
+        }
 
 
         //set notification switch enable/disable
@@ -255,7 +306,7 @@ class UserProfileActivity : AppCompatActivity() {
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
 
-        if(phone_textview.text.toString() == name && !isGroup)
+        if(phone_textview.text.toString() == supportActionBar?.title && !isGroup)
         menuInflater.inflate(R.menu.user_profile_menu, menu)
 
         return super.onCreateOptionsMenu(menu)
@@ -269,7 +320,7 @@ class UserProfileActivity : AppCompatActivity() {
                 val contactIntent = Intent(Intent.ACTION_INSERT)
                 contactIntent.putExtra(ContactsContract.Intents.Insert.PHONE, phone_textview.text)
                 contactIntent.type = ContactsContract.RawContacts.CONTENT_TYPE
-                startActivity(contactIntent)
+                startActivityForResult(contactIntent, 111)
             }
         }
 
@@ -300,12 +351,46 @@ class UserProfileActivity : AppCompatActivity() {
     }
 
 
+    var groupMembers:MutableList<Models.GroupMember> = ArrayList()
     private fun loadGroupMembers(){
         if(!isGroup)
             return
 
         profile_heading.text = "Group Participants"
 
+
+
+        //load created by
+        FirebaseUtils.ref.groupInfo(targetUID)
+//            .child("createdBy")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onCancelled(p0: DatabaseError) { }
+
+                override fun onDataChange(p0: DataSnapshot) {
+                    if(!p0.exists())
+                        return
+
+                    val group = p0.getValue(Models.Group::class.java)
+
+                    val uid = group?.createdBy
+
+                    FirebaseUtils.ref.user(uid!!)
+                        .child("phone")
+                        .addListenerForSingleValueEvent(object : ValueEventListener {
+                            override fun onCancelled(p0: DatabaseError) { }
+
+                            override fun onDataChange(p0: DataSnapshot) {
+                                val phone = p0.getValue(String::class.java)
+                                val subtitle = "Created by ${utils.getNameFromNumber(this@UserProfileActivity,phone!!)}" +
+                                        " on ${utils.getHeaderFormattedDate(group.createdOn)}"
+
+                                Log.d("UserProfileActivity", "onDataChange: $subtitle")
+                                supportActionBar?.subtitle = subtitle
+                            }
+                        })
+
+                }
+            })
 
 
         FirebaseUtils.ref.groupMembers(targetUID)
@@ -315,7 +400,8 @@ class UserProfileActivity : AppCompatActivity() {
 
                 override fun onDataChange(p0: DataSnapshot) {
 
-                    val groupMembers:MutableList<Models.GroupMember> = ArrayList()
+                    groupMembers.clear()
+
                     for(post in p0.children){
                         val member = post.getValue(Models.GroupMember::class.java)!!
                         if(!member.removed)
@@ -330,7 +416,15 @@ class UserProfileActivity : AppCompatActivity() {
     private fun setMemberAdapter(groupMembers:MutableList<Models.GroupMember>){
 
         val excludedUIDs:MutableList<String> = ArrayList()
-        var isAdmin = groupMembers.any { it.uid == FirebaseUtils.getUid() && it.admin }
+        val isAdmin = groupMembers.any { it.uid == FirebaseUtils.getUid() && it.admin }
+
+
+
+        if(!groupMembers.any { it.uid == myUID }){
+            group_member_recycler_view.visibility = View.GONE
+            block_user.visibility = View.GONE
+            return
+        }
 
         groupMembers.forEach { excludedUIDs.add(it.uid) }
 
@@ -364,25 +458,21 @@ class UserProfileActivity : AppCompatActivity() {
 
                 p0.admin.visibility =  if(groupMembers[p1].admin)  View.VISIBLE else View.GONE
 
+                val groupMember =  groupMembers[p0.adapterPosition]
 
                 p0.itemView.setOnClickListener {
-                    if(groupMembers[p0.adapterPosition].uid == myUID)
+                    Log.d("UserProfileActivity", "onBindViewHolder: uid = $groupMember")
+                    if(groupMember.uid == myUID)
                         return@setOnClickListener
 
-                    if(!isAdmin)
-                        return@setOnClickListener
+//                    if(!isAdmin)
+//                        return@setOnClickListener
 
-                    alert { positiveButton("Yes") {
-                        FirebaseUtils.ref.groupMember(targetUID, groupMembers[p0.adapterPosition].uid)
-                            .child("removed").setValue(true).addOnSuccessListener {
-                                this.ctx.toast("Member removed")
-                            }
-                    }
-                    negativeButton("No"){
+                    FirebaseUtils.showTargetOptionMenuFromProfile(this@UserProfileActivity,
+                        groupMember.uid, targetUID, groupMember.phoneNumber,groupMember.admin, isAdmin ,
+                        groupMembers, name)
 
-                    }
-                        message = "Remove ${utils.getNameFromNumber(this@UserProfileActivity,groupMembers[p0.adapterPosition].phoneNumber)} from this group?"
-                    }
+
                 }
             }
 
@@ -425,8 +515,36 @@ class UserProfileActivity : AppCompatActivity() {
                         this.ctx.toast("New member added")
                     }}
 
+                //add event to other members
+                groupMembers.forEach {member ->
+                    // add member event in message node
+
+                    if(member.uid != it.uid) {
+
+                        FirebaseUtils.addedMemberEvent(member.uid, targetUID, it.number)
+
+                        FirebaseUtils.ref.lastMessage(member.uid)
+                            .child(targetUID)
+                            .setValue(
+                                Models.LastMessageDetail(
+                                    type = FirebaseUtils.KEY_CONVERSATION_GROUP,
+                                    nameOrNumber = name
+                                )
+                            )
+                    }
+
+                }
+
             }
+
+
+
+
             }
+
+        else if(requestCode == 111 && resultCode == Activity.RESULT_OK){
+            supportActionBar?.title = utils.getNameFromNumber(this, name)
+        }
 
         super.onActivityResult(requestCode, resultCode, data)
     }

@@ -40,7 +40,9 @@
 
     <TextView android:layout_width="match_parent"
               android:layout_height="wrap_content"
-              android:padding="15dp"
+              android:paddingLeft="15dp"
+              android:paddingBottom="10dp"
+              android:paddingTop="5dp"
               android:text="Loading..."
               android:textSize="18sp"
               android:background="?selectableItemBackground"
@@ -53,10 +55,11 @@
 
 
     <android.support.v7.widget.RecyclerView android:layout_width="match_parent"
-                                            android:padding="15dp"
+                                            android:paddingLeft="15dp"
+                                            android:paddingBottom="5dp"
                                             app:layoutManager="android.support.v7.widget.LinearLayoutManager"
                                             android:id="@+id/group_member_recycler_view"
-                                            android:layout_marginBottom="5dp"
+                                            android:clipToPadding="false"
                                             android:layout_height="wrap_content"/>
 
 

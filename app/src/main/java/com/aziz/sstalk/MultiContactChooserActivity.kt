@@ -28,6 +28,7 @@ import kotlinx.android.synthetic.main.activity_multi_contact_chooser.*
 import kotlinx.android.synthetic.main.contact_screen.*
 import kotlinx.android.synthetic.main.item__forward_contact_list.view.*
 import kotlinx.android.synthetic.main.item_conversation_layout.view.*
+import kotlinx.android.synthetic.main.item_grid_contact_layout.*
 import kotlinx.android.synthetic.main.item_grid_contact_layout.view.*
 import org.jetbrains.anko.*
 import java.io.Serializable
@@ -54,6 +55,8 @@ class MultiContactChooserActivity : AppCompatActivity(){
 
         excludedUIDs = intent.getStringArrayListExtra(utils.constants.KEY_EXCLUDED_LIST)
 
+        if(excludedUIDs.isNullOrEmpty())
+            excludedUIDs = ArrayList()
 
         contacts_list.layoutManager = LinearLayoutManager(this@MultiContactChooserActivity)
         participant_recyclerview.layoutManager = LinearLayoutManager(this@MultiContactChooserActivity,
@@ -252,6 +255,7 @@ class MultiContactChooserActivity : AppCompatActivity(){
 
             FirebaseUtils.loadProfileThumbnail(this@MultiContactChooserActivity, selectedUsers[p1].uid,
                 p0.pic)
+
         }
 
     }
@@ -268,5 +272,8 @@ class MultiContactChooserActivity : AppCompatActivity(){
     class ParticipantHolder(itemView: View):RecyclerView.ViewHolder(itemView){
         val name = itemView.grid_name!!
         val pic = itemView.grid_pic!!
+        init {
+            itemView.grid_cancel_btn.visibility = View.GONE
+        }
     }
 }

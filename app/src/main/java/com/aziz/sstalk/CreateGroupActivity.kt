@@ -23,6 +23,7 @@ import com.google.android.gms.tasks.Task
 import com.google.firebase.storage.UploadTask
 import com.mvc.imagepicker.ImagePicker
 import kotlinx.android.synthetic.main.activity_create_group.*
+import kotlinx.android.synthetic.main.item_grid_contact_layout.*
 import kotlinx.android.synthetic.main.item_grid_contact_layout.view.*
 import kotlinx.android.synthetic.main.layout_profile_image_picker.*
 import me.shaohui.advancedluban.Luban
@@ -46,7 +47,12 @@ class CreateGroupActivity : AppCompatActivity() {
 
 
         add_participant_btn.setOnClickListener {
-            startActivityForResult(Intent(this, MultiContactChooserActivity::class.java),101)
+
+            val excludedUIDs:MutableList<String> = ArrayList()
+             participantList.forEach { excludedUIDs.add(it.uid) }
+                startActivityForResult(Intent(this, MultiContactChooserActivity::class.java).apply {
+                putStringArrayListExtra(utils.constants.KEY_EXCLUDED_LIST, excludedUIDs as java.util.ArrayList<String>?)
+            },101)
         }
 
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
@@ -87,6 +93,11 @@ class CreateGroupActivity : AppCompatActivity() {
                     this@CreateGroupActivity, selectedUsers[p1].uid,
                     p0.pic
                 )
+
+                p0.cancelBtn.setOnClickListener {
+                    selectedUsers.removeAt(p0.adapterPosition)
+                    notifyItemRemoved(p0.adapterPosition)
+                }
             }
 
         }
@@ -128,9 +139,12 @@ class CreateGroupActivity : AppCompatActivity() {
 
         }
         else if(resultCode == Activity.RESULT_OK){
+            // for receiving participant list
             val selectedUsers = data?.getParcelableArrayListExtra<Models.Contact>(utils.constants.KEY_SELECTED)
                     as java.util.ArrayList<Models.Contact>
             participantList = selectedUsers
+
+
             setGridAdapter(selectedUsers)
         }
 
@@ -141,6 +155,7 @@ class CreateGroupActivity : AppCompatActivity() {
     class ParticipantHolder(itemView: View): RecyclerView.ViewHolder(itemView){
         val name = itemView.grid_name!!
         val pic = itemView.grid_pic!!
+        val cancelBtn = itemView.grid_cancel_btn!!
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {

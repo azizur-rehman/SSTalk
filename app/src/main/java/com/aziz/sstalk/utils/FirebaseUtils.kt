@@ -1,6 +1,5 @@
 package com.aziz.sstalk.utils
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.graphics.Typeface
@@ -614,7 +613,9 @@ object FirebaseUtils {
                     when {
                         messageModel!!.messageType == FirebaseUtils.EVENT_TYPE_LEFT -> textView.text = "❗ A member left"
                         messageModel.messageType == FirebaseUtils.EVENT_TYPE_ADDED -> textView.text = "❗ A new member was added"
-                        messageModel.messageType == FirebaseUtils.EVENT_TYPE_LEFT -> textView.text = "❗ A member was removed"
+                        messageModel.messageType == FirebaseUtils.EVENT_TYPE_CREATED -> textView.text = "❗ Group was created"
+                        messageModel.messageType == FirebaseUtils.EVENT_TYPE_REMOVED -> textView.text = "❗ A member was removed"
+
                     }
 
                     if(textView.text.isNotEmpty())
@@ -991,22 +992,22 @@ object FirebaseUtils {
     }
 
 
-    fun removedMemberEvent(uid:String, groupID: String, removedMember:String){
+    fun removedMemberEvent(uid:String, groupID: String, removedMemberPhoneNumber:String){
 
         FirebaseUtils.ref.getChatRef(uid, groupID)
             .child("MSG${System.currentTimeMillis()}")
-            .setValue(Models.MessageModel(removedMember,
+            .setValue(Models.MessageModel(removedMemberPhoneNumber,
                 FirebaseUtils.getPhoneNumber(),// this will use as remover
                 messageType = EVENT_TYPE_REMOVED
             ))
     }
 
 
-    fun leftMemberEvent(uid:String, groupID: String, leftMember:String){
+    private fun leftMemberEvent(uid: String, groupID: String){
 
         FirebaseUtils.ref.getChatRef(uid, groupID)
             .child("MSG${System.currentTimeMillis()}")
-            .setValue(Models.MessageModel(leftMember,
+            .setValue(Models.MessageModel(FirebaseUtils.getPhoneNumber(),
                 FirebaseUtils.getPhoneNumber(),// this will use as remover
                 messageType = EVENT_TYPE_LEFT
             ))
@@ -1062,6 +1063,115 @@ object FirebaseUtils {
                 }
             }
         }
+        }
+    }
+
+
+    //this method will add events only, it won't remove member
+    //you have to use it in callback of member removal
+    fun removeMember(uid: String, groupID: String, phoneNumber: String, groupName: String,
+                     isRemovedByOther:Boolean){
+        if(isRemovedByOther)
+            FirebaseUtils.removedMemberEvent(uid, groupID, phoneNumber)
+        else
+            FirebaseUtils.leftMemberEvent(uid, groupID)
+        //update last message node
+        FirebaseUtils.ref.lastMessage(uid)
+            .child(groupID)
+            .setValue(Models.LastMessageDetail(type = FirebaseUtils.KEY_CONVERSATION_GROUP,
+                nameOrNumber = groupName))
+
+    }
+
+    fun showTargetOptionMenuFromProfile(
+        context: Context,
+        uid: String,
+        groupID: String,
+        phoneNumber: String,
+        isAdmin: Boolean,
+        isMeAdmin: Boolean,
+        groupMembers : MutableList<Models.GroupMember>,
+        groupName:String
+    ){
+
+
+            context.selector("", listOf("${if(isAdmin) "Dismiss" else "Make"} Admin",
+                "Remove this member",
+                "View Profile", "Message", "Make a call")) { _, i ->
+
+                when (i) {
+
+                    0 -> {
+                        if(!isMeAdmin)
+                            context.toast("You have to be an admin to remove someone")
+                        else{
+                            context.alert {
+                                message = if(isAdmin) "Dismiss ${utils.getNameFromNumber(context, phoneNumber)} from admin?"
+                                else "Make ${utils.getNameFromNumber(context, phoneNumber)} as Admin?"
+                                positiveButton("Yes"){
+                                    FirebaseUtils.ref.groupMember(groupID, uid)
+                                        .child("admin").setValue(!isAdmin)
+                                }
+                                negativeButton("No"){}
+                            }.show()
+                        }
+                    }
+
+                    1-> {
+
+                        // make or dismiss admin
+                        if(!isMeAdmin) {
+                            context.toast("You have to be an admin to remove someone")
+                            return@selector
+                        }
+
+                        context.alert { positiveButton("Yes") {
+                            FirebaseUtils.ref.groupMember(groupID, uid)
+                                .child("removed").setValue(true).addOnSuccessListener {
+                                    this.ctx.toast("Member removed")
+                                    repeat(groupMembers.size) {
+
+                                        removeMember(uid, groupID, phoneNumber, groupName, true)
+                                    }
+
+                                    // add event to myself
+                                    removedMemberEvent(FirebaseUtils.getUid(), groupID, phoneNumber)
+                                }
+                        }
+                            negativeButton("No"){
+
+                            }
+                            message = "Remove ${utils.getNameFromNumber(context, phoneNumber)} from this group?"
+                        }.show()
+                    }
+
+
+                    3 -> {
+                        //show message activity
+                        context.startActivity(Intent(context, MessageActivity::class.java).apply {
+                            putExtra(FirebaseUtils.KEY_UID, uid)
+                            putExtra(utils.constants.KEY_NAME_OR_NUMBER, phoneNumber)
+                            putExtra(utils.constants.KEY_TARGET_TYPE, FirebaseUtils.KEY_CONVERSATION_SINGLE)
+                            addFlags( Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                        })
+                    }
+
+                    2 -> {
+                        //show profile activity
+                        context.startActivity(Intent(context, UserProfileActivity::class.java).apply {
+                            putExtra(FirebaseUtils.KEY_UID, uid)
+                            putExtra(FirebaseUtils.KEY_NAME, phoneNumber)
+                            putExtra(utils.constants.KEY_IS_GROUP, false )
+                        })
+                    }
+
+                    4 -> {
+                        //make call
+                        context.makeCall(phoneNumber)
+
+                    }
+                }
+
         }
     }
 
