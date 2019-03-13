@@ -202,7 +202,6 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         val options = FirebaseRecyclerOptions.Builder<Models.LastMessageDetail>()
             .setQuery(FirebaseUtils.ref.lastMessage(FirebaseUtils.getUid())
-                    //todo dont forget to change it
                 .orderByChild(FirebaseUtils.KEY_REVERSE_TIMESTAMP),Models.LastMessageDetail::class.java)
             .build()
 
@@ -216,13 +215,16 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 if(model.type == FirebaseUtils.KEY_CONVERSATION_GROUP) {
                     holder.name.text = model.nameOrNumber.trim()
                     FirebaseUtils.loadGroupPic(context, uid, holder.pic)
-                    if(holder.name.text.isEmpty())
+                    if(holder.name.text.isEmpty() || utils.isGroupID(holder.name.text.toString()))
                         FirebaseUtils.setGroupName(uid, holder.name)
+
+                    holder.onlineStatus.visibility = View.GONE
                 }
                 else {
                     holder.name.text = utils.getNameFromNumber(context, model.nameOrNumber)
                     FirebaseUtils.loadProfilePic(this@HomeActivity, uid, holder.pic)
                     FirebaseUtils.setUserOnlineStatus(uid, holder.onlineStatus)
+
                 }
 
 
@@ -283,7 +285,8 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                             putExtra(FirebaseUtils.KEY_UID, uid)
                             putExtra(utils.constants.KEY_TARGET_TYPE, model.type)
                             putExtra(utils.constants.KEY_NAME_OR_NUMBER, model.nameOrNumber)
-                        putExtra(utils.constants.KEY_UNREAD, unreadCount)}
+                        putExtra(utils.constants.KEY_UNREAD, unreadCount) //optional
+                        }
                     )
                 }
 
@@ -346,6 +349,8 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
                         override fun onDestroyActionMode(p0: ActionMode?) {
                             isContextToolbarActive = false
+
+                            Log.d("HomeActivity", "onDestroyActionMode: $selectedItemPosition")
 
                             for(pos in selectedItemPosition)
                                 adapter.notifyItemChanged(pos)

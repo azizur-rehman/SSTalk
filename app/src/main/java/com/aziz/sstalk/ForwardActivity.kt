@@ -194,25 +194,38 @@ class ForwardActivity : AppCompatActivity() {
             model.caption = ""
 
             val currentModel = model
+            var nameOrNumber: String
+            var type: String
 
-            var nameOrNumber = allFrequentConverstation[positionInMainList].nameOrNumber
-            val type = allFrequentConverstation[positionInMainList].type
+            if(positionInMainList > -1) {
+                 nameOrNumber = allFrequentConverstation[positionInMainList].nameOrNumber
+                 type = allFrequentConverstation[positionInMainList].type
+            }
+            else{
+                nameOrNumber = registeredAvailableUser.filter { it.uid == targetUID }[0].number
+                type = FirebaseUtils.KEY_CONVERSATION_SINGLE
+            }
+
 
             if(nameOrNumber.isEmpty()){
                 nameOrNumber = if(utils.isGroupID(targetUID)) selectedTitles[i]
                 else selectedNumbers[i]
             }
 
+            val isGroup = utils.isGroupID(targetUID)
+
             //send to my node
             FirebaseUtils.ref.getChatRef(myUID, targetUID)
                 .child(messageID)
                 .setValue(currentModel)
                 .addOnSuccessListener {
-                    FirebaseUtils.setMessageStatusToDB(messageID, myUID, targetUID, true, isRead = true)
+                    FirebaseUtils.setMessageStatusToDB(messageID, myUID, targetUID, true, isRead = true,
+                        groupNameIf = nameOrNumber)
 
                     FirebaseUtils.ref.lastMessage(myUID)
                         .child(targetUID)
-                        .setValue(Models.LastMessageDetail(nameOrNumber = nameOrNumber, type = type))
+                        .setValue(Models.LastMessageDetail(nameOrNumber =  nameOrNumber ,
+                            type = type))
 
                 }
 
@@ -230,11 +243,11 @@ class ForwardActivity : AppCompatActivity() {
                     .child(messageID)
                     .setValue(currentModel)
                     .addOnSuccessListener {
-                        FirebaseUtils.setMessageStatusToDB(messageID, targetUID, myUID, false, isRead = false)
+                        FirebaseUtils.setMessageStatusToDB(messageID, targetUID, myUID, false, isRead = false,groupNameIf = "")
 
                         FirebaseUtils.ref.lastMessage(targetUID)
                             .child(myUID)
-                            .setValue(Models.LastMessageDetail(nameOrNumber = nameOrNumber, type = type))
+                            .setValue(Models.LastMessageDetail(nameOrNumber = FirebaseUtils.getPhoneNumber(), type = type))
                     }
             }
         }
@@ -429,6 +442,9 @@ class ForwardActivity : AppCompatActivity() {
     }
 
     private fun setAllContactAdapter(){
+
+        Log.d("ForwardActivity", "setAllContactAdapter: $registeredAvailableUser")
+
         allContactAdapter = object : RecyclerView.Adapter<ViewHolder>(){
             override fun onCreateViewHolder(p0: ViewGroup, p1: Int): ViewHolder =
                 ViewHolder(layoutInflater.inflate(R.layout.item__forward_contact_list, p0, false))
@@ -505,7 +521,7 @@ class ForwardActivity : AppCompatActivity() {
             holder.checkBox.isChecked = !holder.checkBox.isChecked
 
 
-            Log.d("ForwardActivity", "bindHolder: selected => "+allFrequentConverstation[allFrequentUIDs.indexOf(uid)])
+//            Log.d("ForwardActivity", "bindHolder: selected => "+allFrequentConverstation[allFrequentUIDs.indexOf(uid)])
 
             if(holder.checkBox.isChecked) {
                 selectedUIDs.add(uid)
@@ -559,9 +575,11 @@ class ForwardActivity : AppCompatActivity() {
                             continue
 
                         for((index, item) in numberList.withIndex()) {
-                            if (item.number == number) {
+                            if (item.number == number || item.number.contains(number)) {
                                 numberList[index].uid = uid
-                                if(!allFrequentUIDs.contains(uid))
+                                if(!allFrequentUIDs.any { it == uid } && !registeredAvailableUser.any{ it == numberList[index] }
+                                    && !registeredAvailableUser.any { it.number == number }
+                                )
                                 registeredAvailableUser.add(numberList[index])
                             }
 
@@ -609,7 +627,8 @@ class ForwardActivity : AppCompatActivity() {
                                 .setValue(messageModel)
                                 .addOnSuccessListener {
 
-                                    FirebaseUtils.setMessageStatusToDB(messageID, memberID, groupId, false, false)
+                                    FirebaseUtils.setMessageStatusToDB(messageID, memberID, groupId, false, false,
+                                        groupName)
 
                                     FirebaseUtils.ref.lastMessage(memberID)
                                         .child(groupId)

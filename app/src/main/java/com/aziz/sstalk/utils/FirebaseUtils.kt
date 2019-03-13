@@ -1,9 +1,11 @@
 package com.aziz.sstalk.utils
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.graphics.Typeface
 import android.graphics.drawable.BitmapDrawable
+import android.os.Build
 import android.os.Handler
 import android.support.v4.content.ContextCompat
 import android.util.Log
@@ -30,6 +32,7 @@ import org.jetbrains.anko.*
 import java.io.File
 import java.lang.Exception
 import java.util.*
+import java.util.jar.Manifest
 
 
 object FirebaseUtils {
@@ -228,7 +231,8 @@ object FirebaseUtils {
                                     val file= File(utils.getProfilePicPath(context)+uid+".jpg")
                                     if(file.exists()){
                                         Picasso.get().load(file)
-                                            .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE).into(imageView)
+                                            .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
+                                            .into(imageView)
                                         imageView.setOnClickListener {
                                             context.startActivity(Intent(context, ImagePreviewActivity::class.java)
                                                 .putExtra(utils.constants.KEY_LOCAL_PATH, file.path))
@@ -387,7 +391,7 @@ object FirebaseUtils {
                 Picasso.get().load(file)
                     .resize(60,60)
                     .centerCrop()
-                    .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
+//                    .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
                     .into(imageView)
             }
 
@@ -410,7 +414,7 @@ object FirebaseUtils {
                                 val file= File(utils.getProfilePicPath(context)+uid+".jpg")
                                 if(file.exists()){
                                     Picasso.get().load(file)
-                                        .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
+//                                        .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
                                         .resize(60,60)
                                         .centerCrop()
                                         .into(imageView)
@@ -427,7 +431,7 @@ object FirebaseUtils {
 
                             Picasso.get().load(link)
                                 .placeholder(R.drawable.contact_placeholder)
-                                .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
+//                                .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
                                 .into(imageView, object : Callback {
                                     override fun onSuccess() {
                                         if (utils.hasStoragePermission(context)) {
@@ -746,16 +750,19 @@ object FirebaseUtils {
     }
 
 
-    fun setMessageStatusToDB(messageID: String, uid: String,targetUID: String, isDelivered:Boolean, isRead:Boolean){
+    fun setMessageStatusToDB(messageID: String, uid: String,targetUID: String, isDelivered:Boolean, isRead:Boolean, groupNameIf:String){
         Log.d(
             "FirebaseUtils",
             "setMessageStatusToDB: setting values to $uid -> $targetUID as $isDelivered, $isRead on $messageID"
         )
 
+        Log.d("FirebaseUtils", "setMessageStatusToDB: group name = $groupNameIf")
+
         ref.messageStatus(uid,targetUID,messageID)
             .setValue(Models.MessageStatus(FirebaseUtils.getUid(), isRead, isDelivered, messageID,
                 if(FirebaseUtils.isLoggedIn()) FirebaseAuth.getInstance().currentUser!!.phoneNumber!! else "1234567890",
-                if(FirebaseUtils.isLoggedIn()) FirebaseAuth.getInstance().currentUser!!.photoUrl.toString() else ""))
+                if(FirebaseUtils.isLoggedIn()) FirebaseAuth.getInstance().currentUser!!.photoUrl.toString() else "",
+                groupNameIf))
     }
 
 
@@ -1058,7 +1065,12 @@ object FirebaseUtils {
                 }
 
                 2 -> {
-                    context.makeCall(phoneNumber)
+                    if(utils.hasCallPermission(context))
+                        context.makeCall(phoneNumber)
+                    else
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                            (context as Activity).requestPermissions(arrayOf(android.Manifest.permission.CALL_PHONE), 132)
+                        }
 
                 }
             }
@@ -1167,7 +1179,12 @@ object FirebaseUtils {
 
                     4 -> {
                         //make call
-                        context.makeCall(phoneNumber)
+                        if(utils.hasCallPermission(context))
+                            context.makeCall(phoneNumber)
+                        else
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                                (context as Activity).requestPermissions(arrayOf(android.Manifest.permission.CALL_PHONE), 132)
+                            }
 
                     }
                 }

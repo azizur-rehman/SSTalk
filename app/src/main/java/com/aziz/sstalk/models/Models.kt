@@ -44,7 +44,8 @@ class Models {
 
     data class MessageStatus(var from: String = "", var read:Boolean = false, var delivered:Boolean = false, var messageID:String = "",
                              var senderPhoneNumber:String = "",
-                             var senderPhotoURL:String = "")
+                             var senderPhotoURL:String = "",
+                             var groupNameIfGroup:String = "")
 
     data class UserActivityStatus(var status:String = "offline", var timeInMillis: Long = System.currentTimeMillis())
 

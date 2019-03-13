@@ -237,7 +237,8 @@ class ContactsActivity : AppCompatActivity(){
                     else -> {
                         startActivity(Intent(this@ContactsActivity, MessageActivity::class.java)
                             .putExtra(FirebaseUtils.KEY_UID, uid)
-                            .putExtra(utils.constants.KEY_NAME_OR_NUMBER, registeredAvailableUser[position].number)                        )
+                            .putExtra(utils.constants.KEY_NAME_OR_NUMBER, registeredAvailableUser[position].number)
+                            .putExtra(utils.constants.KEY_TARGET_TYPE, FirebaseUtils.KEY_CONVERSATION_SINGLE))
                         finish()
                     }
                 }

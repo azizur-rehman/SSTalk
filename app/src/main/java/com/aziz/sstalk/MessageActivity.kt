@@ -209,6 +209,21 @@ class MessageActivity : AppCompatActivity() {
 
         if(isGroup) {
             target_name_textview.text = nameOrNumber
+
+            if(utils.isGroupID(nameOrNumber) || nameOrNumber.isEmpty()){
+                FirebaseUtils.ref.groupInfo(targetUid).child(utils.constants.KEY_NAME)
+                    .addListenerForSingleValueEvent(object : ValueEventListener {
+                        override fun onCancelled(p0: DatabaseError) { }
+                        override fun onDataChange(p0: DataSnapshot) {
+                            if(p0.exists()) {
+                                nameOrNumber = p0.getValue(String::class.java)!!
+                                target_name_textview.text = nameOrNumber
+                            }
+                        }
+                    })
+//                FirebaseUtils.setGroupName(nameOrNumber, target_name_textview)
+            }
+
             FirebaseUtils.loadGroupPicThumbnail(context, targetUid, profile_circleimageview)
             if(nameOrNumber.isEmpty())
                 FirebaseUtils.setGroupName(targetUid, target_name_textview)
@@ -227,6 +242,9 @@ class MessageActivity : AppCompatActivity() {
                     super.onInitialized()
                 }
             })
+
+
+        messageInputField.setOnFocusChangeListener { v, hasFocus -> dateStickyHeader.visibility = View.GONE }
 
 
 
@@ -248,6 +266,7 @@ class MessageActivity : AppCompatActivity() {
         messageInputField.setTypingListener(object : MessageInput.TypingListener {
             override fun onStartTyping() {
                 FirebaseUtils.setMeAsTyping()
+                dateStickyHeader.visibility = View.GONE
             }
 
             override fun onStopTyping() { FirebaseUtils.setMeAsOnline() }
@@ -1420,7 +1439,8 @@ class MessageActivity : AppCompatActivity() {
             .setValue(messageModel)
             .addOnSuccessListener {
 
-                FirebaseUtils.setMessageStatusToDB(messageID, myUID, targetUid, true, true)
+                FirebaseUtils.setMessageStatusToDB(messageID, myUID, targetUid, true, true,
+                    nameOrNumber)
 
                 FirebaseUtils.ref.lastMessage(myUID)
                     .child(targetUid)
@@ -1458,7 +1478,7 @@ class MessageActivity : AppCompatActivity() {
             .setValue(messageModel)
             .addOnSuccessListener {
 
-                FirebaseUtils.setMessageStatusToDB(messageID, targetUid, myUID,false, false)
+                FirebaseUtils.setMessageStatusToDB(messageID, targetUid, myUID,false, false, nameOrNumber)
 
                 FirebaseUtils.ref.lastMessage(targetUid)
                     .child(myUID)
@@ -1486,7 +1506,7 @@ class MessageActivity : AppCompatActivity() {
                     .setValue(messageModel)
                     .addOnSuccessListener {
 
-                        FirebaseUtils.setMessageStatusToDB(messageID, memberID, targetUid, false, false)
+                        FirebaseUtils.setMessageStatusToDB(messageID, memberID, targetUid, false, false, nameOrNumber)
 
                         FirebaseUtils.ref.lastMessage(memberID)
                             .child(targetUid)
@@ -2718,6 +2738,7 @@ class MessageActivity : AppCompatActivity() {
                     var isMeRemoved = false
                     var members = ""
 
+
                     for(post in p0.children){
                         val member = post.getValue(Models.GroupMember::class.java)!!
                         groupMembers.add(member)
@@ -2733,9 +2754,12 @@ class MessageActivity : AppCompatActivity() {
                         isMeRemoved = true
 
                     try {
-                        members = members.trim().substring(0, members.lastIndex - 1)
-                        user_online_status.text = members
-                        Log.d("MessageActivity", "onDataChange: member name = $members")
+                        if (!isMeRemoved) {
+                            members = members.trim().substring(0, members.lastIndex - 1)
+                            user_online_status.text = members
+                            Log.d("MessageActivity", "onDataChange: member name = $members")
+                        }
+                        else user_online_status.visibility = View.GONE
                     }
                     catch (e:Exception){}
                     val snackbar = Snackbar.make(messageInputField, "You cannot reply to this conversation anymore", Snackbar.LENGTH_INDEFINITE)

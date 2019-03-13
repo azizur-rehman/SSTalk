@@ -42,12 +42,16 @@ class FragmentOTP : Fragment() {
     var mResendToken:PhoneAuthProvider.ForceResendingToken? = null
     var userInfoBundle:Bundle? = null
 
+    var progressDialog:ProgressDialog? = null
+
     var otp_count = 1
 
     private var rootView:View? = null
 
     private var verificationStateChangedCallbacks = object  : PhoneAuthProvider.OnVerificationStateChangedCallbacks(){
         override fun onVerificationCompleted(p0: PhoneAuthCredential?) {
+
+            Log.d("FragmentOTP", "onVerificationCompleted: ${p0.toString()}")
         }
 
         override fun onVerificationFailed(p0: FirebaseException?) {
@@ -67,6 +71,8 @@ class FragmentOTP : Fragment() {
             mResendToken = p1!!
 
             otp_count++
+            progressDialog?.dismiss()
+            context?.toast("OTP sent")
         }
 
 
@@ -92,6 +98,7 @@ class FragmentOTP : Fragment() {
         mobile_no = arguments!!.getString(MobileLoginActivity.KEY.PHONE)
         Log.d("FragmentOTP", "bindViews: mob = $mobile_no")
 
+        progressDialog = ProgressDialog(context)
 
         view.pinView.setAnimationEnable(true)
         view.verify.setOnClickListener{
@@ -149,6 +156,11 @@ class FragmentOTP : Fragment() {
         otp_count++
 
         Log.d("FragmentOTP", "generateOTP: sending OTP to ----> ${mobile_no.toString()}")
+
+        progressDialog?.setMessage("Sending OTP")
+        progressDialog?.setCancelable(false)
+        progressDialog?.show()
+
 
         PhoneAuthProvider.getInstance()
             .verifyPhoneNumber(mobile_no.toString(),60, TimeUnit.SECONDS,this.activity!!, verificationStateChangedCallbacks)

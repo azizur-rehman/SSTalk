@@ -25,6 +25,7 @@ import com.google.firebase.storage.StorageReference
 import com.google.firebase.storage.UploadTask
 import com.mvc.imagepicker.ImagePicker
 import kotlinx.android.synthetic.main.activity_edit_profile.*
+import kotlinx.android.synthetic.main.item_contact_layout.*
 import kotlinx.android.synthetic.main.layout_profile_image_picker.*
 import me.shaohui.advancedluban.Luban
 import me.shaohui.advancedluban.OnCompressListener
@@ -58,8 +59,17 @@ class EditProfile : AppCompatActivity() {
         profile_pick_btn.setOnClickListener { ImagePicker.pickImage(context) }
 
         if(FirebaseUtils.isLoggedIn()) {
-            val name = FirebaseAuth.getInstance().currentUser!!.displayName!!
-            profile_name.setText(name)
+            FirebaseUtils.ref.user(myUID)
+                .child("name").addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onCancelled(p0: DatabaseError) { }
+
+                    override fun onDataChange(p0: DataSnapshot) {
+                        if(p0.exists()) {
+                            val name = p0.value.toString()
+                            profile_name.setText(name)
+                        }
+                    }
+                })
         }
 
         updateProfileBtn.setOnClickListener {
@@ -166,10 +176,13 @@ class EditProfile : AppCompatActivity() {
                                 utils.toast(context, toastAfterUploadIfAny) }
 
 
-                    FirebaseAuth.getInstance().currentUser!!
-                        .updateProfile(UserProfileChangeRequest.Builder()
-                            .setPhotoUri(link).build())
-
+                    if(FirebaseUtils.isLoggedIn()) {
+                        FirebaseAuth.getInstance().currentUser!!
+                            .updateProfile(
+                                UserProfileChangeRequest.Builder()
+                                    .setPhotoUri(link).build()
+                            )
+                    }
 
                     if(intent.getBooleanExtra(utils.constants.KEY_IS_ON_ACCOUNT_CREATION, false)){
                         startActivity(Intent(context, HomeActivity::class.java))
@@ -221,6 +234,8 @@ class EditProfile : AppCompatActivity() {
                             profile_circleimageview.setImageBitmap(bitmap)
 
                             isProfileChanged = true
+
+
 
                         }
 

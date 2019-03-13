@@ -55,6 +55,8 @@
                       android:textColor="@color/white"
                       android:textSize="11sp"
                       android:drawablePadding="5dp"
+                      android:maxLines="1"
+                      android:ellipsize="end"
                       android:id="@+id/user_online_status"
                       android:layout_marginTop="1dp"
                       android:layout_height="wrap_content"/>

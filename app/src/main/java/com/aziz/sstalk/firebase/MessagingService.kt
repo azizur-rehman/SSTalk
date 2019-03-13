@@ -33,6 +33,7 @@ class MessagingService: FirebaseMessagingService() {
     private val KEY_SENDER_PIC_URL = "senderPhotoURL"
     private val KEY_MESSAGES = "messages"
     private val KEY_IS_MUTED = "isMuted"
+    private val KEY_GROUP_NAME = "groupNameIfAny"
 
     private val MESSAGE_SEPERATOR = "<--MESSAGE_SEPERATOR-->"
 
@@ -99,7 +100,7 @@ class MessagingService: FirebaseMessagingService() {
         var name = utils.getNameFromNumber(this@MessagingService, senderPhone!!)
 
         if(utils.isGroupID(sender!!))
-            name = "New messages by $name in a group"
+            name = data[KEY_GROUP_NAME]!!
 
         val intent = Intent(this@MessagingService, MessageActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -108,7 +109,7 @@ class MessagingService: FirebaseMessagingService() {
         }
         if(utils.isGroupID(sender)) {
             intent.putExtra(utils.constants.KEY_TARGET_TYPE, FirebaseUtils.KEY_CONVERSATION_GROUP)
-            intent.putExtra(utils.constants.KEY_NAME_OR_NUMBER, sender)
+            intent.putExtra(utils.constants.KEY_NAME_OR_NUMBER, data[KEY_GROUP_NAME]!!)
         }else  {
             intent.putExtra(utils.constants.KEY_NAME_OR_NUMBER, senderPhone)
             intent.putExtra(utils.constants.KEY_TARGET_TYPE, FirebaseUtils.KEY_CONVERSATION_SINGLE)
@@ -261,13 +262,18 @@ class MessagingService: FirebaseMessagingService() {
         val sender = remoteMessage.data[KEY_SENDER]!!
 
         if(utils.isGroupID(sender))
-            name = "New messages by $name in a group"
+            name = remoteMessage.data[KEY_GROUP_NAME]!!
 
-        val person = Person.Builder().setName(name)
+        var conversationName = name
+        if(conversationName.isEmpty()){
+            conversationName = "New Group Messages"
+        }
+
+        val conversation = Person.Builder().setName(conversationName)
 
            if(utils.hasStoragePermission(this)) {
                if(profilePicFile.exists()) {
-                   person.setIcon(IconCompat.createWithBitmap(utils.getCircleBitmap(BitmapFactory.decodeFile(profilePicFile.path))))
+                   conversation.setIcon(IconCompat.createWithBitmap(utils.getCircleBitmap(BitmapFactory.decodeFile(profilePicFile.path))))
 //                   notificationCompatBuilder.setLargeIcon(utils.getCircleBitmap(BitmapFactory.decodeFile(profilePicFile.path)))
                }
                else{
@@ -275,14 +281,17 @@ class MessagingService: FirebaseMessagingService() {
                }
            }
 
-        val style = NotificationCompat.MessagingStyle(person.build())
+        val style = NotificationCompat.MessagingStyle(conversation.build())
+//        style.conversationTitle = conversationName
 
+        val personName = utils.getNameFromNumber(this@MessagingService, remoteMessage.data[KEY_SENDER_PHONE]!!)
+        val person = Person.Builder().setName(personName).build()
 
         messages.forEach {
 //            Log.d("MessagingService", "updateNotificationWithBigText: messages = $it")
             if(it.trim().isNotEmpty() && messages.size<=5)
             style.addMessage(
-                it.replace(MESSAGE_SEPERATOR,"").trim(), System.currentTimeMillis(), person.build()
+                it.replace(MESSAGE_SEPERATOR,"").trim(), System.currentTimeMillis(), conversation.build()
             )
         }
 

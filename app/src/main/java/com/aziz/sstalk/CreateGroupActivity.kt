@@ -8,6 +8,7 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.support.v4.content.ContextCompat
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.Log
@@ -45,6 +46,8 @@ class CreateGroupActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_create_group)
 
+        profile_circleimageview.setImageResource(R.drawable.ic_group_white_24dp)
+        profile_circleimageview.circleBackgroundColor = ContextCompat.getColor(this, R.color.colorPrimary)
 
         add_participant_btn.setOnClickListener {
 

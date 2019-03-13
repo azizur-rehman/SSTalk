@@ -7,6 +7,8 @@
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+        <!--<item name="searchViewStyle">@style/MySearchViewStyle</item>-->
+
     </style>
 
     <style name="AppTheme.NoActionBar" parent="AppTheme">
@@ -19,8 +21,6 @@
 
     <style name="AppTheme.NoActionBar.Translucent" parent="AppTheme.NoActionBar">
         <item name="android:windowTranslucentStatus" tools:targetApi="kitkat">true</item>
-        <item name="android:windowTranslucentNavigation" tools:targetApi="kitkat">true</item>
-        <item name="android:windowDrawsSystemBarBackgrounds" tools:targetApi="lollipop">true</item>
         <item name="android:statusBarColor" tools:targetApi="lollipop">@android:color/transparent</item>
     </style>
 
@@ -97,11 +97,26 @@
 
 
     <style name="AppToolbar" parent="ThemeOverlay.AppCompat.Dark.ActionBar">
-
-
       <item name="android:actionMenuTextColor">@color/colorPrimary</item>
+    </style>
 
-
+    <style name="MySearchViewStyle" parent="Widget.AppCompat.SearchView">
+        <!-- Background for the search query section (e.g. EditText) -->
+        <item name="queryBackground">@color/white</item>
+        <!-- Background for the actions section (e.g. voice, submit) -->
+        <!--<item name="submitBackground">...</item>-->
+        <!-- Close button icon -->
+        <item name="closeIcon">@drawable/ic_cancel_grey_24dp</item>
+        <!-- Search button icon -->
+        <!--<item name="searchIcon">...</item>-->
+        <!-- Go/commit button icon -->
+        <!--<item name="goIcon">...</item>-->
+        <!-- Voice search button icon -->
+        <!--<item name="voiceIcon">...</item>-->
+        <!-- Commit icon shown in the query suggestion row -->
+        <!--<item name="commitIcon">...</item>-->
+        <!-- Layout for query suggestion rows -->
+        <!--<item name="suggestionRowLayout">...</item>-->
     </style>
 
 </resources>
