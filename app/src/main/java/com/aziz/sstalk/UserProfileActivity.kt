@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.ProgressDialog
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.net.Uri
@@ -19,16 +20,24 @@ import android.view.*
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.utils
+import com.google.android.gms.tasks.Continuation
+import com.google.android.gms.tasks.Task
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.storage.UploadTask
 import com.squareup.picasso.Picasso
+import com.theartofdev.edmodo.cropper.CropImage
+import com.theartofdev.edmodo.cropper.CropImageView
 import com.vincent.filepicker.DividerGridItemDecoration
 import kotlinx.android.synthetic.main.activity_user_profile.*
 import kotlinx.android.synthetic.main.content_user_profile.*
 import kotlinx.android.synthetic.main.item_group_member_layout.view.*
 import kotlinx.android.synthetic.main.item_image.view.*
 import kotlinx.android.synthetic.main.item_video.view.*
+import kotlinx.android.synthetic.main.layout_profile_image_picker.*
+import me.shaohui.advancedluban.Luban
+import me.shaohui.advancedluban.OnCompressListener
 import org.jetbrains.anko.*
 import org.jetbrains.anko.collections.forEachWithIndex
 import java.io.File
@@ -306,8 +315,10 @@ class UserProfileActivity : AppCompatActivity() {
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
 
-        if(phone_textview.text.toString() == supportActionBar?.title && !isGroup)
-        menuInflater.inflate(R.menu.user_profile_menu, menu)
+        if(isGroup) menuInflater.inflate(R.menu.edit_profile_menu, menu)
+        else if(phone_textview.text.toString() == supportActionBar?.title ) {
+             menuInflater.inflate(R.menu.user_profile_menu, menu)
+        }
 
         return super.onCreateOptionsMenu(menu)
     }
@@ -321,6 +332,20 @@ class UserProfileActivity : AppCompatActivity() {
                 contactIntent.putExtra(ContactsContract.Intents.Insert.PHONE, phone_textview.text)
                 contactIntent.type = ContactsContract.RawContacts.CONTENT_TYPE
                 startActivityForResult(contactIntent, 111)
+            }
+
+            R.id.action_edit -> {
+
+                if(!groupMembers.any { it.uid == myUID }){
+                    toast("You are no longer a part of this group")
+                    return false
+                }
+
+                CropImage.activity()
+                    .setGuidelines(CropImageView.Guidelines.ON)
+                    .setCropShape(CropImageView.CropShape.RECTANGLE)
+                    .setAspectRatio(1,1)
+                    .start(this)
             }
         }
 
@@ -349,6 +374,7 @@ class UserProfileActivity : AppCompatActivity() {
                 }
             })
     }
+
 
 
     var groupMembers:MutableList<Models.GroupMember> = ArrayList()
@@ -546,6 +572,31 @@ class UserProfileActivity : AppCompatActivity() {
             supportActionBar?.title = utils.getNameFromNumber(this, name)
         }
 
+        else  if(resultCode == Activity.RESULT_OK && requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE){
+
+            utils.printIntentKeyValues(data!!)
+
+            val result = CropImage.getActivityResult(data)
+            val filePath = result.uri.path
+
+            Luban.compress(this, File(filePath))
+                .putGear(Luban.THIRD_GEAR)
+                .launch(object : OnCompressListener {
+                    override fun onStart() {
+                    }
+
+                    override fun onSuccess(file: File?) {
+                        uploadGroupProfilePic(targetUID, file!!)
+                    }
+
+                    override fun onError(e: Throwable?) {
+                        uploadGroupProfilePic(targetUID, File(filePath))
+                    }
+
+                })
+
+        }
+
         super.onActivityResult(requestCode, resultCode, data)
     }
 
@@ -558,5 +609,68 @@ class UserProfileActivity : AppCompatActivity() {
         val imageView = itemView.iv_thumbnail_video
         val length = itemView.txt_duration
 
+    }
+
+
+
+    val context = this@UserProfileActivity
+
+
+    //for uploading group profile pic
+    private fun uploadGroupProfilePic(groupID: String , imageFile:File){
+
+
+        if(!isGroup)
+            return
+
+        val dialog = ProgressDialog(context)
+        dialog.setMessage("Wait a moment...")
+        dialog.setCancelable(false)
+        dialog.show()
+
+        val storageRef = FirebaseUtils.ref.profilePicStorageRef(groupID)
+
+        val uploadTask = storageRef.putFile(utils.getUriFromFile(context, imageFile))
+
+        Log.d("UserProfileActivity", "uploadGroupProfilePic: path = ${imageFile.path}")
+
+        uploadTask.continueWithTask(Continuation<UploadTask.TaskSnapshot, Task<Uri>> { task ->
+            if (!task.isSuccessful) {
+                task.exception?.let {
+                    throw it
+                }
+            }
+            Log.d("FirebaseUtils", "uploadedImage: size = "+task.result!!.bytesTransferred/1024)
+            return@Continuation storageRef.downloadUrl
+        })
+            .addOnCompleteListener { task ->
+                dialog.dismiss()
+                if(task.isSuccessful) {
+                    val link = task.result
+                    updateProfileUrl(groupID, link.toString())
+                }
+                else
+                    utils.toast(context, task.exception!!.message.toString())
+            }
+            .addOnSuccessListener {
+                dialog.dismiss()
+
+            }
+            .addOnFailureListener{
+                dialog.dismiss()
+            }
+
+
+
+    }
+
+
+    private fun updateProfileUrl(groupID: String, url:String){
+        FirebaseUtils.ref.groupInfo(groupID)
+            .child(FirebaseUtils.KEY_PROFILE_PIC_URL)
+            .setValue(url)
+            .addOnSuccessListener {
+                toast("Profile pic updated")
+            }
     }
 }
