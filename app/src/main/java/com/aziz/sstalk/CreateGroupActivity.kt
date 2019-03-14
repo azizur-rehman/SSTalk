@@ -23,6 +23,8 @@ import com.google.android.gms.tasks.Continuation
 import com.google.android.gms.tasks.Task
 import com.google.firebase.storage.UploadTask
 import com.mvc.imagepicker.ImagePicker
+import com.theartofdev.edmodo.cropper.CropImage
+import com.theartofdev.edmodo.cropper.CropImageView
 import kotlinx.android.synthetic.main.activity_create_group.*
 import kotlinx.android.synthetic.main.item_grid_contact_layout.*
 import kotlinx.android.synthetic.main.item_grid_contact_layout.view.*
@@ -60,7 +62,16 @@ class CreateGroupActivity : AppCompatActivity() {
 
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        profile_pick_btn.setOnClickListener { ImagePicker.pickImage(this, 123) }
+        profile_pick_btn.setOnClickListener {
+
+            CropImage.activity()
+                .setGuidelines(CropImageView.Guidelines.ON)
+                .setCropShape(CropImageView.CropShape.RECTANGLE)
+                .setAspectRatio(1,1)
+                .start(this)
+//            ImagePicker.pickImage(this, 123)
+
+        }
 
 
     }
@@ -110,10 +121,14 @@ class CreateGroupActivity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
 
-        if(resultCode == Activity.RESULT_OK && requestCode == 123){
+        if(resultCode == Activity.RESULT_OK && requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE){
 
-            val filePath = ImagePicker.getImagePathFromResult(this, requestCode, resultCode, data)
+            utils.printIntentKeyValues(data!!)
 
+            val result = CropImage.getActivityResult(data)
+            val filePath = result.uri.path
+
+            Log.d("CreateGroup", "onActivityResult: path = $filePath")
             imageFile = File(filePath)
 
             Luban.compress(this, File(filePath))

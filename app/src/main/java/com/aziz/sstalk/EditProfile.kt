@@ -24,6 +24,8 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.StorageReference
 import com.google.firebase.storage.UploadTask
 import com.mvc.imagepicker.ImagePicker
+import com.theartofdev.edmodo.cropper.CropImage
+import com.theartofdev.edmodo.cropper.CropImageView
 import kotlinx.android.synthetic.main.activity_edit_profile.*
 import kotlinx.android.synthetic.main.item_contact_layout.*
 import kotlinx.android.synthetic.main.layout_profile_image_picker.*
@@ -56,7 +58,14 @@ class EditProfile : AppCompatActivity() {
 
         FirebaseUtils.loadProfilePic(this, myUID, profile_circleimageview)
 
-        profile_pick_btn.setOnClickListener { ImagePicker.pickImage(context) }
+        profile_pick_btn.setOnClickListener {
+//            ImagePicker.pickImage(context)
+            CropImage.activity()
+                .setGuidelines(CropImageView.Guidelines.ON)
+                .setCropShape(CropImageView.CropShape.RECTANGLE)
+                .setAspectRatio(1,1)
+                .start(this)
+        }
 
         if(FirebaseUtils.isLoggedIn()) {
             FirebaseUtils.ref.user(myUID)
@@ -146,7 +155,7 @@ class EditProfile : AppCompatActivity() {
 
 
 
-        Log.d("FirebaseUtils", "uploadImage: File size = "+file.length()/1024)
+        Log.d("EditProfile", "uploadImage: File size = "+file.length()/1024)
 
 
 
@@ -166,8 +175,6 @@ class EditProfile : AppCompatActivity() {
                 dialog.dismiss()
                 if(task.isSuccessful) {
                     val link = task.result
-
-
 
                     dbRef.setValue(link.toString())
                         .addOnSuccessListener {
@@ -216,7 +223,15 @@ class EditProfile : AppCompatActivity() {
         when(resultCode){
             Activity.RESULT_OK -> {
 
-                 val filePath = ImagePicker.getImagePathFromResult(context, requestCode, resultCode, data)
+
+                utils.printIntentKeyValues(data!!)
+
+                 val result = CropImage.getActivityResult(data)
+                val filePath = result.uri.path
+
+                Log.d("EditProfile", "onActivityResult: $filePath")
+                    //utils.getRealPathFromURI(context, result.uri)
+                     //ImagePicker.getImagePathFromResult(context, requestCode, resultCode, data)
 
                 Luban.compress(context, File(filePath))
                     .putGear(Luban.THIRD_GEAR)

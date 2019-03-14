@@ -632,12 +632,16 @@ object utils {
     fun getUriFromFile(context: Context?, file:File) : Uri {
 
         var uri = Uri.fromFile(file)
+        return try {
 
-        if(Build.VERSION.SDK_INT>= 24)
-            uri = FileProvider.getUriForFile(context!!, constants.URI_AUTHORITY, file)
+            if (Build.VERSION.SDK_INT >= 24)
+                uri = FileProvider.getUriForFile(context!!, constants.URI_AUTHORITY, file)
 
-        return uri
-
+            uri
+        } catch (e:Exception){
+            Log.e("utils", "utils: getUriFromFile = ${e.message}")
+            uri
+        }
     }
 
     fun isAppIsInBackground(context: Context):Boolean {
