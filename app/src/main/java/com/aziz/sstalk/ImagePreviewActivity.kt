@@ -76,7 +76,7 @@ class ImagePreviewActivity : AppCompatActivity() {
 
             if(imgURL.isEmpty()){
                 utils.toast(this@ImagePreviewActivity, "Failed to load image")
-                Log.d("ImagePreviewActivity", "onCreate: path empty")
+                Log.d("ImagePreviewActivi13ty", "onCreate: path empty")
                 finish()
             }
             else
@@ -93,6 +93,8 @@ class ImagePreviewActivity : AppCompatActivity() {
             supportActionBar!!.setDisplayHomeAsUpEnabled(true)
             supportActionBar!!.setHomeButtonEnabled(true)
         }
+
+        title = ""
     }
 
 

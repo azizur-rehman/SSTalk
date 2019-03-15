@@ -65,6 +65,7 @@ import com.vincent.filepicker.activity.VideoPickActivity
 import com.vincent.filepicker.filter.entity.ImageFile
 import com.vincent.filepicker.filter.entity.VideoFile
 import kotlinx.android.synthetic.main.activity_message.*
+import kotlinx.android.synthetic.main.content_user_profile.*
 import kotlinx.android.synthetic.main.layout_attachment_menu.*
 import kotlinx.android.synthetic.main.layout_include_message_activity_toolbar.*
 import kotlinx.android.synthetic.main.text_header.view.*
@@ -227,6 +228,8 @@ class MessageActivity : AppCompatActivity() {
             FirebaseUtils.loadGroupPicThumbnail(context, targetUid, profile_circleimageview)
             if(nameOrNumber.isEmpty())
                 FirebaseUtils.setGroupName(targetUid, target_name_textview)
+
+            monitorGroupNameChanges()
         }
         else {
             target_name_textview.text = (utils.getNameFromNumber(context, nameOrNumber))
@@ -311,6 +314,23 @@ class MessageActivity : AppCompatActivity() {
 
 
         }
+    }
+
+
+    private fun monitorGroupNameChanges(){
+        // keep track of latest value just in case its changed and user is engaged with the screen
+        FirebaseUtils.ref.groupInfo(targetUid)
+            .child(utils.constants.KEY_NAME)
+            .addValueEventListener(object : ValueEventListener {
+                override fun onCancelled(p0: DatabaseError) {
+                }
+
+                override fun onDataChange(p0: DataSnapshot) {
+                    nameOrNumber = p0.value.toString()
+                    target_name_textview.text = nameOrNumber
+                }
+            })
+
     }
 
 
@@ -737,7 +757,7 @@ class MessageActivity : AppCompatActivity() {
                             textHolder.text.text = utils.getNameFromNumber(context, model.message) +" left"
                         }
                         FirebaseUtils.EVENT_TYPE_CREATED -> {
-                            textHolder.text.text = utils.getNameFromNumber(context, model.message) +" created this group"
+                            textHolder.text.text = utils.getNameFromNumber(context, model.from) +" created this group"
                         }
                     }
 

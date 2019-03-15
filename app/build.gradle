@@ -76,7 +76,9 @@ dependencies {
     implementation 'org.jetbrains.anko:anko-commons:0.10.4'
     implementation 'com.github.medyo:android-about-page:1.2.5'
 
+    // the above version is based androidX pattern
     implementation 'com.theartofdev.edmodo:android-image-cropper:2.7.0'
+    implementation 'com.yarolegovich:lovely-dialog:1.1.0'
 
 
 

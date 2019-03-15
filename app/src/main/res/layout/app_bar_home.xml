@@ -21,12 +21,25 @@
 
     <include layout="@layout/content_home"/>
 
+    <android.support.design.widget.BottomNavigationView android:layout_width="match_parent"
+                                                        android:layout_gravity="bottom"
+                                                        android:background="@color/white"
+                                                        android:visibility="gone"
+                                                        app:menu="@menu/nav_bottom_home_menu"
+                                                        android:layout_height="wrap_content"
+
+    />
+
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/show_contacts"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="@dimen/fab_margin"
+        android:paddingBottom="30dp"
         android:src="@drawable/ic_person_add_white_24dp" />
+
+
+
 
 </android.support.design.widget.CoordinatorLayout>

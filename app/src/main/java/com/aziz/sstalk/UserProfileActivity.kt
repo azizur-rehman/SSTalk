@@ -30,6 +30,8 @@ import com.squareup.picasso.Picasso
 import com.theartofdev.edmodo.cropper.CropImage
 import com.theartofdev.edmodo.cropper.CropImageView
 import com.vincent.filepicker.DividerGridItemDecoration
+import com.yarolegovich.lovelydialog.LovelyInfoDialog
+import com.yarolegovich.lovelydialog.LovelyTextInputDialog
 import kotlinx.android.synthetic.main.activity_user_profile.*
 import kotlinx.android.synthetic.main.content_user_profile.*
 import kotlinx.android.synthetic.main.item_group_member_layout.view.*
@@ -85,6 +87,7 @@ class UserProfileActivity : AppCompatActivity() {
 
         if(!isGroup) {
             phone_textview.text = name
+            isPhoneLoaded = true
         }else {
             phone_textview.visibility = View.GONE
             loadGroupMembers()
@@ -341,11 +344,25 @@ class UserProfileActivity : AppCompatActivity() {
                     return false
                 }
 
-                CropImage.activity()
-                    .setGuidelines(CropImageView.Guidelines.ON)
-                    .setCropShape(CropImageView.CropShape.RECTANGLE)
-                    .setAspectRatio(1,1)
-                    .start(this)
+                selector("Edit Group", listOf("Edit name", "Change Group picture")){_,i ->
+                    when(i){
+                        0 -> {
+                            //show group name edit dialog
+                            showGroupNameEditDialog()
+                        }
+
+                        1 -> {
+                            //show group profile change
+                            CropImage.activity()
+                                .setGuidelines(CropImageView.Guidelines.ON)
+                                .setCropShape(CropImageView.CropShape.RECTANGLE)
+                                .setAspectRatio(1,1)
+                                .start(this)
+                        }
+                    }
+                }
+
+
             }
         }
 
@@ -374,6 +391,7 @@ class UserProfileActivity : AppCompatActivity() {
                 }
             })
     }
+
 
 
 
@@ -412,6 +430,7 @@ class UserProfileActivity : AppCompatActivity() {
 
                                 Log.d("UserProfileActivity", "onDataChange: $subtitle")
                                 supportActionBar?.subtitle = subtitle
+                                toolbar_subtitle_textView.text = subtitle
                             }
                         })
 
@@ -444,6 +463,19 @@ class UserProfileActivity : AppCompatActivity() {
         val excludedUIDs:MutableList<String> = ArrayList()
         val isAdmin = groupMembers.any { it.uid == FirebaseUtils.getUid() && it.admin }
 
+        // keep track of latest value just in case its changed and user is engaged with the screen
+        FirebaseUtils.ref.groupInfo(targetUID)
+            .child(utils.constants.KEY_NAME)
+            .addValueEventListener(object : ValueEventListener {
+                override fun onCancelled(p0: DatabaseError) {
+                }
+
+                override fun onDataChange(p0: DataSnapshot) {
+                    name = p0.value.toString()
+                    Log.d("UserProfileActivity", "onDataChange: value has changed name = $name")
+                    title = name
+                }
+            })
 
 
         if(!groupMembers.any { it.uid == myUID }){
@@ -491,8 +523,6 @@ class UserProfileActivity : AppCompatActivity() {
                     if(groupMember.uid == myUID)
                         return@setOnClickListener
 
-//                    if(!isAdmin)
-//                        return@setOnClickListener
 
                     FirebaseUtils.showTargetOptionMenuFromProfile(this@UserProfileActivity,
                         groupMember.uid, targetUID, groupMember.phoneNumber,groupMember.admin, isAdmin ,
@@ -672,5 +702,46 @@ class UserProfileActivity : AppCompatActivity() {
             .addOnSuccessListener {
                 toast("Profile pic updated")
             }
+    }
+
+
+    private fun showGroupNameEditDialog(){
+
+      LovelyTextInputDialog(this)
+      .setTopColorRes(R.color.colorAccent)
+          .setTopTitleColor(Color.WHITE)
+          .setTopTitle("New Group name")
+      .setTitle("Edit the group name")
+      .setInitialInput(name)
+          .setInputFilter("Invalid Group name") {
+              return@setInputFilter it.isNotBlank() && it.length > 3
+          }
+          .setConfirmButton("Confirm") {
+
+              val newName = it
+
+          FirebaseUtils.ref.groupInfo(targetUID)
+              .child(FirebaseUtils.KEY_NAME)
+              .setValue(newName)
+              .addOnSuccessListener {
+
+                  groupMembers.forEach { member -> FirebaseUtils.ref.lastMessage(member.uid)
+                      .child(targetUID).child(FirebaseUtils.KEY_NAME_OR_NUMBER).setValue(newName) }
+
+                  startActivity(Intent(context, HomeActivity::class.java)
+                      .apply {
+                          flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                      })
+                  finish()
+                  toast("Group name has been changed")
+              }
+
+
+
+      }
+
+          .setNegativeButton("No" ){}
+      .show()
+
     }
 }

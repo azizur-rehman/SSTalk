@@ -411,7 +411,6 @@ class ForwardActivity : AppCompatActivity() {
 
                 bindHolder(holder, uid,model.nameOrNumber, type)
 
-
             }
 
         }
@@ -497,23 +496,14 @@ class ForwardActivity : AppCompatActivity() {
 
         holder.title.setTextColor(Color.BLACK)
 
-        //check if user is blocked
-        FirebaseUtils.ref.blockedUser(myUID, uid)
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onCancelled(p0: DatabaseError) {}
-
-                override fun onDataChange(p0: DataSnapshot) {
-                    holder.itemView.isEnabled = true
-                    if(p0.exists()){
-                        holder.itemView.isEnabled = !p0.value.toString().toBoolean()
-                        holder.itemView.isClickable = holder.itemView.isEnabled
-                        holder.title.setTextColor(if(holder.itemView.isEnabled) Color.BLACK else Color.LTGRAY)
-                    }
-
-                }
-
-            })
-
+        if(!isGroup) {
+            //check if user is blocked
+            checkIfBlocked(uid, holder)
+        }
+        else{
+            //check if not in group
+            checkIfInGroup(uid, holder)
+        }
 
 
 
@@ -656,8 +646,8 @@ class ForwardActivity : AppCompatActivity() {
          val pic = view.pic!!
          val checkBox = view.checkbox!!
 
-
     }
+
 
 
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
@@ -669,6 +659,86 @@ class ForwardActivity : AppCompatActivity() {
     override fun onDestroy() {
         asyncLoader?.cancel(true)
         super.onDestroy()
+    }
+
+
+    private fun checkIfBlocked(uid: String, holder: ViewHolder){
+        FirebaseUtils.ref.blockedUser(myUID, uid)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onCancelled(p0: DatabaseError) {}
+
+                override fun onDataChange(p0: DataSnapshot) {
+                    holder.itemView.isEnabled = true
+                    if (p0.exists()) {
+                        holder.itemView.isEnabled = !p0.value.toString().toBoolean()
+                    }
+                    holder.itemView.isClickable = holder.itemView.isEnabled
+                    holder.title.setTextColor(if (holder.itemView.isEnabled) Color.BLACK else Color.LTGRAY)
+
+
+                }
+
+            })
+
+        FirebaseUtils.ref.blockedUser(uid, myUID)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onCancelled(p0: DatabaseError) {}
+
+                override fun onDataChange(p0: DataSnapshot) {
+                    holder.itemView.isEnabled = true
+                    if (p0.exists()) {
+                        holder.itemView.isEnabled = !p0.value.toString().toBoolean()
+                    }
+                    holder.itemView.isClickable = holder.itemView.isEnabled
+                    holder.title.setTextColor(if (holder.itemView.isEnabled) Color.BLACK else Color.LTGRAY)
+
+
+                }
+
+            })
+
+    }
+
+
+     private fun checkIfInGroup(selectedGroupID:String, holder: ViewHolder){
+
+         holder.itemView.isEnabled = true
+         holder.itemView.isClickable = holder.itemView.isEnabled
+         holder.title.setTextColor(if(holder.itemView.isEnabled) Color.BLACK else Color.LTGRAY)
+
+
+
+         FirebaseUtils.ref.groupMembers(selectedGroupID)
+            .orderByChild("removed").equalTo(false)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onCancelled(p0: DatabaseError) {
+                }
+
+                override fun onDataChange(p0: DataSnapshot) {
+                    //only available members will be returned
+                    var isMeRemoved = false
+
+                    isMeRemoved = if(!p0.exists())
+                        true
+                    else
+                        !p0.children.any {
+                            it.getValue(Models.GroupMember::class.java)?.uid == myUID }
+
+//                    Log.d("ForwardActivity", "bindHolder: group name = ${holder.title.text}")
+//                    Log.d("ForwardActivity", "bindHolder: group id = $selectedGroupID")
+//                    Log.d("ForwardActivity", "onDataChange: removed = $isMeRemoved")
+
+                    try {
+
+                        holder.itemView.isEnabled = !isMeRemoved
+                        holder.itemView.isClickable = holder.itemView.isEnabled
+                        holder.title.setTextColor(if(holder.itemView.isEnabled) Color.BLACK else Color.LTGRAY)
+
+                    }
+                    catch (e:Exception){}
+
+                }
+            })
     }
 
 }

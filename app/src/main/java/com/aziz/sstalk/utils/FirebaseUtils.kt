@@ -70,6 +70,7 @@ object FirebaseUtils {
         val KEY_PHONE = "phone"
         val KEY_PROFILE_PIC_URL = "profile_pic_url"
         val KEY_NAME = "name"
+        val KEY_NAME_OR_NUMBER = "nameOrNumber"
 
         val KEY_CONVERSATION_SINGLE = "single"
         val KEY_CONVERSATION_GROUP = "group"
@@ -987,7 +988,7 @@ object FirebaseUtils {
 
         Log.d(
             "FirebaseUtils",
-            "addedMemberEvent: adding $addingMemberPhoneNumber to group $groupID and showing to $uid"
+            "createdGroupEvent: adding $addingMemberPhoneNumber to group $groupID and showing to $uid"
         )
 
         FirebaseUtils.ref.getChatRef(uid, groupID)
@@ -1065,8 +1066,12 @@ object FirebaseUtils {
                 }
 
                 2 -> {
-                    if(utils.hasCallPermission(context))
-                        context.makeCall(phoneNumber)
+                    if(utils.hasCallPermission(context)){
+                        context.alert { yesButton{ context.makeCall(phoneNumber) }
+                            noButton{}
+                            message = "Call ${utils.getNameFromNumber(context, phoneNumber)}"
+                        }.show()
+                    }
                     else
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                             (context as Activity).requestPermissions(arrayOf(android.Manifest.permission.CALL_PHONE), 132)
@@ -1120,11 +1125,11 @@ object FirebaseUtils {
                             context.alert {
                                 message = if(isAdmin) "Dismiss ${utils.getNameFromNumber(context, phoneNumber)} from admin?"
                                 else "Make ${utils.getNameFromNumber(context, phoneNumber)} as Admin?"
-                                positiveButton("Yes"){
+                                yesButton{
                                     FirebaseUtils.ref.groupMember(groupID, uid)
                                         .child("admin").setValue(!isAdmin)
                                 }
-                                negativeButton("No"){}
+                                noButton{}
                             }.show()
                         }
                     }
@@ -1137,7 +1142,7 @@ object FirebaseUtils {
                             return@selector
                         }
 
-                        context.alert { positiveButton("Yes") {
+                        context.alert { yesButton {
                             FirebaseUtils.ref.groupMember(groupID, uid)
                                 .child("removed").setValue(true).addOnSuccessListener {
                                     this.ctx.toast("Member removed")
@@ -1150,9 +1155,7 @@ object FirebaseUtils {
                                     removedMemberEvent(FirebaseUtils.getUid(), groupID, phoneNumber)
                                 }
                         }
-                            negativeButton("No"){
-
-                            }
+                            noButton{}
                             message = "Remove ${utils.getNameFromNumber(context, phoneNumber)} from this group?"
                         }.show()
                     }
@@ -1179,8 +1182,14 @@ object FirebaseUtils {
 
                     4 -> {
                         //make call
-                        if(utils.hasCallPermission(context))
-                            context.makeCall(phoneNumber)
+                        if(utils.hasCallPermission(context)) {
+                            context.alert { yesButton{
+                                context.makeCall(phoneNumber)
+                            }
+                                noButton{}
+                                message = "Call ${utils.getNameFromNumber(context, phoneNumber)}?"
+                            }.show()
+                        }
                         else
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                                 (context as Activity).requestPermissions(arrayOf(android.Manifest.permission.CALL_PHONE), 132)
