@@ -16,6 +16,7 @@ import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.view.*
 import android.widget.TextView
+import com.aziz.sstalk.fragments.FragmentOnlineFriends
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.Pref
@@ -31,6 +32,7 @@ import kotlinx.android.synthetic.main.activity_home.*
 import kotlinx.android.synthetic.main.app_bar_home.*
 import kotlinx.android.synthetic.main.content_home.*
 import kotlinx.android.synthetic.main.item_conversation_layout.view.*
+import org.jetbrains.anko.activityUiThread
 import org.jetbrains.anko.doAsyncResult
 import org.jetbrains.anko.onComplete
 import org.jetbrains.anko.uiThread
@@ -54,7 +56,8 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     var isContextToolbarActive = false
     private var asyncLoader: Future<Boolean>? = null
-
+    private var isOnlineFragmentLoaded = false
+    private val fragmentOnline = FragmentOnlineFriends()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -86,17 +89,21 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
 
 
+        conversation_progressbar.visibility = View.VISIBLE
         initComponents()
 
     }
 
     private fun initComponents(){
+        conversation_progressbar.visibility = View.GONE
         asyncLoader = doAsyncResult {
 
-            onComplete { conversation_progressbar.visibility = View.GONE }
+            onComplete {  }
 
-            uiThread {
+            activityUiThread {
                 nav_view.setNavigationItemSelectedListener(this@HomeActivity )
+
+                setBottomNavigationView()
 
                 hasPermission = utils.hasContactPermission(this@HomeActivity) && utils.hasStoragePermission(context)
 
@@ -158,10 +165,16 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
 
     override fun onBackPressed() {
-        if (drawer_layout.isDrawerOpen(GravityCompat.START)) {
-            drawer_layout.closeDrawer(GravityCompat.START)
-        } else {
-            super.onBackPressed()
+        when {
+            drawer_layout.isDrawerOpen(GravityCompat.START) -> drawer_layout.closeDrawer(GravityCompat.START)
+            isOnlineFragmentLoaded -> {
+                supportFragmentManager.beginTransaction()
+                    .remove(fragmentOnline)
+                    .commit()
+                home_bottom_nav.menu.findItem(R.id.nav_action_inbox).isChecked = true
+                isOnlineFragmentLoaded = false
+            }
+            else -> super.onBackPressed()
         }
     }
 
@@ -374,6 +387,16 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
 
 
+        FirebaseUtils.ref.lastMessage(FirebaseUtils.getUid())
+            .orderByChild(FirebaseUtils.KEY_REVERSE_TIMESTAMP)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onCancelled(p0: DatabaseError) {
+                }
+
+                override fun onDataChange(p0: DataSnapshot) {
+                    conversation_progressbar.visibility = View.GONE
+                }
+            })
 
 
         conversationRecycler.layoutManager = LinearLayoutManager(context) as RecyclerView.LayoutManager?
@@ -501,6 +524,49 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     isAnyMuted = p0.getValue(Boolean::class.java)!!
                 }
             })
+    }
+
+
+
+
+    private fun setBottomNavigationView(){
+
+        title = "Recent"
+
+        home_bottom_nav.setOnNavigationItemSelectedListener {
+            when(it.itemId){
+                R.id.nav_action_inbox -> {
+                    title = "Recent"
+                    supportFragmentManager.beginTransaction()
+                        .remove( fragmentOnline)
+                        .commit()
+                    isOnlineFragmentLoaded = false
+                }
+
+                R.id.nav_action_online -> {
+                    supportFragmentManager.beginTransaction()
+                        .replace(R.id.homeLayoutContainer, fragmentOnline)
+                        .commit()
+                    isOnlineFragmentLoaded = true
+                    title = "Online contacts"
+
+                }
+            }
+
+            return@setOnNavigationItemSelectedListener true
+        }
+
+
+    }
+
+
+    fun setOnlineCount(count:Int) {
+
+        try {
+            home_bottom_nav.menu.findItem(R.id.nav_action_online)
+                .title = "Online($count)"
+        }
+        catch (e:Exception){}
     }
 
 }

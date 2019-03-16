@@ -268,7 +268,7 @@ class MessageActivity : AppCompatActivity() {
 
         messageInputField.setTypingListener(object : MessageInput.TypingListener {
             override fun onStartTyping() {
-                FirebaseUtils.setMeAsTyping()
+                FirebaseUtils.setMeAsTyping(targetUid)
                 dateStickyHeader.visibility = View.GONE
             }
 

@@ -52,6 +52,7 @@ class MultiContactChooserActivity : AppCompatActivity(){
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_multi_contact_chooser)
+        title = "Choose from contacts"
 
         excludedUIDs = intent.getStringArrayListExtra(utils.constants.KEY_EXCLUDED_LIST)
 
@@ -148,7 +149,7 @@ class MultiContactChooserActivity : AppCompatActivity(){
                                 numberList[index].uid = uid
                                 if(uid!=FirebaseUtils.getUid() && !registeredAvailableUser.contains(numberList[index])) {
                                     if(excludedUIDs.isEmpty() || !excludedUIDs.contains(uid))
-                                    registeredAvailableUser.add(numberList[index])
+                                        registeredAvailableUser.add(numberList[index])
                                 }
                             }
 
@@ -219,13 +220,16 @@ class MultiContactChooserActivity : AppCompatActivity(){
 
                 holder.checkBox.isChecked = !holder.checkBox.isChecked
 
+                val user = registeredAvailableUser[holder.adapterPosition]
+
                 if(holder.checkBox.isChecked) {
-                    selectedUsers.add(registeredAvailableUser[holder.adapterPosition])
-                    horizontalAdapter.notifyItemInserted(selectedUsers.lastIndex)
+                    selectedUsers.add(user)
+                    horizontalAdapter.notifyItemInserted(selectedUsers.indexOf(user))
 
                 }else {
-                    selectedUsers.remove(registeredAvailableUser[holder.adapterPosition])
-                    horizontalAdapter.notifyItemRemoved(selectedUsers.lastIndex)
+                    val index = selectedUsers.indexOf(user)
+                    selectedUsers.remove(user)
+                    horizontalAdapter.notifyItemRemoved(index)
 
                 }
 
@@ -252,6 +256,10 @@ class MultiContactChooserActivity : AppCompatActivity(){
         override fun onBindViewHolder(p0: ParticipantHolder, p1: Int) {
             p0.name.text = utils.getNameFromNumber(this@MultiContactChooserActivity,
                 selectedUsers[p1].number)
+
+            if(p0.name.text.isNotEmpty() && p0.name.text.contains(" ")){
+                p0.name.text = p0.name.text.substring(0,p0.name.text.indexOf(" "))
+            }
 
             FirebaseUtils.loadProfileThumbnail(this@MultiContactChooserActivity, selectedUsers[p1].uid,
                 p0.pic)

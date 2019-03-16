@@ -174,7 +174,7 @@ object utils {
                 isDuplicate = FirebaseAuth.getInstance().currentUser!!.phoneNumber == number
             }
 
-            if(!isDuplicate)
+            if(!isDuplicate && !numberList.any { it.number == number })
                 numberList.add(Models.Contact(name, number , pic))
 
 
@@ -682,7 +682,8 @@ object utils {
                 val formattedNumber = utils.getFormattedTenDigitNumber(item.number)
                 if (getFormattedTenDigitNumber(number) == formattedNumber) {
 
-                    if(formattedNumber == getFormattedTenDigitNumber(FirebaseUtils.getPhoneNumber()))
+                    if(formattedNumber == getFormattedTenDigitNumber(FirebaseUtils.getPhoneNumber())
+                        || formattedNumber.contains(getFormattedTenDigitNumber(FirebaseUtils.getPhoneNumber())))
                         return "You"
 
                     return item.name

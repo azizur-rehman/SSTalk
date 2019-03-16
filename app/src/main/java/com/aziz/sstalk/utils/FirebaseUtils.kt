@@ -32,7 +32,6 @@ import org.jetbrains.anko.*
 import java.io.File
 import java.lang.Exception
 import java.util.*
-import java.util.jar.Manifest
 
 
 object FirebaseUtils {
@@ -59,6 +58,8 @@ object FirebaseUtils {
         val VAL_TYPING = "Typing..."
 
         val NODE_FILE = "Files"
+
+        val NODE_FEEDBACK = "Feedbacks"
 
 
         val KEY_STATUS = "status"
@@ -93,6 +94,10 @@ object FirebaseUtils {
                     FirebaseDatabase.getInstance().setPersistenceEnabled(true)
                     FirebaseDatabase.getInstance().reference
                         .child(NODE_MESSAGES)
+                        .keepSynced(true)
+
+                    FirebaseDatabase.getInstance().reference
+                        .child(NODE_USER_ACTIVITY_STATUS)
                         .keepSynced(true)
                 }
                 catch (e:Exception){ }
@@ -167,6 +172,8 @@ object FirebaseUtils {
                 allMessageStatus(uid, targetUID)
                 .child(messageID)
 
+            fun userStatusRoot():DatabaseReference = root().child(NODE_USER_ACTIVITY_STATUS)
+
             fun userStatus(uid: String):DatabaseReference = root().child(NODE_USER_ACTIVITY_STATUS)
                 .child(uid)
 
@@ -190,6 +197,8 @@ object FirebaseUtils {
 
             fun groupMember(groupID:String, uid: String):DatabaseReference =
                 FirebaseUtils.ref.root().child(NODE_GROUP_MEMBER).child(groupID).child(uid)
+
+            fun feedback():DatabaseReference = FirebaseUtils.ref.root().child(NODE_FEEDBACK)
         }
 
 
@@ -200,6 +209,7 @@ object FirebaseUtils {
             if(uid.isEmpty())
                 return
 
+        var fileExists = false
 
 
         if(utils.hasStoragePermission(context)){
@@ -207,6 +217,7 @@ object FirebaseUtils {
 
             val file= File(utils.getProfilePicPath(context)+uid+".jpg")
             if(file.exists()){
+                fileExists = true
                 Picasso.get().load(file)
                     .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE).into(imageView)
                 imageView.setOnClickListener {
@@ -226,7 +237,7 @@ object FirebaseUtils {
                             val link: String? = p0.getValue(String::class.java)
 
                             if(Pref.Profile.isProfileUrlSame(context, uid, link.toString())
-                                && utils.hasStoragePermission(context)){
+                                && fileExists){
 
 
                                     val file= File(utils.getProfilePicPath(context)+uid+".jpg")
@@ -247,7 +258,7 @@ object FirebaseUtils {
                                 if(link!!.isEmpty())
                                     return
 
-                                    Picasso.get().load(link)
+                                Picasso.get().load(link)
                                         .placeholder(R.drawable.contact_placeholder)
                                         .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
                                         .into(imageView, object : Callback {
@@ -263,6 +274,7 @@ object FirebaseUtils {
                                             }
 
                                             override fun onError(e: Exception?) {
+                                                Log.d("FirebaseUtils", "onError: error loading image for $uid = ${e?.message}")
                                             }
 
 
@@ -294,12 +306,15 @@ object FirebaseUtils {
             return
 
 
+        var fileExists = false
 
         if(utils.hasStoragePermission(context)){
 
 
             val file= File(utils.getProfilePicPath(context)+groupId+".jpg")
             if(file.exists()){
+                fileExists = true
+
                 Picasso.get().load(file)
                     .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE).into(imageView)
                 imageView.setOnClickListener {
@@ -319,7 +334,7 @@ object FirebaseUtils {
                         val link: String? = p0.getValue(String::class.java)
 
                         if(Pref.Profile.isProfileUrlSame(context, groupId, link.toString())
-                            && utils.hasStoragePermission(context)){
+                            && fileExists){
 
 
                             val file= File(utils.getProfilePicPath(context)+groupId+".jpg")
@@ -355,6 +370,7 @@ object FirebaseUtils {
                                     }
 
                                     override fun onError(e: Exception?) {
+
                                     }
 
 
@@ -386,13 +402,16 @@ object FirebaseUtils {
             return
 
 
+        var fileExists = false
+
         if(utils.hasStoragePermission(context)){
             val file= File(utils.getProfilePicPath(context)+uid+".jpg")
             if(file.exists()){
+                fileExists = true
                 Picasso.get().load(file)
                     .resize(60,60)
                     .centerCrop()
-//                    .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
+                    .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
                     .into(imageView)
             }
 
@@ -411,11 +430,11 @@ object FirebaseUtils {
 
 
                         if(Pref.Profile.isProfileUrlSame(context, uid, link.toString())
-                            && utils.hasStoragePermission(context)){
+                            && fileExists){
                                 val file= File(utils.getProfilePicPath(context)+uid+".jpg")
                                 if(file.exists()){
                                     Picasso.get().load(file)
-//                                        .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
+                                        .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
                                         .resize(60,60)
                                         .centerCrop()
                                         .into(imageView)
@@ -432,7 +451,7 @@ object FirebaseUtils {
 
                             Picasso.get().load(link)
                                 .placeholder(R.drawable.contact_placeholder)
-//                                .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
+                                .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
                                 .into(imageView, object : Callback {
                                     override fun onSuccess() {
                                         if (utils.hasStoragePermission(context)) {
@@ -444,6 +463,7 @@ object FirebaseUtils {
                                     }
 
                                     override fun onError(e: Exception?) {
+                                        Log.d("FirebaseUtils", "onError: error loading image for $uid = ${e?.message}")
                                     }
 
                                 })
@@ -466,10 +486,12 @@ object FirebaseUtils {
         if(groupId.isEmpty())
             return
 
+        var fileExists = false
 
         if(utils.hasStoragePermission(context)){
             val file= File(utils.getProfilePicPath(context)+groupId+".jpg")
             if(file.exists()){
+                fileExists = true
                 Picasso.get().load(file)
                     .resize(60,60)
                     .centerCrop()
@@ -492,7 +514,7 @@ object FirebaseUtils {
 
 
                         if(Pref.Profile.isProfileUrlSame(context, groupId, link.toString())
-                            && utils.hasStoragePermission(context)){
+                            && fileExists){
                             val file= File(utils.getProfilePicPath(context)+groupId+".jpg")
                             if(file.exists()){
                                 Picasso.get().load(file)
@@ -525,6 +547,7 @@ object FirebaseUtils {
                                     }
 
                                     override fun onError(e: Exception?) {
+
                                     }
 
                                 })
@@ -701,9 +724,9 @@ object FirebaseUtils {
             .setValue(Models.UserActivityStatus(FirebaseUtils.VAL_OFFLINE, System.currentTimeMillis()))
     }
 
-    fun setMeAsTyping(){
+    fun setMeAsTyping(targetUID:String){
         FirebaseUtils.ref.userStatus(FirebaseUtils.getUid())
-            .setValue(Models.UserActivityStatus(FirebaseUtils.VAL_TYPING, System.currentTimeMillis()))
+            .setValue(Models.UserActivityStatus(FirebaseUtils.VAL_TYPING+" - $targetUID", System.currentTimeMillis()))
     }
 
     fun setDeliveryStatusTick(
@@ -818,25 +841,37 @@ object FirebaseUtils {
 
                     val userStatus = p0.getValue(Models.UserActivityStatus::class.java)!!
 
-                    if(userStatus.status == VAL_ONLINE || userStatus.status == VAL_TYPING){
-                        textView.text = userStatus.status
-                        textView.setCompoundDrawablesWithIntrinsicBounds(ContextCompat.getDrawable(context, R.drawable.shape_bubble_online),
-                            null, null,null)
-                    }
-                    else{
-                        val time = utils.getLocalTime(userStatus.timeInMillis)
-                        var timeString = time
+                    when {
+                        userStatus.status == VAL_ONLINE -> {
+                            textView.text = userStatus.status
+                            textView.setCompoundDrawablesWithIntrinsicBounds(ContextCompat.getDrawable(context, R.drawable.shape_bubble_online),
+                                null, null,null)
+                        }
+                        userStatus.status.startsWith(VAL_TYPING) -> {
+                            if(userStatus.status.endsWith(uid))
+                                textView.text = VAL_TYPING
+                            else
+                                textView.text = VAL_ONLINE
 
-                        timeString = if(DateFormatter.isYesterday(Date(userStatus.timeInMillis)))
-                            "on Yesterday $time"
-                        else if(DateFormatter.isToday(Date(userStatus.timeInMillis)))
-                            "at $time"
-                        else if(DateFormatter.isCurrentYear(Date(userStatus.timeInMillis)))
-                            "on "+utils.getLocalDate(userStatus.timeInMillis)
-                        else
-                            "on "+utils.getLocalDateWithYear(userStatus.timeInMillis)
+                            textView.setCompoundDrawablesWithIntrinsicBounds(ContextCompat.getDrawable(context, R.drawable.shape_bubble_online),
+                                null, null,null)
 
-                        textView.text = "last seen $timeString"
+                        }
+                        else -> {
+                            val time = utils.getLocalTime(userStatus.timeInMillis)
+                            var timeString = time
+
+                            timeString = if(DateFormatter.isYesterday(Date(userStatus.timeInMillis)))
+                                "on Yesterday $time"
+                            else if(DateFormatter.isToday(Date(userStatus.timeInMillis)))
+                                "at $time"
+                            else if(DateFormatter.isCurrentYear(Date(userStatus.timeInMillis)))
+                                "on "+utils.getLocalDate(userStatus.timeInMillis)
+                            else
+                                "on "+utils.getLocalDateWithYear(userStatus.timeInMillis)
+
+                            textView.text = "last seen $timeString"
+                        }
                     }
                 }
             })
@@ -865,7 +900,7 @@ object FirebaseUtils {
 
                     val userStatus = p0.getValue(Models.UserActivityStatus::class.java)!!
 
-                    if(userStatus.status == VAL_ONLINE || userStatus.status == VAL_TYPING){
+                    if(userStatus.status == VAL_ONLINE || userStatus.status.startsWith(VAL_TYPING)){
                         imageView.visibility = View.VISIBLE
                     }
 

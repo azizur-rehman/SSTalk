@@ -4,9 +4,11 @@
     <item android:title="Recent"
           android:icon="@drawable/ic_message_light_24dp"
           app:showAsAction="always"
-          android:id="@+id/action_inbox"
+          android:checked="true"
+          android:id="@+id/nav_action_inbox"
     />
     <item android:title="Online"
+          android:id="@+id/nav_action_online"
           android:icon="@drawable/ic_person_white_24dp"
           app:showAsAction="always"
     />

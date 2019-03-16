@@ -24,7 +24,7 @@
     <android.support.design.widget.BottomNavigationView android:layout_width="match_parent"
                                                         android:layout_gravity="bottom"
                                                         android:background="@color/white"
-                                                        android:visibility="gone"
+                                                        android:id="@+id/home_bottom_nav"
                                                         app:menu="@menu/nav_bottom_home_menu"
                                                         android:layout_height="wrap_content"
 
@@ -35,7 +35,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
-        android:layout_margin="@dimen/fab_margin"
+        android:layout_marginBottom="64dp"
+        android:layout_marginRight="16dp"
         android:paddingBottom="30dp"
         android:src="@drawable/ic_person_add_white_24dp" />
 

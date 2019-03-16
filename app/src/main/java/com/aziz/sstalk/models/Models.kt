@@ -78,4 +78,10 @@ class Models {
                                 var reverseTimeStamp: Long = addedOn * -1)
 
 
+    data class Feedback(var uid:String = "",
+                        var feedback:String = "",
+                        var addedOn:Long = System.currentTimeMillis(),
+                        var reverseTimeStamp: Long = addedOn * -1
+                        )
+
 }

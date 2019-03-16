@@ -160,10 +160,18 @@ class CreateGroupActivity : AppCompatActivity() {
             // for receiving participant list
             val selectedUsers = data?.getParcelableArrayListExtra<Models.Contact>(utils.constants.KEY_SELECTED)
                     as java.util.ArrayList<Models.Contact>
-            participantList = selectedUsers
+
+            if(participantList.isEmpty()){
+                participantList = selectedUsers
+            }
+            else{
+                participantList.addAll(selectedUsers)
+            }
+
+            Log.d("CreateGroupActivity", "onActivityResult: $participantList")
 
 
-            setGridAdapter(selectedUsers)
+            setGridAdapter(participantList as ArrayList<Models.Contact>)
         }
 
         super.onActivityResult(requestCode, resultCode, data)
