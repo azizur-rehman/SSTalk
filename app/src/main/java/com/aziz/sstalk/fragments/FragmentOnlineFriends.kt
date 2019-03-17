@@ -18,6 +18,7 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import kotlinx.android.synthetic.main.item_contact_layout_2.view.*
+import kotlinx.android.synthetic.main.layout_recycler_view.*
 import kotlinx.android.synthetic.main.layout_recycler_view.view.*
 import org.jetbrains.anko.collections.forEachWithIndex
 import java.lang.Exception
@@ -96,7 +97,10 @@ class FragmentOnlineFriends : Fragment() {
                                 else
                                     onlineUsers.remove(it)
 
-                                setOnlineAdapter(onlineUsers, view)
+                                try {
+                                    setOnlineAdapter(onlineUsers, view)
+                                }
+                                catch (e:Exception){ }
                             }
 
                         })}
@@ -112,6 +116,9 @@ class FragmentOnlineFriends : Fragment() {
 
     private fun setOnlineAdapter(onlineUsers:MutableList<Models.Contact>, view: View){
 
+
+        recycler_back_message.visibility =if(onlineUsers.isNotEmpty()) View.GONE
+        else View.VISIBLE
 
         class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
             val name = itemView.name

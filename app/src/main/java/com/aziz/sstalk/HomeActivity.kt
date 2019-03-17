@@ -565,6 +565,9 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         try {
             home_bottom_nav.menu.findItem(R.id.nav_action_online)
                 .title = "Online($count)"
+            if(count == 0)
+                home_bottom_nav.menu.findItem(R.id.nav_action_online)
+                    .title = "Online"
         }
         catch (e:Exception){}
     }

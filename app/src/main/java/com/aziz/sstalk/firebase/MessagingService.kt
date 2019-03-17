@@ -1,9 +1,13 @@
 package com.aziz.sstalk.firebase
 
 import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
+import android.os.Build
 import android.support.v4.app.NotificationCompat
 import android.support.v4.app.NotificationManagerCompat
 import android.support.v4.app.Person
@@ -274,7 +278,7 @@ class MessagingService: FirebaseMessagingService() {
            if(utils.hasStoragePermission(this)) {
                if(profilePicFile.exists()) {
                    conversation.setIcon(IconCompat.createWithBitmap(utils.getCircleBitmap(BitmapFactory.decodeFile(profilePicFile.path))))
-//                   notificationCompatBuilder.setLargeIcon(utils.getCircleBitmap(BitmapFactory.decodeFile(profilePicFile.path)))
+                   notificationCompatBuilder.setLargeIcon(utils.getCircleBitmap(BitmapFactory.decodeFile(profilePicFile.path)))
                }
                else{
                    Log.d("MessagingService", "updateNotificationWithBigText: profile doesn't exists")
@@ -300,9 +304,36 @@ class MessagingService: FirebaseMessagingService() {
 
         notificationCompatBuilder.setNumber(messages.size)
 
-        with(NotificationManagerCompat.from(this@MessagingService)){
-            notify( NotificationDetail.SINGLE_ID, notificationCompatBuilder.build())
+        val channelID =  "ss-talk-channel"
+        val channelName = getString(R.string.app_name)
+
+
+        val notificationManager: NotificationManager =
+            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val descriptionText = "SS talk notifications"
+            val importance = NotificationManager.IMPORTANCE_HIGH
+            val channel = NotificationChannel(channelID, channelName, importance).apply {
+                description = descriptionText
+            }
+            // Register the channel with the system
+            notificationManager.createNotificationChannel(channel)
+            notificationCompatBuilder.setChannelId(channelID)
         }
+
+        notificationManager.notify(NotificationDetail.SINGLE_ID, notificationCompatBuilder.build())
+
+//        with(NotificationManagerCompat.from(this@MessagingService)){
+//
+//
+//            if(Build.VERSION.SDK_INT>= Build.VERSION_CODES.O)
+//
+//                notificationCompatBuilder.setChannelId()
+//                Log.d("MessagingService", "updateNotificationWithBigText: ")
+//
+//            notify( NotificationDetail.SINGLE_ID, notificationCompatBuilder.build())
+//        }
 
 
     }
