@@ -31,6 +31,8 @@ import kotlinx.android.synthetic.main.item_contact_layout.*
 import kotlinx.android.synthetic.main.layout_profile_image_picker.*
 import me.shaohui.advancedluban.Luban
 import me.shaohui.advancedluban.OnCompressListener
+import org.jetbrains.anko.selector
+import org.jetbrains.anko.toast
 import java.io.File
 
 class EditProfile : AppCompatActivity() {
@@ -60,11 +62,25 @@ class EditProfile : AppCompatActivity() {
 
         profile_pick_btn.setOnClickListener {
 //            ImagePicker.pickImage(context)
-            CropImage.activity()
-                .setGuidelines(CropImageView.Guidelines.ON)
-                .setCropShape(CropImageView.CropShape.RECTANGLE)
-                .setAspectRatio(1,1)
-                .start(this)
+
+            selector("Edit profile picture", listOf("Change picture", "Delete picture")) { _, pos ->
+
+                if(pos == 0){
+                    CropImage.activity()
+                    .setGuidelines(CropImageView.Guidelines.ON)
+                    .setCropShape(CropImageView.CropShape.RECTANGLE)
+                    .setAspectRatio(1,1)
+                    .start(this)
+                }
+                else{
+                    //delete pic
+                     FirebaseUtils.ref.user(myUID)
+                        .child(FirebaseUtils.KEY_PROFILE_PIC_URL).setValue("").addOnSuccessListener { toast("Profile pic removed") }
+                }
+
+            }
+
+
         }
 
         if(FirebaseUtils.isLoggedIn()) {

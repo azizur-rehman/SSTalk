@@ -7,9 +7,9 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
+import android.graphics.Color
 import android.os.Build
 import android.support.v4.app.NotificationCompat
-import android.support.v4.app.NotificationManagerCompat
 import android.support.v4.app.Person
 import android.support.v4.content.ContextCompat
 import android.support.v4.graphics.drawable.IconCompat
@@ -41,6 +41,13 @@ class MessagingService: FirebaseMessagingService() {
 
     private val MESSAGE_SEPERATOR = "<--MESSAGE_SEPERATOR-->"
 
+
+    val channelIDSingle =  "ss-talk-single"
+    val channelIDMerged = "ss-talk-merged"
+    val channelNameIndividual = "Individual"
+    val channelNameMerged = "Merged"
+
+
     object NotificationDetail {
         val SINGLE_ID = 123456
         val MUlTIPLE_ID = 654321
@@ -50,7 +57,7 @@ class MessagingService: FirebaseMessagingService() {
     override fun onMessageReceived(p0: RemoteMessage?) {
         super.onMessageReceived(p0)
 
-        Log.d("MessagingService", "onMessageReceived: ${p0!!.data.toString()}")
+        Log.d("MessagingService", "onMessageReceived: ${p0!!.data}")
         val data: MutableMap<String, String>? = p0.data ?: return
 
         val sender = data!![KEY_SENDER]!!
@@ -137,7 +144,7 @@ class MessagingService: FirebaseMessagingService() {
         val data = remoteMessage.data
 
 
-        val notification = NotificationCompat.Builder(this@MessagingService)
+        val notification = NotificationCompat.Builder(this@MessagingService, channelIDSingle)
             .setContentTitle(title)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentText("Tap to read")
@@ -175,16 +182,17 @@ class MessagingService: FirebaseMessagingService() {
         // for single message
         updateNotificationWithBigText(remoteMessage, notification)
 
-        getAllUnreadMessages(notification, remoteMessage)
+        getAllUnreadMessages(notification)
 
     }
 
 
-    private fun getAllUnreadMessages(notificationCompatBuilder: NotificationCompat.Builder, remoteMessage: RemoteMessage){
+    private fun getAllUnreadMessages(notificationCompatBuilder: NotificationCompat.Builder){
         var unreadCount = 0
         var unreadConversation = 0
 
 
+        Log.d("MessagingService", "getAllUnreadMessages: check if more than one conversation has unread messages")
 
 
 
@@ -196,6 +204,7 @@ class MessagingService: FirebaseMessagingService() {
                 override fun onDataChange(p0: DataSnapshot) {
                     //iterate through every node to check for unread messages
 
+                    val totalConversation = p0.childrenCount
                     for((index,snapshot) in p0.children.withIndex()){
                         snapshot.ref.orderByChild("read")
                             .equalTo(false)
@@ -206,11 +215,19 @@ class MessagingService: FirebaseMessagingService() {
                                 override fun onDataChange(p1: DataSnapshot) {
 
 
-                                    if (!p1.exists()) return
-                                    unreadCount += p1.childrenCount.toInt()
-                                    unreadConversation++
+                                    Log.d("MessagingService", "onDataChange: unread messages = ${p1.value}")
+//                                    Log.d("MessagingService", "onDataChange: ref = ${p1.ref}")
 
-                                    if (index == p0.childrenCount.toInt() - 1) {
+                                    if (p1.exists()) {
+                                        unreadCount += p1.childrenCount.toInt()
+                                        unreadConversation++
+                                    }
+
+                                    Log.d("MessagingService", "onDataChange: index = $index")
+
+                                    if (index == totalConversation.toInt() - 1) {
+
+                                        Log.d("MessagingService", "onDataChange: last index")
 
                                         if(index == 0)
                                             return
@@ -224,23 +241,26 @@ class MessagingService: FirebaseMessagingService() {
 
 
                                         val title = "$unreadCount messages from $unreadConversation conversations"
+                                        Log.d("MessagingService", "onDataChange: $title")
 
 
                                         val intent = Intent(this@MessagingService, HomeActivity::class.java).apply {
                                             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                                         }
-                                        with(NotificationManagerCompat.from(this@MessagingService)){
-                                            notify( NotificationDetail.MUlTIPLE_ID, notificationCompatBuilder.setStyle(NotificationCompat.BigTextStyle()
-                                                .setBigContentTitle(title)
-                                                .bigText("Tap to Read"))
-                                                .setDefaults(Notification.DEFAULT_LIGHTS)
-                                                .setSmallIcon(R.mipmap.ic_launcher)
-                                                .setColor(ContextCompat.getColor(this@MessagingService, R.color.colorPrimary))
-                                                .setLargeIcon((BitmapFactory.decodeResource(resources, R.mipmap.ic_launcher)))
-                                                .setContentIntent(PendingIntent.getActivity(this@MessagingService, NotificationDetail.MUlTIPLE_ID, intent, PendingIntent.FLAG_UPDATE_CURRENT))
-                                                .setContentTitle(title)
-                                                .build())
-                                        }
+
+                                        notificationCompatBuilder.setStyle(NotificationCompat.BigTextStyle()
+                                            .setBigContentTitle(title)
+                                            .bigText("Tap to Read"))
+                                            .setDefaults(Notification.DEFAULT_LIGHTS)
+                                            .setSmallIcon(R.mipmap.ic_launcher)
+                                            .setColor(ContextCompat.getColor(this@MessagingService, R.color.colorPrimary))
+                                            .setLargeIcon((BitmapFactory.decodeResource(resources, R.mipmap.ic_launcher)))
+                                            .setContentIntent(PendingIntent.getActivity(this@MessagingService, NotificationDetail.MUlTIPLE_ID, intent, PendingIntent.FLAG_UPDATE_CURRENT))
+                                            .setContentTitle(title)
+                                            .setChannelId(channelIDMerged)
+
+                                        getNotificationManager(notificationCompatBuilder, channelNameMerged, channelIDMerged).notify( NotificationDetail.MUlTIPLE_ID, notificationCompatBuilder.build())
+
                                     }
                                 }
                             })
@@ -256,6 +276,7 @@ class MessagingService: FirebaseMessagingService() {
         notificationCompatBuilder: NotificationCompat.Builder
     ){
 
+        notificationCompatBuilder.setChannelId(channelIDSingle)
 
         val profilePicFile = File(utils.getProfilePicPath(this)+remoteMessage.data[KEY_SENDER]!!+".jpg")
 
@@ -293,7 +314,7 @@ class MessagingService: FirebaseMessagingService() {
 
         messages.forEach {
 //            Log.d("MessagingService", "updateNotificationWithBigText: messages = $it")
-            if(it.trim().isNotEmpty() && messages.size<=5)
+            if(it.trim().isNotEmpty() && messages.size<=4)
             style.addMessage(
                 it.replace(MESSAGE_SEPERATOR,"").trim(), System.currentTimeMillis(), conversation.build()
             )
@@ -304,10 +325,17 @@ class MessagingService: FirebaseMessagingService() {
 
         notificationCompatBuilder.setNumber(messages.size)
 
-        val channelID =  "ss-talk-channel"
-        val channelName = getString(R.string.app_name)
 
 
+        getNotificationManager(notificationCompatBuilder, channelNameIndividual, channelIDSingle).notify(NotificationDetail.SINGLE_ID, notificationCompatBuilder.build())
+
+
+
+
+    }
+
+
+    private fun getNotificationManager(notificationCompatBuilder: NotificationCompat.Builder, channelName:String, channelID:String): NotificationManager{
         val notificationManager: NotificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
@@ -317,25 +345,18 @@ class MessagingService: FirebaseMessagingService() {
             val channel = NotificationChannel(channelID, channelName, importance).apply {
                 description = descriptionText
             }
+
+            channel.enableLights(true)
+            channel.lightColor = Color.GREEN
+            channel.setShowBadge(true)
+            channel.lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+
             // Register the channel with the system
             notificationManager.createNotificationChannel(channel)
             notificationCompatBuilder.setChannelId(channelID)
         }
 
-        notificationManager.notify(NotificationDetail.SINGLE_ID, notificationCompatBuilder.build())
-
-//        with(NotificationManagerCompat.from(this@MessagingService)){
-//
-//
-//            if(Build.VERSION.SDK_INT>= Build.VERSION_CODES.O)
-//
-//                notificationCompatBuilder.setChannelId()
-//                Log.d("MessagingService", "updateNotificationWithBigText: ")
-//
-//            notify( NotificationDetail.SINGLE_ID, notificationCompatBuilder.build())
-//        }
-
-
+        return notificationManager
     }
 
 

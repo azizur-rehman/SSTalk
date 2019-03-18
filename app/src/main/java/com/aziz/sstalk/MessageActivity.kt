@@ -2644,6 +2644,7 @@ class MessageActivity : AppCompatActivity() {
         bottomScrollButton.hide()
         dateStickyHeader.visibility = View.INVISIBLE
 
+        if(unreadMessageCount == 0)
         unreadCount.visibility = View.GONE
         Handler().postDelayed({
             FirebaseUtils.setUnreadCount(targetUid, unreadCount)

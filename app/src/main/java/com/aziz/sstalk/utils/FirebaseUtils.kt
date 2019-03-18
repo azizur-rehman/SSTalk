@@ -99,6 +99,11 @@ object FirebaseUtils {
                     FirebaseDatabase.getInstance().reference
                         .child(NODE_USER_ACTIVITY_STATUS)
                         .keepSynced(true)
+
+
+                    FirebaseDatabase.getInstance().reference
+                        .child(NODE_MESSAGE_STATUS)
+                        .keepSynced(true)
                 }
                 catch (e:Exception){ }
 
@@ -218,6 +223,7 @@ object FirebaseUtils {
             val file= File(utils.getProfilePicPath(context)+uid+".jpg")
             if(file.exists()){
                 fileExists = true
+                Log.d("FirebaseUtils", "loadProfilePic: exists of $uid")
                 Picasso.get().load(file)
                     .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE).into(imageView)
                 imageView.setOnClickListener {
@@ -236,9 +242,18 @@ object FirebaseUtils {
                         if (p0.exists()) {
                             val link: String? = p0.getValue(String::class.java)
 
+                            if(link!!.isEmpty()) {
+                                Log.d("FirebaseUtils", "onDataChange: profile pic not exists for $uid")
+                                Picasso.get().load(R.drawable.contact_placeholder).into(imageView)
+                                return
+                            }
+
+                            Log.d("FirebaseUtils", "loadProfilePic: loading for  = $uid")
+
                             if(Pref.Profile.isProfileUrlSame(context, uid, link.toString())
                                 && fileExists){
 
+                                Log.d("FirebaseUtils", "onDataChange: profile exists and is same for $uid")
 
                                     val file= File(utils.getProfilePicPath(context)+uid+".jpg")
                                     if(file.exists()){
@@ -255,15 +270,20 @@ object FirebaseUtils {
                             }
                             else {
 
-                                if(link!!.isEmpty())
-                                    return
+
+
+
+                                Log.d("FirebaseUtils", "onDataChange: profile doesn't exist or changed for $uid")
+
 
                                 Picasso.get().load(link)
                                         .placeholder(R.drawable.contact_placeholder)
+                                    .error(R.drawable.error_placeholder)
                                         .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
                                         .into(imageView, object : Callback {
                                             override fun onSuccess() {
                                                 if (utils.hasStoragePermission(context)) {
+                                                    Log.d("FirebaseUtils", "onSuccess: saving profile pic")
                                                     utils.saveBitmapToProfileFolder(
                                                         context,
                                                         (imageView.drawable as BitmapDrawable).bitmap,
@@ -333,6 +353,12 @@ object FirebaseUtils {
                     if (p0.exists()) {
                         val link: String? = p0.getValue(String::class.java)
 
+                        if(link!!.isEmpty()) {
+                            Log.d("FirebaseUtils", "onDataChange: profile pic not exists for $groupId")
+                            imageView.setImageResource(R.drawable.ic_group_white_24dp)
+                            return
+                        }
+
                         if(Pref.Profile.isProfileUrlSame(context, groupId, link.toString())
                             && fileExists){
 
@@ -351,11 +377,9 @@ object FirebaseUtils {
                         }
                         else {
 
-                            if(link!!.isEmpty())
-                                return
 
                             Picasso.get().load(link)
-                                .placeholder(R.drawable.contact_placeholder)
+                                .placeholder(R.drawable.ic_group_white_24dp)
                                 .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
                                 .into(imageView, object : Callback {
                                     override fun onSuccess() {
@@ -407,6 +431,7 @@ object FirebaseUtils {
         if(utils.hasStoragePermission(context)){
             val file= File(utils.getProfilePicPath(context)+uid+".jpg")
             if(file.exists()){
+                Log.d("FirebaseUtils", "loadProfileThumbnail: profile exists")
                 fileExists = true
                 Picasso.get().load(file)
                     .resize(60,60)
@@ -428,6 +453,12 @@ object FirebaseUtils {
                     if (p0.exists()) {
                         val link: String? = p0.getValue(String::class.java)
 
+                        if(link!!.isEmpty()) {
+                            Log.d("FirebaseUtils", "onDataChange: profile pic not exists for $uid")
+                            Picasso.get().load(R.drawable.contact_placeholder).into(imageView)
+                            return
+                        }
+
 
                         if(Pref.Profile.isProfileUrlSame(context, uid, link.toString())
                             && fileExists){
@@ -446,8 +477,6 @@ object FirebaseUtils {
                             //download profile pic
                             Log.d("FirebaseUtils", "onDataChange:,  profile url has changed, loading from web")
 
-                            if(link!!.isEmpty())
-                                return
 
                             Picasso.get().load(link)
                                 .placeholder(R.drawable.contact_placeholder)
@@ -512,6 +541,11 @@ object FirebaseUtils {
                     if (p0.exists()) {
                         val link: String? = p0.getValue(String::class.java)
 
+                        if(link!!.isEmpty()) {
+                            Log.d("FirebaseUtils", "onDataChange: profile pic not exists for $groupId")
+                            imageView.setImageResource(R.drawable.ic_group_white_24dp)
+                            return
+                        }
 
                         if(Pref.Profile.isProfileUrlSame(context, groupId, link.toString())
                             && fileExists){
@@ -530,11 +564,9 @@ object FirebaseUtils {
                             //download profile pic
                             Log.d("FirebaseUtils", "onDataChange:,  profile url has changed, loading from web")
 
-                            if(link!!.isEmpty())
-                                return
 
                             Picasso.get().load(link)
-                                .placeholder(R.drawable.contact_placeholder)
+                                .placeholder(R.drawable.ic_group_white_24dp)
                                 .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
                                 .into(imageView, object : Callback {
                                     override fun onSuccess() {
