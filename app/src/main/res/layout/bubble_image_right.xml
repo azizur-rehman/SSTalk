@@ -39,7 +39,7 @@
 
 
 
-            <com.skyline.widget.layout.RoundCornerLayout
+            <com.aziz.sstalk.views.RoundCornerLayout
                     android:layout_width="240dp"
 
                     android:id="@+id/image_container_right_card"
@@ -145,7 +145,7 @@
 
                  </FrameLayout>
 
-                </com.skyline.widget.layout.RoundCornerLayout>
+                </com.aziz.sstalk.views.RoundCornerLayout>
 
 
                 <TextView

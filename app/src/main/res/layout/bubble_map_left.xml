@@ -59,7 +59,6 @@
                     android:padding="5dp"
                     android:textSize="14sp"
                     android:maxWidth="240dp"
-                    android:autoLink="all"
                     android:visibility="gone"
                     android:text="Sender"
                     android:textColor="@color/red"
@@ -67,7 +66,7 @@
             />
 
 
-            <com.skyline.widget.layout.RoundCornerLayout
+            <com.aziz.sstalk.views.RoundCornerLayout
                     android:layout_width="240dp"
                     android:id="@+id/map_container_left_card"
                     android:layout_height="210dp"
@@ -92,7 +91,7 @@
                 />
 
 
-            </com.skyline.widget.layout.RoundCornerLayout>
+            </com.aziz.sstalk.views.RoundCornerLayout>
 
 
 

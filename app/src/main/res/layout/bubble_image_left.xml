@@ -55,11 +55,10 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="start"
                     android:paddingBottom="5dp"
+                    android:visibility="gone"
                     android:paddingLeft="2dp"
                     android:textSize="14sp"
                     android:maxWidth="240dp"
-                    android:visibility="gone"
-                    android:autoLink="all"
                     android:text="Sender"
                     android:textColor="@color/red"
                     android:id="@+id/messageText_sender_image_left"
@@ -76,7 +75,7 @@
 
 
 
-                <com.skyline.widget.layout.RoundCornerLayout
+                <com.aziz.sstalk.views.RoundCornerLayout
                         android:layout_width="240dp"
                         android:id="@+id/image_container_left_card"
                         android:layout_height="210dp"
@@ -122,7 +121,7 @@
 
 
 
-                </com.skyline.widget.layout.RoundCornerLayout>
+                </com.aziz.sstalk.views.RoundCornerLayout>
 
 
                 <TextView

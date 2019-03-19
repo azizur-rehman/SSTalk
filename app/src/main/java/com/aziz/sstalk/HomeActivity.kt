@@ -32,6 +32,7 @@ import kotlinx.android.synthetic.main.activity_home.*
 import kotlinx.android.synthetic.main.app_bar_home.*
 import kotlinx.android.synthetic.main.content_home.*
 import kotlinx.android.synthetic.main.item_conversation_layout.view.*
+import kotlinx.android.synthetic.main.layout_recycler_view.*
 import org.jetbrains.anko.activityUiThread
 import org.jetbrains.anko.doAsyncResult
 import org.jetbrains.anko.onComplete
@@ -399,12 +400,23 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             })
 
 
-        conversationRecycler.layoutManager = LinearLayoutManager(context) as RecyclerView.LayoutManager?
+        conversationRecycler.layoutManager = LinearLayoutManager(context)
         conversationRecycler.adapter = adapter
 //        conversationRecycler.addItemDecoration(DividerItemDecoration(this, DividerItemDecoration.VERTICAL))
 
         adapter.startListening()
-        setonDisconnectListener()
+
+        adapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
+            override fun onChanged() {
+                super.onChanged()
+
+                if(adapter.itemCount > 0){
+                    recyclerView.smoothScrollToPosition(0)
+                }
+            }
+        })
+
+        FirebaseUtils.setonDisconnectListener()
     }
 
 
@@ -441,12 +453,6 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
 
-    private fun setonDisconnectListener(){
-
-        FirebaseUtils.ref.userStatus(FirebaseUtils.getUid())
-            .onDisconnect()
-            .setValue(Models.UserActivityStatus(FirebaseUtils.VAL_OFFLINE, System.currentTimeMillis()))
-    }
 
 
     private fun deleteSelectedConversations(itemPositions:MutableList<Int>) {
@@ -562,12 +568,15 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     fun setOnlineCount(count:Int) {
 
+
         try {
             home_bottom_nav.menu.findItem(R.id.nav_action_online)
                 .title = "Online($count)"
             if(count == 0)
                 home_bottom_nav.menu.findItem(R.id.nav_action_online)
                     .title = "Online"
+
+
         }
         catch (e:Exception){}
     }

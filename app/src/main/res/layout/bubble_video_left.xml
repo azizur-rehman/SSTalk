@@ -58,7 +58,6 @@
                     android:textSize="14sp"
                     android:maxWidth="240dp"
                     android:visibility="gone"
-                    android:autoLink="all"
                     android:text="Sender"
                     android:textColor="@color/red"
                     android:id="@+id/messageText_sender_video_left"
@@ -74,7 +73,7 @@
                     android:layout_height="wrap_content">
 
 
-                <com.skyline.widget.layout.RoundCornerLayout
+                <com.aziz.sstalk.views.RoundCornerLayout
                         android:layout_width="240dp"
                         android:id="@+id/video_container_left_card"
                         android:layout_height="210dp"
@@ -178,7 +177,7 @@
                             android:textColor="@color/transparent_white_10"
                     />
 
-                </com.skyline.widget.layout.RoundCornerLayout>
+                </com.aziz.sstalk.views.RoundCornerLayout>
 
                 <TextView
                         android:layout_width="match_parent"

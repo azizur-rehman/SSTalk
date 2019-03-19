@@ -48,6 +48,8 @@ class FragmentOnlineFriends : Fragment() {
                 override fun onDataChange(p0: DataSnapshot) {
 
 
+                    if(context == null)
+                        return
 
                     val numberList: MutableList<Models.Contact> = utils.getContactList(context)
                     val registeredAvailableUser:MutableList<Models.Contact> = mutableListOf()

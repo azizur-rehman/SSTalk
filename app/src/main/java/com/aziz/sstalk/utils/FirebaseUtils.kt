@@ -239,12 +239,27 @@ object FirebaseUtils {
                 .addValueEventListener(object : ValueEventListener {
 
                     override fun onDataChange(p0: DataSnapshot) {
+
+                        if(!p0.exists()) {
+                            Log.d("FirebaseUtils", "onDataChange: profile pic not exists for $uid")
+                            imageView.setImageResource(R.drawable.contact_placeholder)
+                            if(utils.hasStoragePermission(context)){
+                                File(utils.getProfilePicPath(context)+uid+".jpg")
+                                    .delete()
+                            }
+                            return
+                        }
+
                         if (p0.exists()) {
                             val link: String? = p0.getValue(String::class.java)
 
                             if(link!!.isEmpty()) {
                                 Log.d("FirebaseUtils", "onDataChange: profile pic not exists for $uid")
                                 Picasso.get().load(R.drawable.contact_placeholder).into(imageView)
+                                if(utils.hasStoragePermission(context)){
+                                    File(utils.getProfilePicPath(context)+uid+".jpg")
+                                        .delete()
+                                }
                                 return
                             }
 
@@ -350,12 +365,28 @@ object FirebaseUtils {
             .addValueEventListener(object : ValueEventListener {
 
                 override fun onDataChange(p0: DataSnapshot) {
+
+                    if(!p0.exists()) {
+                        Log.d("FirebaseUtils", "onDataChange: group pic(snapshot) not exists for $groupId")
+                        imageView.setImageResource(R.drawable.ic_group_white_24dp)
+                        if(utils.hasStoragePermission(context)){
+                            File(utils.getProfilePicPath(context)+groupId+".jpg")
+                                .delete()
+                        }
+                        return
+                    }
+
+
                     if (p0.exists()) {
                         val link: String? = p0.getValue(String::class.java)
 
                         if(link!!.isEmpty()) {
-                            Log.d("FirebaseUtils", "onDataChange: profile pic not exists for $groupId")
+                            Log.d("FirebaseUtils", "onDataChange: group profile pic not exists for $groupId")
                             imageView.setImageResource(R.drawable.ic_group_white_24dp)
+                            if(utils.hasStoragePermission(context)){
+                                File(utils.getProfilePicPath(context)+groupId+".jpg")
+                                    .delete()
+                            }
                             return
                         }
 
@@ -434,7 +465,7 @@ object FirebaseUtils {
                 Log.d("FirebaseUtils", "loadProfileThumbnail: profile exists")
                 fileExists = true
                 Picasso.get().load(file)
-                    .resize(60,60)
+                    .resize(80,80)
                     .centerCrop()
                     .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
                     .into(imageView)
@@ -450,12 +481,28 @@ object FirebaseUtils {
             .addValueEventListener(object : ValueEventListener {
 
                 override fun onDataChange(p0: DataSnapshot) {
+
+
+                    if(!p0.exists()) {
+                        Log.d("FirebaseUtils", "onDataChange: profile thumbnail not exists for $uid")
+                        imageView.setImageResource(R.drawable.contact_placeholder)
+                        if(utils.hasStoragePermission(context)){
+                            File(utils.getProfilePicPath(context)+uid+".jpg")
+                                .delete()
+                        }
+                        return
+                    }
+
                     if (p0.exists()) {
                         val link: String? = p0.getValue(String::class.java)
 
                         if(link!!.isEmpty()) {
                             Log.d("FirebaseUtils", "onDataChange: profile pic not exists for $uid")
                             Picasso.get().load(R.drawable.contact_placeholder).into(imageView)
+                            if(utils.hasStoragePermission(context)){
+                                File(utils.getProfilePicPath(context)+uid+".jpg")
+                                    .delete()
+                            }
                             return
                         }
 
@@ -466,7 +513,7 @@ object FirebaseUtils {
                                 if(file.exists()){
                                     Picasso.get().load(file)
                                         .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
-                                        .resize(60,60)
+                                        .resize(80,80)
                                         .centerCrop()
                                         .into(imageView)
                                 }
@@ -507,7 +554,6 @@ object FirebaseUtils {
     }
 
 
-
     fun loadGroupPicThumbnail(context: Context, groupId:String, imageView: ImageView){
 
         imageView.setImageResource(R.drawable.ic_group_white_24dp)
@@ -522,7 +568,7 @@ object FirebaseUtils {
             if(file.exists()){
                 fileExists = true
                 Picasso.get().load(file)
-                    .resize(60,60)
+                    .resize(80,80)
                     .centerCrop()
                     .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
                     .into(imageView)
@@ -538,12 +584,29 @@ object FirebaseUtils {
             .addValueEventListener(object : ValueEventListener {
 
                 override fun onDataChange(p0: DataSnapshot) {
+
+                    if(!p0.exists()) {
+                        Log.d("FirebaseUtils", "onDataChange: group(snapshot) thumbnail not exists for $groupId")
+                        imageView.setImageResource(R.drawable.ic_group_white_24dp)
+
+                        if(utils.hasStoragePermission(context)){
+                           File(utils.getProfilePicPath(context)+groupId+".jpg")
+                               .delete()
+                        }
+
+                        return
+                    }
+
                     if (p0.exists()) {
                         val link: String? = p0.getValue(String::class.java)
 
                         if(link!!.isEmpty()) {
                             Log.d("FirebaseUtils", "onDataChange: profile pic not exists for $groupId")
                             imageView.setImageResource(R.drawable.ic_group_white_24dp)
+                            if(utils.hasStoragePermission(context)){
+                                File(utils.getProfilePicPath(context)+groupId+".jpg")
+                                    .delete()
+                            }
                             return
                         }
 
@@ -553,7 +616,7 @@ object FirebaseUtils {
                             if(file.exists()){
                                 Picasso.get().load(file)
                                     .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
-                                    .resize(60,60)
+                                    .resize(80,80)
                                     .centerCrop()
                                     .into(imageView)
                             }
@@ -715,6 +778,20 @@ object FirebaseUtils {
         if(boldTextViews.isNotEmpty())
             initialTypeface = boldTextViews[0].typeface
 
+
+        allMessageStatus(FirebaseUtils.getUid(), targetUID)
+            .orderByChild("delivered")
+            .equalTo(false)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onCancelled(p0: DatabaseError) {
+                }
+
+                override fun onDataChange(p0: DataSnapshot) {
+                    p0.children.forEach {
+                        it.ref.child("delivered").setValue(true)
+                    }
+                }
+            })
 
         allMessageStatus(FirebaseUtils.getUid(), targetUID)
             .orderByChild("read")
@@ -1268,4 +1345,12 @@ object FirebaseUtils {
         }
     }
 
+
+
+     fun setonDisconnectListener(){
+
+        FirebaseUtils.ref.userStatus(FirebaseUtils.getUid())
+            .onDisconnect()
+            .setValue(Models.UserActivityStatus(FirebaseUtils.VAL_OFFLINE, System.currentTimeMillis()))
+    }
 }

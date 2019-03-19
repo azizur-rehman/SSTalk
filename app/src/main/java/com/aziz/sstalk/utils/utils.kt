@@ -280,7 +280,7 @@ object utils {
         val animator =
             ViewAnimationUtils.createCircularReveal(view, cx, cy, 0f, finalRadius)
         animator.interpolator = AccelerateDecelerateInterpolator()
-        animator.duration = 600
+        animator.duration = 300
 
         animator.addListener(object : Animator.AnimatorListener{
             override fun onAnimationRepeat(animation: Animator?) {
@@ -317,7 +317,7 @@ object utils {
         val cx = ( view.right + view.left)
         val cy = (view.top + view.bottom)
 
-// get the final radius for the clipping circle
+        // get the final radius for the clipping circle
         val dx = Math.max(cx, view.width + cx)
         val dy = Math.max(cy, view.height + cy)
         val finalRadius = Math.hypot(dx.toDouble(), dy.toDouble()).toFloat()
@@ -325,7 +325,7 @@ object utils {
         val animator =
             ViewAnimationUtils.createCircularReveal(view, cx, cy, finalRadius, 0f)
         animator.interpolator = AccelerateDecelerateInterpolator()
-        animator.duration = 1000
+        animator.duration = 400
 
         animator.addListener(object : Animator.AnimatorListener{
             override fun onAnimationRepeat(animation: Animator?) {
@@ -675,17 +675,17 @@ object utils {
 
         try {
 
-            val list = utils.getContactList(context)
 
+            if(number == getFormattedTenDigitNumber(FirebaseUtils.getPhoneNumber())
+                || number.contains(getFormattedTenDigitNumber(FirebaseUtils.getPhoneNumber()))) {
+                return "You"
+            }
+
+            val list = utils.getContactList(context)
 
             for (item in list) {
                 val formattedNumber = utils.getFormattedTenDigitNumber(item.number)
                 if (getFormattedTenDigitNumber(number) == formattedNumber) {
-
-                    if(formattedNumber == getFormattedTenDigitNumber(FirebaseUtils.getPhoneNumber())
-                        || formattedNumber.contains(getFormattedTenDigitNumber(FirebaseUtils.getPhoneNumber())))
-                        return "You"
-
                     return item.name
                 }
             }

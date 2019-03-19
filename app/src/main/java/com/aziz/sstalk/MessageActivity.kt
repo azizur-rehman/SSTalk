@@ -156,6 +156,8 @@ class MessageActivity : AppCompatActivity() {
         setContentView(R.layout.activity_message)
 
 
+        FirebaseUtils.setonDisconnectListener()
+
 
         setSupportActionBar(toolbar)
 
@@ -301,15 +303,9 @@ class MessageActivity : AppCompatActivity() {
 
             if(attachment_menu.visibility != View.VISIBLE) {
                 utils.setEnterRevealEffect(this, attachment_menu)
-//             utils.showFabs(fab_camera, fab_gallery, fab_video, fab_location)
-                //  messagesList.alpha = 0.6f
-
             }
             else {
                 utils.setExitRevealEffect(attachment_menu)
-                // messagesList.alpha = 1f
-//             utils.hideFabs(fab_camera, fab_gallery, fab_video, fab_location)
-
             }
 
 
@@ -2792,6 +2788,8 @@ class MessageActivity : AppCompatActivity() {
                 }
             })
     }
+
+
 
 
 }

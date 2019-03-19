@@ -68,7 +68,8 @@
                 android:layout_width="wrap_content"
                 android:visibility="invisible"
                 android:layout_height="wrap_content"
-                android:src="@android:drawable/ic_menu_send"
+                android:src="@drawable/ic_send"
+                android:tint="@color/white"
         />
 
 

@@ -63,7 +63,7 @@ class EditProfile : AppCompatActivity() {
         profile_pick_btn.setOnClickListener {
 //            ImagePicker.pickImage(context)
 
-            selector("Edit profile picture", listOf("Change picture", "Delete picture")) { _, pos ->
+            selector("Edit profile picture", listOf("Change picture", "Remove picture")) { _, pos ->
 
                 if(pos == 0){
                     CropImage.activity()

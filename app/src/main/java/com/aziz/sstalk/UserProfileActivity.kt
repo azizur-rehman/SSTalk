@@ -69,7 +69,7 @@ class UserProfileActivity : AppCompatActivity() {
             supportActionBar!!.setHomeButtonEnabled(true)
         }
 
-//        window.setFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS, WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
+        FirebaseUtils.setonDisconnectListener()
 
         contentView?.setBackgroundColor(Color.TRANSPARENT)
 
@@ -124,8 +124,12 @@ class UserProfileActivity : AppCompatActivity() {
 
             uiThread {
 
-                FirebaseUtils.loadProfilePic(this@UserProfileActivity, targetUID, user_profile_imageview)
+                if(!isGroup)
+                    FirebaseUtils.loadProfilePic(this@UserProfileActivity, targetUID, user_profile_imageview)
+                else
+                    FirebaseUtils.loadGroupPic(context, targetUID, user_profile_imageview)
 
+                //loading media recyclerview
                 FirebaseUtils.ref.getChatRef(myUID,targetUID)
                     .orderByChild(FirebaseUtils.KEY_REVERSE_TIMESTAMP)
                     .addValueEventListener(object:ValueEventListener {
@@ -344,7 +348,7 @@ class UserProfileActivity : AppCompatActivity() {
                     return false
                 }
 
-                selector("Edit Group", listOf("Edit name", "Change Group picture")){_,i ->
+                selector("Edit Group", listOf("Edit name", "Change Group picture", "Remove picture")){_,i ->
                     when(i){
                         0 -> {
                             //show group name edit dialog
@@ -358,6 +362,13 @@ class UserProfileActivity : AppCompatActivity() {
                                 .setCropShape(CropImageView.CropShape.RECTANGLE)
                                 .setAspectRatio(1,1)
                                 .start(this)
+                        }
+
+                        2 -> {
+                            alert { message = "Remove profile picture?"
+                            yesButton { updateProfileUrl(targetUID, "")}
+                                noButton {  }
+                            }.show()
                         }
                     }
                 }
@@ -700,7 +711,8 @@ class UserProfileActivity : AppCompatActivity() {
             .child(FirebaseUtils.KEY_PROFILE_PIC_URL)
             .setValue(url)
             .addOnSuccessListener {
-                toast("Profile pic updated")
+                if(url.isNotEmpty()) toast("Profile pic updated")
+                else toast("Picture removed")
             }
     }
 
