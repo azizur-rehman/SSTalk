@@ -1,34 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#ffffff">
 
-    <android.support.design.widget.AppBarLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@null"
-        android:theme="@style/AppTheme.AppBarOverlay"
-        app:elevation="0dp">
 
-        <android.support.v7.widget.Toolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            app:popupTheme="@style/AppTheme.PopupOverlay"
-            app:theme="@style/AppTheme.Toolbar" />
-
-    </android.support.design.widget.AppBarLayout>
 
     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="-16dp"
         android:orientation="vertical"
-                  android:gravity="center"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+                  android:gravity="center">
 
         <ScrollView
             android:layout_width="match_parent"
@@ -82,7 +66,7 @@
                         android:layout_gravity="center"
                         android:cursorVisible="true"
                         android:hint="Hint."
-                        android:inputType="text"
+                        android:inputType="number"
                         android:textColor="@color/colorPrimary"
                         android:textSize="18sp"
                         android:textStyle="bold"
@@ -102,26 +86,58 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
-                    android:layout_marginTop="16dp"
+                    android:layout_marginTop="20dp"
                     android:fontFamily="@font/gotham"
-                    android:text="Don't recieve the OTP?"
+                    android:text="Didn't receive the OTP?"
                     android:textAlignment="center"
                     android:textColor="#a3a3a3"
                     android:textSize="16sp" />
+
+
+                <LinearLayout android:layout_width="match_parent"
+                              android:orientation="horizontal"
+                              android:layout_marginBottom="16dp"
+                              android:layout_height="wrap_content">
+
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
                     android:fontFamily="@font/gotham"
-                    android:text="RESEND OTP"
+                    android:text="Resend"
                     android:id="@+id/resendBtn"
+                    style="@style/TextViewHeading"
                     android:textAlignment="center"
+                    android:layout_weight="1"
                     android:textColor="@color/colorAccent"
                     android:textSize="16sp" />
+
+                    <View android:layout_width="2dp"
+                          android:layout_margin="15dp"
+                          android:layout_height="match_parent"
+                          android:background="@color/colorPrimary"
+                          />
+
+                    <TextView
+                            android:layout_width="match_parent"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/gotham"
+                            android:text="Change Number"
+                            android:id="@+id/changeNumber"
+                            style="@style/TextViewHeading"
+                            android:textAlignment="center"
+                            android:textSize="16sp" />
+
+
+
+                </LinearLayout>
+
+
 
 
                 <Button
                     android:id="@+id/verify"
+                    style="@style/RoundButton"
                     android:onClick="onVerifyClick"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -130,7 +146,6 @@
                     android:layout_marginLeft="16dp"
                     android:layout_marginRight="16dp"
                     android:layout_marginTop="24dp"
-                    android:background="@drawable/buttonshape"
                     android:fontFamily="@font/gotham"
                     android:text="VERIFY"
                     android:textAllCaps="false"
@@ -144,4 +159,4 @@
     </LinearLayout>
 
 
-</android.support.design.widget.CoordinatorLayout>
+</LinearLayout>

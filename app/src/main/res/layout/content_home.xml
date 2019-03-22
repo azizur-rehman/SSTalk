@@ -1,11 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.v7.widget.RecyclerView xmlns:android="http://schemas.android.com/apk/res/android"
+
+<FrameLayout android:layout_height="match_parent"
+             android:layout_width="match_parent"
+             android:id="@+id/homeLayoutContainer"
+             xmlns:app="http://schemas.android.com/apk/res-auto"
+             android:fitsSystemWindows="true"
+             app:layout_behavior="@string/appbar_scrolling_view_behavior"
+             xmlns:android="http://schemas.android.com/apk/res/android">
+
+
+    <ProgressBar android:layout_width="wrap_content"
+                 android:layout_gravity="center"
+                 android:id="@+id/conversation_progressbar"
+                 style="@android:style/Widget.DeviceDefault.Light.ProgressBar.Large"
+                 android:layout_height="wrap_content"/>
+
+
+
+
+    <android.support.v7.widget.RecyclerView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:clipToPadding="false"
+    app:stackFromEnd="false"
+    android:paddingBottom="100dp"
     android:id="@+id/conversationRecycler"
-    app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:showIn="@layout/app_bar_home">
 
 </android.support.v7.widget.RecyclerView>
+
+
+
+
+
+</FrameLayout>

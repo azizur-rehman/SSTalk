@@ -2,17 +2,20 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:padding="3dp"
+    android:id="@+id/container_right"
+
     android:orientation="vertical"
     android:layout_height="wrap_content">
 
 
     <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:padding="10dp"
-        android:layout_margin="5dp"
-        android:visibility="gone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="20dp"
+            android:layout_margin="5dp"
+            android:gravity="center"
+            android:drawableLeft="@drawable/shape_line"
+            android:drawableRight="@drawable/shape_line"
         android:id="@+id/header_right"
         android:layout_gravity="center"
         android:textColor="@color/black"
@@ -20,51 +23,74 @@
         />
 
 
+    <LinearLayout android:layout_width="match_parent"
+                  android:orientation="vertical"
+                  android:padding="3dp"
+                  android:layout_height="wrap_content"
+                  android:id="@+id/message_layout_text_right">
+
+
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_gravity="end"
         android:orientation="vertical"
         android:layout_marginLeft="50dp"
-        android:background="@drawable/bg_custom_outcoming_message"
+        android:id="@+id/bubble_container_right_text"
+        android:padding="10dp"
+        android:background="@drawable/shape_bubble_right"
         android:layout_height="wrap_content">
-
-
-
-        <ImageView android:layout_width="200dp"
-                   android:layout_height="180dp"
-                   android:scaleType="center"
-                   android:paddingTop="5dp"
-                   android:id="@+id/imageview_right"
-                   android:src="@drawable/bg_preview"
-        />
 
 
         <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="0dp"
-                android:padding="5dp"
+                android:paddingLeft="5dp"
+                android:paddingRight="5dp"
+
                 android:layout_weight="1"
-                android:maxWidth="200dp"
+                android:textSize="16sp"
+                android:maxWidth="240dp"
                 android:autoLink="all"
-                android:text="Caption is used for image asasfasfasfasfasfasfasfasfasfasfasfwhich is not optional"
+                android:text="Caption "
                 android:id="@+id/messageText_right"
             android:textColor="@color/white"
             />
+
+        <LinearLayout android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:gravity="center"
+                      android:paddingTop="2dp"
+                      android:paddingLeft="20dp"
+                      android:orientation="horizontal"
+                      android:layout_gravity="end">
+
+            <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="end"
+                    android:text=".."
+                    android:textSize="10sp"
+                    android:textAllCaps="true"
+                    android:id="@+id/time_right"
+                    android:textColor="@color/transparent_white_10"
+            />
+
+            <ImageView android:layout_width="12dp"
+                       android:layout_marginLeft="5dp"
+                       android:id="@+id/delivery_status"
+                       android:src="@drawable/ic_message_pending_gray_24dp"
+                       android:layout_gravity="center"
+                       android:layout_height="12dp"/>
+
+
+        </LinearLayout>
 
 
     </LinearLayout>
 
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="end"
-        android:text="12:10 PM"
-        android:paddingTop="2dp"
-        android:id="@+id/time_right"
-        android:paddingRight="15dp"
-        android:textColor="@color/warm_grey"
-        />
 
+
+    </LinearLayout>
 
 </LinearLayout>

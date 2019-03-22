@@ -2,28 +2,81 @@ package com.aziz.sstalk
 
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
-import com.aziz.sstalk.Fragments.FragmentOTP
+import android.util.Log
+import com.aziz.sstalk.fragments.FragmentOTP
 import com.aziz.sstalk.utils.utils
+import com.hbb20.CountryCodePicker
 import kotlinx.android.synthetic.main.input_phone.*
+import org.jetbrains.anko.alert
 
 class MobileLoginActivity : AppCompatActivity() {
+
+
+    private var fragmentOTP: FragmentOTP? = null
+
+    object KEY {
+        const val PHONE = "phone"
+        const val COUNTRY = "country"
+        const val COUNTRY_CODE = "countryCode"
+        const val COUNTRY_LOCALE_CODE = "locale"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.input_phone)
 
+        country_picker.registerCarrierNumberEditText(mobile_number)
+
         generate_otp.setOnClickListener {
 
-            utils.toast(this, "Generating OTP")
-            val fragmentOTP = FragmentOTP()
+
+            if(!country_picker.isValidFullNumber) {
+                mobile_number.error = "Input valid number"
+                return@setOnClickListener
+            }
+
+
+            fragmentOTP = FragmentOTP()
             val bundle = Bundle()
-            bundle.putString("phone", "+91${mobile_number.text}")
+            val countryCode = country_picker.selectedCountryCode
+            val countryName = country_picker.selectedCountryName
+            val countryLocale = country_picker.selectedCountryNameCode
 
-            fragmentOTP.arguments = bundle
+            bundle.putString(KEY.PHONE, country_picker.fullNumberWithPlus)
+            bundle.putString(KEY.COUNTRY, countryName)
+            bundle.putString(KEY.COUNTRY_LOCALE_CODE, countryLocale)
+            bundle.putString(KEY.COUNTRY_CODE, countryCode)
 
-            supportFragmentManager.beginTransaction()
-                .replace(R.id.container, fragmentOTP)
-                .commit()
+
+
+
+            fragmentOTP?.arguments = bundle
+
+            Log.d("MobileLoginActivity", "onCreate: bundle = ${bundle.toString()}")
+
+
+            alert {
+                message = "Is ${country_picker.fullNumberWithPlus} your phone number?"
+                positiveButton("Yes"){
+                    supportFragmentManager.beginTransaction()
+                        .replace(R.id.container, fragmentOTP!!)
+                        .commit()
+            }
+            negativeButton("No"){
+
+            }
+
+            }.show()
+
+
         }
     }
+
+
+    override fun onBackPressed() {
+
+        if(!supportFragmentManager.fragments.contains(fragmentOTP))
+            super.onBackPressed()
+    }
+
 }

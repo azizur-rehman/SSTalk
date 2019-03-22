@@ -1,43 +1,112 @@
 package com.aziz.sstalk
 
-import android.app.Activity
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.support.v7.app.AppCompatActivity
+import android.graphics.drawable.Drawable
 import android.os.Bundle
-import android.support.v7.widget.Toolbar
+import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.view.MenuItem
+import android.view.View
 import com.aziz.sstalk.utils.utils
+import com.squareup.picasso.NetworkPolicy
+import com.squareup.picasso.Picasso
+import com.squareup.picasso.Target
 import kotlinx.android.synthetic.main.activity_image_preview.*
+import java.io.File
+import java.lang.Exception
 
 class ImagePreviewActivity : AppCompatActivity() {
+
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_image_preview)
 
-        setSupportActionBar(toolbar)
+        var imgURL = intent.getStringExtra(utils.constants.KEY_IMG_PATH)
+        var imgLocalPath = intent.getStringExtra(utils.constants.KEY_LOCAL_PATH)
 
-        val imgBytes = intent.getByteArrayExtra(utils.constants.KEY_IMG_PATH)
+        if(imgURL == null)
+            imgURL = ""
 
-        preview.setImageBitmap(BitmapFactory.decodeByteArray(imgBytes,0,imgBytes.size))
+        if(imgLocalPath == null)
+            imgLocalPath = ""
 
-        sendBtn.setOnClickListener {
-            setResult(Activity.RESULT_OK, intent.putExtra(utils.constants.KEY_CAPTION, captionEditText.text.toString()))
+
+        if(imgURL.isEmpty() && imgLocalPath.isEmpty()){
+            utils.toast(this@ImagePreviewActivity, "Failed to load image")
             finish()
+        }
+
+
+         val target:Target = object : Target{
+            override fun onPrepareLoad(placeHolderDrawable: Drawable?) {
+
+                //utils.toast(this@ImagePreviewActivity, "Preparing to load")
+            }
+
+            override fun onBitmapFailed(e: Exception?, errorDrawable: Drawable?) {
+                utils.toast(this@ImagePreviewActivity, "Failed to load : Image might be deleted")
+                Log.d("ImagePreviewActivity", "onBitmapFailed: ${e!!.message}")
+                finish()
+
+            }
+
+            override fun onBitmapLoaded(bitmap: Bitmap?, from: Picasso.LoadedFrom?) {
+                preview.setImageBitmap(bitmap)
+                //utils.toast(this@ImagePreviewActivity, "Loaded")
+                progress_bar.visibility = View.GONE
+
+            }
 
         }
+
+        preview.tag = target
+
+        if(File(imgLocalPath).exists()){
+
+
+            Picasso.get()
+                .load(File(imgLocalPath))
+                .networkPolicy(NetworkPolicy.OFFLINE)
+                .into(target)
+
+        }
+        else{
+
+            if(imgURL.isEmpty()){
+                utils.toast(this@ImagePreviewActivity, "Failed to load image")
+                Log.d("ImagePreviewActivi13ty", "onCreate: path empty")
+                finish()
+            }
+            else
+            Picasso.get()
+                .load(imgURL.toString())
+                .networkPolicy(NetworkPolicy.OFFLINE)
+                .into(target)
+        }
+
+
+
+        setSupportActionBar(toolbar)
+        if(supportActionBar!=null) {
+            supportActionBar!!.setDisplayHomeAsUpEnabled(true)
+            supportActionBar!!.setHomeButtonEnabled(true)
+        }
+
+        title = ""
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when (item.itemId) {
-            android.R.id.home -> {
-                setResult(Activity.RESULT_CANCELED)
+
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+
+        when(item!!.itemId){
+            android.R.id.home ->{
                 finish()
-                return true
             }
         }
+
+
         return super.onOptionsItemSelected(item)
     }
 }

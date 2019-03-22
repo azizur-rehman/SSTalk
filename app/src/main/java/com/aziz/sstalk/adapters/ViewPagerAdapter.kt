@@ -1,0 +1,37 @@
+package com.aziz.sstalk.adapters
+
+import android.support.v4.app.Fragment
+import android.support.v4.app.FragmentManager
+import android.support.v4.app.FragmentPagerAdapter
+import android.view.ViewGroup
+
+class ViewPagerAdapter(fragmentManager:FragmentManager) : FragmentPagerAdapter(fragmentManager) {
+
+    val fragments:MutableList<Fragment> = ArrayList()
+    val titles:MutableList<String> = ArrayList()
+
+    fun addFragment(fragment: Fragment, title:String){
+        fragments.add(fragment)
+        titles.add(title)
+    }
+
+    override fun getItem(p0: Int): Fragment = fragments[p0]
+
+    override fun getCount(): Int = fragments.size
+
+    override fun getPageTitle(position: Int): CharSequence? {
+        return titles[position]
+    }
+
+
+    override fun destroyItem(container: ViewGroup, position: Int, `object`: Any) {
+        super.destroyItem(container, position, `object`)
+    }
+
+
+    override fun instantiateItem(container: ViewGroup, position: Int): Any {
+        return super.instantiateItem(container, position)
+    }
+
+
+}
