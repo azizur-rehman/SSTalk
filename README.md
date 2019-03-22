@@ -1,5 +1,5 @@
 # SS Talk
-An Kotlin based chat app built on top of Firebase 
+A Kotlin based chat app built on top of Firebase 
 
 
 
@@ -18,3 +18,5 @@ How to own this project or create your own app?
 
 
 Cheers!!! you are done with creating your own chat app 
+
+Feel free to leave any kind of feedback
