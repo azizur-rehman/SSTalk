@@ -1,5 +1,9 @@
 # SS Talk
-A Kotlin based chat app built on top of Firebase available on playstore - https://play.google.com/store/apps/details?id=com.aziz.sstalk
+A Kotlin based chat app built on top of Firebase available on playstore
+
+https://play.google.com/store/apps/details?id=com.aziz.sstalk
+
+
 
 ###Features
 
