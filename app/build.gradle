@@ -52,7 +52,6 @@ dependencies {
     implementation 'com.firebaseui:firebase-ui-database:4.3.0'
     implementation 'com.android.support:multidex:1.0.3'
     implementation 'com.chaos.view:pinview:1.4.2'
-    implementation 'com.github.Mariovc:ImagePicker:1.2.2'
     implementation 'com.vincent.filepicker:MultiTypeFilePicker:1.0.8'
     implementation 'de.hdodenhof:circleimageview:3.0.0'
     implementation 'com.squareup.picasso:picasso:2.71828'
@@ -79,8 +78,6 @@ dependencies {
     // the above version is based androidX pattern
     implementation 'com.theartofdev.edmodo:android-image-cropper:2.7.0'
     implementation 'com.yarolegovich:lovely-dialog:1.1.0'
-
-
 
 
 }

@@ -23,7 +23,6 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.StorageReference
 import com.google.firebase.storage.UploadTask
-import com.mvc.imagepicker.ImagePicker
 import com.theartofdev.edmodo.cropper.CropImage
 import com.theartofdev.edmodo.cropper.CropImageView
 import kotlinx.android.synthetic.main.activity_edit_profile.*
@@ -34,6 +33,7 @@ import me.shaohui.advancedluban.OnCompressListener
 import org.jetbrains.anko.selector
 import org.jetbrains.anko.toast
 import java.io.File
+import java.lang.Exception
 
 class EditProfile : AppCompatActivity() {
 
@@ -188,7 +188,10 @@ class EditProfile : AppCompatActivity() {
             return@Continuation storageRef.downloadUrl
         })
             .addOnCompleteListener { task ->
-                dialog.dismiss()
+
+                try {
+                    dialog.dismiss()
+                }catch (e:Exception){}
                 if(task.isSuccessful) {
                     val link = task.result
 

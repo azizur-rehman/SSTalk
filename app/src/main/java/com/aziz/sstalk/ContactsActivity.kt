@@ -201,7 +201,7 @@ class ContactsActivity : AppCompatActivity(){
                     holder.pic.circleBackgroundColor = ContextCompat.getColor(this@ContactsActivity, R.color.colorPrimary)
                 }
                 registeredAvailableUser.lastIndex -> {
-                    holder.pic.setPadding(20,20,20,20)
+                    holder.pic.setPadding(30,30,30,30)
                     holder.pic.circleBackgroundColor = Color.TRANSPARENT
                     holder.pic.setImageResource(android.R.drawable.ic_menu_share)
                 }

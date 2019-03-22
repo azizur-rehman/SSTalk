@@ -93,7 +93,7 @@ object utils {
         const val KEY_NAME = "name"
 
         const val IS_FOR_SINGLE_FILE = "isSingleFile"
-        const val URI_AUTHORITY = "com.mvc.imagepicker.provider"
+        const val URI_AUTHORITY = "com.aziz.sstalk"
 
         const val KEY_FILE_TYPE = "type"
         const val debugUserID = "user---2"
@@ -449,12 +449,14 @@ object utils {
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, fout)
             Log.d("utils", "saveBitmap: file saved to ${file.path}")
 
+            if(!Pref.isMediaVisible(context!!))
+                return file.path
 
             val values = ContentValues(3)
             values.put(MediaStore.Video.Media.TITLE, messageIdForName)
             values.put(MediaStore.Video.Media.MIME_TYPE, "image/*")
             values.put(MediaStore.Video.Media.DATA, file.absolutePath)
-            context!!.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+            context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
 
         }
         catch (e:Exception){
@@ -578,6 +580,10 @@ object utils {
 
 
     fun addVideoToMediaStore(context:Context, messageIdForName: String, file: File){
+
+        if(!Pref.isMediaVisible(context))
+            return
+
         val values = ContentValues(3)
         values.put(MediaStore.Video.Media.TITLE, messageIdForName)
         values.put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
@@ -737,12 +743,21 @@ object utils {
             val column_index = cursor!!.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
             cursor.moveToFirst()
             return cursor.getString(column_index)
-        } finally {
+        }
+        catch (e:Exception){
+            Log.e("utils", "getRealPathFromURI: error = ${e.message}")
+            return FileUtils.getFilePath(context, contentUri)
+        }
+
+        finally {
             if (cursor != null) {
                 cursor.close()
             }
         }
+
     }
+
+
 
 
     fun Context.toast(message: String){

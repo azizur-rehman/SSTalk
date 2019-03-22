@@ -2719,7 +2719,7 @@ class MessageActivity : AppCompatActivity() {
         AlertDialog.Builder(context)
             .setMessage("Delete selected messages?")
             .setPositiveButton("Yes") { _, _ ->
-                actionMode!!.finish()
+                Log.d("MessageActivity", "deleteSelectedMessages: $selectedItemPosition")
                 for ((index, itemPosition) in selectedItemPosition.withIndex()) {
                     FirebaseUtils.ref.getChatRef(myUID, targetUid)
                         .child(adapter.getRef(itemPosition).key.toString())
@@ -2730,6 +2730,8 @@ class MessageActivity : AppCompatActivity() {
                             }
                         }
                 }
+
+                actionMode?.finish()
             }
             .setNegativeButton("No", null)
             .show()

@@ -1,11 +1,17 @@
 package com.aziz.sstalk
 
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import android.util.Log
 import android.view.MenuItem
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.FirebaseUtils
+import com.aziz.sstalk.utils.utils
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.ValueEventListener
 import com.yarolegovich.lovelydialog.LovelyTextInputDialog
 import mehdi.sakout.aboutpage.AboutPage
 import mehdi.sakout.aboutpage.Element
@@ -17,7 +23,7 @@ class AboutTheDeveloperActivity : AppCompatActivity(){
 
 
 
-        val aboutView = AboutPage(this)
+        val aboutPage = AboutPage(this)
             .isRTL(false)
             .setImage(R.mipmap.ic_launcher)
             .setDescription("SS Talk\n\nAn Open Source Chat Project for Android")
@@ -32,7 +38,21 @@ class AboutTheDeveloperActivity : AppCompatActivity(){
             { FirebaseUtils.checkForUpdate(this@AboutTheDeveloperActivity, true) })
             .addItem(Element("Feedback to the developer",android.R.drawable.ic_dialog_info).setOnClickListener
             { showFeedbackDialog(FirebaseUtils.getUid()) })
-            .create()
+
+        Log.d("about", "onCreate: uid = ${FirebaseUtils.getUid()}")
+
+        if(FirebaseUtils.getUid()  == utils.constants.debugUserID ||
+                FirebaseUtils.getUid() == "LPVjVKbpTzeUDpank04sxkoparE2" ||
+                FirebaseUtils.getUid() == "vHv8TSqbS2YBHZJXS5X5Saz4acC2"){
+
+            // if it falls under one of my uids
+            Log.d("AboutTheDeveloper", "onCreate: show feedbacks")
+
+            aboutPage.addItem(Element("Feedbacks",android.R.drawable.ic_dialog_info).setOnClickListener
+            { startActivity(Intent(this@AboutTheDeveloperActivity, FeedbackActivity::class.java)) })
+        }
+
+        val aboutView = aboutPage.create()
 
         setContentView(aboutView)
 
@@ -71,4 +91,6 @@ class AboutTheDeveloperActivity : AppCompatActivity(){
         finish()
         return super.onOptionsItemSelected(item)
     }
+
+
 }

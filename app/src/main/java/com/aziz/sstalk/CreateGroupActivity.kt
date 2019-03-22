@@ -22,7 +22,6 @@ import com.aziz.sstalk.utils.utils
 import com.google.android.gms.tasks.Continuation
 import com.google.android.gms.tasks.Task
 import com.google.firebase.storage.UploadTask
-import com.mvc.imagepicker.ImagePicker
 import com.theartofdev.edmodo.cropper.CropImage
 import com.theartofdev.edmodo.cropper.CropImageView
 import kotlinx.android.synthetic.main.activity_create_group.*
@@ -47,6 +46,8 @@ class CreateGroupActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_create_group)
+
+        title = "Create new Group"
 
         profile_circleimageview.setImageResource(R.drawable.ic_group_white_24dp)
         profile_circleimageview.circleBackgroundColor = ContextCompat.getColor(this, R.color.colorPrimary)

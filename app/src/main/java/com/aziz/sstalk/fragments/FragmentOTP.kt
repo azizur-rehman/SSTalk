@@ -27,6 +27,9 @@ import com.google.firebase.FirebaseException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.PhoneAuthProvider
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.ValueEventListener
 import kotlinx.android.synthetic.main.input_otp.*
 import kotlinx.android.synthetic.main.input_otp.view.*
 import java.time.Duration
@@ -185,23 +188,44 @@ class FragmentOTP : Fragment() {
 
 
                     val user = it.result!!.user
-                    FirebaseUtils.ref.user(user.uid)
-                        .setValue(Models.User("",user.metadata!!.creationTimestamp,
-                            user.metadata!!.lastSignInTimestamp,
-                            user.phoneNumber!!,
-                            "",
-                            user.uid, countryName,
-                            countryCode, countryLocale
-                            ))
-                        .addOnSuccessListener {
 
-                            val intent = Intent(context, EditProfile::class.java).apply {
-                                flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
-                                putExtra(utils.constants.KEY_IS_ON_ACCOUNT_CREATION, true)
+                    FirebaseUtils.ref.user(user.uid)
+                        .addListenerForSingleValueEvent(object : ValueEventListener {
+                            override fun onCancelled(p0: DatabaseError) {
                             }
 
-                                startActivity(intent)
-                        }
+                            override fun onDataChange(p0: DataSnapshot) {
+                                var profileURL = ""
+                                var name = ""
+                                if(p0.exists()){
+                                    try { profileURL = p0.getValue(Models.User::class.java)?.profile_pic_url!!
+                                    name = p0.getValue(Models.User::class.java)?.name!!
+                                        }catch (e:Exception){}
+                                }
+
+
+                                FirebaseUtils.ref.user(user.uid)
+                                    .setValue(Models.User(name,user.metadata!!.creationTimestamp,
+                                        user.metadata!!.lastSignInTimestamp,
+                                        user.phoneNumber!!,
+                                        profileURL,
+                                        user.uid, countryName,
+                                        countryCode, countryLocale
+                                    ))
+                                    .addOnSuccessListener {
+
+                                        val intent = Intent(context, EditProfile::class.java).apply {
+                                            flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
+                                            putExtra(utils.constants.KEY_IS_ON_ACCOUNT_CREATION, true)
+                                        }
+
+                                        startActivity(intent)
+                                    }
+                            }
+
+                        })
+
+
 
                 }
                 else{

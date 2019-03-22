@@ -10,6 +10,7 @@ object Pref {
     const val FILE = "settings"
     const val FILE_PROFILE = "profile"
     const val KEY_CURRENT_TARGET = "current"
+    const val KEY_MEDIA_VISIBILITY = "media_visibility"
 
     fun storeToken(context: Context, token:String){
         context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
@@ -74,5 +75,19 @@ object Pref {
     fun getCurrentTargetUID(context: Context):String? {
         return context.getSharedPreferences(KEY_CURRENT_TARGET, Context.MODE_PRIVATE)
             .getString(KEY_CURRENT_TARGET,"")
+    }
+
+
+    fun setMediaVisibility(context:Context, isVisible:Boolean){
+        context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(KEY_MEDIA_VISIBILITY, isVisible)
+            .apply()
+    }
+
+
+    fun isMediaVisible(context:Context):Boolean{
+        return context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+            .getBoolean(KEY_MEDIA_VISIBILITY, true)
     }
 }
