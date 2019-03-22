@@ -46,6 +46,6 @@ https://play.google.com/store/apps/details?id=com.aziz.sstalk
 
 Cheers!!! you are done with creating your own chat app 
 
-
+Remember! The project is protected with SHA1 & Authorization rules, So try not to use your head in messing up the database 😄
 
 Feel free to leave any kind of feedback
