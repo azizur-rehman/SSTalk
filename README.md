@@ -1,4 +1,4 @@
-# SSTalk
+# SS Talk
 An Kotlin based chat app built on top of Firebase 
 
 
