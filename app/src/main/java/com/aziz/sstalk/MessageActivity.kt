@@ -1,6 +1,8 @@
 package com.aziz.sstalk
 
 import android.Manifest
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
 import android.animation.ArgbEvaluator
 import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
@@ -32,6 +34,7 @@ import android.view.MenuItem
 import android.view.*
 import android.view.ViewGroup
 import android.support.v7.widget.SearchView
+import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.*
 import com.aziz.sstalk.firebase.MessagingService
 import com.aziz.sstalk.models.Models
@@ -64,6 +67,8 @@ import com.vincent.filepicker.activity.ImagePickActivity
 import com.vincent.filepicker.activity.VideoPickActivity
 import com.vincent.filepicker.filter.entity.ImageFile
 import com.vincent.filepicker.filter.entity.VideoFile
+import io.codetail.animation.SupportAnimator
+import io.codetail.animation.ViewAnimationUtils
 import kotlinx.android.synthetic.main.activity_message.*
 import kotlinx.android.synthetic.main.content_user_profile.*
 import kotlinx.android.synthetic.main.layout_attachment_menu.*
@@ -2792,6 +2797,80 @@ class MessageActivity : AppCompatActivity() {
     }
 
 
+
+
+    //stuff for reveal menu
+    var isMenuHidden = true
+    private fun hideRevealView() {
+        if (attachment_menu.visibility == View.VISIBLE) {
+            attachment_menu.visibility = View.GONE
+            isMenuHidden = true
+        }
+    }
+
+
+    private fun animateAttachmentMenu(){
+        val mRevealView = attachment_menu
+        val cx = (mRevealView.left + mRevealView.right)
+        val cy = mRevealView.top
+        val radius = Math.max(mRevealView.width, mRevealView.height)
+
+        //Below Android LOLIPOP Version
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            val animator: SupportAnimator =
+                ViewAnimationUtils.createCircularReveal(mRevealView, cx, cy, 0f, radius.toFloat())
+            animator.interpolator = AccelerateDecelerateInterpolator()
+            animator.duration = 700
+
+            val animator_reverse = animator.reverse()
+
+            if (isMenuHidden) {
+                mRevealView.visibility = View.VISIBLE
+                animator.start()
+                isMenuHidden = false
+            } else {
+                animator_reverse.addListener(object  : SupportAnimator.AnimatorListener {
+                    override fun onAnimationRepeat() {
+                    }
+
+                    override fun onAnimationEnd() {
+                        mRevealView.visibility = View.INVISIBLE
+                        isMenuHidden = true
+                    }
+
+                    override fun onAnimationCancel() {
+                    }
+
+                    override fun onAnimationStart() {
+                    }
+
+                })
+                animator_reverse.start()
+            }
+        }
+        // Android LOLIPOP And ABOVE Version
+        else {
+            if (isMenuHidden) {
+                val anim = android.view.ViewAnimationUtils.createCircularReveal(mRevealView, cx, cy, 0F,
+                    radius.toFloat()
+                )
+                mRevealView.visibility = View.VISIBLE
+                anim.start()
+                isMenuHidden = false
+            } else {
+                val anim = android.view.ViewAnimationUtils.createCircularReveal(mRevealView, cx, cy,
+                    radius.toFloat(), 0f)
+                anim.addListener(object : AnimatorListenerAdapter() {
+                    override fun onAnimationEnd( animation: Animator) {
+                        super.onAnimationEnd(animation)
+                        mRevealView.visibility = View.INVISIBLE
+                        isMenuHidden = true
+                    }
+                })
+                anim.start()
+            }
+        }
+    }
 
 
 }
