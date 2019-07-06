@@ -16,7 +16,7 @@
         android:layout_height="0dp"
         app:elevation="0dp"
         app:menu="@menu/option_setting_menu"
-        app:itemIconTint="@color/colorPrimary"
+        app:itemIconTint="@color/colorPrimaryDark"
         android:id="@+id/setting_nav_view"
         app:itemTextAppearance="@style/TextViewHeading"
         app:itemTextColor="@color/dark_gray"

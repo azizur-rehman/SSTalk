@@ -44,6 +44,10 @@ class SettingsActivity : AppCompatActivity() {
         val enableSound = setting_nav_view.menu.findItem(R.id.action_sound_enable).actionView as Switch
         val enableVibration = setting_nav_view.menu.findItem(R.id.action_vibration_enable).actionView as Switch
 
+        val mediaVisiblity = setting_nav_view.menu.findItem(R.id.action_media_visibility).actionView as Switch
+
+        mediaVisiblity.isChecked = Pref.isMediaVisible(this)
+
         enableSound.isChecked = Pref.Notification.hasSoundEnabled(context)
         enableVibration.isChecked = Pref.Notification.hasVibrationEnabled(context)
 
@@ -55,6 +59,9 @@ class SettingsActivity : AppCompatActivity() {
             Pref.Notification.setVibrationEnabled(context, isChecked)
         }
 
+        mediaVisiblity.setOnCheckedChangeListener{_,isChecked ->
+            Pref.setMediaVisibility(context, isChecked)
+        }
 
     }
 

@@ -21,6 +21,9 @@
 
     <include layout="@layout/content_home"/>
 
+
+
+
     <android.support.design.widget.BottomNavigationView android:layout_width="match_parent"
                                                         android:layout_gravity="bottom"
                                                         android:background="@color/white"

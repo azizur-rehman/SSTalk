@@ -50,6 +50,62 @@
                       android:background="@color/white"
                       android:layout_height="wrap_content">
 
+
+                <LinearLayout android:layout_width="match_parent"
+                              android:orientation="horizontal"
+                              android:padding="10dp"
+                              android:id="@+id/caption_layout"
+                              android:layout_height="wrap_content">
+
+                  <FrameLayout android:layout_width="wrap_content"
+                               android:background="@color/black"
+                               android:layout_height="wrap_content">
+
+                    <ImageView android:layout_width="80dp"
+                               android:id="@+id/preview"
+                               android:alpha="0.9"
+                               android:src="@drawable/placeholder_image"
+                               android:scaleType="centerCrop"
+                               android:layout_height="80dp"
+                    />
+
+                      <ImageView android:layout_width="16dp" android:layout_height="16dp"
+                      android:layout_gravity="center"
+                                 android:id="@+id/play_icon"
+                                 android:visibility="gone"
+                                 android:src="@drawable/ic_play_white"
+                      />
+
+
+                      <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                      android:textColor="@color/white"
+                                android:id="@+id/videoLength"
+                                android:layout_gravity="bottom|end"
+                                android:textSize="10sp"
+                                android:text="00:00"
+                                android:visibility="gone"
+                                android:layout_margin="2dp"
+                        />
+
+
+                  </FrameLayout>
+
+                    <EditText android:layout_width="0dp"
+                              android:layout_weight="1"
+                              android:layout_marginLeft="10dp"
+                              android:padding="10dp"
+                              android:ems="3"
+                              android:maxLength="30"
+                              android:id="@+id/captionEditText"
+                              android:background="@drawable/button_round_with_stroke"
+                              android:hint="Type caption..."
+                              android:layout_height="match_parent"/>
+
+
+                </LinearLayout>
+
+
+
             <TextView android:layout_width="match_parent"
                   android:layout_height="wrap_content"
                 android:text="Frequent contacts"

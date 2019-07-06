@@ -11,9 +11,22 @@
             android:icon="@drawable/ic_person_flat"
         />
 
-    </menu>
+      </menu>
 
   </item>
+
+
+    <item android:title="Media" android:checkable="false">
+        <menu>
+            <item android:title="Visible in gallery"
+                  android:id="@+id/action_media_visibility"
+                  app:actionViewClass="android.widget.Switch"
+                  android:icon="@drawable/ic_perm_media_white_24dp"
+            />
+
+        </menu>
+
+    </item>
 
 
     <item android:title="Notifications" android:checkable="false">

@@ -36,6 +36,7 @@ import me.shaohui.advancedluban.Luban
 import me.shaohui.advancedluban.OnCompressListener
 import org.jetbrains.anko.collections.forEachWithIndex
 import org.jetbrains.anko.doAsyncResult
+import org.jetbrains.anko.longToast
 import org.jetbrains.anko.onComplete
 import org.jetbrains.anko.uiThread
 import java.io.File
@@ -89,6 +90,7 @@ class ForwardActivity : AppCompatActivity() {
 
         fwd_snackbar = Snackbar.make(sendBtn, "", Snackbar.LENGTH_INDEFINITE)
 
+        caption_layout.visibility = View.GONE
 
         recyclerLayout.visibility = View.GONE
         asyncLoader = doAsyncResult {
@@ -193,6 +195,9 @@ class ForwardActivity : AppCompatActivity() {
             model.to = targetUID
             model.caption = ""
 
+            if(caption_layout.visibility == View.VISIBLE && captionEditText.text.isNotEmpty())
+                model.caption = captionEditText.text.toString()
+
             val currentModel = model
             var nameOrNumber: String
             var type: String
@@ -281,6 +286,8 @@ class ForwardActivity : AppCompatActivity() {
         progressDialog = ProgressDialog(this)
         progressDialog!!.setCancelable(false)
 
+        caption_layout.visibility = View.VISIBLE
+
         if(intent.action == Intent.ACTION_SEND){
             when {
                 intent.type == "text/plain" -> {
@@ -299,6 +306,8 @@ class ForwardActivity : AppCompatActivity() {
                     bitmap = MediaStore.Images.Media.getBitmap(contentResolver, imageURI)
                     isImageFromIntent = true
 
+                    preview.setImageBitmap(bitmap)
+
                 }
                 intent.type!!.startsWith("video/") -> {
                     if(!utils.hasStoragePermission(this)){
@@ -307,13 +316,24 @@ class ForwardActivity : AppCompatActivity() {
                         return
                     }
 
-                    val videoUri = intent.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as Uri
+                    play_icon.visibility = View.VISIBLE
+                    videoLength.visibility = View.VISIBLE
+
+                    try{
+                         val videoUri = intent.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as Uri
+                    Log.d("ForwardActivity", "handleIncomingIntents: initial video path = ${videoUri.path}")
                     val videoFile =  File(utils.getRealPathFromURI(this, videoUri))
+                    Log.d("ForwardActivity", "handleIncomingIntents: real video path = ${videoFile.path}")
+
 
                     if(!videoFile.exists()){
                         utils.toast(context, "Something went wrong in video file")
                         finish()
                     }
+
+                        videoLength.text = utils.getVideoLength(context, videoFile.path)
+
+                     utils.setVideoThumbnailFromWebAsync(context, videoFile.path, preview)
 
                     if(videoFile.length() > (16 * 1024 * 1024)){
                         utils.toast(context, "Please choose a file smaller than 16 MB")
@@ -323,6 +343,11 @@ class ForwardActivity : AppCompatActivity() {
                     currentVideoFile = videoFile
                     isVideoFromIntent = true
 
+                    }
+                    catch (e:Exception){
+                        longToast("Failed to load video")
+                        finish()
+                    }
                 }
             }
         }
@@ -389,6 +414,8 @@ class ForwardActivity : AppCompatActivity() {
 
     }
 
+    lateinit var adapter: FirebaseRecyclerAdapter<Models.LastMessageDetail, ViewHolder>
+
     private fun setFrequentAdapter(){
 
         val lastMsgQuery = FirebaseUtils.ref.lastMessage(FirebaseUtils.getUid())
@@ -396,10 +423,9 @@ class ForwardActivity : AppCompatActivity() {
 
         val options = FirebaseRecyclerOptions.Builder<Models.LastMessageDetail>()
             .setQuery(lastMsgQuery, Models.LastMessageDetail::class.java)
-            .setLifecycleOwner(this)
             .build()
 
-        val adapter = object : FirebaseRecyclerAdapter<Models.LastMessageDetail, ViewHolder>(options){
+        adapter = object : FirebaseRecyclerAdapter<Models.LastMessageDetail, ViewHolder>(options){
             override fun onCreateViewHolder(p0: ViewGroup, p1: Int): ViewHolder =
                 ViewHolder(layoutInflater.inflate(R.layout.item__forward_contact_list, p0, false))
 
@@ -416,7 +442,8 @@ class ForwardActivity : AppCompatActivity() {
         }
 
         frequentRecyclerView.adapter = adapter
-//        frequentRecyclerView.addItemDecoration(DividerItemDecoration(this, DividerItemDecoration.VERTICAL))
+
+        adapter.startListening()
 
         lastMsgQuery.addListenerForSingleValueEvent(object : ValueEventListener{
             override fun onCancelled(p0: DatabaseError) {
@@ -439,6 +466,8 @@ class ForwardActivity : AppCompatActivity() {
         })
 
     }
+
+
 
     private fun setAllContactAdapter(){
 
@@ -658,6 +687,7 @@ class ForwardActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         asyncLoader?.cancel(true)
+        adapter?.stopListening()
         super.onDestroy()
     }
 
@@ -703,7 +733,7 @@ class ForwardActivity : AppCompatActivity() {
      private fun checkIfInGroup(selectedGroupID:String, holder: ViewHolder){
 
          holder.itemView.isEnabled = true
-         holder.itemView.isClickable = holder.itemView.isEnabled
+         holder.itemView.isClickable = true
          holder.title.setTextColor(if(holder.itemView.isEnabled) Color.BLACK else Color.LTGRAY)
 
 
@@ -724,9 +754,9 @@ class ForwardActivity : AppCompatActivity() {
                         !p0.children.any {
                             it.getValue(Models.GroupMember::class.java)?.uid == myUID }
 
-//                    Log.d("ForwardActivity", "bindHolder: group name = ${holder.title.text}")
-//                    Log.d("ForwardActivity", "bindHolder: group id = $selectedGroupID")
-//                    Log.d("ForwardActivity", "onDataChange: removed = $isMeRemoved")
+                    Log.d("ForwardActivity", "bindHolder: group name = ${holder.title.text}")
+                    Log.d("ForwardActivity", "bindHolder: group id = $selectedGroupID")
+                    Log.d("ForwardActivity", "onDataChange: removed = $isMeRemoved")
 
                     try {
 
