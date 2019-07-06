@@ -52,6 +52,9 @@ import com.google.android.gms.tasks.Task
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.ml.naturallanguage.FirebaseNaturalLanguage
+import com.google.firebase.ml.naturallanguage.smartreply.FirebaseTextMessage
+import com.google.firebase.ml.naturallanguage.smartreply.SmartReplySuggestionResult
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.UploadTask
 import com.mikhaellopez.circularprogressbar.CircularProgressBar
@@ -65,7 +68,7 @@ import com.vincent.filepicker.activity.VideoPickActivity
 import com.vincent.filepicker.filter.entity.ImageFile
 import com.vincent.filepicker.filter.entity.VideoFile
 import kotlinx.android.synthetic.main.activity_message.*
-import kotlinx.android.synthetic.main.content_user_profile.*
+import kotlinx.android.synthetic.main.item_smart_reply.view.*
 import kotlinx.android.synthetic.main.layout_attachment_menu.*
 import kotlinx.android.synthetic.main.layout_include_message_activity_toolbar.*
 import kotlinx.android.synthetic.main.text_header.view.*
@@ -210,6 +213,8 @@ class MessageActivity : AppCompatActivity() {
 
     private fun initComponents(){
 
+
+
         if(isGroup) {
             target_name_textview.text = nameOrNumber
 
@@ -310,6 +315,9 @@ class MessageActivity : AppCompatActivity() {
 
 
         }
+
+
+        bindSmartReply()
     }
 
 
@@ -2789,6 +2797,96 @@ class MessageActivity : AppCompatActivity() {
             })
     }
 
+
+
+    private fun bindSmartReply(){
+
+        FirebaseUtils.ref.getChatRef(myUID, targetUid)
+            .addValueEventListener(object : ValueEventListener{
+                override fun onCancelled(p0: DatabaseError) {}
+
+                override fun onDataChange(p0: DataSnapshot) {
+
+                    val conversation:MutableList<FirebaseTextMessage> = ArrayList()
+                    var isLastMessageMine = false
+                    p0.children.forEachIndexed { index, dataSnapshot ->
+                        val message = dataSnapshot.getValue(Models.MessageModel::class.java)
+                        message?.let {
+                            val textMessage = message.message.takeIf { message.messageType == "message" }?:message.messageType
+
+                            conversation.add(FirebaseTextMessage.createForRemoteUser(textMessage,
+                                System.currentTimeMillis(), targetUid))
+
+                            if(index == p0.childrenCount.toInt() - 1){
+                                isLastMessageMine = it.from == myUID
+                            }
+                        }
+                    }
+
+
+
+                    //generate smart reply
+                    try {
+
+
+
+//                        smart_reply_recycler.visibility = if(isLastMessageMine) View.GONE else View.VISIBLE
+
+
+                        if(conversation.isEmpty()) return
+
+                        FirebaseNaturalLanguage.getInstance().smartReply
+                            .suggestReplies(conversation)
+                            .addOnSuccessListener {
+                                when(it.status){
+                                    SmartReplySuggestionResult.STATUS_SUCCESS -> {
+
+
+                                    }
+                                    SmartReplySuggestionResult.STATUS_NO_REPLY -> {
+                                        Log.d("MessageActivity", "onChildAdded: no reply")
+                                    }
+                                    SmartReplySuggestionResult.STATUS_NOT_SUPPORTED_LANGUAGE -> {
+                                        Log.d("MessageActivity", "onChildAdded: language not supported ")
+                                    }
+                                }
+
+
+
+                                smart_reply_recycler.adapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>(){
+                                    override fun onCreateViewHolder(p0: ViewGroup, p1: Int): RecyclerView.ViewHolder {
+                                        return object : RecyclerView.ViewHolder(LayoutInflater.from(context)
+                                            .inflate(R.layout.item_smart_reply,p0,false)){}
+                                    }
+
+                                    override fun getItemCount() = it.suggestions.size
+                                    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, p1: Int) {
+                                        val suggestion  = it.suggestions[p1].text
+                                        holder.itemView.item_text.text = suggestion
+
+
+                                        holder.itemView.item_text.setOnClickListener {
+                                            Log.d("MessageActivity", "onBindViewHolder: suggestion text clicked")
+                                            messageInputField.inputEditText.setText(suggestion)
+                                            messageInputField.button.callOnClick()
+                                        }
+
+                                        holder.itemView.setOnClickListener {
+                                            Log.d("MessageActivity", "onBindViewHolder: suggestion clicked")
+                                            messageInputField.inputEditText.setText(suggestion)
+                                            messageInputField.button.callOnClick()
+                                        }
+                                    }
+
+                                }
+
+                            }
+                    } catch (e: Exception) {
+                        Log.e("MessageActivity", "onDataChange: error on smart suggestion : ",e)
+                    }
+                }
+            })
+    }
 
 
 

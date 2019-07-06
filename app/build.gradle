@@ -32,6 +32,9 @@ android {
     androidExtensions {
         experimental = true
     }
+    aaptOptions {
+        noCompress "tflite"
+    }
 }
 
 dependencies {
@@ -73,7 +76,7 @@ dependencies {
     implementation 'com.github.lguipeng:AnimCheckBox:1.0.1'
     implementation 'com.skyline.widget:round-corner-layout:1.0.1'
     implementation 'com.hbb20:ccp:2.2.4'
-    implementation 'org.jetbrains.anko:anko-commons:0.10.4'
+    implementation 'org.jetbrains.anko:anko-commons:0.10.8'
     implementation 'com.github.medyo:android-about-page:1.2.5'
 
     // the above version is based androidX pattern
@@ -81,6 +84,9 @@ dependencies {
     implementation 'com.yarolegovich:lovely-dialog:1.1.0'
 
 
+    //ML
+    implementation 'com.google.firebase:firebase-ml-natural-language:18.0.0'
+    implementation 'com.google.firebase:firebase-ml-natural-language-smart-reply-model:18.0.0'
 
 
 }

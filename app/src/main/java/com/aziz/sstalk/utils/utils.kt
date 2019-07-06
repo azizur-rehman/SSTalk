@@ -47,7 +47,6 @@ import com.aziz.sstalk.utils.utils.toast
 import com.bumptech.glide.Glide
 import com.google.firebase.auth.FirebaseAuth
 import com.squareup.picasso.Picasso
-import io.michaelrocks.libphonenumber.android.PhoneNumberUtil
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream

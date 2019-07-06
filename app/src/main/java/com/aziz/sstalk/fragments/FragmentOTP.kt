@@ -22,7 +22,6 @@ import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.utils
 import com.aziz.sstalk.utils.utils.longToast
 import com.aziz.sstalk.utils.utils.toast
-import com.futuremind.recyclerviewfastscroll.Utils
 import com.google.firebase.FirebaseException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.PhoneAuthCredential

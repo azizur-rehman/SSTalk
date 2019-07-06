@@ -100,6 +100,15 @@
             </FrameLayout>
 
 
+            <android.support.v7.widget.RecyclerView android:layout_width="match_parent"
+                                                    android:layout_height="wrap_content"
+                                                    app:layoutManager="android.support.v7.widget.LinearLayoutManager"
+                                                    android:orientation="horizontal"
+                                                    android:background="@color/white"
+                                                    android:id="@+id/smart_reply_recycler"
+            />
+
+
             <com.stfalcon.chatkit.messages.MessageInput
                     android:layout_width="match_parent"
                     android:id="@+id/messageInputField"
