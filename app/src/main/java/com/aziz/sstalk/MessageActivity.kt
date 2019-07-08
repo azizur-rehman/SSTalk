@@ -142,6 +142,7 @@ class MessageActivity : AppCompatActivity() {
     var loadedPosition:HashMap<Int,Boolean> = HashMap()
 
     var selectedMessageModel:MutableList<Models.MessageModel> = ArrayList()
+    var selectedMessageIDs:MutableList<String> = ArrayList()
     val selectedItemPosition:MutableList<Int> = ArrayList()
 
     var searchFilterItemPosition:MutableList<Int> = ArrayList()
@@ -2241,7 +2242,7 @@ class MessageActivity : AppCompatActivity() {
         unselectedDrawable = ColorDrawable(Color.WHITE)
 
 
-        if(selectedItemPosition.contains(position))
+        if(selectedMessageIDs.contains(messageID))
             itemView.background = selectedDrawable
         else
             itemView.background = unselectedDrawable
@@ -2254,9 +2255,10 @@ class MessageActivity : AppCompatActivity() {
 
             if(!isContextMenuActive) {
 
-                if (!selectedItemPosition.contains(position)) {
+                if (!selectedMessageIDs.contains(messageID)) {
                     selectedItemPosition.add(position)
                     selectedMessageModel.add(model)
+                    selectedMessageIDs.add(messageID)
                 }
 
 
@@ -2329,12 +2331,13 @@ class MessageActivity : AppCompatActivity() {
                                 adapter.notifyItemChanged(pos)
 
                             selectedItemPosition.clear()
+                            selectedMessageIDs.clear()
                             isContextMenuActive = false
                         }
 
                     })
 
-                actionMode!!.title = selectedItemPosition.size.toString()
+                actionMode?.title = selectedItemPosition.size.toString()
 
 
                 itemView.background = selectedDrawable
@@ -2350,23 +2353,25 @@ class MessageActivity : AppCompatActivity() {
 
             if(isContextMenuActive) {
 
-                if(selectedItemPosition.contains(position)){
+                if(selectedMessageIDs.contains(messageID)){
                     itemView.background = unselectedDrawable
                     selectedItemPosition.remove(position)
                     selectedMessageModel.remove(model)
+                    selectedMessageIDs.remove(messageID)
 
                 }
                 else{
                     itemView.background = selectedDrawable
                     selectedItemPosition.add(position)
                     selectedMessageModel.add(model)
+                    selectedMessageIDs.add(messageID)
                 }
 
-                actionMode!!.title = selectedItemPosition.size.toString()
+                actionMode?.title = selectedItemPosition.size.toString()
                 actionMode?.invalidate()
 
                 if(selectedItemPosition.isEmpty()){
-                        actionMode!!.finish()
+                        actionMode?.finish()
                 }
 
 
@@ -2729,16 +2734,18 @@ class MessageActivity : AppCompatActivity() {
     private fun deleteSelectedMessages(actionMode: ActionMode?){
 
 
+        Log.d("MessageActivity", "deleteSelectedMessages: $selectedItemPosition , msg ID = $selectedMessageIDs")
+
         AlertDialog.Builder(context)
             .setMessage("Delete selected messages?")
             .setPositiveButton("Yes") { _, _ ->
-                Log.d("MessageActivity", "deleteSelectedMessages: $selectedItemPosition")
-                for ((index, itemPosition) in selectedItemPosition.withIndex()) {
+
+                for ((index, messageID) in selectedMessageIDs.withIndex()) {
                     FirebaseUtils.ref.getChatRef(myUID, targetUid)
-                        .child(adapter.getRef(itemPosition).key.toString())
+                        .child(messageID)
                         .removeValue()
                         .addOnCompleteListener {
-                            if (index == selectedItemPosition.lastIndex) {
+                            if (index == selectedMessageIDs.lastIndex) {
                                 toast("Message deleted")
                             }
                         }
