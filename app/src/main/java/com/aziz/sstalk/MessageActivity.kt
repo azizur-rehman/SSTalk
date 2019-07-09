@@ -55,6 +55,8 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.ml.naturallanguage.FirebaseNaturalLanguage
 import com.google.firebase.ml.naturallanguage.smartreply.FirebaseTextMessage
 import com.google.firebase.ml.naturallanguage.smartreply.SmartReplySuggestionResult
+import com.google.firebase.ml.naturallanguage.translate.FirebaseTranslateLanguage
+import com.google.firebase.ml.naturallanguage.translate.FirebaseTranslatorOptions
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.UploadTask
 import com.mikhaellopez.circularprogressbar.CircularProgressBar
@@ -70,6 +72,8 @@ import com.vincent.filepicker.filter.entity.VideoFile
 import io.codetail.animation.SupportAnimator
 import io.codetail.animation.ViewAnimationUtils
 import kotlinx.android.synthetic.main.activity_message.*
+import kotlinx.android.synthetic.main.bubble_left.view.*
+import kotlinx.android.synthetic.main.bubble_right.view.*
 import kotlinx.android.synthetic.main.item_smart_reply.view.*
 import kotlinx.android.synthetic.main.layout_attachment_menu.*
 import kotlinx.android.synthetic.main.layout_include_message_activity_toolbar.*
@@ -152,7 +156,7 @@ class MessageActivity : AppCompatActivity() {
     private val CircularProgressBarsAt:HashMap<String,CircularProgressBar> = HashMap()
     private val mediaControlImageViewAt:HashMap<String,ImageView> = HashMap()
 
-    lateinit var adapter:FirebaseRecyclerAdapter<Models.MessageModel, androidx.recyclerview.widget.RecyclerView.ViewHolder>
+    lateinit var adapter:FirebaseRecyclerAdapter<Models.MessageModel, RecyclerView.ViewHolder>
 
 
 
@@ -696,9 +700,9 @@ class MessageActivity : AppCompatActivity() {
             .build()
 
 
-         adapter = object  : FirebaseRecyclerAdapter<Models.MessageModel, androidx.recyclerview.widget.RecyclerView.ViewHolder>(options) {
+         adapter = object  : FirebaseRecyclerAdapter<Models.MessageModel, RecyclerView.ViewHolder>(options) {
 
-            override fun onCreateViewHolder(p0: ViewGroup, viewType: Int): androidx.recyclerview.widget.RecyclerView.ViewHolder {
+            override fun onCreateViewHolder(p0: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
 
 
                return when(viewType) {
@@ -750,7 +754,7 @@ class MessageActivity : AppCompatActivity() {
 
             @SuppressLint("ObjectAnimatorBinding", "SetTextI18n")
             override fun onBindViewHolder(
-                holder: androidx.recyclerview.widget.RecyclerView.ViewHolder,
+                holder: RecyclerView.ViewHolder,
                 position: Int,
                 model: Models.MessageModel) {
 
@@ -1302,7 +1306,7 @@ class MessageActivity : AppCompatActivity() {
 
 
     private fun setObserver(){
-        adapter.registerAdapterDataObserver(object : androidx.recyclerview.widget.RecyclerView.AdapterDataObserver() {
+        adapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
             override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
 
 
@@ -2239,6 +2243,8 @@ class MessageActivity : AppCompatActivity() {
     var selectedDrawable:Drawable? = null
     var unselectedDrawable:Drawable? = null
 
+    var isTranslatorPressed = false
+
     //setting contextual toolbar on viewHolder
 
     var actionMode: ActionMode? = null
@@ -2321,6 +2327,7 @@ class MessageActivity : AppCompatActivity() {
 
                         override fun onCreateActionMode(p0: ActionMode?, p1: Menu?): Boolean {
                             p0?.menuInflater?.inflate(R.menu.chat_actions_menu, p1!!)
+                            p1?.findItem(R.id.action_translate)?.isVisible = (selectedMessageModel.size == 1)
                             isContextMenuActive = true
                             return true
                         }
@@ -2331,8 +2338,7 @@ class MessageActivity : AppCompatActivity() {
                                 it.isFile
                             }
 
-
-                                p1?.findItem(R.id.action_translate)?.isVisible = (models.size == 1)
+                            p1?.findItem(R.id.action_translate)?.isVisible = (models.size == 1)
 
                             p1?.findItem(R.id.action_copy)?.isVisible = !isContainsFile
                             p0?.title = selectedItemPosition.size.toString()
@@ -2342,11 +2348,16 @@ class MessageActivity : AppCompatActivity() {
 
                         override fun onDestroyActionMode(p0: ActionMode?) {
                             for (pos in selectedItemPosition)
+                            {
+                                if(!isTranslatorPressed)
                                 adapter.notifyItemChanged(pos)
+                            }
 
                             selectedItemPosition.clear()
                             selectedMessageIDs.clear()
+                            selectedMessageModel.clear()
                             isContextMenuActive = false
+                            isTranslatorPressed = false
                         }
 
                     })
@@ -2396,6 +2407,39 @@ class MessageActivity : AppCompatActivity() {
 
     private fun translateMessage(itemView: View, model: Models.MessageModel) {
 
+        isTranslatorPressed = true
+        itemView.background = ColorDrawable(Color.WHITE)
+
+        //identify language
+        FirebaseNaturalLanguage.getInstance().languageIdentification
+            .identifyLanguage(model.message)
+            .addOnSuccessListener { languageCode ->
+                Log.d("MessageActivity", "translateMessage: language = $languageCode")
+
+                val translatorOptions = FirebaseTranslatorOptions.Builder()
+                    .setSourceLanguage(FirebaseTranslateLanguage.languageForLanguageCode(languageCode)?:FirebaseTranslateLanguage.EN)
+                    .setTargetLanguage(FirebaseTranslateLanguage.HI).build()
+
+               val firebaseNaturalLanguage =  FirebaseNaturalLanguage.getInstance().getTranslator(translatorOptions)
+                   firebaseNaturalLanguage.downloadModelIfNeeded()
+                    .addOnSuccessListener {
+                        Log.d("MessageActivity", "translateMessage: translator downloaded")
+                    }
+                       .addOnFailureListener {
+                           toast(it.localizedMessage)
+                       }
+
+                firebaseNaturalLanguage.translate(model.message)
+                    .addOnSuccessListener { translatedText ->
+                        Log.d("MessageActivity", "translateMessage: $translatedText")
+                        if(model.from == myUID)
+                            itemView.messageText_right.text = translatedText
+                        else
+                            itemView.messageText_left.text = translatedText
+                    }
+
+
+            }
 
     }
 
@@ -2695,13 +2739,13 @@ class MessageActivity : AppCompatActivity() {
             messagesList.scrollToPosition(adapter.itemCount - 1)
         }
 
-        messagesList.setOnScrollListener(object : androidx.recyclerview.widget.RecyclerView.OnScrollListener() {
+        messagesList.setOnScrollListener(object : RecyclerView.OnScrollListener() {
 
 
-            override fun onScrollStateChanged(recyclerView: androidx.recyclerview.widget.RecyclerView, newState: Int) {
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
 
 
-                if(newState == androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_IDLE || newState == androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_SETTLING) {
+                if(newState == RecyclerView.SCROLL_STATE_IDLE || newState == RecyclerView.SCROLL_STATE_SETTLING) {
 
                     if(dateStickyHeader.visibility == View.VISIBLE && !isRunning) {
                         isRunning = true
@@ -2715,7 +2759,7 @@ class MessageActivity : AppCompatActivity() {
                     }
                 }
 
-                if(newState == androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_DRAGGING){
+                if(newState == RecyclerView.SCROLL_STATE_DRAGGING){
                     if(layoutManager.findLastVisibleItemPosition() < adapter.itemCount - 1)
                         dateStickyHeader.visibility = View.VISIBLE
                 }
@@ -2723,7 +2767,7 @@ class MessageActivity : AppCompatActivity() {
                 super.onScrollStateChanged(recyclerView, newState)
             }
 
-            override fun onScrolled(recyclerView: androidx.recyclerview.widget.RecyclerView, dx: Int, dy: Int) {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
 
                 if(layoutManager.findLastVisibleItemPosition() == adapter.itemCount - 1 )
                     bottomScrollButton.hide()
@@ -2845,8 +2889,13 @@ class MessageActivity : AppCompatActivity() {
                         message?.let {
                             val textMessage = message.message.takeIf { message.messageType == "message" }?:message.messageType
 
+                            if(it.from == targetUid)
                             conversation.add(FirebaseTextMessage.createForRemoteUser(textMessage,
                                 System.currentTimeMillis(), targetUid))
+                            else
+                                conversation.add(FirebaseTextMessage.createForLocalUser(textMessage,
+                                System.currentTimeMillis()))
+
 
                             if(index == p0.childrenCount.toInt() - 1){
                                 isLastMessageMine = it.from == myUID
@@ -2855,7 +2904,7 @@ class MessageActivity : AppCompatActivity() {
                     }
 
 
-                    smart_reply_recycler.visibility = if(isLastMessageMine)  View.GONE else View.VISIBLE
+//                    smart_reply_recycler.visibility = if(isLastMessageMine)  View.GONE else View.VISIBLE
 
 
                     //generate smart reply
@@ -2886,14 +2935,14 @@ class MessageActivity : AppCompatActivity() {
 
 
 
-                                smart_reply_recycler.adapter = object : androidx.recyclerview.widget.RecyclerView.Adapter<androidx.recyclerview.widget.RecyclerView.ViewHolder>(){
-                                    override fun onCreateViewHolder(p0: ViewGroup, p1: Int): androidx.recyclerview.widget.RecyclerView.ViewHolder {
-                                        return object : androidx.recyclerview.widget.RecyclerView.ViewHolder(LayoutInflater.from(context)
+                                smart_reply_recycler.adapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>(){
+                                    override fun onCreateViewHolder(p0: ViewGroup, p1: Int): RecyclerView.ViewHolder {
+                                        return object : RecyclerView.ViewHolder(LayoutInflater.from(context)
                                             .inflate(R.layout.item_smart_reply,p0,false)){}
                                     }
 
                                     override fun getItemCount() = it.suggestions.size
-                                    override fun onBindViewHolder(holder: androidx.recyclerview.widget.RecyclerView.ViewHolder, p1: Int) {
+                                    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, p1: Int) {
                                         val suggestion  = it.suggestions[p1].text
                                         holder.itemView.item_text.text = suggestion
 
