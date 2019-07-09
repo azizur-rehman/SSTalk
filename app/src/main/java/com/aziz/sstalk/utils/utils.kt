@@ -16,9 +16,9 @@ import android.net.Uri
 import android.os.*
 import android.provider.ContactsContract
 import android.provider.MediaStore
-import android.support.design.widget.FloatingActionButton
-import android.support.v4.app.ActivityCompat
-import android.support.v4.content.FileProvider
+import com.google.android.material.floatingactionbutton.FloatingActionButton
+import androidx.core.app.ActivityCompat
+import androidx.core.content.FileProvider
 import android.text.SpannableString
 import android.text.style.BackgroundColorSpan
 import android.util.Log
@@ -506,7 +506,7 @@ object utils {
     fun getFileSize(sizeInBytes:Long):String{
 
          if (sizeInBytes <= 0)
-            return "0";
+            return "0"
 
         val units = arrayOf( "B", "KB", "MB", "GB", "TB" )
         val digitGroups = (log10(sizeInBytes.toDouble()) / log10(1024.0)).toInt()
@@ -713,13 +713,13 @@ object utils {
 }
 
 
-    fun hideFabs(vararg fabs:FloatingActionButton){
+    fun hideFabs(vararg fabs: FloatingActionButton){
         fabs.forEach {
             it.hide()
         }
     }
 
-    fun showFabs(vararg fabs:FloatingActionButton){
+    fun showFabs(vararg fabs: FloatingActionButton){
         fabs.forEach {
             it.show()
         }

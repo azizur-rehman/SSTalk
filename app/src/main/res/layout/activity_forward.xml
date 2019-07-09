@@ -2,7 +2,7 @@
 
 
 
- <android.support.design.widget.CoordinatorLayout
+ <androidx.coordinatorlayout.widget.CoordinatorLayout
         xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
         xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -12,9 +12,9 @@
         tools:context=".ForwardActivity">
 
 
-    <android.support.design.widget.AppBarLayout android:layout_width="match_parent"
-                                                android:layout_height="wrap_content">
-        <android.support.v7.widget.Toolbar
+    <com.google.android.material.appbar.AppBarLayout android:layout_width="match_parent"
+                                                     android:layout_height="wrap_content">
+        <androidx.appcompat.widget.Toolbar
                 android:layout_width="match_parent"
                 android:layout_height="?actionBarSize"
                 android:background="@color/colorPrimary"
@@ -26,7 +26,7 @@
                 app:title="Forward to ..."
         />
 
-    </android.support.design.widget.AppBarLayout>
+    </com.google.android.material.appbar.AppBarLayout>
 
 
     <FrameLayout
@@ -36,7 +36,7 @@
 
 
 
-        <android.support.v4.widget.NestedScrollView
+        <androidx.core.widget.NestedScrollView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="@color/white"
@@ -113,12 +113,12 @@
                       style="@style/TextViewHeading"
         />
 
-            <android.support.v7.widget.RecyclerView android:layout_width="match_parent"
-                                                android:layout_height="wrap_content"
-                                                app:layoutManager="android.support.v7.widget.LinearLayoutManager"
-                                                    android:clipToPadding="false"
-                                                    android:paddingBottom="10dp"
-                                                    android:id="@+id/frequentRecyclerView"
+            <androidx.recyclerview.widget.RecyclerView android:layout_width="match_parent"
+                                                       android:layout_height="wrap_content"
+                                                       app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                                                       android:clipToPadding="false"
+                                                       android:paddingBottom="10dp"
+                                                       android:id="@+id/frequentRecyclerView"
         />
 
 
@@ -131,19 +131,19 @@
         />
 
 
-             <android.support.v7.widget.RecyclerView android:layout_width="match_parent"
-                                                android:layout_height="match_parent"
-                                                     android:clipToPadding="false"
-                                                     android:paddingBottom="100dp"
-                                                     app:layoutManager="android.support.v7.widget.LinearLayoutManager"
-                                                android:id="@+id/allContactRecyclerView"
+             <androidx.recyclerview.widget.RecyclerView android:layout_width="match_parent"
+                                                        android:layout_height="match_parent"
+                                                        android:clipToPadding="false"
+                                                        android:paddingBottom="100dp"
+                                                        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                                                        android:id="@+id/allContactRecyclerView"
         />
         </LinearLayout>
 
 
 
 
-        </android.support.v4.widget.NestedScrollView>
+        </androidx.core.widget.NestedScrollView>
 
 
         <ProgressBar android:layout_width="wrap_content"
@@ -158,7 +158,7 @@
     </FrameLayout>
 
 
-    <android.support.design.widget.FloatingActionButton
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom|end"
@@ -169,5 +169,5 @@
     />
 
 
-</android.support.design.widget.CoordinatorLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
 

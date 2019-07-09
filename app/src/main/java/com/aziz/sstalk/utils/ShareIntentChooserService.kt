@@ -5,7 +5,7 @@ import android.content.IntentFilter
 import android.os.Build
 import android.service.chooser.ChooserTarget
 import android.service.chooser.ChooserTargetService
-import android.support.annotation.RequiresApi
+import androidx.annotation.RequiresApi
 
 @RequiresApi(Build.VERSION_CODES.M)
 class ShareIntentChooserService : ChooserTargetService() {

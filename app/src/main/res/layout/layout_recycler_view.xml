@@ -6,10 +6,10 @@
               android:layout_height="match_parent"
               xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <android.support.v7.widget.RecyclerView android:layout_width="match_parent"
-                                            android:id="@+id/recyclerView"
-                                            app:layoutManager="android.support.v7.widget.LinearLayoutManager"
-                                            android:layout_height="match_parent"/>
+    <androidx.recyclerview.widget.RecyclerView android:layout_width="match_parent"
+                                               android:id="@+id/recyclerView"
+                                               app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                                               android:layout_height="match_parent"/>
 
     <TextView android:layout_width="match_parent" android:layout_height="match_parent"
         android:gravity="center"

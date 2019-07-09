@@ -10,11 +10,11 @@ import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Bundle
 import android.provider.ContactsContract
-import android.support.v4.content.ContextCompat
-import android.support.v7.app.AlertDialog
-import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.GridLayoutManager
-import android.support.v7.widget.RecyclerView
+import androidx.core.content.ContextCompat
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import android.util.Log
 import android.view.*
 import com.aziz.sstalk.models.Models
@@ -112,11 +112,11 @@ class UserProfileActivity : AppCompatActivity() {
 
         }
 
-        val layoutManager = GridLayoutManager(this, 4)
+        val layoutManager = androidx.recyclerview.widget.GridLayoutManager(this, 4)
         mediaRecyclerView.addItemDecoration(DividerGridItemDecoration(this))
         mediaRecyclerView.isNestedScrollingEnabled = true
 
-        mediaRecyclerView.layoutManager = layoutManager as RecyclerView.LayoutManager?
+        mediaRecyclerView.layoutManager = layoutManager
 
 
 
@@ -159,8 +159,8 @@ class UserProfileActivity : AppCompatActivity() {
                                 mediaRecyclerView.adapter!!.notifyDataSetChanged()
                             else {
 
-                                mediaRecyclerView.adapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-                                    override fun onCreateViewHolder(p0: ViewGroup, p1: Int): RecyclerView.ViewHolder {
+                                mediaRecyclerView.adapter = object : androidx.recyclerview.widget.RecyclerView.Adapter<androidx.recyclerview.widget.RecyclerView.ViewHolder>() {
+                                    override fun onCreateViewHolder(p0: ViewGroup, p1: Int): androidx.recyclerview.widget.RecyclerView.ViewHolder {
                                         //0 for image
                                         //1 for video right now
 
@@ -176,7 +176,7 @@ class UserProfileActivity : AppCompatActivity() {
                                         return if (messageModels[position].messageType == utils.constants.FILE_TYPE_IMAGE) 0 else 1
                                     }
 
-                                    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, p1: Int) {
+                                    override fun onBindViewHolder(holder: androidx.recyclerview.widget.RecyclerView.ViewHolder, p1: Int) {
 
                                         if (holder is imageHolder) {
                                             Picasso.get().load(File(messageModels[p1].file_local_path))
@@ -505,14 +505,14 @@ class UserProfileActivity : AppCompatActivity() {
                 .apply { putStringArrayListExtra(utils.constants.KEY_EXCLUDED_LIST, excludedUIDs as ArrayList<String>) }, 101)
         }
 
-        class memberHolder(itemView: View):RecyclerView.ViewHolder(itemView){
+        class memberHolder(itemView: View): androidx.recyclerview.widget.RecyclerView.ViewHolder(itemView){
             var name = itemView.name!!
             var profilePic = itemView.pic!!
             var admin = itemView.admin_textview!!
 
         }
 
-        group_member_recycler_view.adapter = object : RecyclerView.Adapter<memberHolder>() {
+        group_member_recycler_view.adapter = object : androidx.recyclerview.widget.RecyclerView.Adapter<memberHolder>() {
             override fun onCreateViewHolder(p0: ViewGroup, p1: Int): memberHolder {
                 return memberHolder(layoutInflater.inflate(R.layout.item_group_member_layout, p0, false))
             }
@@ -579,7 +579,7 @@ class UserProfileActivity : AppCompatActivity() {
                         nameOrNumber = name))
                     .addOnSuccessListener { if(index == selectedUsers.lastIndex) {
                         progressDialog.dismiss()
-                        this.ctx.toast("New member added")
+                        this.toast("New member added")
                     }}
 
                 //add event to other members
@@ -641,12 +641,12 @@ class UserProfileActivity : AppCompatActivity() {
         super.onActivityResult(requestCode, resultCode, data)
     }
 
-    class imageHolder(itemView:View): RecyclerView.ViewHolder(itemView){
+    class imageHolder(itemView:View): androidx.recyclerview.widget.RecyclerView.ViewHolder(itemView){
         val imageView = itemView.iv_thumbnail_image
 
     }
 
-    class videoHolder(itemView:View): RecyclerView.ViewHolder(itemView){
+    class videoHolder(itemView:View): androidx.recyclerview.widget.RecyclerView.ViewHolder(itemView){
         val imageView = itemView.iv_thumbnail_video
         val length = itemView.txt_duration
 

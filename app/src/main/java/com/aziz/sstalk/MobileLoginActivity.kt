@@ -1,6 +1,6 @@
 package com.aziz.sstalk
 
-import android.support.v7.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import com.aziz.sstalk.fragments.FragmentOTP
@@ -52,7 +52,7 @@ class MobileLoginActivity : AppCompatActivity() {
 
             fragmentOTP?.arguments = bundle
 
-            Log.d("MobileLoginActivity", "onCreate: bundle = ${bundle.toString()}")
+            Log.d("MobileLoginActivity", "onCreate: bundle = $bundle")
 
 
             alert {

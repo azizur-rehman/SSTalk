@@ -8,8 +8,8 @@ import android.app.ProgressDialog
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.support.design.widget.Snackbar
-import android.support.v4.app.Fragment
+import com.google.android.material.snackbar.Snackbar
+import androidx.fragment.app.Fragment
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -122,7 +122,8 @@ class FragmentOTP : Fragment() {
             if(System.currentTimeMillis() - lastGenerated!! > 30000)
             generateOTP()
             else
-                Snackbar.make(rootView!!, "Wait for 30 seconds",Snackbar.LENGTH_LONG)
+                Snackbar.make(rootView!!, "Wait for 30 seconds",
+                    Snackbar.LENGTH_LONG)
                     .show()
         }
 
@@ -150,7 +151,8 @@ class FragmentOTP : Fragment() {
 
 
         if(otp_count>4){
-            Snackbar.make(rootView!!,  "You have requested maximum number of OTP. Please again later.",Snackbar.LENGTH_LONG)
+            Snackbar.make(rootView!!,  "You have requested maximum number of OTP. Please again later.",
+                Snackbar.LENGTH_LONG)
                 .show()
             return
         }

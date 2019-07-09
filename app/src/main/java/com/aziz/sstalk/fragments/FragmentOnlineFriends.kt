@@ -2,8 +2,8 @@ package com.aziz.sstalk.fragments
 
 import android.content.Intent
 import android.os.Bundle
-import android.support.v4.app.Fragment
-import android.support.v7.widget.RecyclerView
+import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.RecyclerView
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -122,7 +122,7 @@ class FragmentOnlineFriends : Fragment() {
         recycler_back_message.visibility =if(onlineUsers.isNotEmpty()) View.GONE
         else View.VISIBLE
 
-        class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
+        class ViewHolder(itemView: View) : androidx.recyclerview.widget.RecyclerView.ViewHolder(itemView){
             val name = itemView.name
             val pic = itemView.pic
 
@@ -131,7 +131,7 @@ class FragmentOnlineFriends : Fragment() {
        try { (context as HomeActivity).setOnlineCount(onlineUsers.size) }
        catch (e:Exception){}
 
-        view.recyclerView.adapter = object : RecyclerView.Adapter<ViewHolder>() {
+        view.recyclerView.adapter = object : androidx.recyclerview.widget.RecyclerView.Adapter<ViewHolder>() {
             override fun onCreateViewHolder(p0: ViewGroup, p1: Int): ViewHolder {
                 return ViewHolder(layoutInflater.inflate(R.layout.item_layout_online,
                     p0, false))

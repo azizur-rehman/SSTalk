@@ -15,22 +15,22 @@ import android.net.Uri
 import android.os.*
 import android.os.Environment.DIRECTORY_DCIM
 import android.provider.MediaStore
-import android.support.design.widget.Snackbar
-import android.support.text.emoji.EmojiCompat
-import android.support.text.emoji.bundled.BundledEmojiCompatConfig
-import android.support.v4.app.ActivityCompat
-import android.support.v4.content.ContextCompat
-import android.support.v7.app.AlertDialog
-import android.support.v7.app.AppCompatActivity
-import android.support.v7.view.ActionMode
-import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.RecyclerView
+import com.google.android.material.snackbar.Snackbar
+import androidx.emoji.text.EmojiCompat
+import androidx.emoji.bundled.BundledEmojiCompatConfig
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.view.ActionMode
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.*
 import android.view.ViewGroup
-import android.support.v7.widget.SearchView
+import androidx.appcompat.widget.SearchView
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.*
 import com.aziz.sstalk.firebase.MessagingService
@@ -152,7 +152,7 @@ class MessageActivity : AppCompatActivity() {
     private val CircularProgressBarsAt:HashMap<String,CircularProgressBar> = HashMap()
     private val mediaControlImageViewAt:HashMap<String,ImageView> = HashMap()
 
-    lateinit var adapter:FirebaseRecyclerAdapter<Models.MessageModel, RecyclerView.ViewHolder>
+    lateinit var adapter:FirebaseRecyclerAdapter<Models.MessageModel, androidx.recyclerview.widget.RecyclerView.ViewHolder>
 
 
 
@@ -247,7 +247,7 @@ class MessageActivity : AppCompatActivity() {
             FirebaseUtils.setUserOnlineStatus(this, targetUid, user_online_status)
         }
 
-        val emojiConfig = BundledEmojiCompatConfig(this)
+        val emojiConfig = androidx.emoji.bundled.BundledEmojiCompatConfig(this)
         EmojiCompat.init(emojiConfig)
             .registerInitCallback(object:EmojiCompat.InitCallback() {
                 override fun onInitialized() {
@@ -678,10 +678,10 @@ class MessageActivity : AppCompatActivity() {
 
        messagesList.setHasFixedSize(true)
        messagesList.setItemViewCacheSize(20)
-       messagesList.isDrawingCacheEnabled = true;
+       messagesList.isDrawingCacheEnabled = true
        messagesList.drawingCacheQuality = View.DRAWING_CACHE_QUALITY_HIGH
 
-       val linearLayoutManager = LinearLayoutManager(this)
+       val linearLayoutManager = androidx.recyclerview.widget.LinearLayoutManager(this)
         linearLayoutManager.stackFromEnd = true
         messagesList.layoutManager = linearLayoutManager
 
@@ -696,9 +696,9 @@ class MessageActivity : AppCompatActivity() {
             .build()
 
 
-         adapter = object  : FirebaseRecyclerAdapter<Models.MessageModel, RecyclerView.ViewHolder>(options) {
+         adapter = object  : FirebaseRecyclerAdapter<Models.MessageModel, androidx.recyclerview.widget.RecyclerView.ViewHolder>(options) {
 
-            override fun onCreateViewHolder(p0: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+            override fun onCreateViewHolder(p0: ViewGroup, viewType: Int): androidx.recyclerview.widget.RecyclerView.ViewHolder {
 
 
                return when(viewType) {
@@ -750,7 +750,7 @@ class MessageActivity : AppCompatActivity() {
 
             @SuppressLint("ObjectAnimatorBinding", "SetTextI18n")
             override fun onBindViewHolder(
-                holder: RecyclerView.ViewHolder,
+                holder: androidx.recyclerview.widget.RecyclerView.ViewHolder,
                 position: Int,
                 model: Models.MessageModel) {
 
@@ -1302,13 +1302,13 @@ class MessageActivity : AppCompatActivity() {
 
 
     private fun setObserver(){
-        adapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
+        adapter.registerAdapterDataObserver(object : androidx.recyclerview.widget.RecyclerView.AdapterDataObserver() {
             override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
 
 
                 val model = adapter.snapshots[positionStart]
 
-                val layoutManager = messagesList.layoutManager as LinearLayoutManager
+                val layoutManager = messagesList.layoutManager as androidx.recyclerview.widget.LinearLayoutManager
                 val lastVisiblePosition = layoutManager.findLastCompletelyVisibleItemPosition()
 
                 // If the recycler view is initially being loaded or the
@@ -1940,7 +1940,7 @@ class MessageActivity : AppCompatActivity() {
 }
 
 
-    var blockedSnackbar:Snackbar? = null
+    var blockedSnackbar: Snackbar? = null
 
     private fun checkIfBlocked(targetUID:String) {
 
@@ -2682,7 +2682,7 @@ class MessageActivity : AppCompatActivity() {
         },2000)
 
 
-        val layoutManager = messagesList.layoutManager as LinearLayoutManager
+        val layoutManager = messagesList.layoutManager as androidx.recyclerview.widget.LinearLayoutManager
 
         val textView = TextView(this)
         textView.text = "Sample text"
@@ -2695,13 +2695,13 @@ class MessageActivity : AppCompatActivity() {
             messagesList.scrollToPosition(adapter.itemCount - 1)
         }
 
-        messagesList.setOnScrollListener(object : RecyclerView.OnScrollListener() {
+        messagesList.setOnScrollListener(object : androidx.recyclerview.widget.RecyclerView.OnScrollListener() {
 
 
-            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+            override fun onScrollStateChanged(recyclerView: androidx.recyclerview.widget.RecyclerView, newState: Int) {
 
 
-                if(newState == RecyclerView.SCROLL_STATE_IDLE || newState == RecyclerView.SCROLL_STATE_SETTLING) {
+                if(newState == androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_IDLE || newState == androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_SETTLING) {
 
                     if(dateStickyHeader.visibility == View.VISIBLE && !isRunning) {
                         isRunning = true
@@ -2715,7 +2715,7 @@ class MessageActivity : AppCompatActivity() {
                     }
                 }
 
-                if(newState == RecyclerView.SCROLL_STATE_DRAGGING){
+                if(newState == androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_DRAGGING){
                     if(layoutManager.findLastVisibleItemPosition() < adapter.itemCount - 1)
                         dateStickyHeader.visibility = View.VISIBLE
                 }
@@ -2723,7 +2723,7 @@ class MessageActivity : AppCompatActivity() {
                 super.onScrollStateChanged(recyclerView, newState)
             }
 
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+            override fun onScrolled(recyclerView: androidx.recyclerview.widget.RecyclerView, dx: Int, dy: Int) {
 
                 if(layoutManager.findLastVisibleItemPosition() == adapter.itemCount - 1 )
                     bottomScrollButton.hide()
@@ -2886,14 +2886,14 @@ class MessageActivity : AppCompatActivity() {
 
 
 
-                                smart_reply_recycler.adapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>(){
-                                    override fun onCreateViewHolder(p0: ViewGroup, p1: Int): RecyclerView.ViewHolder {
-                                        return object : RecyclerView.ViewHolder(LayoutInflater.from(context)
+                                smart_reply_recycler.adapter = object : androidx.recyclerview.widget.RecyclerView.Adapter<androidx.recyclerview.widget.RecyclerView.ViewHolder>(){
+                                    override fun onCreateViewHolder(p0: ViewGroup, p1: Int): androidx.recyclerview.widget.RecyclerView.ViewHolder {
+                                        return object : androidx.recyclerview.widget.RecyclerView.ViewHolder(LayoutInflater.from(context)
                                             .inflate(R.layout.item_smart_reply,p0,false)){}
                                     }
 
                                     override fun getItemCount() = it.suggestions.size
-                                    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, p1: Int) {
+                                    override fun onBindViewHolder(holder: androidx.recyclerview.widget.RecyclerView.ViewHolder, p1: Int) {
                                         val suggestion  = it.suggestions[p1].text
                                         holder.itemView.item_text.text = suggestion
 

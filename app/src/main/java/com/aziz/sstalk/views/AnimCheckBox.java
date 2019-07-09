@@ -48,7 +48,7 @@ public class AnimCheckBox extends View implements Checkable {
     private AnimCheckBox.OnCheckedChangeListener mOnCheckedChangeListener;
 
     public AnimCheckBox(Context context) {
-        this(context, (AttributeSet)null);
+        this(context, null);
     }
 
     public AnimCheckBox(Context context, AttributeSet attrs) {
@@ -198,7 +198,7 @@ public class AnimCheckBox extends View implements Checkable {
         final float hookMaxValue = this.mHookSize + this.mEndLeftHookOffset - this.mBaseLeftHookOffset;
         final float circleMaxFraction = this.mHookSize / hookMaxValue;
         final float circleMaxValue = 360.0F / circleMaxFraction;
-        animator.setFloatValues(new float[]{0.0F, 1.0F});
+        animator.setFloatValues(0.0F, 1.0F);
         animator.addUpdateListener(new AnimatorUpdateListener() {
             public void onAnimationUpdate(ValueAnimator animation) {
                 float fraction = animation.getAnimatedFraction();
@@ -222,7 +222,7 @@ public class AnimCheckBox extends View implements Checkable {
         final float hookMaxValue = this.mHookSize + this.mEndLeftHookOffset - this.mBaseLeftHookOffset;
         final float circleMinFraction = (this.mEndLeftHookOffset - this.mBaseLeftHookOffset) / hookMaxValue;
         final float circleMaxValue = 360.0F / (1.0F - circleMinFraction);
-        animator.setFloatValues(new float[]{0.0F, 1.0F});
+        animator.setFloatValues(0.0F, 1.0F);
         animator.addUpdateListener(new AnimatorUpdateListener() {
             public void onAnimationUpdate(ValueAnimator animation) {
                 float circleFraction = animation.getAnimatedFraction();

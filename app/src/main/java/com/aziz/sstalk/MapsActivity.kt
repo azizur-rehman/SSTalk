@@ -4,7 +4,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.location.Address
 import android.location.Geocoder
-import android.support.v7.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import com.aziz.sstalk.utils.utils
 import com.google.android.gms.location.LocationServices

@@ -43,7 +43,7 @@ class DateFormatter private constructor() {
         fun format(date: Date): String
     }
 
-    enum class Template private constructor(private val template: String) {
+    enum class Template(private val template: String) {
         STRING_DAY_MONTH_YEAR("d MMMM yyyy"),
         STRING_DAY_MONTH("d MMMM"),
         TIME("HH:mm");

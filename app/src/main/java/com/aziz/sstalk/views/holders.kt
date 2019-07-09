@@ -1,6 +1,6 @@
 package com.aziz.sstalk.views
 
-import android.support.v7.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView
 import android.view.View
 import kotlinx.android.synthetic.main.bubble_image_left.view.*
 import kotlinx.android.synthetic.main.bubble_image_right.view.*
@@ -14,7 +14,7 @@ import kotlinx.android.synthetic.main.text_header.view.*
 
 object holders {
 
-    class TargetTextMsgHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
+    class TargetTextMsgHolder(itemView: View) : androidx.recyclerview.widget.RecyclerView.ViewHolder(itemView){
         val message = itemView.messageText_left!!
         val time = itemView.time_left!!
         val headerDateTime = itemView.header_left!!
@@ -26,7 +26,7 @@ object holders {
         val senderTitle = itemView.messageText_sender_left!!
 
     }
-    class MyTextMsgHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
+    class MyTextMsgHolder(itemView: View) : androidx.recyclerview.widget.RecyclerView.ViewHolder(itemView){
         val message = itemView.messageText_right!!
         val time = itemView.time_right!!
         val messageStatus = itemView.delivery_status!!
@@ -39,7 +39,7 @@ object holders {
     }
 
 
-    class MyImageMsgHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
+    class MyImageMsgHolder(itemView: View) : androidx.recyclerview.widget.RecyclerView.ViewHolder(itemView){
         val message = itemView.messageText_image_right!!
         val time = itemView.time_image_right!!
         val imageView = itemView.imageview_image_right!!
@@ -56,7 +56,7 @@ object holders {
         val imageUploadControl = itemView.imageview_image_control_right!!
     }
 
-    class TargetImageMsgHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
+    class TargetImageMsgHolder(itemView: View) : androidx.recyclerview.widget.RecyclerView.ViewHolder(itemView){
         val message = itemView.messageText_image_left!!
         val time = itemView.time_image_left!!
         val imageView = itemView.imageview_image_left!!
@@ -75,7 +75,7 @@ object holders {
 
 
 
-    class MyVideoMsgHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
+    class MyVideoMsgHolder(itemView: View) : androidx.recyclerview.widget.RecyclerView.ViewHolder(itemView){
         val message = itemView.messageText_video_right!!
         val time = itemView.time_video_right!!
         val centerImageView = itemView.imageview_video_right!!
@@ -98,7 +98,7 @@ object holders {
 
     }
 
-    class TargetVideoMsgHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
+    class TargetVideoMsgHolder(itemView: View) : androidx.recyclerview.widget.RecyclerView.ViewHolder(itemView){
         val message = itemView.messageText_video_left!!
         val time = itemView.time_video_left!!
         val centerImageView = itemView.imageview_video_left!!
@@ -121,7 +121,7 @@ object holders {
 
 
 
-    class TargetMapHolder(itemView: View): RecyclerView.ViewHolder(itemView){
+    class TargetMapHolder(itemView: View): androidx.recyclerview.widget.RecyclerView.ViewHolder(itemView){
         val message = itemView.messageText_map_left!!
         val mapView = itemView.mapview_left!!
         val dateHeader = itemView.header_map_left!!
@@ -135,7 +135,7 @@ object holders {
 
     }
 
-    class MyMapHolder(itemView: View): RecyclerView.ViewHolder(itemView){
+    class MyMapHolder(itemView: View): androidx.recyclerview.widget.RecyclerView.ViewHolder(itemView){
         val message = itemView.messageText_map_right!!
         val mapView = itemView.mapview_right!!
         val dateHeader = itemView.header_map_right!!
@@ -150,7 +150,7 @@ object holders {
     }
 
 
-    class TextHeaderHolder(itemView: View):RecyclerView.ViewHolder(itemView){
+    class TextHeaderHolder(itemView: View): androidx.recyclerview.widget.RecyclerView.ViewHolder(itemView){
         val text = itemView.header_textView!!
         val dateTextView = itemView.header_date_text!!
     }

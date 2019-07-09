@@ -18,7 +18,7 @@ android {
         targetSdkVersion 28
         versionCode 1
         versionName "1.0"
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled true
     }
     buildTypes {
@@ -41,19 +41,19 @@ dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     //noinspection GradleCompatible
-    implementation 'com.android.support:appcompat-v7:28.0.0'
-    implementation 'com.android.support:design:28.0.0'
-    implementation 'com.android.support.constraint:constraint-layout:1.1.3'
-    implementation 'com.google.firebase:firebase-core:16.0.7'
+    implementation 'androidx.appcompat:appcompat:1.0.0'
+    implementation 'com.google.android.material:material:1.0.0'
+    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
+    implementation 'com.google.firebase:firebase-core:17.0.0'
     implementation 'com.github.stfalcon:chatkit:0.3.3'
-    implementation 'com.google.firebase:firebase-messaging:17.4.0'
-    implementation 'com.google.firebase:firebase-auth:16.1.0'
-    implementation 'com.google.firebase:firebase-database:16.1.0'
-    implementation 'com.google.firebase:firebase-firestore:18.1.0'
-    implementation 'com.google.firebase:firebase-storage:16.1.0'
+    implementation 'com.google.firebase:firebase-messaging:19.0.1'
+    implementation 'com.google.firebase:firebase-auth:18.0.0'
+    implementation 'com.google.firebase:firebase-database:18.0.0'
+    implementation 'com.google.firebase:firebase-firestore:20.1.0'
+    implementation 'com.google.firebase:firebase-storage:18.0.0'
     // FirebaseUI for Firebase Realtime Database
     implementation 'com.firebaseui:firebase-ui-database:4.3.0'
-    implementation 'com.android.support:multidex:1.0.3'
+    implementation 'androidx.multidex:multidex:2.0.0'
     implementation 'com.chaos.view:pinview:1.4.2'
     implementation 'com.github.Mariovc:ImagePicker:1.2.2'
     implementation 'com.vincent.filepicker:MultiTypeFilePicker:1.0.8'
@@ -66,13 +66,13 @@ dependencies {
     //for image compression
     implementation 'me.shaohui.advancedluban:library:1.3.5'
     implementation 'com.nex3z:notification-badge:1.0.2'
-    implementation 'com.google.android.gms:play-services-location:16.0.0'
-    implementation 'com.google.android.gms:play-services-maps:16.1.0'
+    implementation 'com.google.android.gms:play-services-location:17.0.0'
+    implementation 'com.google.android.gms:play-services-maps:17.0.0'
     implementation('com.github.ozodrukh:CircularReveal:1.3.1@aar') {
         transitive = true
     }
     implementation 'com.mikhaellopez:circularprogressbar:2.0.0'
-    implementation 'com.android.support:support-emoji-bundled:28.0.0'
+    implementation 'androidx.emoji:emoji-bundled:1.0.0'
     implementation 'com.github.lguipeng:AnimCheckBox:1.0.1'
     implementation 'com.skyline.widget:round-corner-layout:1.0.1'
     implementation 'com.hbb20:ccp:2.2.4'
@@ -85,8 +85,10 @@ dependencies {
 
 
     //ML
-    implementation 'com.google.firebase:firebase-ml-natural-language:18.0.0'
-    implementation 'com.google.firebase:firebase-ml-natural-language-smart-reply-model:18.0.0'
+    implementation 'com.google.firebase:firebase-ml-natural-language:20.0.0'
+    implementation 'com.google.firebase:firebase-ml-natural-language-smart-reply-model:20.0.0'
+    implementation 'com.google.firebase:firebase-ml-natural-language-language-id-model:20.0.0'
+    implementation 'com.google.firebase:firebase-ml-natural-language-translate-model:20.0.0'
 
 
 }

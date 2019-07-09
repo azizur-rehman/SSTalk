@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 
-<android.support.design.widget.CoordinatorLayout android:layout_height="match_parent"
-                                                 android:layout_width="match_parent"
-                                                 android:background="@color/white"
-                                                 xmlns:android="http://schemas.android.com/apk/res/android"
-                                                 xmlns:app="http://schemas.android.com/apk/res-auto">
+<androidx.coordinatorlayout.widget.CoordinatorLayout android:layout_height="match_parent"
+                                                     android:layout_width="match_parent"
+                                                     android:background="@color/white"
+                                                     xmlns:android="http://schemas.android.com/apk/res/android"
+                                                     xmlns:app="http://schemas.android.com/apk/res-auto">
 
 
-    <android.support.design.widget.AppBarLayout android:layout_width="match_parent"
-                                                android:layout_height="wrap_content">
+    <com.google.android.material.appbar.AppBarLayout android:layout_width="match_parent"
+                                                     android:layout_height="wrap_content">
 
        <include layout="@layout/layout_include_message_activity_toolbar"/>
 
-    </android.support.design.widget.AppBarLayout>
+    </com.google.android.material.appbar.AppBarLayout>
 
 
 
@@ -42,7 +42,7 @@
             <FrameLayout android:layout_width="match_parent" android:layout_height="0dp"
                          android:layout_weight="1">
 
-                <android.support.v7.widget.RecyclerView
+                <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/messagesList"
                         android:clipToPadding="false"
                         android:paddingBottom="15dp"
@@ -57,7 +57,7 @@
                         android:layout_gravity="bottom|end"
                 >
 
-                    <android.support.design.widget.FloatingActionButton
+                    <com.google.android.material.floatingactionbutton.FloatingActionButton
                             android:layout_width="match_parent"
                             android:src="@drawable/ic_fast_scroll_arrow_down"
                             android:layout_height="match_parent"
@@ -96,11 +96,11 @@
 
 
 
-            <android.support.v7.widget.RecyclerView android:layout_width="match_parent"
-                                                    android:layout_height="wrap_content"
-                                                    app:layoutManager="android.support.v7.widget.LinearLayoutManager"
-                                                    android:orientation="horizontal"
-                                                    android:id="@+id/smart_reply_recycler"
+            <androidx.recyclerview.widget.RecyclerView android:layout_width="match_parent"
+                                                       android:layout_height="wrap_content"
+                                                       app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                                                       android:orientation="horizontal"
+                                                       android:id="@+id/smart_reply_recycler"
             />
 
 
@@ -149,4 +149,4 @@
 
 
 
-</android.support.design.widget.CoordinatorLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
