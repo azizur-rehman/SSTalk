@@ -31,15 +31,14 @@ import de.hdodenhof.circleimageview.CircleImageView
 import kotlinx.android.synthetic.main.activity_home.*
 import kotlinx.android.synthetic.main.app_bar_home.*
 import kotlinx.android.synthetic.main.content_home.*
+import kotlinx.android.synthetic.main.content_home.recycler_back_message
 import kotlinx.android.synthetic.main.item_conversation_layout.view.*
 import kotlinx.android.synthetic.main.layout_recycler_view.*
-import org.jetbrains.anko.activityUiThread
-import org.jetbrains.anko.doAsyncResult
-import org.jetbrains.anko.onComplete
-import org.jetbrains.anko.uiThread
+import org.jetbrains.anko.*
 import java.lang.Exception
 import java.util.*
 import java.util.concurrent.Future
+import kotlin.collections.ArrayList
 
 class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
@@ -52,6 +51,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     lateinit var adapter:FirebaseRecyclerAdapter<Models.LastMessageDetail, ViewHolder>
 
     val selectedItemPosition:MutableList<Int> = ArrayList()
+    val selectedRecipients:MutableList<String> = ArrayList()
 
     var actionMode:ActionMode? = null
 
@@ -214,9 +214,10 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private fun setAdapter(){
 
+        val reference = FirebaseUtils.ref.lastMessage(FirebaseUtils.getUid())
+            .orderByChild(FirebaseUtils.KEY_REVERSE_TIMESTAMP)
         val options = FirebaseRecyclerOptions.Builder<Models.LastMessageDetail>()
-            .setQuery(FirebaseUtils.ref.lastMessage(FirebaseUtils.getUid())
-                .orderByChild(FirebaseUtils.KEY_REVERSE_TIMESTAMP),Models.LastMessageDetail::class.java)
+            .setQuery(reference ,Models.LastMessageDetail::class.java)
             .build()
 
          adapter = object : FirebaseRecyclerAdapter<Models.LastMessageDetail, ViewHolder>(options){
@@ -272,11 +273,13 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                             holder.checkbox.visibility = View.VISIBLE
                             holder.checkbox.isChecked = true
                             selectedItemPosition.add(position)
+                            selectedRecipients.add(uid)
                         }
                         else{
                             holder.checkbox.visibility = View.INVISIBLE
                             holder.checkbox.isChecked = false
                             selectedItemPosition.remove(position)
+                            selectedRecipients.remove(uid)
                         }
 
                         if(selectedItemPosition.size==2)
@@ -314,6 +317,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     if(!selectedItemPosition.contains(position))
                     {
                         selectedItemPosition.add(position)
+                        selectedRecipients.add(uid)
                     }
 
 
@@ -370,6 +374,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                                 adapter.notifyItemChanged(pos)
 
                             selectedItemPosition.clear()
+                            selectedRecipients.clear()
                             isAnyMuted = false
 
                         }
@@ -388,14 +393,24 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
 
 
-        FirebaseUtils.ref.lastMessage(FirebaseUtils.getUid())
-            .orderByChild(FirebaseUtils.KEY_REVERSE_TIMESTAMP)
-            .addListenerForSingleValueEvent(object : ValueEventListener {
+
+        recycler_back_message.setOnClickListener { startActivity(intentFor<ContactsActivity>()) }
+
+        reference.addValueEventListener(object : ValueEventListener {
                 override fun onCancelled(p0: DatabaseError) {
                 }
 
                 override fun onDataChange(p0: DataSnapshot) {
+
                     conversation_progressbar.visibility = View.GONE
+
+                    if(p0.exists()){
+                        recycler_back_message.visibility = View.GONE
+                    }
+                    else
+                        recycler_back_message.visibility = View.VISIBLE
+
+
                 }
             })
 

@@ -1,10 +1,7 @@
 package com.aziz.sstalk
 
 import android.Manifest
-import android.animation.Animator
-import android.animation.AnimatorListenerAdapter
-import android.animation.ArgbEvaluator
-import android.animation.ObjectAnimator
+import android.animation.*
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.NotificationManager
@@ -314,10 +311,13 @@ class MessageActivity : AppCompatActivity() {
 
             if(attachment_menu.visibility != View.VISIBLE) {
                 utils.setEnterRevealEffect(this, attachment_menu)
+                
             }
             else {
                 utils.setExitRevealEffect(attachment_menu)
+                
             }
+
 
 
         }
@@ -381,6 +381,8 @@ class MessageActivity : AppCompatActivity() {
             else{
                 startCamera()
             }
+
+            
         }
 
 
@@ -409,6 +411,7 @@ class MessageActivity : AppCompatActivity() {
             else{
                 startActivityForResult(galleryIntent, RQ_GALLERY)
             }
+            
         }
 
 
@@ -428,6 +431,7 @@ class MessageActivity : AppCompatActivity() {
             else{
                 startActivityForResult(Intent(context, MapsActivity::class.java), RQ_LOCATION)
             }
+            
         }
 
 
@@ -456,6 +460,7 @@ class MessageActivity : AppCompatActivity() {
             else{
                 startActivityForResult(videoIntent, RQ_VIDEO)
             }
+            
 
         }
 
@@ -1137,7 +1142,7 @@ class MessageActivity : AppCompatActivity() {
                 if(thumbnail != null){
 
                     if(model.file_local_path.isNotEmpty() && File(model.file_local_path).exists()){
-                        videoLengthTextView!!.text = utils.getVideoLength(context, model.file_local_path)
+                        videoLengthTextView?.text = utils.getVideoLength(context, model.file_local_path)
 
                         utils.loadVideoThumbnailFromLocalAsync(context, thumbnail, model.file_local_path)
 
@@ -1146,13 +1151,14 @@ class MessageActivity : AppCompatActivity() {
                     else{
 
                         utils.setVideoThumbnailFromWebAsync(context, model.message, thumbnail)
+                        videoLengthTextView?.text = utils.getFileSize(model.file_size_in_bytes)
 
                         Log.d("MessageActivity", "onBindViewHolder: $messageID file not found")
 
-                            tapToDownload!!.visibility = View.VISIBLE
+                            tapToDownload?.visibility = View.VISIBLE
 
 
-                            tapToDownload.setOnClickListener {
+                            tapToDownload?.setOnClickListener {
 
                                 if(isContextMenuActive)
                                     return@setOnClickListener
@@ -2264,7 +2270,7 @@ class MessageActivity : AppCompatActivity() {
 
                 actionMode = startSupportActionMode(object : ActionMode.Callback {
                         override fun onActionItemClicked(p0: ActionMode?, p1: MenuItem?): Boolean {
-                            when (p1!!.itemId) {
+                            when (p1?.itemId) {
 
                                 R.id.action_delete -> {
 
@@ -2299,17 +2305,22 @@ class MessageActivity : AppCompatActivity() {
                                             )
                                     )
                                 }
+
+                                R.id.action_translate -> {
+                                    translateMessage(itemView, model)
+                                }
+
                             }
 
-                            if (p1.itemId != R.id.action_delete)
-                                p0!!.finish()
+                            if (p1?.itemId != R.id.action_delete)
+                                p0?.finish()
 
                             return true
 
                         }
 
                         override fun onCreateActionMode(p0: ActionMode?, p1: Menu?): Boolean {
-                            p0!!.menuInflater.inflate(R.menu.chat_actions_menu, p1!!)
+                            p0?.menuInflater?.inflate(R.menu.chat_actions_menu, p1!!)
                             isContextMenuActive = true
                             return true
                         }
@@ -2319,6 +2330,9 @@ class MessageActivity : AppCompatActivity() {
                             val isContainsFile = models.any {
                                 it.isFile
                             }
+
+
+                                p1?.findItem(R.id.action_translate)?.isVisible = (models.size == 1)
 
                             p1?.findItem(R.id.action_copy)?.isVisible = !isContainsFile
                             p0?.title = selectedItemPosition.size.toString()
@@ -2380,7 +2394,10 @@ class MessageActivity : AppCompatActivity() {
         }
     }
 
+    private fun translateMessage(itemView: View, model: Models.MessageModel) {
 
+
+    }
 
 
     var isContextMenuActive = false
@@ -2838,6 +2855,8 @@ class MessageActivity : AppCompatActivity() {
                     }
 
 
+                    smart_reply_recycler.visibility = if(isLastMessageMine)  View.GONE else View.VISIBLE
+
 
                     //generate smart reply
                     try {
@@ -2900,6 +2919,8 @@ class MessageActivity : AppCompatActivity() {
                     }
                 }
             })
+
+
     }
 
 

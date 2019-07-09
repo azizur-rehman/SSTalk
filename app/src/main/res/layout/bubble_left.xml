@@ -20,7 +20,6 @@
             android:id="@+id/header_left"
             android:layout_gravity="center"
             android:textColor="@color/black"
-            android:text="21 jan 19"
     />
 
 
@@ -29,7 +28,7 @@
                   android:layout_width="match_parent"
                   android:orientation="horizontal"
                   android:id="@+id/message_layout_text_left"
-                  xmlns:android="http://schemas.android.com/apk/res/android">
+    >
 
 
         <de.hdodenhof.circleimageview.CircleImageView
@@ -43,7 +42,6 @@
 
 
         <LinearLayout
-                xmlns:android="http://schemas.android.com/apk/res/android"
                 android:layout_width="match_parent"
                 android:padding="3dp"
                 android:layout_marginLeft="1dp"
