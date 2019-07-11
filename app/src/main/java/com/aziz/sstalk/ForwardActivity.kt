@@ -106,7 +106,7 @@ class ForwardActivity : AppCompatActivity() {
         }
         catch (e:Exception){ messageModels = ArrayList()}
 
-        if(messageModels!!.isEmpty())
+        if(messageModels.isNullOrEmpty())
             handleIncomingIntents(intent)
 
 
@@ -164,7 +164,7 @@ class ForwardActivity : AppCompatActivity() {
 
                 }
 
-            else{
+                else{
                     onForwardToSelectedUIDs()
                 }
 
@@ -284,7 +284,7 @@ class ForwardActivity : AppCompatActivity() {
     private fun handleIncomingIntents(intent: Intent){
 
         progressDialog = ProgressDialog(this)
-        progressDialog!!.setCancelable(false)
+        progressDialog?.setCancelable(false)
 
         caption_layout.visibility = View.VISIBLE
 
@@ -294,8 +294,9 @@ class ForwardActivity : AppCompatActivity() {
                     val text = intent.getStringExtra(Intent.EXTRA_TEXT)
                     messageModels!!.add(Models.MessageModel(text ))
                     isTextFromIntent = true
+                    caption_layout.visibility = View.GONE
                 }
-                intent.type!!.startsWith( "image/") -> {
+                intent.type?.startsWith( "image/")?:false -> {
 
                     if(!utils.hasStoragePermission(this)) {
                         utils.toast(this, "App does not have storage permission")
@@ -305,11 +306,12 @@ class ForwardActivity : AppCompatActivity() {
                     val imageURI = intent.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as Uri
                     bitmap = MediaStore.Images.Media.getBitmap(contentResolver, imageURI)
                     isImageFromIntent = true
+                    caption_layout.visibility = View.VISIBLE
 
                     preview.setImageBitmap(bitmap)
 
                 }
-                intent.type!!.startsWith("video/") -> {
+                intent.type?.startsWith("video/")?:false -> {
                     if(!utils.hasStoragePermission(this)){
                         utils.toast(this, "App does not have storage permission")
                         finish()
@@ -348,6 +350,8 @@ class ForwardActivity : AppCompatActivity() {
                         longToast("Failed to load video")
                         finish()
                     }
+                    caption_layout.visibility = View.VISIBLE
+
                 }
             }
         }
@@ -540,24 +544,20 @@ class ForwardActivity : AppCompatActivity() {
             holder.checkBox.isChecked = !holder.checkBox.isChecked
 
 
-//            Log.d("ForwardActivity", "bindHolder: selected => "+allFrequentConverstation[allFrequentUIDs.indexOf(uid)])
-
             if(holder.checkBox.isChecked) {
                 selectedUIDs.add(uid)
                 selectedTitles.add(holder.title.text.toString())
                 selectedNumbers.add(phone)
-                nameOfRecipient = nameOfRecipient + holder.title.text +" "
             }
             else {
                 selectedUIDs.remove(uid)
-                nameOfRecipient = nameOfRecipient.replace(holder.title.text.toString(),"")
                 selectedTitles.remove(holder.title.text.toString())
                 selectedNumbers.remove(phone)
-
-
             }
 
-             fwd_snackbar!!.setText(">  ${nameOfRecipient.trim()}")
+            nameOfRecipient  = selectedTitles.joinToString(", ")
+
+             fwd_snackbar?.setText(">  ${nameOfRecipient.trim()}")
 
             sendBtn.visibility = if(selectedUIDs.isEmpty()) View.GONE else View.VISIBLE
 

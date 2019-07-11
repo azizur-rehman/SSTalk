@@ -1,19 +1,24 @@
 package com.aziz.sstalk
 
-import android.content.DialogInterface
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import androidx.appcompat.app.AlertDialog
 import android.util.Log
+import androidx.appcompat.app.AlertDialog
 import android.view.MenuItem
 import android.view.View
+import android.widget.LinearLayout
 import android.widget.Switch
 import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.Pref
 import com.aziz.sstalk.utils.utils.longToast
+import com.aziz.sstalk.views.TitleSubtitleView
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.ml.naturallanguage.translate.FirebaseTranslateLanguage
 import kotlinx.android.synthetic.main.activity_settings.*
+import org.jetbrains.anko.selector
+import java.util.*
+import kotlin.collections.ArrayList
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -32,7 +37,7 @@ class SettingsActivity : AppCompatActivity() {
         setting_nav_view.setNavigationItemSelectedListener {
 
             when(it.itemId){
-                R.id.action_block_list -> {
+                R.id.setting_block_list -> {
                     startActivity(Intent(context, BlockListActivity::class.java))
                 }
             }
@@ -41,10 +46,10 @@ class SettingsActivity : AppCompatActivity() {
             true
         }
 
-        val enableSound = setting_nav_view.menu.findItem(R.id.action_sound_enable).actionView as Switch
-        val enableVibration = setting_nav_view.menu.findItem(R.id.action_vibration_enable).actionView as Switch
+        val enableSound = setting_nav_view.menu.findItem(R.id.setting_sound_enable).actionView as Switch
+        val enableVibration = setting_nav_view.menu.findItem(R.id.setting_vibration_enable).actionView as Switch
 
-        val mediaVisiblity = setting_nav_view.menu.findItem(R.id.action_media_visibility).actionView as Switch
+        val mediaVisiblity = setting_nav_view.menu.findItem(R.id.setting_media_visibility).actionView as Switch
 
         mediaVisiblity.isChecked = Pref.isMediaVisible(this)
 
@@ -61,6 +66,38 @@ class SettingsActivity : AppCompatActivity() {
 
         mediaVisiblity.setOnCheckedChangeListener{_,isChecked ->
             Pref.setMediaVisibility(context, isChecked)
+        }
+
+
+        with(setting_nav_view.menu){
+
+           val defaultLangView =  findItem(R.id.setting_default_language).actionView as TitleSubtitleView
+
+            val defaultLanguage = Pref.getSettingFile(this@SettingsActivity)
+                .getInt(Pref.KEY_DEFAULT_TRANSLATION_LANG, FirebaseTranslateLanguage.HI)
+
+
+            Log.d("SettingsActivity", "onCreate: default Language = $defaultLanguage")
+            defaultLangView.setOnClickListener {
+
+
+                val languages:MutableList<String> = ArrayList()
+                FirebaseTranslateLanguage.getAllLanguages().forEach {
+                    val code = FirebaseTranslateLanguage.languageCodeForLanguage(it)
+                    languages.add(Locale(code).displayName) }
+
+
+
+                selector("Choose your Default Language", languages){ _, position ->
+                    run {
+                        Pref.setDefaultLanguage(this@SettingsActivity, position)
+                    }
+                }
+
+            }
+            val smartReply = findItem(R.id.setting_smart_reply).actionView as Switch
+            smartReply.isChecked = Pref.isTapToReply(this@SettingsActivity)
+            smartReply.setOnCheckedChangeListener { _, isChecked -> Pref.isTapToReply(this@SettingsActivity, isChecked) }
         }
 
     }

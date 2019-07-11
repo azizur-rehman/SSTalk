@@ -17,7 +17,6 @@ import android.os.Environment.DIRECTORY_DCIM
 import android.provider.MediaStore
 import com.google.android.material.snackbar.Snackbar
 import androidx.emoji.text.EmojiCompat
-import androidx.emoji.bundled.BundledEmojiCompatConfig
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.appcompat.app.AlertDialog
@@ -26,6 +25,7 @@ import androidx.appcompat.view.ActionMode
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import android.util.Log
+import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuItem
 import android.view.*
@@ -33,6 +33,7 @@ import android.view.ViewGroup
 import androidx.appcompat.widget.SearchView
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.*
+import androidx.appcompat.widget.SwitchCompat
 import com.aziz.sstalk.firebase.MessagingService
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.DateFormatter
@@ -48,7 +49,9 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.tasks.Continuation
+import com.google.android.gms.tasks.OnSuccessListener
 import com.google.android.gms.tasks.Task
+import com.google.firebase.FirebaseApp
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
@@ -56,6 +59,8 @@ import com.google.firebase.ml.naturallanguage.FirebaseNaturalLanguage
 import com.google.firebase.ml.naturallanguage.smartreply.FirebaseTextMessage
 import com.google.firebase.ml.naturallanguage.smartreply.SmartReplySuggestionResult
 import com.google.firebase.ml.naturallanguage.translate.FirebaseTranslateLanguage
+import com.google.firebase.ml.naturallanguage.translate.FirebaseTranslateModelManager
+import com.google.firebase.ml.naturallanguage.translate.FirebaseTranslator
 import com.google.firebase.ml.naturallanguage.translate.FirebaseTranslatorOptions
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.UploadTask
@@ -685,7 +690,7 @@ class MessageActivity : AppCompatActivity() {
        messagesList.isDrawingCacheEnabled = true
        messagesList.drawingCacheQuality = View.DRAWING_CACHE_QUALITY_HIGH
 
-       val linearLayoutManager = androidx.recyclerview.widget.LinearLayoutManager(this)
+       val linearLayoutManager = LinearLayoutManager(this)
         linearLayoutManager.stackFromEnd = true
         messagesList.layoutManager = linearLayoutManager
 
@@ -860,6 +865,7 @@ class MessageActivity : AppCompatActivity() {
                         messageLayout = holder.messageLayout
                         dateHeader = holder.headerDateTime
 
+                        holder.itemView.bubble_left_translation.visibility = View.GONE
 
                         if(position==0){
                             FirebaseUtils.loadProfileThumbnail(context, model.from, holder.senderIcon)
@@ -906,7 +912,7 @@ class MessageActivity : AppCompatActivity() {
                         FirebaseUtils.setDeliveryStatusTick(targetUid, messageID, holder.messageStatus)
                         messageTextView = holder.message
                         messageLayout = holder.messageLayout
-
+                        holder.itemView.bubble_right_translation.visibility = View.GONE
                         //end of my holder
 
                     }
@@ -1312,7 +1318,7 @@ class MessageActivity : AppCompatActivity() {
 
                 val model = adapter.snapshots[positionStart]
 
-                val layoutManager = messagesList.layoutManager as androidx.recyclerview.widget.LinearLayoutManager
+                val layoutManager = messagesList.layoutManager as LinearLayoutManager
                 val lastVisiblePosition = layoutManager.findLastCompletelyVisibleItemPosition()
 
                 // If the recycler view is initially being loaded or the
@@ -1760,13 +1766,15 @@ class MessageActivity : AppCompatActivity() {
                         if(percentage >= 100)
                             return@setOnClickListener
 
+
+
                         Log.d("MessageActivity", "fileUpload: cancel clicked")
                         if(BuildConfig.DEBUG)
                             utils.toast(context, "Upload cancelled")
 
 
                         uploadTask.cancel()
-                        mediaControlImageViewAt[messageID]!!.setImageResource(R.drawable.ic_play_white)
+                        mediaControlImageViewAt[messageID]?.setImageResource(R.drawable.ic_play_white)
                         adapter.notifyDataSetChanged()
                     }
                 }
@@ -1869,8 +1877,8 @@ class MessageActivity : AppCompatActivity() {
 
         val progressBar = CircularProgressBarsAt[messageID]
 
-        progressBar!!.visibility = View.VISIBLE
-        progressBar.progress =0f
+        progressBar?.visibility = View.VISIBLE
+        progressBar?.progress =0f
 
         val storageRef = FirebaseStorage.getInstance().reference
             .child(utils.constants.FILE_TYPE_VIDEO).child(messageID)
@@ -1884,18 +1892,18 @@ class MessageActivity : AppCompatActivity() {
             storageRef.getFile(videoFile)
                 .addOnProgressListener {
                     val percentage:Double = (100.0 * it.bytesTransferred) / it.totalByteCount
-                    progressBar.progress = percentage.toFloat()
+                    progressBar?.progress = percentage.toFloat()
 
                 }
                 .addOnCompleteListener{
-                    progressBar.visibility = View.GONE
+                    progressBar?.visibility = View.GONE
                     try {
                        // adapter.notifyDataSetChanged()
                     }
                     catch (e:Exception){}
                 }
                 .addOnCanceledListener {
-                    progressBar.visibility = View.GONE
+                    progressBar?.visibility = View.GONE
                 }
                 .addOnSuccessListener {
 
@@ -2313,7 +2321,17 @@ class MessageActivity : AppCompatActivity() {
                                 }
 
                                 R.id.action_translate -> {
-                                    translateMessage(itemView, model)
+
+                                    Log.d("MessageActivity", "onActionItemClicked: ${Pref.getSettingFile(context).all}")
+
+                                    if(Pref.getSettingFile(context).contains(Pref.KEY_DEFAULT_TRANSLATION_LANG))
+                                        translateMessage(itemView, model)
+                                    else{
+                                        alert { message = "You have not set any default language. Go to Menu -> Setting to set it."
+                                        positiveButton("Go to setting"){ startActivity(intentFor<SettingsActivity>())}
+                                            negativeButton("Cancel"){}
+                                        }.show()
+                                    }
                                 }
 
                             }
@@ -2327,7 +2345,7 @@ class MessageActivity : AppCompatActivity() {
 
                         override fun onCreateActionMode(p0: ActionMode?, p1: Menu?): Boolean {
                             p0?.menuInflater?.inflate(R.menu.chat_actions_menu, p1!!)
-                            p1?.findItem(R.id.action_translate)?.isVisible = (selectedMessageModel.size == 1)
+                            p1?.findItem(R.id.action_translate)?.isVisible = (selectedMessageModel.size == 1 && !model.isFile)
                             isContextMenuActive = true
                             return true
                         }
@@ -2338,7 +2356,7 @@ class MessageActivity : AppCompatActivity() {
                                 it.isFile
                             }
 
-                            p1?.findItem(R.id.action_translate)?.isVisible = (models.size == 1)
+                            p1?.findItem(R.id.action_translate)?.isVisible = (models.size == 1 && model.messageType == "message")
 
                             p1?.findItem(R.id.action_copy)?.isVisible = !isContainsFile
                             p0?.title = selectedItemPosition.size.toString()
@@ -2350,7 +2368,9 @@ class MessageActivity : AppCompatActivity() {
                             for (pos in selectedItemPosition)
                             {
                                 if(!isTranslatorPressed)
-                                adapter.notifyItemChanged(pos)
+                                {
+                                    adapter.notifyItemChanged(pos)
+                                }
                             }
 
                             selectedItemPosition.clear()
@@ -2410,6 +2430,21 @@ class MessageActivity : AppCompatActivity() {
         isTranslatorPressed = true
         itemView.background = ColorDrawable(Color.WHITE)
 
+        var translationHeading = "Identifying Language"
+
+        if(model.from == myUID)
+        {
+            itemView.bubble_right_translation.text = translationHeading
+            itemView.bubble_right_translation.visibility = View.VISIBLE
+
+        }
+        else
+        {
+            itemView.bubble_left_translation.text = translationHeading
+            itemView.bubble_left_translation.visibility = View.VISIBLE
+
+        }
+
         //identify language
         FirebaseNaturalLanguage.getInstance().languageIdentification
             .identifyLanguage(model.message)
@@ -2418,31 +2453,114 @@ class MessageActivity : AppCompatActivity() {
 
                 val translatorOptions = FirebaseTranslatorOptions.Builder()
                     .setSourceLanguage(FirebaseTranslateLanguage.languageForLanguageCode(languageCode)?:FirebaseTranslateLanguage.EN)
-                    .setTargetLanguage(FirebaseTranslateLanguage.HI).build()
+                    .setTargetLanguage(Pref.getDefaultLanguage(context))
+                    .build()
 
-               val firebaseNaturalLanguage =  FirebaseNaturalLanguage.getInstance().getTranslator(translatorOptions)
-                   firebaseNaturalLanguage.downloadModelIfNeeded()
-                    .addOnSuccessListener {
-                        Log.d("MessageActivity", "translateMessage: translator downloaded")
-                    }
-                       .addOnFailureListener {
-                           toast(it.localizedMessage)
-                       }
+                val languageName = Locale(languageCode).displayLanguage
 
-                firebaseNaturalLanguage.translate(model.message)
-                    .addOnSuccessListener { translatedText ->
-                        Log.d("MessageActivity", "translateMessage: $translatedText")
+               val firebaseTranslator =  FirebaseNaturalLanguage.getInstance().getTranslator(translatorOptions)
+
+
+                FirebaseApp.initializeApp(this)?.let { firebaseApp ->
+                    FirebaseTranslateModelManager.getInstance().getAvailableModels(firebaseApp).addOnSuccessListener {
+                        it.iterator().forEach {
+                            if (it.language == Pref.getDefaultLanguage(context)) {
+                                // has model available
+                                Log.d("MessageActivity", "translateMessage: Translator files available")
+                                onTranslatorDownloaded(itemView, model, firebaseTranslator, languageName)
+                                return@forEach
+                            }
+                        }
+                            // download translator, and then translate
+
+
+                        translationHeading = "Downloading files for $languageName"
+
                         if(model.from == myUID)
-                            itemView.messageText_right.text = translatedText
+                        {
+                            itemView.bubble_right_translation.text = translationHeading
+                            itemView.bubble_right_translation.visibility = View.VISIBLE
+
+                        }
                         else
-                            itemView.messageText_left.text = translatedText
+                        {
+                            itemView.bubble_left_translation.text = translationHeading
+                            itemView.bubble_left_translation.visibility = View.VISIBLE
+
+                        }
+
+                        firebaseTranslator.downloadModelIfNeeded()
+                            .addOnSuccessListener {
+                               Log.d("MessageActivity", "translateMessage: translator downloaded")
+                                 onTranslatorDownloaded(itemView, model, firebaseTranslator, languageName)
+                                }
+                                .addOnFailureListener {
+                                    toast(it.localizedMessage)
+                                }
+
                     }
+                }
+
 
 
             }
 
     }
 
+
+    private fun onTranslatorDownloaded(itemView: View, model: Models.MessageModel, firebaseTranslator:FirebaseTranslator, languageName:String){
+
+
+        var translationHeading = "Translating from $languageName"
+
+
+        if(model.from == myUID)
+        {
+            itemView.bubble_right_translation.text = translationHeading
+            itemView.bubble_right_translation.visibility = View.VISIBLE
+
+        }
+        else
+        {
+            itemView.bubble_left_translation.text = translationHeading
+            itemView.bubble_left_translation.visibility = View.VISIBLE
+
+        }
+
+        firebaseTranslator.translate(model.message)
+            .addOnSuccessListener { translatedText ->
+                Log.d("MessageActivity", "translateMessage: $translatedText")
+                translationHeading = "Translated to ${Locale(FirebaseTranslateLanguage.languageCodeForLanguage(Pref.getDefaultLanguage(this))).displayName} from $languageName"
+                if(model.from == myUID)
+                {
+                    itemView.messageText_right.text = translatedText
+                    itemView.bubble_right_translation.text = translationHeading
+                    itemView.bubble_right_translation.visibility = View.VISIBLE
+                }
+                else
+                {
+                    itemView.messageText_left.text = translatedText
+                    itemView.bubble_left_translation.text = translationHeading
+                    itemView.bubble_left_translation.visibility = View.VISIBLE
+                }
+            }
+            .addOnFailureListener {
+                Log.d("MessageActivity", "translateMessage: error =  ${it.message}")
+                translationHeading = "Failed to Translate"
+                if(model.from == myUID)
+                {
+                    itemView.bubble_right_translation.visibility = View.VISIBLE
+                    itemView.bubble_right_translation.text = translationHeading
+
+                }
+                else
+                {
+                    itemView.bubble_left_translation.visibility = View.VISIBLE
+                    itemView.bubble_left_translation.text = translationHeading
+
+                }
+            }
+    }
 
     var isContextMenuActive = false
 
@@ -2726,7 +2844,7 @@ class MessageActivity : AppCompatActivity() {
         },2000)
 
 
-        val layoutManager = messagesList.layoutManager as androidx.recyclerview.widget.LinearLayoutManager
+        val layoutManager = messagesList.layoutManager as LinearLayoutManager
 
         val textView = TextView(this)
         textView.text = "Sample text"
@@ -2911,10 +3029,6 @@ class MessageActivity : AppCompatActivity() {
                     try {
 
 
-
-//                        smart_reply_recycler.visibility = if(isLastMessageMine) View.GONE else View.VISIBLE
-
-
                         if(conversation.isEmpty()) return
 
                         FirebaseNaturalLanguage.getInstance().smartReply
@@ -2926,13 +3040,14 @@ class MessageActivity : AppCompatActivity() {
 
                                     }
                                     SmartReplySuggestionResult.STATUS_NO_REPLY -> {
-                                        Log.d("MessageActivity", "onChildAdded: no reply")
+                                        Log.d("MessageActivity", "ML Translation: no reply")
                                     }
                                     SmartReplySuggestionResult.STATUS_NOT_SUPPORTED_LANGUAGE -> {
-                                        Log.d("MessageActivity", "onChildAdded: language not supported ")
+                                        Log.d("MessageActivity", "ML Translation: language not supported ")
                                     }
                                 }
 
+                                smart_reply_setting.visibility = if(it.suggestions.isNotEmpty()) View.VISIBLE else View.GONE
 
 
                                 smart_reply_recycler.adapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>(){
@@ -2950,12 +3065,14 @@ class MessageActivity : AppCompatActivity() {
                                         holder.itemView.item_text.setOnClickListener {
                                             Log.d("MessageActivity", "onBindViewHolder: suggestion text clicked")
                                             messageInputField.inputEditText.setText(suggestion)
+                                            if(Pref.isTapToReply(context))
                                             messageInputField.button.callOnClick()
                                         }
 
                                         holder.itemView.setOnClickListener {
                                             Log.d("MessageActivity", "onBindViewHolder: suggestion clicked")
                                             messageInputField.inputEditText.setText(suggestion)
+                                            if(Pref.isTapToReply(context))
                                             messageInputField.button.callOnClick()
                                         }
                                     }
@@ -2969,6 +3086,36 @@ class MessageActivity : AppCompatActivity() {
                 }
             })
 
+
+        smart_reply_setting.setOnClickListener {
+
+            val switch = SwitchCompat(this)
+            val params = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            params.setMargins(30, 30, 30, 30)
+            switch.layoutParams = params
+
+            val layout = LinearLayout(this)
+            layout.setPadding(20,20,20,20)
+            layout.layoutParams = params
+
+            switch.text = "Tap to send"
+            switch.setTextSize( TypedValue.COMPLEX_UNIT_SP, 18f)
+
+            layout.addView(switch)
+
+            switch.setSwitchTextAppearance(this, R.style.TextViewHeading)
+
+            switch.isChecked = Pref.isTapToReply(this)
+            switch.setOnCheckedChangeListener { _, isChecked ->
+                Pref.isTapToReply(context, isChecked)
+            }
+            val settingDialog = alert {
+                customView = layout
+                positiveButton("Ok"){}
+            }
+
+            settingDialog.show()
+        }
 
     }
 

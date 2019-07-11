@@ -63,14 +63,14 @@
                             android:layout_height="match_parent"
                             android:scaleType="center"
                             app:elevation="0dp"
-                            android:layout_marginRight="10dp"
-                            android:layout_marginTop="10dp"
+                            android:layout_marginRight="5dp"
+                            android:layout_marginTop="5dp"
                             android:layout_gravity="bottom|start"
                             app:backgroundTint="@color/ivory_dark"
                             android:id="@+id/bottomScrollButton"
                             app:fabSize="mini"
 
-                    />
+                            android:layout_marginEnd="5dp"/>
 
 
                     <com.nex3z.notificationbadge.NotificationBadge
@@ -95,14 +95,35 @@
             </FrameLayout>
 
 
+          <androidx.core.widget.NestedScrollView android:layout_width="match_parent"
+                                                 android:fillViewport="true"
+                                                 android:layout_height="wrap_content">
 
-            <androidx.recyclerview.widget.RecyclerView android:layout_width="match_parent"
+              <LinearLayout android:layout_width="match_parent"
+                         android:orientation="horizontal"
+                         android:gravity="center_vertical"
+                         android:layout_height="wrap_content">
+
+               <androidx.recyclerview.widget.RecyclerView android:layout_width="wrap_content"
                                                        android:layout_height="wrap_content"
                                                        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                                                        android:orientation="horizontal"
-                                                       android:id="@+id/smart_reply_recycler"
-            />
+                                                       android:id="@+id/smart_reply_recycler"/>
+                 <ImageView android:layout_width="20dp"
+                            android:layout_marginStart="10dp"
+                            android:layout_marginRight="10dp"
+                            android:layout_marginEnd="10dp"
+                            android:layout_height="20dp"
+                            android:tint="@color/dark_gray"
+                            android:visibility="gone"
+                            android:id="@+id/smart_reply_setting"
+                            android:src="@drawable/ic_setting_flat_black"
+                            android:layout_marginLeft="10dp"/>
 
+           </LinearLayout>
+
+
+          </androidx.core.widget.NestedScrollView>
 
 
             <com.stfalcon.chatkit.messages.MessageInput

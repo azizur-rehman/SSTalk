@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu
-        xmlns:tools="http://schemas.android.com/tools"
-        tools:showIn = "navigation_view"
-        xmlns:app="http://schemas.android.com/apk/res-auto" xmlns:android="http://schemas.android.com/apk/res/android">
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:android="http://schemas.android.com/apk/res/android">
 
-  <item android:title="Privacy" android:checkable="false">
+    <item android:title="Privacy" android:checkable="false">
       <menu>
         <item android:title="Block list"
-              android:id="@+id/action_block_list"
+              android:id="@+id/setting_block_list"
             android:icon="@drawable/ic_person_flat"
         />
 
@@ -19,7 +18,7 @@
     <item android:title="Media" android:checkable="false">
         <menu>
             <item android:title="Visible in gallery"
-                  android:id="@+id/action_media_visibility"
+                  android:id="@+id/setting_media_visibility"
                   app:actionViewClass="android.widget.Switch"
                   android:icon="@drawable/ic_perm_media_white_24dp"
             />
@@ -35,17 +34,46 @@
             <item android:title="Sound"
                   android:icon="@drawable/ic_volume_up_white_24dp"
                   app:actionViewClass="android.widget.Switch"
-                  android:id="@+id/action_sound_enable"
+                  android:id="@+id/setting_sound_enable"
             />
 
             <item android:title="Vibrate"
                   android:icon="@drawable/ic_vibration_white_24dp"
                   app:actionViewClass="android.widget.Switch"
-                  android:id="@+id/action_vibration_enable"
+                  android:id="@+id/setting_vibration_enable"
 
             />
         </menu>
 
     </item>
+
+
+    <item android:title="Smart Reply" android:checkable="false">
+        <menu>
+
+            <item android:title="Tap to send"
+                  android:icon="@drawable/ic_reply_black_24dp"
+                  app:actionViewClass="android.widget.Switch"
+                  android:id="@+id/setting_smart_reply"
+            />
+
+        </menu>
+
+    </item>
+
+
+    <item android:title="Translation" android:checkable="false">
+        <menu>
+
+            <item android:title=""
+                  android:icon="@drawable/ic_translate_white_24dp"
+                  android:id="@+id/setting_default_language"
+                  app:actionViewClass="com.aziz.sstalk.views.TitleSubtitleView"
+            />
+
+        </menu>
+
+    </item>
+
 
 </menu>
