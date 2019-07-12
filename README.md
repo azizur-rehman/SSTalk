@@ -5,7 +5,7 @@ https://play.google.com/store/apps/details?id=com.aziz.sstalk
 
 
 
-###Features
+### Features
 
 
 - Single Chat
@@ -21,7 +21,7 @@ https://play.google.com/store/apps/details?id=com.aziz.sstalk
 -  Phone signing with OTP verification
 
 
-###Screenshots:
+### Screenshots:
 
 
 <img src="https://github.com/azizur-rehman/SSTalk/blob/master/Screenshots/appwrap-template-201903222309470.png" width="200"> <img src="https://github.com/azizur-rehman/SSTalk/blob/master/Screenshots/appwrap-template-201903222309471.png" width="200"> <img src="https://github.com/azizur-rehman/SSTalk/blob/master/Screenshots/appwrap-template-20190322233759.png" width="200">
@@ -32,7 +32,7 @@ https://play.google.com/store/apps/details?id=com.aziz.sstalk
 
 
 
-###How to own this project or create your own app?
+### How to own this project or create your own app?
 
 1.  Change the project name
 
