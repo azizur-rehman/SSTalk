@@ -123,7 +123,7 @@ class SettingsActivity : AppCompatActivity() {
         if(languageDialog != null){
             languageDialog?.show()
             if(Pref.getDefaultLanguage(context) > -1)
-                recyclerView.scrollToPosition(Pref.getDefaultLanguage(context))
+                languageDialog?.recyclerView?.scrollToPosition(Pref.getDefaultLanguage(context))
             return
         }
 
