@@ -118,7 +118,7 @@ object Pref {
             .putInt(KEY_DEFAULT_TRANSLATION_LANG, languageCode).apply()
     }
 
-    fun getDefaultLanguage(context: Context, defaultLanguage:Int = FirebaseTranslateLanguage.HI):Int{
+    fun getDefaultLanguage(context: Context, defaultLanguage:Int = -1):Int{
         return Pref.getSettingFile(context)
             .getInt(KEY_DEFAULT_TRANSLATION_LANG, defaultLanguage)
     }

@@ -40,6 +40,7 @@
               android:textSize="22sp"
                   android:layout_marginTop="20dp"
               android:text="Logout"
+                  android:id="@+id/logout_btn"
               android:background="?selectableItemBackground"
               android:onClick="onLogoutClick"
               style="@style/TextViewHeading"

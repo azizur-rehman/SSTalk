@@ -33,7 +33,6 @@ import android.view.ViewGroup
 import androidx.appcompat.widget.SearchView
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.*
-import androidx.appcompat.widget.SwitchCompat
 import com.aziz.sstalk.firebase.MessagingService
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.DateFormatter
@@ -49,7 +48,6 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.tasks.Continuation
-import com.google.android.gms.tasks.OnSuccessListener
 import com.google.android.gms.tasks.Task
 import com.google.firebase.FirebaseApp
 import com.google.firebase.database.DataSnapshot
@@ -2368,9 +2366,7 @@ class MessageActivity : AppCompatActivity() {
                             for (pos in selectedItemPosition)
                             {
                                 if(!isTranslatorPressed)
-                                {
                                     adapter.notifyItemChanged(pos)
-                                }
                             }
 
                             selectedItemPosition.clear()
@@ -2425,7 +2421,7 @@ class MessageActivity : AppCompatActivity() {
         }
     }
 
-    private fun translateMessage(itemView: View, model: Models.MessageModel) {
+    private fun translateMessage(itemView: View, model: Models.MessageModel):Unit {
 
         isTranslatorPressed = true
         itemView.background = ColorDrawable(Color.WHITE)
@@ -2458,46 +2454,37 @@ class MessageActivity : AppCompatActivity() {
 
                 val languageName = Locale(languageCode).displayLanguage
 
-               val firebaseTranslator =  FirebaseNaturalLanguage.getInstance().getTranslator(translatorOptions)
-
+                val firebaseTranslator =  FirebaseNaturalLanguage.getInstance().getTranslator(translatorOptions)
 
                 FirebaseApp.initializeApp(this)?.let { firebaseApp ->
                     FirebaseTranslateModelManager.getInstance().getAvailableModels(firebaseApp).addOnSuccessListener {
-                        it.iterator().forEach {
-                            if (it.language == Pref.getDefaultLanguage(context)) {
-                                // has model available
-                                Log.d("MessageActivity", "translateMessage: Translator files available")
-                                onTranslatorDownloaded(itemView, model, firebaseTranslator, languageName)
-                                return@forEach
-                            }
+
+
+                        if (it.any { remoteModel -> remoteModel.language == Pref.getDefaultLanguage(context) }) {
+                            // model is available to translate
+                            Log.d("MessageActivity", "translateMessage: Translator Model is available")
+                            onTranslatorDownloaded(itemView, model, firebaseTranslator, languageName)
                         }
+
+                        else {
                             // download translator, and then translate
+                            translationHeading = "Downloading files for $languageName"
 
+                            when (myUID) {
+                                model.from -> itemView.bubble_right_translation.text = translationHeading
+                                else -> itemView.bubble_left_translation.text = translationHeading
+                            }
 
-                        translationHeading = "Downloading files for $languageName"
-
-                        if(model.from == myUID)
-                        {
-                            itemView.bubble_right_translation.text = translationHeading
-                            itemView.bubble_right_translation.visibility = View.VISIBLE
-
-                        }
-                        else
-                        {
-                            itemView.bubble_left_translation.text = translationHeading
-                            itemView.bubble_left_translation.visibility = View.VISIBLE
-
-                        }
-
-                        firebaseTranslator.downloadModelIfNeeded()
-                            .addOnSuccessListener {
-                               Log.d("MessageActivity", "translateMessage: translator downloaded")
-                                 onTranslatorDownloaded(itemView, model, firebaseTranslator, languageName)
+                            firebaseTranslator.downloadModelIfNeeded()
+                                .addOnSuccessListener {
+                                    Log.d("MessageActivity", "translateMessage: translator downloaded")
+                                    onTranslatorDownloaded(itemView, model, firebaseTranslator, languageName)
                                 }
                                 .addOnFailureListener {
                                     toast(it.localizedMessage)
                                 }
 
+                        }
                     }
                 }
 
@@ -2514,50 +2501,32 @@ class MessageActivity : AppCompatActivity() {
         var translationHeading = "Translating from $languageName"
 
 
-        if(model.from == myUID)
-        {
-            itemView.bubble_right_translation.text = translationHeading
-            itemView.bubble_right_translation.visibility = View.VISIBLE
-
-        }
-        else
-        {
-            itemView.bubble_left_translation.text = translationHeading
-            itemView.bubble_left_translation.visibility = View.VISIBLE
-
+        when (myUID) {
+            model.from -> itemView.bubble_right_translation.text = translationHeading
+            else -> itemView.bubble_left_translation.text = translationHeading
         }
 
         firebaseTranslator.translate(model.message)
             .addOnSuccessListener { translatedText ->
                 Log.d("MessageActivity", "translateMessage: $translatedText")
                 translationHeading = "Translated to ${Locale(FirebaseTranslateLanguage.languageCodeForLanguage(Pref.getDefaultLanguage(this))).displayName} from $languageName"
-                if(model.from == myUID)
-                {
-                    itemView.messageText_right.text = translatedText
-                    itemView.bubble_right_translation.text = translationHeading
-                    itemView.bubble_right_translation.visibility = View.VISIBLE
-                }
-                else
-                {
-                    itemView.messageText_left.text = translatedText
-                    itemView.bubble_left_translation.text = translationHeading
-                    itemView.bubble_left_translation.visibility = View.VISIBLE
+                when (myUID) {
+                    model.from -> {
+                        itemView.messageText_right.text = translatedText
+                        itemView.bubble_right_translation.text = translationHeading
+                    }
+                    else -> {
+                        itemView.messageText_left.text = translatedText
+                        itemView.bubble_left_translation.text = translationHeading
+                    }
                 }
             }
             .addOnFailureListener {
                 Log.d("MessageActivity", "translateMessage: error =  ${it.message}")
                 translationHeading = "Failed to Translate"
-                if(model.from == myUID)
-                {
-                    itemView.bubble_right_translation.visibility = View.VISIBLE
-                    itemView.bubble_right_translation.text = translationHeading
-
-                }
-                else
-                {
-                    itemView.bubble_left_translation.visibility = View.VISIBLE
-                    itemView.bubble_left_translation.text = translationHeading
-
+                when (myUID) {
+                    model.from -> itemView.bubble_right_translation.text = translationHeading
+                    else -> itemView.bubble_left_translation.text = translationHeading
                 }
             }
     }
@@ -3089,24 +3058,24 @@ class MessageActivity : AppCompatActivity() {
 
         smart_reply_setting.setOnClickListener {
 
-            val switch = SwitchCompat(this)
+            val smartReplyCheckbox = CheckBox(this)
             val params = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
             params.setMargins(30, 30, 30, 30)
-            switch.layoutParams = params
+            smartReplyCheckbox.layoutParams = params
 
             val layout = LinearLayout(this)
             layout.setPadding(20,20,20,20)
             layout.layoutParams = params
 
-            switch.text = "Tap to send"
-            switch.setTextSize( TypedValue.COMPLEX_UNIT_SP, 18f)
+            smartReplyCheckbox.text = "Tap to send"
+            smartReplyCheckbox.setTextSize( TypedValue.COMPLEX_UNIT_SP, 18f)
 
-            layout.addView(switch)
+            layout.addView(smartReplyCheckbox)
 
-            switch.setSwitchTextAppearance(this, R.style.TextViewHeading)
+//            switch.setSwitchTextAppearance(this, R.style.TextViewHeading)
 
-            switch.isChecked = Pref.isTapToReply(this)
-            switch.setOnCheckedChangeListener { _, isChecked ->
+            smartReplyCheckbox.isChecked = Pref.isTapToReply(this)
+            smartReplyCheckbox.setOnCheckedChangeListener { _, isChecked ->
                 Pref.isTapToReply(context, isChecked)
             }
             val settingDialog = alert {

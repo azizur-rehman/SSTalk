@@ -1104,7 +1104,7 @@ object FirebaseUtils {
 
                 override fun onDataChange(p0: DataSnapshot) {
 
-                    val versionCode = p0.getValue(Int::class.java)!!
+                    val versionCode = p0.getValue(Int::class.java)?:BuildConfig.VERSION_CODE
                     Log.d("FirebaseUtils", "onDataChange: current version = ${com.aziz.sstalk.BuildConfig.VERSION_CODE}")
                     Log.d("FirebaseUtils", "onDataChange: available version = $versionCode")
 

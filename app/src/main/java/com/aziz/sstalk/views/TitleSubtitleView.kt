@@ -21,7 +21,7 @@ class TitleSubtitleView : LinearLayout {
     }
 
     private fun initView() {
-        val view = View.inflate(context, R.layout.item_title_subtitle, null)
+        val view = View.inflate(context, R.layout.item_selector, null)
         addView(view)
     }
 }

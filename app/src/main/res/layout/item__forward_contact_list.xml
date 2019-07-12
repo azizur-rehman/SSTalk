@@ -22,12 +22,12 @@
 
 
         <com.github.lguipeng.library.animcheckbox.AnimCheckBox
+                android:id="@+id/checkbox"
                 android:layout_gravity="center_vertical"
                 android:layout_width="36dp"
                 android:padding="4dp"
                 android:layout_height="36dp"
                 app:stroke_width="2dp"
-                android:id="@+id/checkbox"
                 app:stroke_color="@color/white"
                 app:circle_color="@color/colorPrimary"
                 app:checked="false"/>

@@ -65,10 +65,9 @@
     <item android:title="Translation" android:checkable="false">
         <menu>
 
-            <item android:title=""
+            <item android:title="Default Language (Tap to choose)"
                   android:icon="@drawable/ic_translate_white_24dp"
                   android:id="@+id/setting_default_language"
-                  app:actionViewClass="com.aziz.sstalk.views.TitleSubtitleView"
             />
 
         </menu>
