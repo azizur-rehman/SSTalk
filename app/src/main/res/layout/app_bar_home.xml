@@ -23,15 +23,13 @@
 
 
 
-    <com.google.android.material.bottomnavigation.BottomNavigationView android:layout_width="match_parent"
-                                                                       android:layout_gravity="bottom"
-                                                                       android:background="@color/white"
-                                                                       android:id="@+id/home_bottom_nav"
-                                                                       app:elevation="5dp"
-                                                                       app:menu="@menu/nav_bottom_home_menu"
-                                                                       android:layout_height="wrap_content"
 
-    />
+
+    <com.aurelhubert.ahbottomnavigation.AHBottomNavigation
+            android:id="@+id/bottom_navigation_home"
+            android:layout_width="match_parent"
+            android:layout_gravity="bottom"
+            android:layout_height="wrap_content"/>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/show_contacts"

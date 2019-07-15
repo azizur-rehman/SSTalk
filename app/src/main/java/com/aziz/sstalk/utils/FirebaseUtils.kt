@@ -207,7 +207,7 @@ object FirebaseUtils {
         }
 
 
-    fun loadProfilePic(context: Context, uid: String, imageView: ImageView, onHasPicture:(() -> Unit)? = null){
+    fun loadProfilePic(context: Context, uid: String, imageView: ImageView){
 
         try{
             imageView.setImageResource(R.drawable.contact_placeholder)
@@ -227,9 +227,8 @@ object FirebaseUtils {
                 fileExists = true
                 Log.d("FirebaseUtils", "loadProfilePic: exists of $uid")
                 Picasso.get().load(file)
-                    .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE).into(imageView)
+//                    .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE).into(imageView)
 
-                onHasPicture?.invoke()
 
                 imageView.setOnClickListener {
                     context.startActivity(Intent(context, ImagePreviewActivity::class.java)
@@ -278,10 +277,10 @@ object FirebaseUtils {
                                     val file= File(utils.getProfilePicPath(context)+uid+".jpg")
                                     if(file.exists()){
                                         Picasso.get().load(file)
-                                            .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
+//                                            .memoryPolicy(MemoryPolicy.NO_CACHE,
+//                                                MemoryPolicy.NO_STORE)
                                             .into(imageView)
 
-                                        onHasPicture?.invoke()
 
                                         imageView.setOnClickListener {
                                             context.startActivity(Intent(context, ImagePreviewActivity::class.java)
@@ -341,7 +340,7 @@ object FirebaseUtils {
         }
 
     //for group
-    fun loadGroupPic(context: Context, groupId: String, imageView: ImageView, onHasPicture:(() -> Unit)? = null){
+    fun loadGroupPic(context: Context, groupId: String, imageView: ImageView){
 
         try{
             imageView.setImageResource(R.drawable.ic_group_white_24dp)
@@ -364,7 +363,6 @@ object FirebaseUtils {
                 Picasso.get().load(file)
                     .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE).into(imageView)
 
-                onHasPicture?.invoke()
 
                 imageView.setOnClickListener {
                     context.startActivity(Intent(context, ImagePreviewActivity::class.java)
@@ -410,7 +408,7 @@ object FirebaseUtils {
 
                             val file= File(utils.getProfilePicPath(context)+groupId+".jpg")
                             if(file.exists()){
-                                onHasPicture?.invoke()
+
                                 Picasso.get().load(file)
                                     .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE).into(imageView)
                                 imageView.setOnClickListener {
@@ -790,7 +788,7 @@ object FirebaseUtils {
             })
     }
 
-    fun setUnreadCount(targetUID: String, notificationBadge: NotificationBadge, vararg boldTextViews: TextView ){
+    fun setUnreadCount(targetUID: String, notificationBadge: NotificationBadge, vararg boldTextViews: TextView){
 
         var initialTypeface:Typeface? = null
         notificationBadge.visibility = View.GONE
@@ -845,7 +843,7 @@ object FirebaseUtils {
 
     fun setMeAsOnline(){
         FirebaseUtils.ref.userStatus(getUid())
-            .setValue(Models.UserActivityStatus(FirebaseUtils.VAL_ONLINE, System.currentTimeMillis()))
+            .setValue(Models.UserActivityStatus(VAL_ONLINE, System.currentTimeMillis()))
     }
 
     fun setMeAsOffline(){
@@ -855,7 +853,7 @@ object FirebaseUtils {
 
     fun setMeAsTyping(targetUID:String){
         FirebaseUtils.ref.userStatus(getUid())
-            .setValue(Models.UserActivityStatus(FirebaseUtils.VAL_TYPING+" - $targetUID", System.currentTimeMillis()))
+            .setValue(Models.UserActivityStatus(VAL_TYPING +" - $targetUID", System.currentTimeMillis()))
     }
 
     fun setDeliveryStatusTick(

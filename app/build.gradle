@@ -84,6 +84,7 @@ dependencies {
     implementation 'com.theartofdev.edmodo:android-image-cropper:2.8.0'
     implementation 'com.yarolegovich:lovely-dialog:1.1.0'
 
+    implementation 'com.aurelhubert:ahbottomnavigation:2.3.4'
 
     //ML
     implementation 'com.google.firebase:firebase-ml-natural-language:20.0.0'

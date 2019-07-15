@@ -29,7 +29,6 @@
         <ProgressBar android:layout_width="wrap_content"
                      android:layout_gravity="center"
                      android:id="@+id/message_progressbar"
-                     style="@android:style/Widget.DeviceDefault.Light.ProgressBar.Large"
                      android:layout_height="wrap_content"/>
 
 
@@ -51,7 +50,7 @@
 
 
                 <FrameLayout
-                        android:layout_margin="20dp"
+                        android:layout_margin="10dp"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="bottom|end"

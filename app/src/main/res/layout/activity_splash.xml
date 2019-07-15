@@ -10,7 +10,7 @@
         android:layout_height="match_parent"
         tools:context=".SplashActivity">
 
-    <ImageView android:layout_width="240dp"
+    <ImageView android:layout_width="160dp"
                android:layout_weight="1"
                android:layout_height="0dp"
         android:layout_gravity="center"

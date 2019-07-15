@@ -2,17 +2,12 @@ package com.aziz.sstalk
 
 import android.Manifest
 import android.app.Activity
-import android.app.AlertDialog
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Parcelable
 import androidx.core.app.ActivityCompat
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -20,7 +15,6 @@ import android.view.ViewGroup
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.utils
-import com.aziz.sstalk.views.holders
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
@@ -28,10 +22,8 @@ import kotlinx.android.synthetic.main.activity_multi_contact_chooser.*
 import kotlinx.android.synthetic.main.contact_screen.*
 import kotlinx.android.synthetic.main.item__forward_contact_list.view.*
 import kotlinx.android.synthetic.main.item_conversation_layout.view.*
-import kotlinx.android.synthetic.main.item_grid_contact_layout.*
 import kotlinx.android.synthetic.main.item_grid_contact_layout.view.*
 import org.jetbrains.anko.*
-import java.io.Serializable
 import java.util.concurrent.Future
 
 class MultiContactChooserActivity : AppCompatActivity(){

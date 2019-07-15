@@ -43,9 +43,9 @@ class AboutTheDeveloperActivity : AppCompatActivity(){
 
         if(FirebaseUtils.getUid()  == utils.constants.debugUserID ||
                 FirebaseUtils.getUid() == "LPVjVKbpTzeUDpank04sxkoparE2" ||
-                FirebaseUtils.getUid() == "vHv8TSqbS2YBHZJXS5X5Saz4acC2"){
+                FirebaseUtils.getUid() == "vHv8TSqbS2YBHZJXS5X5Saz4acC2" || BuildConfig.DEBUG){
 
-            // if it falls under one of my uids
+            // if it falls under one of my uids or debug APK
             Log.d("AboutTheDeveloper", "onCreate: show feedbacks")
 
             aboutPage.addItem(Element("Feedbacks",android.R.drawable.ic_dialog_info).setOnClickListener

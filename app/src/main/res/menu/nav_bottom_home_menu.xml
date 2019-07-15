@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu
-        xmlns:tools="http://schemas.android.com/tools"
-        tools:showIn="navigation_view"
-        xmlns:app="http://schemas.android.com/apk/res-auto" xmlns:android="http://schemas.android.com/apk/res/android">
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item android:title="Recent"
-          android:icon="@drawable/ic_chat"
           app:showAsAction="always"
           android:checked="true"
+          android:icon="@drawable/ic_chat"
+          android:actionLayout="@layout/layout_menu_badge"
           android:id="@+id/nav_action_inbox"
     />
     <item android:title="Online"

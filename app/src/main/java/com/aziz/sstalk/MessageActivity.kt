@@ -40,7 +40,7 @@ import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.Pref
 import com.aziz.sstalk.utils.utils
 import com.aziz.sstalk.views.ColorGenerator
-import com.aziz.sstalk.views.holders
+import com.aziz.sstalk.views.Holders
 import com.firebase.ui.database.FirebaseRecyclerAdapter
 import com.firebase.ui.database.FirebaseRecyclerOptions
 import com.google.android.gms.maps.*
@@ -223,6 +223,12 @@ class MessageActivity : AppCompatActivity() {
 
     private fun initComponents(){
 
+        with(messagesList){
+            setHasFixedSize(true)
+            setItemViewCacheSize(20)
+            setDrawingCacheEnabled(true)
+            setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH)
+        }
 
 
         if(isGroup) {
@@ -710,38 +716,38 @@ class MessageActivity : AppCompatActivity() {
 
                return when(viewType) {
                      TYPE_MINE ->
-                       holders.MyTextMsgHolder(LayoutInflater.from(this@MessageActivity)
+                       Holders.MyTextMsgHolder(LayoutInflater.from(this@MessageActivity)
                        .inflate(R.layout.bubble_right, p0 , false))
 
                      TYPE_MY_MAP ->
-                         holders.MyMapHolder(LayoutInflater.from(this@MessageActivity)
+                         Holders.MyMapHolder(LayoutInflater.from(this@MessageActivity)
                              .inflate(R.layout.bubble_map_right, p0, false))
 
 
                      TYPE_TARGET_MAP ->
-                       holders.TargetMapHolder(LayoutInflater.from(this@MessageActivity)
+                       Holders.TargetMapHolder(LayoutInflater.from(this@MessageActivity)
                            .inflate(R.layout.bubble_map_left, p0, false))
 
                      TYPE_MY_IMAGE ->
-                         holders.MyImageMsgHolder(LayoutInflater.from(this@MessageActivity)
+                         Holders.MyImageMsgHolder(LayoutInflater.from(this@MessageActivity)
                              .inflate(R.layout.bubble_image_right, p0, false))
 
                    TYPE_TARGET_IMAGE ->
-                       holders.TargetImageMsgHolder(LayoutInflater.from(this@MessageActivity)
+                       Holders.TargetImageMsgHolder(LayoutInflater.from(this@MessageActivity)
                            .inflate(R.layout.bubble_image_left, p0, false))
 
                    TYPE_MY_VIDEO ->
-                       holders.MyVideoMsgHolder(LayoutInflater.from(this@MessageActivity)
+                       Holders.MyVideoMsgHolder(LayoutInflater.from(this@MessageActivity)
                            .inflate(R.layout.bubble_video_right, p0, false))
 
                    TYPE_TARGET_VIDEO ->
-                       holders.TargetVideoMsgHolder(LayoutInflater.from(this@MessageActivity)
+                       Holders.TargetVideoMsgHolder(LayoutInflater.from(this@MessageActivity)
                            .inflate(R.layout.bubble_video_left, p0, false))
 
                    TYPE_EVENT ->
-                       holders.TextHeaderHolder(LayoutInflater.from(context).inflate(R.layout.text_header, p0, false))
+                       Holders.TextHeaderHolder(LayoutInflater.from(context).inflate(R.layout.text_header, p0, false))
 
-                   else -> holders.TargetTextMsgHolder(LayoutInflater.from(this@MessageActivity)
+                   else -> Holders.TargetTextMsgHolder(LayoutInflater.from(this@MessageActivity)
                            .inflate(R.layout.bubble_left, p0, false))
                }
             }
@@ -765,7 +771,7 @@ class MessageActivity : AppCompatActivity() {
 
                 if(getItemViewType(position) == TYPE_EVENT){
 
-                    val textHolder = holder as holders.TextHeaderHolder
+                    val textHolder = holder as Holders.TextHeaderHolder
 
                     when(model.messageType) {
                          FirebaseUtils.EVENT_TYPE_ADDED -> {
@@ -855,7 +861,7 @@ class MessageActivity : AppCompatActivity() {
 
 
                 when (holder) {
-                    is holders.TargetTextMsgHolder -> {
+                    is Holders.TargetTextMsgHolder -> {
                         holder.time.text = utils.getLocalTime(model.timeInMillis)
                         holder.message.text = model.message
                         container = holder.container
@@ -902,7 +908,7 @@ class MessageActivity : AppCompatActivity() {
                                 .getColor(holder.senderTitle.text.toString()))
                         }
                     }
-                    is holders.MyTextMsgHolder -> {
+                    is Holders.MyTextMsgHolder -> {
                         holder.time.text = utils.getLocalTime(model.timeInMillis)
                         holder.message.text = model.message
                         dateHeader = holder.headerDateTime
@@ -914,7 +920,7 @@ class MessageActivity : AppCompatActivity() {
                         //end of my holder
 
                     }
-                    is holders.MyImageMsgHolder -> {
+                    is Holders.MyImageMsgHolder -> {
 
                         holder.time.text = utils.getLocalTime(model.timeInMillis)
                         messageImage = holder.imageView
@@ -932,7 +938,7 @@ class MessageActivity : AppCompatActivity() {
                         setMyImageHolder(holder, model, messageID)
 
                     }
-                    is holders.TargetImageMsgHolder -> {
+                    is Holders.TargetImageMsgHolder -> {
                         messageImage = holder.imageView
                         dateHeader = holder.headerDateTime
                         container = holder.container
@@ -978,7 +984,7 @@ class MessageActivity : AppCompatActivity() {
                                 .getColor(holder.senderTitle.text.toString()))
                         }
                     }
-                    is holders.MyVideoMsgHolder -> {
+                    is Holders.MyVideoMsgHolder -> {
 
                         thumbnail = holder.thumbnail
                         videoLengthTextView = holder.videoLengthText
@@ -997,7 +1003,7 @@ class MessageActivity : AppCompatActivity() {
 
 
                     }
-                    is holders.TargetVideoMsgHolder -> {
+                    is Holders.TargetVideoMsgHolder -> {
 
                         tapToDownload = holder.tap_to_download
                         holder.time.text = utils.getLocalTime(model.timeInMillis)
@@ -1048,7 +1054,7 @@ class MessageActivity : AppCompatActivity() {
 
                     }
 
-                    is holders.MyMapHolder -> {
+                    is Holders.MyMapHolder -> {
                         holder.message.text = model.caption
                         holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
                         holder.time.text = utils.getLocalTime(model.timeInMillis)
@@ -1063,7 +1069,7 @@ class MessageActivity : AppCompatActivity() {
 
                     }
 
-                    is holders.TargetMapHolder -> {
+                    is Holders.TargetMapHolder -> {
 
                         holder.message.text = model.caption
                         dateHeader = holder.dateHeader
@@ -2042,9 +2048,9 @@ class MessageActivity : AppCompatActivity() {
         super.onPause()
     }
 
-    //setting my holders
+    //setting my Holders
     //setting my holder config
-    private fun setMyImageHolder(holder: holders.MyImageMsgHolder, model: Models.MessageModel, messageID: String){
+    private fun setMyImageHolder(holder: Holders.MyImageMsgHolder, model: Models.MessageModel, messageID: String){
         holder.tapToRetry.visibility = View.GONE
 
         holder.progressBar.visibility = View.VISIBLE
@@ -2138,7 +2144,7 @@ class MessageActivity : AppCompatActivity() {
     }
 
     //setting my video holder
-    private fun setMyVideoHolder(holder:holders.MyVideoMsgHolder, model: Models.MessageModel, messageID: String){
+    private fun setMyVideoHolder(holder:Holders.MyVideoMsgHolder, model: Models.MessageModel, messageID: String){
 
         CircularProgressBarsAt[messageID] = holder.progressBar
         mediaControlImageViewAt[messageID] = holder.centerImageView
@@ -2163,9 +2169,9 @@ class MessageActivity : AppCompatActivity() {
 
 
 
-    //setting target holders
+    //setting target Holders
     //setting target image holder
-    private fun setTargetImageHolder(holder: holders.TargetImageMsgHolder, model:Models.MessageModel, messageID: String){
+    private fun setTargetImageHolder(holder: Holders.TargetImageMsgHolder, model:Models.MessageModel, messageID: String){
         holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
 
 
@@ -2213,7 +2219,7 @@ class MessageActivity : AppCompatActivity() {
 
 
     //setting target video holder
-    private fun setTargetVideoHolder(holder: holders.TargetVideoMsgHolder, model: Models.MessageModel, messageID: String){
+    private fun setTargetVideoHolder(holder: Holders.TargetVideoMsgHolder, model: Models.MessageModel, messageID: String){
 
         holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
         holder.message.text = model.caption

@@ -58,7 +58,7 @@
                     android:layout_width="wrap_content"
                     android:layout_marginRight="50dp"
                     android:orientation="vertical"
-                    android:padding="5dp"
+                    android:padding="7dp"
                     android:background="@drawable/shape_bubble_left"
                     android:id="@+id/bubble_container_left_text"
                     android:layout_height="wrap_content">
@@ -67,11 +67,10 @@
                 <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:paddingLeft="5dp"
-                        android:paddingRight="8dp"
+                        android:paddingRight="10dp"
                         android:textSize="13sp"
-                        android:visibility="gone"
                         android:maxWidth="240dp"
+                        android:visibility="gone"
                         android:text="Sender name"
                         android:textColor="@color/red"
                         android:id="@+id/messageText_sender_left"
@@ -81,8 +80,9 @@
                 <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="0dp"
-                        android:padding="5dp"
                         android:layout_weight="1"
+                        android:paddingTop="3dp"
+                        android:paddingBottom="3dp"
                         android:textSize="16sp"
                         android:maxWidth="240dp"
                         android:autoLink="all"

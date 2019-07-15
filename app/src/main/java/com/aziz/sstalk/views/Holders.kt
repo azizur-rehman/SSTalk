@@ -12,7 +12,7 @@ import kotlinx.android.synthetic.main.bubble_video_left.view.*
 import kotlinx.android.synthetic.main.bubble_video_right.view.*
 import kotlinx.android.synthetic.main.text_header.view.*
 
-object holders {
+object Holders {
 
     class TargetTextMsgHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
         val message = itemView.messageText_left!!
