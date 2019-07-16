@@ -55,7 +55,7 @@
                               style="@style/TextViewSmallWhite"
                               android:text="Camera"
                               android:textColor="@color/black"
-                              android:textSize="18sp"
+                              android:textSize="16sp"
                               android:layout_marginTop="5dp"
                               android:layout_height="wrap_content"/>
 
@@ -84,7 +84,7 @@
                               style="@style/TextViewSmallWhite"
                               android:text="Picture"
                               android:textColor="@color/black"
-                              android:textSize="18sp"
+                              android:textSize="16sp"
                               android:layout_marginTop="8dp"
                               android:layout_height="wrap_content"/>
 
@@ -114,7 +114,7 @@
                               style="@style/TextViewSmallWhite"
                               android:text="Video"
                               android:textColor="@color/black"
-                              android:textSize="18sp"
+                              android:textSize="16sp"
                               android:layout_marginTop="8dp"
                               android:layout_height="wrap_content"/>
 
@@ -142,7 +142,7 @@
                               style="@style/TextViewSmallWhite"
                               android:text="Location"
                               android:textColor="@color/black"
-                              android:textSize="18sp"
+                              android:textSize="16sp"
                               android:layout_marginTop="5dp"
                               android:layout_height="wrap_content"/>
 

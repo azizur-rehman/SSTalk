@@ -1109,10 +1109,10 @@ object FirebaseUtils {
                     if(versionCode > com.aziz.sstalk.BuildConfig.VERSION_CODE){
                         //show update dialog
                         context.alert {
-                            positiveButton("Yes"){
+                            positiveButton("Go to PlayStore"){
                                 context.browse(utils.constants.APP_LINK)
                             }
-                            negativeButton("No"){
+                            negativeButton("Cancel"){
                             }
                             title = "Update available"
                             message = "A New update has been available for SS Talk"
