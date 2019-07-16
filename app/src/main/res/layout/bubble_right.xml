@@ -41,17 +41,17 @@
             android:layout_height="wrap_content">
 
 
-        <TextView
+        <androidx.emoji.widget.EmojiTextView
                 android:layout_width="wrap_content"
                 android:layout_height="0dp"
-                android:paddingLeft="5dp"
+                android:paddingLeft="8dp"
                 android:paddingRight="5dp"
                 android:paddingTop="5dp"
                 android:layout_weight="1"
                 android:textSize="16sp"
                 android:maxWidth="240dp"
                 android:autoLink="all"
-                android:text="Caption "
+                android:text="@string/large_text"
                 android:id="@+id/messageText_right"
             android:textColor="@color/white"
             />

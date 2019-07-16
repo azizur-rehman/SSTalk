@@ -815,18 +815,16 @@ class MessageActivity : AppCompatActivity() {
 
 
                 var messageImage:ImageView? = null
-                var videoLayout:View? = null
+                var targetSenderIcon:ImageView? = null
+                var targetSenderTitle:TextView? = null
                 var dateHeader:TextView? = null
-                var latitude: Double = 0.0
-                var longitude: Double = 0.0
-                var mapView: MapView? = null
+                var latitude = 0.0
+                var longitude = 0.0
                 val messageID = super.getRef(position).key!!
                 var thumbnail:ImageView? = null
                 var videoLengthTextView:TextView? = null
 
                 var container:LinearLayout? = null
-
-                var circularProgressBar:CircularProgressBar? = null
 
                 var tapToDownload:TextView? = null
                 var messageTextView:TextView? = null
@@ -870,43 +868,10 @@ class MessageActivity : AppCompatActivity() {
                         dateHeader = holder.headerDateTime
 
                         holder.itemView.bubble_left_translation.visibility = View.GONE
+                        targetSenderIcon = holder.senderIcon
 
-                        if(position==0){
-                            FirebaseUtils.loadProfileThumbnail(context, model.from, holder.senderIcon)
-                            holder.senderIcon.visibility = View.VISIBLE }
-                        else{
-                            if(model.from == snapshots[position -1 ].from) holder.senderIcon.visibility = View.INVISIBLE
-                            else {
-                                holder.senderIcon.visibility = View.VISIBLE
-                                FirebaseUtils.loadProfileThumbnail(context, model.from, holder.senderIcon)
-                            }
-                        }
+                        targetSenderTitle = holder.senderTitle
 
-                        if(isGroup) {
-
-                            holder.senderTitle.visibility = if(holder.senderIcon.visibility == View.VISIBLE) View.VISIBLE
-                            else View.GONE
-
-
-
-                            if (groupMembers.isNotEmpty())
-                                try {
-                                    holder.senderTitle.text =
-                                        utils.getNameFromNumber(
-                                            context,
-                                            groupMembers.filter { it.uid == model.from }[0].phoneNumber
-                                        )
-                                    FirebaseUtils.setTargetOptionMenu(context,model.from,
-                                        groupMembers.filter { it.uid == model.from}[0].phoneNumber,
-                                        holder.senderTitle)
-                                }
-                                catch (e:Exception){
-                                    holder.senderTitle.text = "Removed Member"
-                                }
-
-                            holder.senderTitle.setTextColor(ColorGenerator.MATERIAL
-                                .getColor(holder.senderTitle.text.toString()))
-                        }
                     }
                     is Holders.MyTextMsgHolder -> {
                         holder.time.text = utils.getLocalTime(model.timeInMillis)
@@ -946,43 +911,13 @@ class MessageActivity : AppCompatActivity() {
                         messageTextView = holder.message
                         messageLayout = holder.messageLayout
 
+                        targetSenderIcon = holder.senderIcon
+                        targetSenderTitle = holder.senderTitle
+
                         //setting holder setting
                         setTargetImageHolder(holder, model, messageID)
 
-                        if(position==0){
-                            FirebaseUtils.loadProfileThumbnail(context, model.from, holder.senderIcon)
-                            holder.senderIcon.visibility = View.VISIBLE }
-                        else{
-                            if(model.from == snapshots[position -1 ].from) holder.senderIcon.visibility = View.INVISIBLE
-                            else {
-                                holder.senderIcon.visibility = View.VISIBLE
-                                FirebaseUtils.loadProfileThumbnail(context, model.from, holder.senderIcon)
-                            }
-                        }
 
-                        if(isGroup) {
-
-                           holder.senderTitle.visibility = if(holder.senderIcon.visibility == View.VISIBLE) View.VISIBLE
-                           else View.GONE
-
-                            if (groupMembers.isNotEmpty())
-                                try {
-                                    holder.senderTitle.text =
-                                        utils.getNameFromNumber(
-                                            context,
-                                            groupMembers.filter { it.uid == model.from }[0].phoneNumber
-                                        )
-                                    FirebaseUtils.setTargetOptionMenu(context,model.from,
-                                        groupMembers.filter { it.uid == model.from}[0].phoneNumber,
-                                        holder.senderTitle)
-                                }
-                                catch (e:Exception){
-                                    holder.senderTitle.text = "Removed Member"
-                                }
-
-                            holder.senderTitle.setTextColor(ColorGenerator.MATERIAL
-                                .getColor(holder.senderTitle.text.toString()))
-                        }
                     }
                     is Holders.MyVideoMsgHolder -> {
 
@@ -1012,6 +947,8 @@ class MessageActivity : AppCompatActivity() {
                         dateHeader = holder.headerDateTime
                         container = holder.container
 
+                        targetSenderIcon = holder.senderIcon
+                        targetSenderTitle = holder.senderTitle
 
                         messageTextView = holder.message
                         messageLayout = holder.messageLayout
@@ -1020,37 +957,8 @@ class MessageActivity : AppCompatActivity() {
                         //setting holder config
                         setTargetVideoHolder(holder, model, messageID)
 
-                        if(position==0){
-                            FirebaseUtils.loadProfileThumbnail(context, model.from, holder.senderIcon)
-                            holder.senderIcon.visibility = View.VISIBLE }
-                        else{
-                            if(model.from == snapshots[position -1 ].from) holder.senderIcon.visibility = View.INVISIBLE
-                            else {
-                                holder.senderIcon.visibility = View.VISIBLE
-                                FirebaseUtils.loadProfileThumbnail(context, model.from, holder.senderIcon)
-                            }
-                        }
 
-                        if(isGroup) {
-                            holder.senderTitle.visibility = if(holder.senderIcon.visibility == View.VISIBLE) View.VISIBLE
-                            else View.GONE
-                            if (groupMembers.isNotEmpty())
-                                try {
-                                    holder.senderTitle.text =
-                                        utils.getNameFromNumber(
-                                            context,
-                                            groupMembers.filter { it.uid == model.from }[0].phoneNumber
-                                        )
-                                    FirebaseUtils.setTargetOptionMenu(context,model.from,
-                                        groupMembers.filter { it.uid == model.from}[0].phoneNumber,
-                                        holder.senderTitle)
-                                }
-                                catch (e:Exception){
-                                    holder.senderTitle.text = "Removed Member"
-                                }
-                            holder.senderTitle.setTextColor(ColorGenerator.MATERIAL
-                                .getColor(holder.senderTitle.text.toString()))
-                        }
+
 
                     }
 
@@ -1078,51 +986,61 @@ class MessageActivity : AppCompatActivity() {
                         messageLayout = holder.messageLayout
                         messageTextView = holder.message
 
+                        targetSenderIcon = holder.senderIcon
+                        targetSenderTitle = holder.senderTitle
 
 
                         loadMap(holder.mapView, LatLng(latitude,longitude))
-                        if(position==0){
-                            FirebaseUtils.loadProfileThumbnail(context, model.from, holder.senderIcon)
-                            holder.senderIcon.visibility = View.VISIBLE }
-                        else{
-                            if(model.from == snapshots[position -1 ].from) holder.senderIcon.visibility = View.INVISIBLE
-                            else {
-                                holder.senderIcon.visibility = View.VISIBLE
-                                FirebaseUtils.loadProfileThumbnail(context, model.from, holder.senderIcon)
-                            }
-                        }
+
 
                         holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
 
-                        if(isGroup) {
 
-                            holder.senderTitle.visibility = if(holder.senderIcon.visibility == View.VISIBLE) View.VISIBLE
-                            else View.GONE
-
-                            if (groupMembers.isNotEmpty())
-                                try {
-                                    holder.senderTitle.text =
-                                        utils.getNameFromNumber(
-                                            context,
-                                            groupMembers.filter { it.uid == model.from }[0].phoneNumber
-                                        )
-                                    FirebaseUtils.setTargetOptionMenu(context,model.from,
-                                        groupMembers.filter { it.uid == model.from}[0].phoneNumber,
-                                        holder.senderTitle)
-                                }
-                                catch (e:Exception){
-                                    holder.senderTitle.text = "Removed Member"
-                                }
-                            holder.senderTitle.setTextColor(ColorGenerator.MATERIAL
-                                .getColor(holder.senderTitle.text.toString()))
-                        }
 
 
                     }
                 }
 
 
+                //setting sender icon
+                targetSenderIcon?.let {
+                    if(position==0){
+                        FirebaseUtils.loadProfileThumbnail(context, model.from, it)
+                        it.visibility = View.VISIBLE }
+                    else{
+                        if(model.from == snapshots[position -1 ].from && DateFormatter.isSameDay(Date(model.timeInMillis), Date(snapshots[position-1].timeInMillis))) it.visibility = View.INVISIBLE
+                        else {
+                            it.visibility = View.VISIBLE
+                            FirebaseUtils.loadProfileThumbnail(context, model.from, it)
+                        }
+                    }
+                }
 
+                //setting sender title
+                targetSenderTitle?.let {
+                    if(isGroup) {
+
+                        it.visibility = if(targetSenderIcon?.visibility == View.VISIBLE) View.VISIBLE
+                        else View.GONE
+
+                        if (groupMembers.isNotEmpty())
+                            try {
+                                it.text =
+                                    utils.getNameFromNumber(
+                                        context,
+                                        groupMembers.filter { it.uid == model.from }[0].phoneNumber
+                                    )
+                                FirebaseUtils.setTargetOptionMenu(context,model.from,
+                                    groupMembers.filter { it.uid == model.from}[0].phoneNumber,
+                                    it)
+                            }
+                            catch (e:Exception){
+                                it.text = "Removed Member"
+                            }
+                        it.setTextColor(ColorGenerator.MATERIAL
+                            .getColor(it.text.toString()))
+                    }
+                }
 
 
                 if(container!=null) {

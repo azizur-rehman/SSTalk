@@ -69,6 +69,7 @@ class UserProfileActivity : AppCompatActivity() {
             supportActionBar!!.setHomeButtonEnabled(true)
         }
 
+
         FirebaseUtils.setonDisconnectListener()
 
         contentView?.setBackgroundColor(Color.TRANSPARENT)

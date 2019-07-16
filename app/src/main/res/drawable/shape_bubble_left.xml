@@ -7,10 +7,10 @@
     <corners android:bottomLeftRadius="35dp"
              android:topRightRadius="35dp"
              android:bottomRightRadius="35dp"/>
-    <gradient android:angle="45"
-              android:centerColor="@color/md_brown_50"
-              android:endColor="@color/ivory"
-              android:startColor="@color/ivory_dark"
+    <gradient android:angle="225"
+              android:endColor="#FFEFBA"
+              android:centerColor="#F8E3B4"
+              android:startColor="#FAE3E3"
               />
 
 

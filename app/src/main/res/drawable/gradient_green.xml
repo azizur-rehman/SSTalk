@@ -4,10 +4,9 @@
         xmlns:android="http://schemas.android.com/apk/res/android">
 
     <solid android:color="@color/colorPrimary"/>
-    <gradient android:angle="45"
-              android:centerColor="@color/md_green_200"
-              android:endColor="@color/md_green_300"
-              android:startColor="@color/colorAccent"
+    <gradient android:angle="135"
+              android:endColor="#00b09b"
+              android:startColor="#96c93d"
               />
 
     <padding android:bottom="2dp"

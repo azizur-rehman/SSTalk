@@ -77,16 +77,17 @@
                 />
 
 
-                <TextView
+                <androidx.emoji.widget.EmojiTextView
                         android:layout_width="wrap_content"
                         android:layout_height="0dp"
                         android:layout_weight="1"
                         android:paddingTop="3dp"
                         android:paddingBottom="3dp"
+                        android:paddingRight="5dp"
                         android:textSize="16sp"
                         android:maxWidth="240dp"
                         android:autoLink="all"
-                        android:text="Hii"
+                        android:text="@string/large_text"
                         android:textColor="@color/black"
                          android:id="@+id/messageText_left"
                 />
@@ -96,6 +97,7 @@
                         android:layout_height="wrap_content"
                         android:text="12:10 PM"
                         android:paddingTop="2dp"
+                        android:paddingBottom="2dp"
                         android:layout_gravity="end"
                         android:textSize="10sp"
                         android:paddingRight="10dp"

@@ -7,10 +7,12 @@
     <corners android:bottomLeftRadius="35dp"
              android:topRightRadius="35dp"
              android:topLeftRadius="35dp"/>
-    <gradient android:angle="45"
-              android:centerColor="@color/bubble_right_center"
-              android:endColor="@color/bubble_right_top"
-              android:startColor="@color/bubble_right_bottom"
+
+
+    <gradient android:gradientRadius="225"
+              android:type="radial"
+              android:endColor="@color/colorPrimary"
+              android:startColor="#2EC767"
               />
 
 
