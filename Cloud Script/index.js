@@ -1,280 +1,373 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
-const phoneRegEx = require('phone-regex');
-admin.initializeApp();
+admin.initializeApp()
+const NODE_TOKEN = 'FCM_Tokens';
+const test_user_ID = 'Q7raoE5Jw7gWdx1JsxSbNd1kBgs1'; //emulator
 
-const info_vehicle = 'info_vehicle';
+const  FILE_TYPE_IMAGE = "image"
+const  FILE_TYPE_LOCATION = "location"
+const  FILE_TYPE_VIDEO = "video"
+
+const MESSAGE_SEPERATOR = "<--MESSAGE_SEPERATOR-->";
 
 // // Create and Deploy Your First Cloud Functions
 // // https://firebase.google.com/docs/functions/write-firebase-functions
 //
-// exports.helloWorld = functions.https.onRequest((request, response) => {
-//  response.send("Hello from Firebase!");
-// });
+ exports.testNotification = functions.https.onRequest((request, response) => {
+  response.send("Hello from Firebase!");
 
-const actionCodeSettings = {
-  // URL you want to redirect back to. The domain (www.example.com) for
-  // this URL must be whitelisted in the Firebase Console.
-  iOS: {
-    bundleId: 'com.example.ios'
-  },
-  android: {
-    packageName: 'com.mimansaa.trackmychild',
-    installApp: true,
-    minimumVersion: '16'
-  }
-};
-
-exports.testHTTPFunction = functions.https.onRequest((req, res) => {
-
-  var actionCodeSettings = {
-    url: 'https://www.example.com/cart?email=user@example.com&cartId=123',
-    iOS: {
-      bundleId: 'com.example.ios'
+  const payload = {
+    notification: {
+        title: 'Test notification',
+        body: 'Test content',
+        sound: "default",
+        priority:"high",
     },
-    android: {
-      packageName: 'com.example.android',
-      installApp: true,
-      minimumVersion: '12'
-    },
-    handleCodeInApp: true,
-    dynamicLinkDomain: 'custom.page.link'
-  };
-
-  admin.auth()
-    .generateEmailVerificationLink('azizur.rehman007@gmail.com', actionCodeSettings)
-    .then(function(link) {
-      // The link was successfully generated.
-      console.log('Verificatio mail sent')
-      return res.status(200).send(link)
-    })
-    .catch(function(error) {
-      // Some error occurred, you can inspect the code: error.code
-      console.log('Mail not sent')
-      return res.status(400).send(error)
-
-    });
-});                    
-
-exports.testHTTPFunction2 = functions.https.onRequest((req, res) => {
-                     // sdd = space, dot, or dash
-   // var pattern =  "(\\+[0-9]+[\\- \\.]*)?(\\([0-9]+\\)[\\- \\.]*)?([0-9][0-9\\- \\.]+[0-9])"
-    var phone = req.body.phone
-    //var regex = new RegExp(pattern)
-    
-   var isValid = isPhoneValid(phone)
-  res.status(200).json(phone + ' is valid = '+isValid)
-
-});
-
-exports.createUser = functions.https.onRequest((request, response) => {
-
-    var body = request.body.text
-    var email = request.body.email
-    var password = request.body.password
-    var displayName = request.body.name
-    var phone = request.body.phone
-    var isEmailVerified = request.body.isEmailVerified === '1'
-
-
-    console.log('----- Creating user ------')
-    console.log(JSON.stringify(request.body))
-
-    admin.auth().createUser({
-        email: email,
-        phoneNumber:phone,
-        emailVerified: isEmailVerified,
-        password: password,
-        displayName: displayName,
-        disabled: false
-      }).then(function(user) {
-  
-       // if(!isEmailVerified)
-         // admin.auth().sendVerificationEmail()
-
-        return response.set('Access-Control-Allow-Origin', '*').status(200).send(JSON.stringify(user))
-      })
-      .catch(function(error){
-        console.log(error)
-        return response.set('Access-Control-Allow-Origin', '*').status(400).send(JSON.stringify(error))
-      })
-
-
-});
-
-exports.updateUserEmail =  functions.https.onRequest((request, response) => {
-  console.log('----- Updating user email ----')
-
-
-  var uid = request.body.uid
-  var emailID = request.body.email
-
-
-  if(uid === undefined){
-    return response.set('Access-Control-Allow-Origin', '*').status(401).send(JSON.stringify({error : 'UID Missing'}))
-  }
-
-
-
-  console.log('uid = '+uid +', email = '+emailID)
-
-
-  admin.auth().updateUser(uid, {
-    email : emailID,
-    emailVerified: false
-  })
-  .then(user => {
-    admin.database().ref('all_users').child(uid).child('email').set(emailID)
-    return response.set('Access-Control-Allow-Origin', '*').status(200).send(JSON.stringify(user))
-  })
-  .catch(err => {
-    return response.set('Access-Control-Allow-Origin', '*').status(400).send(JSON.stringify({error : err}))
-  })
-
-
-});
-
-
-
-exports.updateUserPhone =  functions.https.onRequest((request, response) => {
-
-
-  console.log('----- Updating user phone ----')
-
-  var uid = request.body.uid
-  var phone = request.body.phone
-
-
-  if(uid === undefined){
-    return response.set('Access-Control-Allow-Origin', '*').status(401).json({
-      error : 'UID Missing'
-    })
-  }
-
-
-  console.log('uid = '+uid +', email = '+phone)
-
-  admin.auth().updateUser(uid, {
-    phoneNumber : phone
-  })
-  .then(user => {
-    admin.database().ref('all_users').child(uid).child('phone').set(phone)
-    return response.set('Access-Control-Allow-Origin', '*').status(200).json({user})
-  })
-  .catch(err => {
-    return response.set('Access-Control-Allow-Origin', '*').status(400).json({
-      error : err
-    })
-  })
-
-
-});
-
-
-
-exports.updateUserDetail =  functions.https.onRequest((request, response) => {
-  var UserUID = request.body.uid
-  var phone = request.body.phone
-  var email = request.body.email
-  var displayName = request.body.name
-
-  var authProperty;
-
-  console.log('----- Updating user detail ----')
-  console.log('uid = '+UserUID +', email = '+email)
-  console.log('phone = '+phone +', displayName = '+displayName)
-
-
-
-  if(UserUID === undefined)
-    return response.set('Access-Control-Allow-Origin', '*').status(400).send(JSON.stringify({error : "UID missing"}))
-  
-
-    // for both email and phone
-  if(email !== undefined && phone !== undefined){
-    authProperty = {
-      phoneNumber : phone,
-      email : email,
-      displayName : displayName
+    data : {
+        'target' : 'notificationTab'
     }
+    
   }
 
-  //for phone only
-  else if(phone!==undefined)
-   authProperty = {
-    phoneNumber : phone,
-    displayName : displayName
-  }
+  sendNotificationPayload(test_user_ID, payload)
 
-  // for email only
-  else if(email!==undefined)
-   authProperty = {
-    email : email,
-    displayName : displayName
-  }
+ });
 
 
-  admin.auth().updateUser(UserUID, authProperty).then(function(user){
-    return response.set('Access-Control-Allow-Origin', '*').status(200).send(JSON.stringify(user))
-  })
-  .catch(function(error){
-    console.log('error in updating phone = '+error)
-    return response.set('Access-Control-Allow-Origin', '*').status(400).send(JSON.stringify(error))
-  })
+ //just a test function
+exports.testHTTPFunction = functions.https.onRequest((request, response) => {
+    response.send('Test HTTP function to check other functions')
+
+    deleteOldImageFiles()
+});
+
+
+exports.triggerMessage = functions.database.ref('Message_Status/{UID}/{targetUID}/{messageID}/')
+.onCreate((snapshot, context) => {
+
+    var myUID = context.params.UID;
+    var sender_uid = context.params.targetUID;
+    var message_id = context.params.messageID;
+
+   
+    var from = snapshot.child('from').val();
+    var isRead = snapshot.child('read').val();
+    var senderPhone = snapshot.child('senderPhoneNumber').val();
+
+
+    if(from === myUID || isRead === true)
+        return false;
+
+
+        //sender_uid -> myUID
+        //message is sent to myUID from sender_uid
+
+
+
+        console.log('--- Message from ---- '+sender_uid)
+    
+        console.log('my uid = '+myUID)
+    
+        var index = 0;
+        var messages = '';
+
+        var isNotificationSent = false;
+
+        var isMuted = false
+
+
+       return admin.database().ref('Mute_Notification')
+        .child(myUID).child(sender_uid)
+        .once('value', muteSnapshot => {
+            if(muteSnapshot.exists()){
+                if(muteSnapshot.child('enabled').val())
+                    isMuted = true
+            }
+
+
+            return admin.database()
+            .ref('Message_Status').child(myUID).child(sender_uid)
+            .orderByChild('read').equalTo(false)
+            .once('value', statusSnapshot => {
+                var totalMessages = statusSnapshot.numChildren()
+                var msgIDs = []
+        
+        
+                console.log('total unread messages '+totalMessages)
+        
+                statusSnapshot.forEach(msg=>{
+                    msgIDs.push(msg.key.toString())
+        
+                
+                    if(isMuted){
+                        //no need to fetch messages
+                        return;
+                    }
+        
+                    admin.database().ref('Messages')
+                    .child(myUID)
+                    .child(sender_uid)
+                    .child(msg.key.toString())
+                    .once('value', messageSnapshot => {
+                        var type = messageSnapshot.child('messageType').val();
+                        
+
+                        var messageText = '';
+        
+                        if(type === FILE_TYPE_IMAGE){
+                            messageText = '🖼 Image';
+                        }
+                        else if(type === FILE_TYPE_LOCATION){
+                            messageText = '📌 Location';
+                        }
+        
+                        else if(type === FILE_TYPE_VIDEO){
+                            messageText = '🎥 Video';
+                        }
+                        else{
+                            messageText = messageSnapshot.child('message').val();
+                        }
+        
+                        //<-->
+                        if(index <= 10)
+                        messages = messages + messageText + MESSAGE_SEPERATOR;
+        
+                        if(index === totalMessages - 1){
+        
+                            console.log('Messages = '+messages);
+
+                            var groupNameIfAny = msg.child('groupNameIfGroup').val()
+                            console.log('Group name if any - '+groupNameIfAny)
+        
+        
+
+                            if(groupNameIfAny === null)
+                                groupNameIfAny = ''
+          
+                            const payload = {
+                                data : {
+                                    'unreadCount':totalMessages.toString(),
+                                    'senderUID' : sender_uid,
+                                    'receiverUID':myUID,
+                                    'messageIDs': msgIDs.toString(),
+                                    'senderPhoneNumber' :  senderPhone,
+                                    'messages': messages,
+                                    'groupNameIfAny':groupNameIfAny
+                                }
+                              }
+                    
+                              sendNotificationPayload(myUID, payload);
+                        }
+        
+        
+                    index++;
+        
+                    })
+        
+        
+                })
+
+                if(isMuted){
+                    //sending mute notification with messageIDs in payload
+                    const payload = {
+                        data : {
+                            'unreadCount':totalMessages.toString(),
+                            'senderUID' : from,
+                            'receiverUID':myUID,
+                            'messageIDs': msgIDs.toString(),
+                            'senderPhoneNumber' :  senderPhone
+                        }
+                      }
+            
+                      sendNotificationPayload(myUID, payload);
+                }
+        
+            })
+
+        })
+
+    
+  
+
+
+
+})
+
+
+exports.onNewFileUploaded = functions.storage.object().onFinalize(object => {
+
+    var timeCreated = object.timeCreated
+    var name = object.name
+
+
+  
+
+    console.log('---- FIle uploaded ----')
+
+    console.log('Time = '+timeCreated)
+    console.log('Name = '+name)
+
+    cleanOldFiles();
+
+});
+
+exports.updateLastMessageNodeOnMessageDelete = functions.database.ref('Messages/{UID}/{targetUID}/{messageID}/')
+.onDelete((snapshot, context) => {
+
+    var myUID = context.params.UID;
+    var target_uid = context.params.targetUID;
+    var message_id = context.params.messageID;
+
+    admin.database()
+    .ref('Messages').child(myUID).child(target_uid)
+    .once('value', msgSnapshot => {
+
+        var timeInMillis = 0
+        msgSnapshot.forEach(msg=>{
+            timeInMillis = msg.child('timeInMillis').val()
+        })
+
+        if(timeInMillis !== 0){
+            admin.database().ref('LastMessage').child(myUID).child(target_uid)
+            .child('timeInMillis').set(timeInMillis)
+            admin.database().ref('LastMessage').child(myUID).child(target_uid)
+            .child('reverseTimeStamp').set(timeInMillis * -1)
+            
+        }
+    })
+})
+
+
+//just a test function
+exports.testHTTPFunction = functions.https.onRequest((request, response) => {
+    response.send('Test HTTP function to check other functions')
+
+    cleanOldFiles()
+});
+
+
+exports.onAppVersionUpdated = functions.database.ref('App_Version_Code').onWrite((snapshot, context) =>{
+    var previousVersion = parseInt(snapshot.before.val())
+    var newVersion = parseInt(snapshot.after.val())
+    
+
+    if(newVersion > previousVersion){
+
+        console.log('Version Updated : '+previousVersion + ' -> '+newVersion)
+
+        const payload = {
+            notification : {
+                title : 'SS Talk just got updated',
+                body : 'A new update is available with lots of awesome features'
+            }
+        }
+
+       return admin.messaging()
+        //fZ6lFJyzvZs:APA91bH2ofK5mamu9vQHMO_PUbYGS8v7Ms4Exm2zHi7PrBVwYPV66ELRdrHQJfdxNwUCf8fRdtkVavsQVBinJWvz8EUywO13v27U2dIwewp9jpo8QdDrmeJadz-nmtTI--46FqYhQUsl
+       // .sendToDevice('fZ6lFJyzvZs:APA91bH2ofK5mamu9vQHMO_PUbYGS8v7Ms4Exm2zHi7PrBVwYPV66ELRdrHQJfdxNwUCf8fRdtkVavsQVBinJWvz8EUywO13v27U2dIwewp9jpo8QdDrmeJadz-nmtTI--46FqYhQUsl',payload)
+        .send(payload)
+        .then(success => {
+            return console.log('Notified users for new update')
+            })
+            .catch(error => {
+               return console.log('Failed to send update notification = '+JSON.stringify(error)) 
+            })
+        
+    }
 
 });
 
 
-exports.onChildAssigned = functions.database.ref('vehicle_assigned_child/{vehicle_id}/')
-.onWrite((snapshot, context) => {
+function sendNotificationPayload(uid, payload){
 
-  const vehicleID = context.params.vehicle_id
+    console.log('Sending notification to ---> '+uid)
 
-  admin.database().ref('vehicle_assigned_child')
-  .child(vehicleID)
-  .once('value', datasnapshot => {
-    const count = datasnapshot.numChildren()
-    return snapshot.ref.child('occupied_seats').set(count)
-  })
+    admin.database()
+    .ref(NODE_TOKEN).child(uid)
+    .once('value', snapshot=> {
+        
+        var tokens = []
 
-});
+        if(!snapshot.exists())
+            return
 
-function isPhoneValid(phone){
-  return phoneRegEx({exact:true}).test(phone)
+        snapshot.forEach(item =>{
+            tokens.push(item.val())
+        });
+
+
+        admin.messaging()
+        .sendToDevice(tokens, payload)
+        .then(res => {
+            return console.log('Notification sent')
+        })
+        .catch(err => {
+            return console.log('Error in sending notification = '+err)
+        })
+
+    })
+
 }
 
 
-exports.onChildInfoChanged = functions.database.ref('info_child/{child_id}/')
-.onUpdate((snapshot, context) => {
-  const oldVehicleID =  snapshot.before.child('currentVehicleID').val()
-  const newVehicleID =  snapshot.after.child('currentVehicleID').val()
-  
-  console.log(JSON.stringify(snapshot.before.val()) + ' was changed' )
+function cleanOldFiles(){
+  //delete old files
+    console.log('--- Cleaning old files ----')
 
-  // Vehicle assigned for the first time
-  if(oldVehicleID === '' && newVehicleID !== ''){
-    const parentUID = snapshot.before.child('parentUID').val()
-    const childID = snapshot.before.child('id').val()
+  //getting currentTime in millis
+  var currentTime  = new Date().getTime()
 
-    if(parentUID !== '' && childID !== ''){
-      const subscription = Date.now() + (30 * 24 * 60 * 60 * 1000)
-      admin.database().ref('parent_child').child(parentUID).child(childID).child('subscriptionEnd')
-        .set(subscription).then(success => {
-          return console.log('Vehicle has been assigned and 30 days free subscription has been awarded')
-        })
-        .catch(error => {
-          var err = JSON.stringify(error)
-          return console.log(JSON.stringify({message : 'Something went wrong while assigning free subscription',
-          data : 'parent uid = '+parentUID+', childID = '+childID,
-          error: err
-        }))
-        })
-    }
-    else{
-      return console.log('Detail missing, parent uid = '+parentUID+', childID = '+childID )
-    }
+  var dayLimit = 30  //30 days
 
-  }
+  var endLimit = currentTime - (dayLimit
+     * 24
+     * 60 
+     * 60 * 1000)
+
+
+  //fetching files stored before given limit
+  admin.database()
+  .ref('Files')
+  .orderByChild('uploadTime')
+  .endAt(endLimit)
+  .once('value', fileSnapshot => {
+      console.log('---> total files to delete = '+fileSnapshot.numChildren())
+      fileSnapshot.forEach(file => {
+          var fileID = file.child('fileID').val()
+          var fileType = file.child('fileType').val()
+          var bucket = file.child('bucket_path').val()
+          var fileExtension = file.child('file_extension').val()
+
+        deleteFile(bucket, fileID, fileType, fileExtension)
+      })
+  })
+
+}
+
+
+function deleteFile(bucket, fileID, fileType, fileExtension){
+
+
+    console.log('File to delete = '+fileType+'/'+fileID +fileExtension)
+   var storage =  admin.storage()
+
+    storage
+    .bucket(bucket)
+    .file(fileType+'/'+fileID)
+    //+ fileExtension)
+    .delete()
+    .then(() => {
+
+        admin.database()
+        .ref('Files').child(fileID)
+        .remove()   
+
+       return console.log('file deleted with id - '+fileID)
+    })
+    .catch(err => {
+        return console.log('Error in deletion : '+err.toString())
+    })
+
     
+}
 
-});
