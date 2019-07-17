@@ -16,8 +16,8 @@ android {
         applicationId "com.aziz.sstalk"
         minSdkVersion 16
         targetSdkVersion 28
-        versionCode 3
-        versionName "1.0.3"
+        versionCode 4
+        versionName "1.0.4"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled true
     }

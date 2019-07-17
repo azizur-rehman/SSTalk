@@ -308,7 +308,25 @@ class MessageActivity : AppCompatActivity() {
 
 
 
-        checkIfBlocked(targetUid)
+        smart_reply_layout.visibility = View.GONE
+        checkIfBlocked(targetUid){
+
+            if(isBlockedByUser || isBlockedByMe) {
+                messageInputField.visibility = View.INVISIBLE
+                smart_reply_layout.visibility = View.GONE
+                blockedSnackbar?.show()
+
+            }
+            else {
+                messageInputField.visibility = View.VISIBLE
+                smart_reply_layout.visibility = View.VISIBLE
+                blockedSnackbar?.dismiss()
+                bindSmartReply()
+
+            }
+            invalidateOptionsMenu()
+
+        }
 
         setMenuListeners()
 
@@ -336,7 +354,6 @@ class MessageActivity : AppCompatActivity() {
         }
 
 
-        bindSmartReply()
     }
 
 
@@ -1122,6 +1139,7 @@ class MessageActivity : AppCompatActivity() {
 
 
 
+                messageTextView?.let { it.setLinkTextColor(Color.BLUE) }
 
                 val emojiProcessed = EmojiCompat.get().process(messageTextView!!.text)
                 messageTextView.text = emojiProcessed
@@ -1876,7 +1894,7 @@ class MessageActivity : AppCompatActivity() {
 
     var blockedSnackbar: Snackbar? = null
 
-    private fun checkIfBlocked(targetUID:String) {
+    private fun checkIfBlocked(targetUID:String, onChecked:()->Unit) {
 
 
 
@@ -1890,18 +1908,8 @@ class MessageActivity : AppCompatActivity() {
                     else
                         false
 
+                    onChecked.invoke()
 
-                    if(isBlockedByUser || isBlockedByMe) {
-                        messageInputField.visibility = View.INVISIBLE
-                        blockedSnackbar!!.show()
-                    }
-                    else {
-                        messageInputField.visibility = View.VISIBLE
-                        blockedSnackbar!!.dismiss()
-                    }
-
-
-                    invalidateOptionsMenu()
 
                 }
 
@@ -1920,15 +1928,9 @@ class MessageActivity : AppCompatActivity() {
                     else
                         false
 
+                    onChecked.invoke()
 
-                    if(isBlockedByUser || isBlockedByMe) {
-                        messageInputField.visibility = View.INVISIBLE
-                        blockedSnackbar!!.show()
-                    }
-                    else {
-                        messageInputField.visibility = View.VISIBLE
-                        blockedSnackbar!!.dismiss()
-                    }
+
                 }
 
                 override fun onCancelled(databaseError: DatabaseError) {
@@ -2887,6 +2889,9 @@ class MessageActivity : AppCompatActivity() {
 
     private fun bindSmartReply(){
 
+
+        smart_reply_layout.visibility = View.GONE
+
         FirebaseUtils.ref.getChatRef(myUID, targetUid)
             .addValueEventListener(object : ValueEventListener{
                 override fun onCancelled(p0: DatabaseError) {}
@@ -2914,10 +2919,6 @@ class MessageActivity : AppCompatActivity() {
                         }
                     }
 
-
-//                    smart_reply_recycler.visibility = if(isLastMessageMine)  View.GONE else View.VISIBLE
-
-
                     //generate smart reply
                     try {
 
@@ -2940,7 +2941,7 @@ class MessageActivity : AppCompatActivity() {
                                     }
                                 }
 
-                                smart_reply_setting.visibility = if(it.suggestions.isNotEmpty()) View.VISIBLE else View.GONE
+                                smart_reply_layout.visibility = if(it.suggestions.isNotEmpty()) View.VISIBLE else View.GONE
 
 
                                 smart_reply_recycler.adapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>(){

@@ -77,6 +77,8 @@ class FragmentOnlineFriends : Fragment() {
 
 
                     val onlineUsers = mutableListOf<Models.Contact>()
+
+
                     registeredAvailableUser.forEachWithIndex { _, it ->
                         FirebaseUtils.ref.userStatus(it.uid)
                         .addValueEventListener(object : ValueEventListener {

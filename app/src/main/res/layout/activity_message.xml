@@ -100,6 +100,7 @@
 
               <LinearLayout android:layout_width="match_parent"
                          android:orientation="horizontal"
+                            android:id="@+id/smart_reply_layout"
                          android:gravity="center_vertical"
                             android:background="@color/white"
                          android:layout_height="wrap_content">
@@ -115,7 +116,6 @@
                             android:layout_marginEnd="10dp"
                             android:layout_height="20dp"
                             android:tint="@color/dark_gray"
-                            android:visibility="gone"
                             android:id="@+id/smart_reply_setting"
                             android:src="@drawable/ic_setting_flat_black"
                             android:layout_marginLeft="10dp"/>
