@@ -20,12 +20,15 @@ https://play.google.com/store/apps/details?id=com.aziz.sstalk
 -  Blocking feature
 -  Phone signing with OTP verification
 
-## Cloud Functions
--  Push Notification
+<br />
+
+### Cloud Functions
+-  Notification Trigger
 -  Node updation on message deletion
 -  Auto cleanup of old files
 -  App Version Update trigger
-
+<br />
+<br />
 
 ### Screenshots:
 
