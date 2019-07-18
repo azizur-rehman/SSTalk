@@ -4,7 +4,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.location.Address
 import android.location.Geocoder
-import android.support.v7.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import com.aziz.sstalk.utils.utils
 import com.google.android.gms.location.LocationServices
@@ -59,18 +59,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             .lastLocation
             .addOnCompleteListener {
                 if(it.isSuccessful) {
-                    if (it != null) {
-                        try {
-                            val latLng = LatLng(it.result!!.latitude, it.result!!.longitude)
+                    try {
+                        val latLng = LatLng(it.result!!.latitude, it.result!!.longitude)
 
+                        loadLocation(latLng)
+
+                        current_location_btn.setOnClickListener {
                             loadLocation(latLng)
-
-                            current_location_btn.setOnClickListener {
-                                loadLocation(latLng)
-                            }
                         }
-                        catch (e:Exception){ utils.toast(this@MapsActivity,"Failed to load current location")}
                     }
+                    catch (e:Exception){ utils.toast(this@MapsActivity,"Failed to load current location")}
                 }
             }
 

@@ -5,17 +5,19 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.support.design.widget.NavigationView
-import android.support.v4.view.GravityCompat
-import android.support.v7.app.ActionBarDrawerToggle
-import android.support.v7.app.AlertDialog
-import android.support.v7.app.AppCompatActivity
-import android.support.v7.view.ActionMode
-import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.RecyclerView
+import com.google.android.material.navigation.NavigationView
+import androidx.core.view.GravityCompat
+import androidx.appcompat.app.ActionBarDrawerToggle
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.view.ActionMode
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import android.util.Log
 import android.view.*
 import android.widget.TextView
+import androidx.core.content.ContextCompat
+import com.aurelhubert.ahbottomnavigation.AHBottomNavigationItem
 import com.aziz.sstalk.fragments.FragmentOnlineFriends
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.FirebaseUtils
@@ -31,15 +33,16 @@ import de.hdodenhof.circleimageview.CircleImageView
 import kotlinx.android.synthetic.main.activity_home.*
 import kotlinx.android.synthetic.main.app_bar_home.*
 import kotlinx.android.synthetic.main.content_home.*
+import kotlinx.android.synthetic.main.content_home.recycler_back_message
 import kotlinx.android.synthetic.main.item_conversation_layout.view.*
+import kotlinx.android.synthetic.main.layout_menu_badge.view.*
 import kotlinx.android.synthetic.main.layout_recycler_view.*
-import org.jetbrains.anko.activityUiThread
-import org.jetbrains.anko.doAsyncResult
-import org.jetbrains.anko.onComplete
-import org.jetbrains.anko.uiThread
+import org.jetbrains.anko.*
+import org.jetbrains.anko.design.indefiniteSnackbar
+import org.jetbrains.anko.design.longSnackbar
 import java.lang.Exception
-import java.util.*
 import java.util.concurrent.Future
+import kotlin.collections.ArrayList
 
 class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
@@ -48,10 +51,12 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     var hasPermission:Boolean = false
     val id = R.drawable.contact_placeholder
     var isAnyMuted = false
+    var unreadConversation = 0
 
     lateinit var adapter:FirebaseRecyclerAdapter<Models.LastMessageDetail, ViewHolder>
 
     val selectedItemPosition:MutableList<Int> = ArrayList()
+    val selectedRecipients:MutableList<String> = ArrayList()
 
     var actionMode:ActionMode? = null
 
@@ -66,11 +71,11 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         setSupportActionBar(toolbar)
 
 
-//        if(!FirebaseUtils.isLoggedIn()){
-//            startActivity(Intent(context, SplashActivity::class.java))
-//            finish()
-//            return
-//        }
+        if(!FirebaseUtils.isLoggedIn()){
+            startActivity(Intent(context, SplashActivity::class.java))
+            finish()
+            return
+        }
 
         //storing firebase token, if updated
         FirebaseUtils.updateFCMToken()
@@ -157,6 +162,14 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 if(hasPermission && utils.hasStoragePermission(context))
                     //reset the adapter
                     setAdapter()
+                else{
+                    show_contacts.indefiniteSnackbar("Permission not granted. Please grant necessary permissions to continue", "Grant"){
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                            requestPermissions(arrayOf(Manifest.permission.READ_CONTACTS, Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                                Manifest.permission.READ_EXTERNAL_STORAGE), 101)
+                        }
+                    }
+                }
             }
         }
 
@@ -172,7 +185,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 supportFragmentManager.beginTransaction()
                     .remove(fragmentOnline)
                     .commit()
-                home_bottom_nav.menu.findItem(R.id.nav_action_inbox).isChecked = true
+                bottom_navigation_home.setCurrentItem(0, false)
                 isOnlineFragmentLoaded = false
             }
             else -> super.onBackPressed()
@@ -214,9 +227,20 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private fun setAdapter(){
 
+        conversation_progressbar.visibility = View.VISIBLE
+
+        with(conversationRecycler){
+            setHasFixedSize(true)
+            setItemViewCacheSize(20)
+            setDrawingCacheEnabled(true)
+            setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH)
+        }
+
+
+        val reference = FirebaseUtils.ref.lastMessage(FirebaseUtils.getUid())
+            .orderByChild(FirebaseUtils.KEY_REVERSE_TIMESTAMP)
         val options = FirebaseRecyclerOptions.Builder<Models.LastMessageDetail>()
-            .setQuery(FirebaseUtils.ref.lastMessage(FirebaseUtils.getUid())
-                .orderByChild(FirebaseUtils.KEY_REVERSE_TIMESTAMP),Models.LastMessageDetail::class.java)
+            .setQuery(reference ,Models.LastMessageDetail::class.java)
             .build()
 
          adapter = object : FirebaseRecyclerAdapter<Models.LastMessageDetail, ViewHolder>(options){
@@ -228,7 +252,11 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
                 if(model.type == FirebaseUtils.KEY_CONVERSATION_GROUP) {
                     holder.name.text = model.nameOrNumber.trim()
+
+
                     FirebaseUtils.loadGroupPic(context, uid, holder.pic)
+
+
                     if(holder.name.text.isEmpty() || utils.isGroupID(holder.name.text.toString()))
                         FirebaseUtils.setGroupName(uid, holder.name)
 
@@ -272,11 +300,13 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                             holder.checkbox.visibility = View.VISIBLE
                             holder.checkbox.isChecked = true
                             selectedItemPosition.add(position)
+                            selectedRecipients.add(uid)
                         }
                         else{
                             holder.checkbox.visibility = View.INVISIBLE
                             holder.checkbox.isChecked = false
                             selectedItemPosition.remove(position)
+                            selectedRecipients.remove(uid)
                         }
 
                         if(selectedItemPosition.size==2)
@@ -314,6 +344,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     if(!selectedItemPosition.contains(position))
                     {
                         selectedItemPosition.add(position)
+                        selectedRecipients.add(uid)
                     }
 
 
@@ -370,6 +401,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                                 adapter.notifyItemChanged(pos)
 
                             selectedItemPosition.clear()
+                            selectedRecipients.clear()
                             isAnyMuted = false
 
                         }
@@ -388,14 +420,47 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
 
 
-        FirebaseUtils.ref.lastMessage(FirebaseUtils.getUid())
-            .orderByChild(FirebaseUtils.KEY_REVERSE_TIMESTAMP)
-            .addListenerForSingleValueEvent(object : ValueEventListener {
+
+        val unreadConversations:MutableList<String> = ArrayList()
+
+        recycler_back_message.setOnClickListener { startActivity(intentFor<ContactsActivity>()) }
+
+        reference.addValueEventListener(object : ValueEventListener {
                 override fun onCancelled(p0: DatabaseError) {
                 }
 
                 override fun onDataChange(p0: DataSnapshot) {
+
                     conversation_progressbar.visibility = View.GONE
+
+                    p0.children.forEach {
+                        val uid = it.key?:""
+
+                        FirebaseUtils.ref.allMessageStatus(FirebaseUtils.getUid(), uid)
+                            .orderByChild("read").equalTo(false)
+                            .addValueEventListener(object : ValueEventListener{
+                                override fun onDataChange(p0: DataSnapshot) {
+                                    if(p0.childrenCount > 0 ) {
+                                        if(!unreadConversations.contains(uid) && uid.isNotEmpty())
+                                            unreadConversations.add(uid)
+                                    }
+                                    else unreadConversations.remove(uid)
+
+                                    bottom_navigation_home.setNotification(unreadConversations.size.toString().takeIf { unreadConversations.size > 0 }?:"", 0)
+
+                                }
+
+                                override fun onCancelled(p0: DatabaseError) {}
+                            })
+                    }
+
+                    if(p0.exists()){
+                        recycler_back_message.visibility = View.GONE
+                    }
+                    else
+                        recycler_back_message.visibility = View.VISIBLE
+
+
                 }
             })
 
@@ -411,7 +476,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 super.onChanged()
 
                 if(adapter.itemCount > 0){
-                    recyclerView.smoothScrollToPosition(0)
+                    recyclerView.scrollToPosition(0)
                 }
             }
         })
@@ -434,6 +499,10 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         val checkbox = itemView.contact_checkbox!!
         val deliveryTick = itemView.delivery_status_last_msg!!
         val muteIcon = itemView.conversation_mute_icon!!
+
+        init {
+            onlineStatus.visibility = View.GONE
+        }
 
     }
 
@@ -537,46 +606,50 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private fun setBottomNavigationView(){
 
+
+
         title = "Recent"
 
-        home_bottom_nav.setOnNavigationItemSelectedListener {
-            when(it.itemId){
-                R.id.nav_action_inbox -> {
-                    title = "Recent"
-                    supportFragmentManager.beginTransaction()
-                        .remove( fragmentOnline)
-                        .commit()
-                    isOnlineFragmentLoaded = false
+
+        with(bottom_navigation_home){
+            addItem(AHBottomNavigationItem("Recent", R.drawable.ic_chat))
+            addItem(AHBottomNavigationItem("Online", R.drawable.ic_person_outlined))
+            accentColor = ContextCompat.getColor(context, R.color.colorPrimary)
+
+            setUseElevation(true)
+            setOnTabSelectedListener { position, wasSelected ->
+                when(position){
+                    0 ->  {
+                        title = "Recent"
+                        supportFragmentManager.beginTransaction()
+                            .remove( fragmentOnline)
+                            .commit()
+                        isOnlineFragmentLoaded = false
+                    }
+
+                    1 -> {
+                        supportFragmentManager.beginTransaction()
+                            .replace(R.id.homeLayoutContainer, fragmentOnline)
+                            .commit()
+                        isOnlineFragmentLoaded = true
+                        title = "Online contacts"
+                    }
                 }
 
-                R.id.nav_action_online -> {
-                    supportFragmentManager.beginTransaction()
-                        .replace(R.id.homeLayoutContainer, fragmentOnline)
-                        .commit()
-                    isOnlineFragmentLoaded = true
-                    title = "Online contacts"
-
-                }
+                return@setOnTabSelectedListener true
             }
 
-            return@setOnNavigationItemSelectedListener true
         }
+
+
 
 
     }
 
 
     fun setOnlineCount(count:Int) {
-
-
         try {
-            home_bottom_nav.menu.findItem(R.id.nav_action_online)
-                .title = "Online($count)"
-            if(count == 0)
-                home_bottom_nav.menu.findItem(R.id.nav_action_online)
-                    .title = "Online"
-
-
+            bottom_navigation_home.setNotification(count.toString().takeIf { count > 0 }?:"", 1)
         }
         catch (e:Exception){}
     }

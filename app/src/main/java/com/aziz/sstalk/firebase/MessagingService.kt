@@ -9,10 +9,10 @@ import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.os.Build
-import android.support.v4.app.NotificationCompat
-import android.support.v4.app.Person
-import android.support.v4.content.ContextCompat
-import android.support.v4.graphics.drawable.IconCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.app.Person
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.IconCompat
 import android.util.Log
 import com.aziz.sstalk.HomeActivity
 import com.aziz.sstalk.MessageActivity

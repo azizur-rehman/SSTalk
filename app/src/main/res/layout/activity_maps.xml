@@ -35,7 +35,7 @@
                   android:id="@+id/enable_address_checkbox"
                   android:layout_height="match_parent"/>
 
-          <android.support.design.widget.FloatingActionButton
+          <com.google.android.material.floatingactionbutton.FloatingActionButton
                   app:backgroundTint="@color/gray"
                   android:id="@+id/current_location_btn"
                   android:src="@drawable/ic_location"

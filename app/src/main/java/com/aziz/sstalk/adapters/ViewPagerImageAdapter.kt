@@ -3,7 +3,7 @@ package com.aziz.sstalk.adapters
 import android.content.Intent
 import android.media.ThumbnailUtils
 import android.provider.MediaStore
-import android.support.v4.view.PagerAdapter
+import androidx.viewpager.widget.PagerAdapter
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater

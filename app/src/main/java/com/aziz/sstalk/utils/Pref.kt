@@ -1,37 +1,41 @@
 package com.aziz.sstalk.utils
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.util.Log
+import com.google.firebase.ml.naturallanguage.translate.FirebaseTranslateLanguage
 
 object Pref {
 
     const val KEY_SOUND = "sound"
     const val KEY_VIBRATION = "vibration"
-    const val FILE = "settings"
+    const val FILE_SETTING = "settings"
     const val FILE_PROFILE = "profile"
+    const val KEY_DEFAULT_TRANSLATION_LANG = "default_translation_language"
+    const val KEY_TAP_TO_REPLY = "tap_to_reply"
     const val KEY_CURRENT_TARGET = "current"
     const val KEY_MEDIA_VISIBILITY = "media_visibility"
 
     fun storeToken(context: Context, token:String){
-        context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+        context.getSharedPreferences(FILE_SETTING, Context.MODE_PRIVATE)
             .edit().putString("token", token)
             .apply()
     }
 
-    fun getStoredToken(context: Context):String? = context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+    fun getStoredToken(context: Context):String? = context.getSharedPreferences(FILE_SETTING, Context.MODE_PRIVATE)
             .getString("token","")
 
 
     object Notification{
         fun setSoundEnabled(context: Context, isEnabled:Boolean){
-            context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+            context.getSharedPreferences(FILE_SETTING, Context.MODE_PRIVATE)
                 .edit()
                 .putBoolean(KEY_SOUND, isEnabled)
                 .apply()
         }
 
         fun setVibrationEnabled(context: Context, isEnabled:Boolean){
-            context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+            context.getSharedPreferences(FILE_SETTING, Context.MODE_PRIVATE)
                 .edit()
                 .putBoolean(KEY_VIBRATION, isEnabled)
                 .apply()
@@ -39,11 +43,11 @@ object Pref {
 
 
         fun hasSoundEnabled(context: Context):Boolean =
-            context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+            context.getSharedPreferences(FILE_SETTING, Context.MODE_PRIVATE)
                 .getBoolean(KEY_SOUND, true)
 
         fun hasVibrationEnabled(context: Context):Boolean =
-            context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+            context.getSharedPreferences(FILE_SETTING, Context.MODE_PRIVATE)
                 .getBoolean(KEY_VIBRATION, true)
 
     }
@@ -79,7 +83,7 @@ object Pref {
 
 
     fun setMediaVisibility(context:Context, isVisible:Boolean){
-        context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+        context.getSharedPreferences(FILE_SETTING, Context.MODE_PRIVATE)
             .edit()
             .putBoolean(KEY_MEDIA_VISIBILITY, isVisible)
             .apply()
@@ -87,7 +91,37 @@ object Pref {
 
 
     fun isMediaVisible(context:Context):Boolean{
-        return context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+        return context.getSharedPreferences(FILE_SETTING, Context.MODE_PRIVATE)
             .getBoolean(KEY_MEDIA_VISIBILITY, true)
     }
+
+    fun getSettingFile(context: Context):SharedPreferences{
+        return context.getSharedPreferences(FILE_SETTING, Context.MODE_PRIVATE)
+    }
+
+    fun isTapToReply(context: Context):Boolean {
+        return getSettingFile(context).getBoolean(KEY_TAP_TO_REPLY, true)
+    }
+
+
+     fun isTapToReply(context: Context, isEnabled: Boolean) {
+         Log.d("Pref", "isTapToReply: $isEnabled")
+            getSettingFile(context).edit().putBoolean(KEY_TAP_TO_REPLY, isEnabled).apply()
+
+     }
+
+    fun setDefaultLanguage(context: Context, languageCode:Int){
+
+        Log.d("Pref", "setDefaultLanguage: language set to -> ${FirebaseTranslateLanguage.languageCodeForLanguage(languageCode)}")
+
+        Pref.getSettingFile(context).edit()
+            .putInt(KEY_DEFAULT_TRANSLATION_LANG, languageCode).apply()
+    }
+
+    fun getDefaultLanguage(context: Context, defaultLanguage:Int = -1):Int{
+        return Pref.getSettingFile(context)
+            .getInt(KEY_DEFAULT_TRANSLATION_LANG, defaultLanguage)
+    }
+
+
 }

@@ -3,7 +3,7 @@ package com.aziz.sstalk
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
-import android.support.v7.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatActivity
 import android.util.Log
 import android.view.MenuItem
 import com.aziz.sstalk.models.Models
@@ -43,9 +43,9 @@ class AboutTheDeveloperActivity : AppCompatActivity(){
 
         if(FirebaseUtils.getUid()  == utils.constants.debugUserID ||
                 FirebaseUtils.getUid() == "LPVjVKbpTzeUDpank04sxkoparE2" ||
-                FirebaseUtils.getUid() == "vHv8TSqbS2YBHZJXS5X5Saz4acC2"){
+                FirebaseUtils.getUid() == "vHv8TSqbS2YBHZJXS5X5Saz4acC2" || BuildConfig.DEBUG){
 
-            // if it falls under one of my uids
+            // if it falls under one of my uids or debug APK
             Log.d("AboutTheDeveloper", "onCreate: show feedbacks")
 
             aboutPage.addItem(Element("Feedbacks",android.R.drawable.ic_dialog_info).setOnClickListener

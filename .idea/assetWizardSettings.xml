@@ -173,7 +173,7 @@
                                 <PersistentState>
                                   <option name="values">
                                     <map>
-                                      <entry key="url" value="jar:file:/D:/Android%20Studio/plugins/android/lib/android.jar!/images/material_design_icons/action/ic_perm_media_black_24dp.xml" />
+                                      <entry key="url" value="jar:file:/home/aziz/android-studio/plugins/android/lib/android.jar!/images/material_design_icons/content/ic_reply_black_24dp.xml" />
                                     </map>
                                   </option>
                                 </PersistentState>
@@ -183,9 +183,10 @@
                         </option>
                         <option name="values">
                           <map>
+                            <entry key="assetSourceType" value="FILE" />
                             <entry key="color" value="ffffff" />
-                            <entry key="outputName" value="ic_perm_media_white_24dp" />
-                            <entry key="sourceFile" value="C:\Users\Shanu\C:\Users\Shanu\C:\Users\Shanu" />
+                            <entry key="outputName" value="ic_person_outlined" />
+                            <entry key="sourceFile" value="$USER_HOME$/Pictures/ic_person.svg" />
                           </map>
                         </option>
                       </PersistentState>

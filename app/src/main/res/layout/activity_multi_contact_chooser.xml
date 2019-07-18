@@ -6,11 +6,11 @@
               android:animateLayoutChanges="true"
               xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <android.support.v7.widget.RecyclerView android:layout_width="match_parent"
-                                            android:layout_height="wrap_content"
-    app:layoutManager="android.support.v7.widget.LinearLayoutManager"
-        app:stackFromEnd="true"
-        android:id="@+id/participant_recyclerview"
+    <androidx.recyclerview.widget.RecyclerView android:layout_width="match_parent"
+                                               android:layout_height="wrap_content"
+                                               app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                                               app:stackFromEnd="true"
+                                               android:id="@+id/participant_recyclerview"
     />
 
     <View android:layout_width="match_parent" android:layout_height="0.5dp"

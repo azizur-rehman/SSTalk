@@ -2,7 +2,6 @@ package com.aziz.sstalk.utils
 
 import android.Manifest
 import android.animation.Animator
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.ActivityManager
 import android.content.ContentValues
@@ -12,23 +11,16 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.database.Cursor
 import android.graphics.*
-import android.graphics.drawable.Drawable
-import android.graphics.drawable.GradientDrawable
-import android.inputmethodservice.InputMethodService
 import android.media.MediaMetadataRetriever
-import android.media.ThumbnailUtils
 import android.net.Uri
 import android.os.*
 import android.provider.ContactsContract
 import android.provider.MediaStore
-import android.support.design.widget.FloatingActionButton
-import android.support.v4.app.ActivityCompat
-import android.support.v4.content.ContextCompat
-import android.support.v4.content.FileProvider
-import android.telephony.PhoneNumberUtils
+import com.google.android.material.floatingactionbutton.FloatingActionButton
+import androidx.core.app.ActivityCompat
+import androidx.core.content.FileProvider
 import android.text.SpannableString
 import android.text.style.BackgroundColorSpan
-import android.text.style.ForegroundColorSpan
 import android.util.Log
 import android.view.View
 import android.view.ViewAnimationUtils
@@ -36,26 +28,23 @@ import android.view.WindowManager
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.TranslateAnimation
 import android.view.inputmethod.InputMethodManager
-import android.webkit.MimeTypeMap
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import com.aziz.sstalk.BuildConfig
 import com.aziz.sstalk.R
 import com.aziz.sstalk.models.Models
-import com.aziz.sstalk.utils.utils.toast
 import com.bumptech.glide.Glide
 import com.google.firebase.auth.FirebaseAuth
-import com.squareup.picasso.Picasso
-import io.michaelrocks.libphonenumber.android.PhoneNumberUtil
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.lang.Exception
+import java.text.DecimalFormat
 import java.text.SimpleDateFormat
 import java.util.*
-import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
+import kotlin.math.log10
 
 
 object utils {
@@ -198,7 +187,7 @@ object utils {
 
         val calendar = Calendar.getInstance()
         calendar.timeInMillis = timeInMillis
-        val sdf = SimpleDateFormat("hh:mm a")
+        val sdf = SimpleDateFormat("hh:mm a", Locale.getDefault())
 
         sdf.timeZone = TimeZone.getDefault()
 
@@ -514,6 +503,18 @@ object utils {
         }
     }
 
+    fun getFileSize(sizeInBytes:Long):String{
+
+         if (sizeInBytes <= 0)
+            return "0"
+
+        val units = arrayOf( "B", "KB", "MB", "GB", "TB" )
+        val digitGroups = (log10(sizeInBytes.toDouble()) / log10(1024.0)).toInt()
+
+        return  DecimalFormat("#,##0.#").format(sizeInBytes / Math.pow(1024.0, digitGroups.toDouble())) + " " + units[digitGroups]
+
+    }
+
 
     fun setVideoThumbnailFromWebAsync(context: Context, videoPath: String, imageView: ImageView){
 
@@ -712,13 +713,13 @@ object utils {
 }
 
 
-    fun hideFabs(vararg fabs:FloatingActionButton){
+    fun hideFabs(vararg fabs: FloatingActionButton){
         fabs.forEach {
             it.hide()
         }
     }
 
-    fun showFabs(vararg fabs:FloatingActionButton){
+    fun showFabs(vararg fabs: FloatingActionButton){
         fabs.forEach {
             it.show()
         }

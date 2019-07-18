@@ -1,6 +1,6 @@
 package com.aziz.sstalk.views
 
-import android.support.v7.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView
 import android.view.View
 import kotlinx.android.synthetic.main.bubble_image_left.view.*
 import kotlinx.android.synthetic.main.bubble_image_right.view.*
@@ -12,7 +12,7 @@ import kotlinx.android.synthetic.main.bubble_video_left.view.*
 import kotlinx.android.synthetic.main.bubble_video_right.view.*
 import kotlinx.android.synthetic.main.text_header.view.*
 
-object holders {
+object Holders {
 
     class TargetTextMsgHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
         val message = itemView.messageText_left!!
@@ -150,7 +150,7 @@ object holders {
     }
 
 
-    class TextHeaderHolder(itemView: View):RecyclerView.ViewHolder(itemView){
+    class TextHeaderHolder(itemView: View): RecyclerView.ViewHolder(itemView){
         val text = itemView.header_textView!!
         val dateTextView = itemView.header_date_text!!
     }

@@ -2,17 +2,12 @@ package com.aziz.sstalk
 
 import android.Manifest
 import android.app.Activity
-import android.app.AlertDialog
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Parcelable
-import android.support.v4.app.ActivityCompat
-import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.RecyclerView
-import android.util.Log
+import androidx.core.app.ActivityCompat
+import androidx.appcompat.app.AppCompatActivity
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -20,7 +15,6 @@ import android.view.ViewGroup
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.utils
-import com.aziz.sstalk.views.holders
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
@@ -28,10 +22,8 @@ import kotlinx.android.synthetic.main.activity_multi_contact_chooser.*
 import kotlinx.android.synthetic.main.contact_screen.*
 import kotlinx.android.synthetic.main.item__forward_contact_list.view.*
 import kotlinx.android.synthetic.main.item_conversation_layout.view.*
-import kotlinx.android.synthetic.main.item_grid_contact_layout.*
 import kotlinx.android.synthetic.main.item_grid_contact_layout.view.*
 import org.jetbrains.anko.*
-import java.io.Serializable
 import java.util.concurrent.Future
 
 class MultiContactChooserActivity : AppCompatActivity(){
@@ -59,9 +51,11 @@ class MultiContactChooserActivity : AppCompatActivity(){
         if(excludedUIDs.isNullOrEmpty())
             excludedUIDs = ArrayList()
 
-        contacts_list.layoutManager = LinearLayoutManager(this@MultiContactChooserActivity)
-        participant_recyclerview.layoutManager = LinearLayoutManager(this@MultiContactChooserActivity,
-            LinearLayoutManager.HORIZONTAL, false)
+        contacts_list.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this@MultiContactChooserActivity)
+        participant_recyclerview.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(
+            this@MultiContactChooserActivity,
+            androidx.recyclerview.widget.LinearLayoutManager.HORIZONTAL, false
+        )
 
         asyncLoader = doAsyncResult {
 
@@ -199,7 +193,7 @@ class MultiContactChooserActivity : AppCompatActivity(){
     }
 
 
-    val adapter = object : RecyclerView.Adapter<ViewHolder>() {
+    val adapter = object : androidx.recyclerview.widget.RecyclerView.Adapter<ViewHolder>() {
 
         override fun onCreateViewHolder(p0: ViewGroup, p1: Int): ViewHolder
                 = ViewHolder(layoutInflater.inflate(R.layout.item__forward_contact_list, p0, false))
@@ -246,7 +240,7 @@ class MultiContactChooserActivity : AppCompatActivity(){
 
     }
 
-    val horizontalAdapter = object : RecyclerView.Adapter<ParticipantHolder>() {
+    val horizontalAdapter = object : androidx.recyclerview.widget.RecyclerView.Adapter<ParticipantHolder>() {
         override fun onCreateViewHolder(p0: ViewGroup, p1: Int): ParticipantHolder {
             return ParticipantHolder(layoutInflater.inflate(R.layout.item_grid_contact_layout, p0, false))
         }
@@ -271,13 +265,13 @@ class MultiContactChooserActivity : AppCompatActivity(){
 
 
 
-    class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
+    class ViewHolder(itemView: View) : androidx.recyclerview.widget.RecyclerView.ViewHolder(itemView){
                 val name = itemView.name
                 val pic = itemView.pic
                 val checkBox = itemView.checkbox
             }
 
-    class ParticipantHolder(itemView: View):RecyclerView.ViewHolder(itemView){
+    class ParticipantHolder(itemView: View): androidx.recyclerview.widget.RecyclerView.ViewHolder(itemView){
         val name = itemView.grid_name!!
         val pic = itemView.grid_pic!!
         init {

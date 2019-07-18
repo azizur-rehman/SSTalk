@@ -1,8 +1,7 @@
 package com.aziz.sstalk
 
 import android.Manifest
-import android.animation.ArgbEvaluator
-import android.animation.ObjectAnimator
+import android.animation.*
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.NotificationManager
@@ -16,22 +15,23 @@ import android.net.Uri
 import android.os.*
 import android.os.Environment.DIRECTORY_DCIM
 import android.provider.MediaStore
-import android.support.design.widget.Snackbar
-import android.support.text.emoji.EmojiCompat
-import android.support.text.emoji.bundled.BundledEmojiCompatConfig
-import android.support.v4.app.ActivityCompat
-import android.support.v4.content.ContextCompat
-import android.support.v7.app.AlertDialog
-import android.support.v7.app.AppCompatActivity
-import android.support.v7.view.ActionMode
-import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.RecyclerView
+import com.google.android.material.snackbar.Snackbar
+import androidx.emoji.text.EmojiCompat
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.view.ActionMode
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import android.util.Log
+import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuItem
 import android.view.*
 import android.view.ViewGroup
-import android.support.v7.widget.SearchView
+import androidx.appcompat.widget.SearchView
+import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.*
 import com.aziz.sstalk.firebase.MessagingService
 import com.aziz.sstalk.models.Models
@@ -40,7 +40,7 @@ import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.Pref
 import com.aziz.sstalk.utils.utils
 import com.aziz.sstalk.views.ColorGenerator
-import com.aziz.sstalk.views.holders
+import com.aziz.sstalk.views.Holders
 import com.firebase.ui.database.FirebaseRecyclerAdapter
 import com.firebase.ui.database.FirebaseRecyclerOptions
 import com.google.android.gms.maps.*
@@ -49,9 +49,17 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.tasks.Continuation
 import com.google.android.gms.tasks.Task
+import com.google.firebase.FirebaseApp
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.ml.naturallanguage.FirebaseNaturalLanguage
+import com.google.firebase.ml.naturallanguage.smartreply.FirebaseTextMessage
+import com.google.firebase.ml.naturallanguage.smartreply.SmartReplySuggestionResult
+import com.google.firebase.ml.naturallanguage.translate.FirebaseTranslateLanguage
+import com.google.firebase.ml.naturallanguage.translate.FirebaseTranslateModelManager
+import com.google.firebase.ml.naturallanguage.translate.FirebaseTranslator
+import com.google.firebase.ml.naturallanguage.translate.FirebaseTranslatorOptions
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.UploadTask
 import com.mikhaellopez.circularprogressbar.CircularProgressBar
@@ -64,8 +72,12 @@ import com.vincent.filepicker.activity.ImagePickActivity
 import com.vincent.filepicker.activity.VideoPickActivity
 import com.vincent.filepicker.filter.entity.ImageFile
 import com.vincent.filepicker.filter.entity.VideoFile
+import io.codetail.animation.SupportAnimator
+import io.codetail.animation.ViewAnimationUtils
 import kotlinx.android.synthetic.main.activity_message.*
-import kotlinx.android.synthetic.main.content_user_profile.*
+import kotlinx.android.synthetic.main.bubble_left.view.*
+import kotlinx.android.synthetic.main.bubble_right.view.*
+import kotlinx.android.synthetic.main.item_smart_reply.view.*
 import kotlinx.android.synthetic.main.layout_attachment_menu.*
 import kotlinx.android.synthetic.main.layout_include_message_activity_toolbar.*
 import kotlinx.android.synthetic.main.text_header.view.*
@@ -134,6 +146,7 @@ class MessageActivity : AppCompatActivity() {
     var loadedPosition:HashMap<Int,Boolean> = HashMap()
 
     var selectedMessageModel:MutableList<Models.MessageModel> = ArrayList()
+    var selectedMessageIDs:MutableList<String> = ArrayList()
     val selectedItemPosition:MutableList<Int> = ArrayList()
 
     var searchFilterItemPosition:MutableList<Int> = ArrayList()
@@ -210,6 +223,14 @@ class MessageActivity : AppCompatActivity() {
 
     private fun initComponents(){
 
+        with(messagesList){
+            setHasFixedSize(true)
+            setItemViewCacheSize(20)
+            setDrawingCacheEnabled(true)
+            setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH)
+        }
+
+
         if(isGroup) {
             target_name_textview.text = nameOrNumber
 
@@ -239,7 +260,7 @@ class MessageActivity : AppCompatActivity() {
             FirebaseUtils.setUserOnlineStatus(this, targetUid, user_online_status)
         }
 
-        val emojiConfig = BundledEmojiCompatConfig(this)
+        val emojiConfig = androidx.emoji.bundled.BundledEmojiCompatConfig(this)
         EmojiCompat.init(emojiConfig)
             .registerInitCallback(object:EmojiCompat.InitCallback() {
                 override fun onInitialized() {
@@ -287,7 +308,25 @@ class MessageActivity : AppCompatActivity() {
 
 
 
-        checkIfBlocked(targetUid)
+        smart_reply_layout.visibility = View.GONE
+        checkIfBlocked(targetUid){
+
+            if(isBlockedByUser || isBlockedByMe) {
+                messageInputField.visibility = View.INVISIBLE
+                smart_reply_layout.visibility = View.GONE
+                blockedSnackbar?.show()
+
+            }
+            else {
+                messageInputField.visibility = View.VISIBLE
+                smart_reply_layout.visibility = View.VISIBLE
+                blockedSnackbar?.dismiss()
+                bindSmartReply()
+
+            }
+            invalidateOptionsMenu()
+
+        }
 
         setMenuListeners()
 
@@ -303,13 +342,18 @@ class MessageActivity : AppCompatActivity() {
 
             if(attachment_menu.visibility != View.VISIBLE) {
                 utils.setEnterRevealEffect(this, attachment_menu)
+                
             }
             else {
                 utils.setExitRevealEffect(attachment_menu)
+                
             }
 
 
+
         }
+
+
     }
 
 
@@ -367,6 +411,8 @@ class MessageActivity : AppCompatActivity() {
             else{
                 startCamera()
             }
+
+            
         }
 
 
@@ -395,6 +441,7 @@ class MessageActivity : AppCompatActivity() {
             else{
                 startActivityForResult(galleryIntent, RQ_GALLERY)
             }
+            
         }
 
 
@@ -414,6 +461,7 @@ class MessageActivity : AppCompatActivity() {
             else{
                 startActivityForResult(Intent(context, MapsActivity::class.java), RQ_LOCATION)
             }
+            
         }
 
 
@@ -442,6 +490,7 @@ class MessageActivity : AppCompatActivity() {
             else{
                 startActivityForResult(videoIntent, RQ_VIDEO)
             }
+            
 
         }
 
@@ -659,7 +708,7 @@ class MessageActivity : AppCompatActivity() {
 
        messagesList.setHasFixedSize(true)
        messagesList.setItemViewCacheSize(20)
-       messagesList.isDrawingCacheEnabled = true;
+       messagesList.isDrawingCacheEnabled = true
        messagesList.drawingCacheQuality = View.DRAWING_CACHE_QUALITY_HIGH
 
        val linearLayoutManager = LinearLayoutManager(this)
@@ -684,38 +733,38 @@ class MessageActivity : AppCompatActivity() {
 
                return when(viewType) {
                      TYPE_MINE ->
-                       holders.MyTextMsgHolder(LayoutInflater.from(this@MessageActivity)
+                       Holders.MyTextMsgHolder(LayoutInflater.from(this@MessageActivity)
                        .inflate(R.layout.bubble_right, p0 , false))
 
                      TYPE_MY_MAP ->
-                         holders.MyMapHolder(LayoutInflater.from(this@MessageActivity)
+                         Holders.MyMapHolder(LayoutInflater.from(this@MessageActivity)
                              .inflate(R.layout.bubble_map_right, p0, false))
 
 
                      TYPE_TARGET_MAP ->
-                       holders.TargetMapHolder(LayoutInflater.from(this@MessageActivity)
+                       Holders.TargetMapHolder(LayoutInflater.from(this@MessageActivity)
                            .inflate(R.layout.bubble_map_left, p0, false))
 
                      TYPE_MY_IMAGE ->
-                         holders.MyImageMsgHolder(LayoutInflater.from(this@MessageActivity)
+                         Holders.MyImageMsgHolder(LayoutInflater.from(this@MessageActivity)
                              .inflate(R.layout.bubble_image_right, p0, false))
 
                    TYPE_TARGET_IMAGE ->
-                       holders.TargetImageMsgHolder(LayoutInflater.from(this@MessageActivity)
+                       Holders.TargetImageMsgHolder(LayoutInflater.from(this@MessageActivity)
                            .inflate(R.layout.bubble_image_left, p0, false))
 
                    TYPE_MY_VIDEO ->
-                       holders.MyVideoMsgHolder(LayoutInflater.from(this@MessageActivity)
+                       Holders.MyVideoMsgHolder(LayoutInflater.from(this@MessageActivity)
                            .inflate(R.layout.bubble_video_right, p0, false))
 
                    TYPE_TARGET_VIDEO ->
-                       holders.TargetVideoMsgHolder(LayoutInflater.from(this@MessageActivity)
+                       Holders.TargetVideoMsgHolder(LayoutInflater.from(this@MessageActivity)
                            .inflate(R.layout.bubble_video_left, p0, false))
 
                    TYPE_EVENT ->
-                       holders.TextHeaderHolder(LayoutInflater.from(context).inflate(R.layout.text_header, p0, false))
+                       Holders.TextHeaderHolder(LayoutInflater.from(context).inflate(R.layout.text_header, p0, false))
 
-                   else -> holders.TargetTextMsgHolder(LayoutInflater.from(this@MessageActivity)
+                   else -> Holders.TargetTextMsgHolder(LayoutInflater.from(this@MessageActivity)
                            .inflate(R.layout.bubble_left, p0, false))
                }
             }
@@ -739,7 +788,7 @@ class MessageActivity : AppCompatActivity() {
 
                 if(getItemViewType(position) == TYPE_EVENT){
 
-                    val textHolder = holder as holders.TextHeaderHolder
+                    val textHolder = holder as Holders.TextHeaderHolder
 
                     when(model.messageType) {
                          FirebaseUtils.EVENT_TYPE_ADDED -> {
@@ -783,18 +832,16 @@ class MessageActivity : AppCompatActivity() {
 
 
                 var messageImage:ImageView? = null
-                var videoLayout:View? = null
+                var targetSenderIcon:ImageView? = null
+                var targetSenderTitle:TextView? = null
                 var dateHeader:TextView? = null
-                var latitude: Double = 0.0
-                var longitude: Double = 0.0
-                var mapView: MapView? = null
+                var latitude = 0.0
+                var longitude = 0.0
                 val messageID = super.getRef(position).key!!
                 var thumbnail:ImageView? = null
                 var videoLengthTextView:TextView? = null
 
                 var container:LinearLayout? = null
-
-                var circularProgressBar:CircularProgressBar? = null
 
                 var tapToDownload:TextView? = null
                 var messageTextView:TextView? = null
@@ -829,7 +876,7 @@ class MessageActivity : AppCompatActivity() {
 
 
                 when (holder) {
-                    is holders.TargetTextMsgHolder -> {
+                    is Holders.TargetTextMsgHolder -> {
                         holder.time.text = utils.getLocalTime(model.timeInMillis)
                         holder.message.text = model.message
                         container = holder.container
@@ -837,45 +884,13 @@ class MessageActivity : AppCompatActivity() {
                         messageLayout = holder.messageLayout
                         dateHeader = holder.headerDateTime
 
+                        holder.itemView.bubble_left_translation.visibility = View.GONE
+                        targetSenderIcon = holder.senderIcon
 
-                        if(position==0){
-                            FirebaseUtils.loadProfileThumbnail(context, model.from, holder.senderIcon)
-                            holder.senderIcon.visibility = View.VISIBLE }
-                        else{
-                            if(model.from == snapshots[position -1 ].from) holder.senderIcon.visibility = View.INVISIBLE
-                            else {
-                                holder.senderIcon.visibility = View.VISIBLE
-                                FirebaseUtils.loadProfileThumbnail(context, model.from, holder.senderIcon)
-                            }
-                        }
+                        targetSenderTitle = holder.senderTitle
 
-                        if(isGroup) {
-
-                            holder.senderTitle.visibility = if(holder.senderIcon.visibility == View.VISIBLE) View.VISIBLE
-                            else View.GONE
-
-
-
-                            if (groupMembers.isNotEmpty())
-                                try {
-                                    holder.senderTitle.text =
-                                        utils.getNameFromNumber(
-                                            context,
-                                            groupMembers.filter { it.uid == model.from }[0].phoneNumber
-                                        )
-                                    FirebaseUtils.setTargetOptionMenu(context,model.from,
-                                        groupMembers.filter { it.uid == model.from}[0].phoneNumber,
-                                        holder.senderTitle)
-                                }
-                                catch (e:Exception){
-                                    holder.senderTitle.text = "Removed Member"
-                                }
-
-                            holder.senderTitle.setTextColor(ColorGenerator.MATERIAL
-                                .getColor(holder.senderTitle.text.toString()))
-                        }
                     }
-                    is holders.MyTextMsgHolder -> {
+                    is Holders.MyTextMsgHolder -> {
                         holder.time.text = utils.getLocalTime(model.timeInMillis)
                         holder.message.text = model.message
                         dateHeader = holder.headerDateTime
@@ -883,11 +898,11 @@ class MessageActivity : AppCompatActivity() {
                         FirebaseUtils.setDeliveryStatusTick(targetUid, messageID, holder.messageStatus)
                         messageTextView = holder.message
                         messageLayout = holder.messageLayout
-
+                        holder.itemView.bubble_right_translation.visibility = View.GONE
                         //end of my holder
 
                     }
-                    is holders.MyImageMsgHolder -> {
+                    is Holders.MyImageMsgHolder -> {
 
                         holder.time.text = utils.getLocalTime(model.timeInMillis)
                         messageImage = holder.imageView
@@ -905,7 +920,7 @@ class MessageActivity : AppCompatActivity() {
                         setMyImageHolder(holder, model, messageID)
 
                     }
-                    is holders.TargetImageMsgHolder -> {
+                    is Holders.TargetImageMsgHolder -> {
                         messageImage = holder.imageView
                         dateHeader = holder.headerDateTime
                         container = holder.container
@@ -913,45 +928,15 @@ class MessageActivity : AppCompatActivity() {
                         messageTextView = holder.message
                         messageLayout = holder.messageLayout
 
+                        targetSenderIcon = holder.senderIcon
+                        targetSenderTitle = holder.senderTitle
+
                         //setting holder setting
                         setTargetImageHolder(holder, model, messageID)
 
-                        if(position==0){
-                            FirebaseUtils.loadProfileThumbnail(context, model.from, holder.senderIcon)
-                            holder.senderIcon.visibility = View.VISIBLE }
-                        else{
-                            if(model.from == snapshots[position -1 ].from) holder.senderIcon.visibility = View.INVISIBLE
-                            else {
-                                holder.senderIcon.visibility = View.VISIBLE
-                                FirebaseUtils.loadProfileThumbnail(context, model.from, holder.senderIcon)
-                            }
-                        }
 
-                        if(isGroup) {
-
-                           holder.senderTitle.visibility = if(holder.senderIcon.visibility == View.VISIBLE) View.VISIBLE
-                           else View.GONE
-
-                            if (groupMembers.isNotEmpty())
-                                try {
-                                    holder.senderTitle.text =
-                                        utils.getNameFromNumber(
-                                            context,
-                                            groupMembers.filter { it.uid == model.from }[0].phoneNumber
-                                        )
-                                    FirebaseUtils.setTargetOptionMenu(context,model.from,
-                                        groupMembers.filter { it.uid == model.from}[0].phoneNumber,
-                                        holder.senderTitle)
-                                }
-                                catch (e:Exception){
-                                    holder.senderTitle.text = "Removed Member"
-                                }
-
-                            holder.senderTitle.setTextColor(ColorGenerator.MATERIAL
-                                .getColor(holder.senderTitle.text.toString()))
-                        }
                     }
-                    is holders.MyVideoMsgHolder -> {
+                    is Holders.MyVideoMsgHolder -> {
 
                         thumbnail = holder.thumbnail
                         videoLengthTextView = holder.videoLengthText
@@ -970,7 +955,7 @@ class MessageActivity : AppCompatActivity() {
 
 
                     }
-                    is holders.TargetVideoMsgHolder -> {
+                    is Holders.TargetVideoMsgHolder -> {
 
                         tapToDownload = holder.tap_to_download
                         holder.time.text = utils.getLocalTime(model.timeInMillis)
@@ -979,6 +964,8 @@ class MessageActivity : AppCompatActivity() {
                         dateHeader = holder.headerDateTime
                         container = holder.container
 
+                        targetSenderIcon = holder.senderIcon
+                        targetSenderTitle = holder.senderTitle
 
                         messageTextView = holder.message
                         messageLayout = holder.messageLayout
@@ -987,41 +974,12 @@ class MessageActivity : AppCompatActivity() {
                         //setting holder config
                         setTargetVideoHolder(holder, model, messageID)
 
-                        if(position==0){
-                            FirebaseUtils.loadProfileThumbnail(context, model.from, holder.senderIcon)
-                            holder.senderIcon.visibility = View.VISIBLE }
-                        else{
-                            if(model.from == snapshots[position -1 ].from) holder.senderIcon.visibility = View.INVISIBLE
-                            else {
-                                holder.senderIcon.visibility = View.VISIBLE
-                                FirebaseUtils.loadProfileThumbnail(context, model.from, holder.senderIcon)
-                            }
-                        }
 
-                        if(isGroup) {
-                            holder.senderTitle.visibility = if(holder.senderIcon.visibility == View.VISIBLE) View.VISIBLE
-                            else View.GONE
-                            if (groupMembers.isNotEmpty())
-                                try {
-                                    holder.senderTitle.text =
-                                        utils.getNameFromNumber(
-                                            context,
-                                            groupMembers.filter { it.uid == model.from }[0].phoneNumber
-                                        )
-                                    FirebaseUtils.setTargetOptionMenu(context,model.from,
-                                        groupMembers.filter { it.uid == model.from}[0].phoneNumber,
-                                        holder.senderTitle)
-                                }
-                                catch (e:Exception){
-                                    holder.senderTitle.text = "Removed Member"
-                                }
-                            holder.senderTitle.setTextColor(ColorGenerator.MATERIAL
-                                .getColor(holder.senderTitle.text.toString()))
-                        }
+
 
                     }
 
-                    is holders.MyMapHolder -> {
+                    is Holders.MyMapHolder -> {
                         holder.message.text = model.caption
                         holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
                         holder.time.text = utils.getLocalTime(model.timeInMillis)
@@ -1036,7 +994,7 @@ class MessageActivity : AppCompatActivity() {
 
                     }
 
-                    is holders.TargetMapHolder -> {
+                    is Holders.TargetMapHolder -> {
 
                         holder.message.text = model.caption
                         dateHeader = holder.dateHeader
@@ -1045,51 +1003,61 @@ class MessageActivity : AppCompatActivity() {
                         messageLayout = holder.messageLayout
                         messageTextView = holder.message
 
+                        targetSenderIcon = holder.senderIcon
+                        targetSenderTitle = holder.senderTitle
 
 
                         loadMap(holder.mapView, LatLng(latitude,longitude))
-                        if(position==0){
-                            FirebaseUtils.loadProfileThumbnail(context, model.from, holder.senderIcon)
-                            holder.senderIcon.visibility = View.VISIBLE }
-                        else{
-                            if(model.from == snapshots[position -1 ].from) holder.senderIcon.visibility = View.INVISIBLE
-                            else {
-                                holder.senderIcon.visibility = View.VISIBLE
-                                FirebaseUtils.loadProfileThumbnail(context, model.from, holder.senderIcon)
-                            }
-                        }
+
 
                         holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
 
-                        if(isGroup) {
 
-                            holder.senderTitle.visibility = if(holder.senderIcon.visibility == View.VISIBLE) View.VISIBLE
-                            else View.GONE
-
-                            if (groupMembers.isNotEmpty())
-                                try {
-                                    holder.senderTitle.text =
-                                        utils.getNameFromNumber(
-                                            context,
-                                            groupMembers.filter { it.uid == model.from }[0].phoneNumber
-                                        )
-                                    FirebaseUtils.setTargetOptionMenu(context,model.from,
-                                        groupMembers.filter { it.uid == model.from}[0].phoneNumber,
-                                        holder.senderTitle)
-                                }
-                                catch (e:Exception){
-                                    holder.senderTitle.text = "Removed Member"
-                                }
-                            holder.senderTitle.setTextColor(ColorGenerator.MATERIAL
-                                .getColor(holder.senderTitle.text.toString()))
-                        }
 
 
                     }
                 }
 
 
+                //setting sender icon
+                targetSenderIcon?.let {
+                    if(position==0){
+                        FirebaseUtils.loadProfileThumbnail(context, model.from, it)
+                        it.visibility = View.VISIBLE }
+                    else{
+                        if(model.from == snapshots[position -1 ].from && DateFormatter.isSameDay(Date(model.timeInMillis), Date(snapshots[position-1].timeInMillis))) it.visibility = View.INVISIBLE
+                        else {
+                            it.visibility = View.VISIBLE
+                            FirebaseUtils.loadProfileThumbnail(context, model.from, it)
+                        }
+                    }
+                }
 
+                //setting sender title
+                targetSenderTitle?.let {
+                    if(isGroup) {
+
+                        it.visibility = if(targetSenderIcon?.visibility == View.VISIBLE) View.VISIBLE
+                        else View.GONE
+
+                        if (groupMembers.isNotEmpty())
+                            try {
+                                it.text =
+                                    utils.getNameFromNumber(
+                                        context,
+                                        groupMembers.filter { it.uid == model.from }[0].phoneNumber
+                                    )
+                                FirebaseUtils.setTargetOptionMenu(context,model.from,
+                                    groupMembers.filter { it.uid == model.from}[0].phoneNumber,
+                                    it)
+                            }
+                            catch (e:Exception){
+                                it.text = "Removed Member"
+                            }
+                        it.setTextColor(ColorGenerator.MATERIAL
+                            .getColor(it.text.toString()))
+                    }
+                }
 
 
                 if(container!=null) {
@@ -1123,7 +1091,7 @@ class MessageActivity : AppCompatActivity() {
                 if(thumbnail != null){
 
                     if(model.file_local_path.isNotEmpty() && File(model.file_local_path).exists()){
-                        videoLengthTextView!!.text = utils.getVideoLength(context, model.file_local_path)
+                        videoLengthTextView?.text = utils.getVideoLength(context, model.file_local_path)
 
                         utils.loadVideoThumbnailFromLocalAsync(context, thumbnail, model.file_local_path)
 
@@ -1132,13 +1100,14 @@ class MessageActivity : AppCompatActivity() {
                     else{
 
                         utils.setVideoThumbnailFromWebAsync(context, model.message, thumbnail)
+                        videoLengthTextView?.text = utils.getFileSize(model.file_size_in_bytes)
 
                         Log.d("MessageActivity", "onBindViewHolder: $messageID file not found")
 
-                            tapToDownload!!.visibility = View.VISIBLE
+                            tapToDownload?.visibility = View.VISIBLE
 
 
-                            tapToDownload.setOnClickListener {
+                            tapToDownload?.setOnClickListener {
 
                                 if(isContextMenuActive)
                                     return@setOnClickListener
@@ -1170,6 +1139,7 @@ class MessageActivity : AppCompatActivity() {
 
 
 
+                messageTextView?.let { it.setLinkTextColor(Color.BLUE) }
 
                 val emojiProcessed = EmojiCompat.get().process(messageTextView!!.text)
                 messageTextView.text = emojiProcessed
@@ -1736,13 +1706,15 @@ class MessageActivity : AppCompatActivity() {
                         if(percentage >= 100)
                             return@setOnClickListener
 
+
+
                         Log.d("MessageActivity", "fileUpload: cancel clicked")
                         if(BuildConfig.DEBUG)
                             utils.toast(context, "Upload cancelled")
 
 
                         uploadTask.cancel()
-                        mediaControlImageViewAt[messageID]!!.setImageResource(R.drawable.ic_play_white)
+                        mediaControlImageViewAt[messageID]?.setImageResource(R.drawable.ic_play_white)
                         adapter.notifyDataSetChanged()
                     }
                 }
@@ -1845,8 +1817,8 @@ class MessageActivity : AppCompatActivity() {
 
         val progressBar = CircularProgressBarsAt[messageID]
 
-        progressBar!!.visibility = View.VISIBLE
-        progressBar.progress =0f
+        progressBar?.visibility = View.VISIBLE
+        progressBar?.progress =0f
 
         val storageRef = FirebaseStorage.getInstance().reference
             .child(utils.constants.FILE_TYPE_VIDEO).child(messageID)
@@ -1860,18 +1832,18 @@ class MessageActivity : AppCompatActivity() {
             storageRef.getFile(videoFile)
                 .addOnProgressListener {
                     val percentage:Double = (100.0 * it.bytesTransferred) / it.totalByteCount
-                    progressBar.progress = percentage.toFloat()
+                    progressBar?.progress = percentage.toFloat()
 
                 }
                 .addOnCompleteListener{
-                    progressBar.visibility = View.GONE
+                    progressBar?.visibility = View.GONE
                     try {
                        // adapter.notifyDataSetChanged()
                     }
                     catch (e:Exception){}
                 }
                 .addOnCanceledListener {
-                    progressBar.visibility = View.GONE
+                    progressBar?.visibility = View.GONE
                 }
                 .addOnSuccessListener {
 
@@ -1920,9 +1892,9 @@ class MessageActivity : AppCompatActivity() {
 }
 
 
-    var blockedSnackbar:Snackbar? = null
+    var blockedSnackbar: Snackbar? = null
 
-    private fun checkIfBlocked(targetUID:String) {
+    private fun checkIfBlocked(targetUID:String, onChecked:()->Unit) {
 
 
 
@@ -1936,18 +1908,8 @@ class MessageActivity : AppCompatActivity() {
                     else
                         false
 
+                    onChecked.invoke()
 
-                    if(isBlockedByUser || isBlockedByMe) {
-                        messageInputField.visibility = View.INVISIBLE
-                        blockedSnackbar!!.show()
-                    }
-                    else {
-                        messageInputField.visibility = View.VISIBLE
-                        blockedSnackbar!!.dismiss()
-                    }
-
-
-                    invalidateOptionsMenu()
 
                 }
 
@@ -1966,15 +1928,9 @@ class MessageActivity : AppCompatActivity() {
                     else
                         false
 
+                    onChecked.invoke()
 
-                    if(isBlockedByUser || isBlockedByMe) {
-                        messageInputField.visibility = View.INVISIBLE
-                        blockedSnackbar!!.show()
-                    }
-                    else {
-                        messageInputField.visibility = View.VISIBLE
-                        blockedSnackbar!!.dismiss()
-                    }
+
                 }
 
                 override fun onCancelled(databaseError: DatabaseError) {
@@ -2012,9 +1968,9 @@ class MessageActivity : AppCompatActivity() {
         super.onPause()
     }
 
-    //setting my holders
+    //setting my Holders
     //setting my holder config
-    private fun setMyImageHolder(holder: holders.MyImageMsgHolder, model: Models.MessageModel, messageID: String){
+    private fun setMyImageHolder(holder: Holders.MyImageMsgHolder, model: Models.MessageModel, messageID: String){
         holder.tapToRetry.visibility = View.GONE
 
         holder.progressBar.visibility = View.VISIBLE
@@ -2108,7 +2064,7 @@ class MessageActivity : AppCompatActivity() {
     }
 
     //setting my video holder
-    private fun setMyVideoHolder(holder:holders.MyVideoMsgHolder, model: Models.MessageModel, messageID: String){
+    private fun setMyVideoHolder(holder:Holders.MyVideoMsgHolder, model: Models.MessageModel, messageID: String){
 
         CircularProgressBarsAt[messageID] = holder.progressBar
         mediaControlImageViewAt[messageID] = holder.centerImageView
@@ -2133,9 +2089,9 @@ class MessageActivity : AppCompatActivity() {
 
 
 
-    //setting target holders
+    //setting target Holders
     //setting target image holder
-    private fun setTargetImageHolder(holder: holders.TargetImageMsgHolder, model:Models.MessageModel, messageID: String){
+    private fun setTargetImageHolder(holder: Holders.TargetImageMsgHolder, model:Models.MessageModel, messageID: String){
         holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
 
 
@@ -2183,7 +2139,7 @@ class MessageActivity : AppCompatActivity() {
 
 
     //setting target video holder
-    private fun setTargetVideoHolder(holder: holders.TargetVideoMsgHolder, model: Models.MessageModel, messageID: String){
+    private fun setTargetVideoHolder(holder: Holders.TargetVideoMsgHolder, model: Models.MessageModel, messageID: String){
 
         holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
         holder.message.text = model.caption
@@ -2219,6 +2175,8 @@ class MessageActivity : AppCompatActivity() {
     var selectedDrawable:Drawable? = null
     var unselectedDrawable:Drawable? = null
 
+    var isTranslatorPressed = false
+
     //setting contextual toolbar on viewHolder
 
     var actionMode: ActionMode? = null
@@ -2228,7 +2186,7 @@ class MessageActivity : AppCompatActivity() {
         unselectedDrawable = ColorDrawable(Color.WHITE)
 
 
-        if(selectedItemPosition.contains(position))
+        if(selectedMessageIDs.contains(messageID))
             itemView.background = selectedDrawable
         else
             itemView.background = unselectedDrawable
@@ -2241,15 +2199,16 @@ class MessageActivity : AppCompatActivity() {
 
             if(!isContextMenuActive) {
 
-                if (!selectedItemPosition.contains(position)) {
+                if (!selectedMessageIDs.contains(messageID)) {
                     selectedItemPosition.add(position)
                     selectedMessageModel.add(model)
+                    selectedMessageIDs.add(messageID)
                 }
 
 
                 actionMode = startSupportActionMode(object : ActionMode.Callback {
                         override fun onActionItemClicked(p0: ActionMode?, p1: MenuItem?): Boolean {
-                            when (p1!!.itemId) {
+                            when (p1?.itemId) {
 
                                 R.id.action_delete -> {
 
@@ -2284,17 +2243,33 @@ class MessageActivity : AppCompatActivity() {
                                             )
                                     )
                                 }
+
+                                R.id.action_translate -> {
+
+                                    Log.d("MessageActivity", "onActionItemClicked: ${Pref.getSettingFile(context).all}")
+
+                                    if(Pref.getSettingFile(context).contains(Pref.KEY_DEFAULT_TRANSLATION_LANG))
+                                        translateMessage(itemView, model)
+                                    else{
+                                        alert { message = "You have not set any default language. Go to Menu -> Setting to set it."
+                                        positiveButton("Go to setting"){ startActivity(intentFor<SettingsActivity>())}
+                                            negativeButton("Cancel"){}
+                                        }.show()
+                                    }
+                                }
+
                             }
 
-                            if (p1.itemId != R.id.action_delete)
-                                p0!!.finish()
+                            if (p1?.itemId != R.id.action_delete)
+                                p0?.finish()
 
                             return true
 
                         }
 
                         override fun onCreateActionMode(p0: ActionMode?, p1: Menu?): Boolean {
-                            p0!!.menuInflater.inflate(R.menu.chat_actions_menu, p1!!)
+                            p0?.menuInflater?.inflate(R.menu.chat_actions_menu, p1!!)
+                            p1?.findItem(R.id.action_translate)?.isVisible = (selectedMessageModel.size == 1 && !model.isFile)
                             isContextMenuActive = true
                             return true
                         }
@@ -2305,6 +2280,8 @@ class MessageActivity : AppCompatActivity() {
                                 it.isFile
                             }
 
+                            p1?.findItem(R.id.action_translate)?.isVisible = (models.size == 1 && model.messageType == "message")
+
                             p1?.findItem(R.id.action_copy)?.isVisible = !isContainsFile
                             p0?.title = selectedItemPosition.size.toString()
 
@@ -2313,15 +2290,21 @@ class MessageActivity : AppCompatActivity() {
 
                         override fun onDestroyActionMode(p0: ActionMode?) {
                             for (pos in selectedItemPosition)
-                                adapter.notifyItemChanged(pos)
+                            {
+                                if(!isTranslatorPressed)
+                                    adapter.notifyItemChanged(pos)
+                            }
 
                             selectedItemPosition.clear()
+                            selectedMessageIDs.clear()
+                            selectedMessageModel.clear()
                             isContextMenuActive = false
+                            isTranslatorPressed = false
                         }
 
                     })
 
-                actionMode!!.title = selectedItemPosition.size.toString()
+                actionMode?.title = selectedItemPosition.size.toString()
 
 
                 itemView.background = selectedDrawable
@@ -2337,23 +2320,25 @@ class MessageActivity : AppCompatActivity() {
 
             if(isContextMenuActive) {
 
-                if(selectedItemPosition.contains(position)){
+                if(selectedMessageIDs.contains(messageID)){
                     itemView.background = unselectedDrawable
                     selectedItemPosition.remove(position)
                     selectedMessageModel.remove(model)
+                    selectedMessageIDs.remove(messageID)
 
                 }
                 else{
                     itemView.background = selectedDrawable
                     selectedItemPosition.add(position)
                     selectedMessageModel.add(model)
+                    selectedMessageIDs.add(messageID)
                 }
 
-                actionMode!!.title = selectedItemPosition.size.toString()
+                actionMode?.title = selectedItemPosition.size.toString()
                 actionMode?.invalidate()
 
                 if(selectedItemPosition.isEmpty()){
-                        actionMode!!.finish()
+                        actionMode?.finish()
                 }
 
 
@@ -2362,8 +2347,115 @@ class MessageActivity : AppCompatActivity() {
         }
     }
 
+    private fun translateMessage(itemView: View, model: Models.MessageModel):Unit {
+
+        isTranslatorPressed = true
+        itemView.background = ColorDrawable(Color.WHITE)
+
+        var translationHeading = "Identifying Language"
+
+        if(model.from == myUID)
+        {
+            itemView.bubble_right_translation.text = translationHeading
+            itemView.bubble_right_translation.visibility = View.VISIBLE
+
+        }
+        else
+        {
+            itemView.bubble_left_translation.text = translationHeading
+            itemView.bubble_left_translation.visibility = View.VISIBLE
+
+        }
+
+        //identify language
+        FirebaseNaturalLanguage.getInstance().languageIdentification
+            .identifyLanguage(model.message)
+            .addOnSuccessListener { languageCode ->
+                Log.d("MessageActivity", "translateMessage: language = $languageCode")
+
+                val translatorOptions = FirebaseTranslatorOptions.Builder()
+                    .setSourceLanguage(FirebaseTranslateLanguage.languageForLanguageCode(languageCode)?:FirebaseTranslateLanguage.EN)
+                    .setTargetLanguage(Pref.getDefaultLanguage(context))
+                    .build()
+
+                val languageName = Locale(languageCode).displayLanguage
+
+                val firebaseTranslator =  FirebaseNaturalLanguage.getInstance().getTranslator(translatorOptions)
+
+                FirebaseApp.initializeApp(this)?.let { firebaseApp ->
+                    FirebaseTranslateModelManager.getInstance().getAvailableModels(firebaseApp).addOnSuccessListener {
 
 
+                        if (it.any { remoteModel -> remoteModel.language == Pref.getDefaultLanguage(context) }) {
+                            // model is available to translate
+                            Log.d("MessageActivity", "translateMessage: Translator Model is available")
+                            onTranslatorDownloaded(itemView, model, firebaseTranslator, languageName)
+                        }
+
+                        else {
+                            // download translator, and then translate
+                            translationHeading = "Downloading files for $languageName"
+
+                            when (myUID) {
+                                model.from -> itemView.bubble_right_translation.text = translationHeading
+                                else -> itemView.bubble_left_translation.text = translationHeading
+                            }
+
+                            firebaseTranslator.downloadModelIfNeeded()
+                                .addOnSuccessListener {
+                                    Log.d("MessageActivity", "translateMessage: translator downloaded")
+                                    onTranslatorDownloaded(itemView, model, firebaseTranslator, languageName)
+                                }
+                                .addOnFailureListener {
+                                    toast(it.localizedMessage)
+                                }
+
+                        }
+                    }
+                }
+
+
+
+            }
+
+    }
+
+
+    private fun onTranslatorDownloaded(itemView: View, model: Models.MessageModel, firebaseTranslator:FirebaseTranslator, languageName:String){
+
+
+        var translationHeading = "Translating from $languageName"
+
+
+        when (myUID) {
+            model.from -> itemView.bubble_right_translation.text = translationHeading
+            else -> itemView.bubble_left_translation.text = translationHeading
+        }
+
+        firebaseTranslator.translate(model.message)
+            .addOnSuccessListener { translatedText ->
+                Log.d("MessageActivity", "translateMessage: $translatedText")
+                translationHeading = "Translated to ${Locale(FirebaseTranslateLanguage.languageCodeForLanguage(Pref.getDefaultLanguage(this))).displayName} from $languageName"
+                when (myUID) {
+                    model.from -> {
+                        itemView.messageText_right.text = translatedText
+                        itemView.bubble_right_translation.text = translationHeading
+                    }
+                    else -> {
+                        itemView.messageText_left.text = translatedText
+                        itemView.bubble_left_translation.text = translationHeading
+                    }
+                }
+            }
+            .addOnFailureListener {
+                Log.d("MessageActivity", "translateMessage: error =  ${it.message}")
+                translationHeading = "Failed to Translate"
+                when (myUID) {
+                    model.from -> itemView.bubble_right_translation.text = translationHeading
+                    else -> itemView.bubble_left_translation.text = translationHeading
+                }
+            }
+    }
 
     var isContextMenuActive = false
 
@@ -2716,16 +2808,18 @@ class MessageActivity : AppCompatActivity() {
     private fun deleteSelectedMessages(actionMode: ActionMode?){
 
 
+        Log.d("MessageActivity", "deleteSelectedMessages: $selectedItemPosition , msg ID = $selectedMessageIDs")
+
         AlertDialog.Builder(context)
             .setMessage("Delete selected messages?")
             .setPositiveButton("Yes") { _, _ ->
-                Log.d("MessageActivity", "deleteSelectedMessages: $selectedItemPosition")
-                for ((index, itemPosition) in selectedItemPosition.withIndex()) {
+
+                for ((index, messageID) in selectedMessageIDs.withIndex()) {
                     FirebaseUtils.ref.getChatRef(myUID, targetUid)
-                        .child(adapter.getRef(itemPosition).key.toString())
+                        .child(messageID)
                         .removeValue()
                         .addOnCompleteListener {
-                            if (index == selectedItemPosition.lastIndex) {
+                            if (index == selectedMessageIDs.lastIndex) {
                                 toast("Message deleted")
                             }
                         }
@@ -2792,6 +2886,207 @@ class MessageActivity : AppCompatActivity() {
     }
 
 
+
+    private fun bindSmartReply(){
+
+
+        smart_reply_layout.visibility = View.GONE
+
+        FirebaseUtils.ref.getChatRef(myUID, targetUid)
+            .addValueEventListener(object : ValueEventListener{
+                override fun onCancelled(p0: DatabaseError) {}
+
+                override fun onDataChange(p0: DataSnapshot) {
+
+                    val conversation:MutableList<FirebaseTextMessage> = ArrayList()
+                    var isLastMessageMine = false
+                    p0.children.forEachIndexed { index, dataSnapshot ->
+                        val message = dataSnapshot.getValue(Models.MessageModel::class.java)
+                        message?.let {
+                            val textMessage = message.message.takeIf { message.messageType == "message" }?:message.messageType
+
+                            if(it.from == targetUid)
+                            conversation.add(FirebaseTextMessage.createForRemoteUser(textMessage,
+                                System.currentTimeMillis(), targetUid))
+                            else
+                                conversation.add(FirebaseTextMessage.createForLocalUser(textMessage,
+                                System.currentTimeMillis()))
+
+
+                            if(index == p0.childrenCount.toInt() - 1){
+                                isLastMessageMine = it.from == myUID
+                            }
+                        }
+                    }
+
+                    //generate smart reply
+                    try {
+
+
+                        if(conversation.isEmpty()) return
+
+                        FirebaseNaturalLanguage.getInstance().smartReply
+                            .suggestReplies(conversation)
+                            .addOnSuccessListener {
+                                when(it.status){
+                                    SmartReplySuggestionResult.STATUS_SUCCESS -> {
+
+
+                                    }
+                                    SmartReplySuggestionResult.STATUS_NO_REPLY -> {
+                                        Log.d("MessageActivity", "ML Translation: no reply")
+                                    }
+                                    SmartReplySuggestionResult.STATUS_NOT_SUPPORTED_LANGUAGE -> {
+                                        Log.d("MessageActivity", "ML Translation: language not supported ")
+                                    }
+                                }
+
+                                smart_reply_layout.visibility = if(it.suggestions.isNotEmpty()) View.VISIBLE else View.GONE
+
+
+                                smart_reply_recycler.adapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>(){
+                                    override fun onCreateViewHolder(p0: ViewGroup, p1: Int): RecyclerView.ViewHolder {
+                                        return object : RecyclerView.ViewHolder(LayoutInflater.from(context)
+                                            .inflate(R.layout.item_smart_reply,p0,false)){}
+                                    }
+
+                                    override fun getItemCount() = it.suggestions.size
+                                    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, p1: Int) {
+                                        val suggestion  = it.suggestions[p1].text
+                                        holder.itemView.item_text.text = suggestion
+
+
+                                        holder.itemView.item_text.setOnClickListener {
+                                            Log.d("MessageActivity", "onBindViewHolder: suggestion text clicked")
+                                            messageInputField.inputEditText.setText(suggestion)
+                                            if(Pref.isTapToReply(context))
+                                            messageInputField.button.callOnClick()
+                                        }
+
+                                        holder.itemView.setOnClickListener {
+                                            Log.d("MessageActivity", "onBindViewHolder: suggestion clicked")
+                                            messageInputField.inputEditText.setText(suggestion)
+                                            if(Pref.isTapToReply(context))
+                                            messageInputField.button.callOnClick()
+                                        }
+                                    }
+
+                                }
+
+                            }
+                    } catch (e: Exception) {
+                        Log.e("MessageActivity", "onDataChange: error on smart suggestion : ",e)
+                    }
+                }
+            })
+
+
+        smart_reply_setting.setOnClickListener {
+
+            val smartReplyCheckbox = CheckBox(this)
+            val params = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            params.setMargins(30, 30, 30, 30)
+            smartReplyCheckbox.layoutParams = params
+
+            val layout = LinearLayout(this)
+            layout.setPadding(20,20,20,20)
+            layout.layoutParams = params
+
+            smartReplyCheckbox.text = "Tap to send"
+            smartReplyCheckbox.setTextSize( TypedValue.COMPLEX_UNIT_SP, 18f)
+
+            layout.addView(smartReplyCheckbox)
+
+//            switch.setSwitchTextAppearance(this, R.style.TextViewHeading)
+
+            smartReplyCheckbox.isChecked = Pref.isTapToReply(this)
+            smartReplyCheckbox.setOnCheckedChangeListener { _, isChecked ->
+                Pref.isTapToReply(context, isChecked)
+            }
+            val settingDialog = alert {
+                customView = layout
+                positiveButton("Ok"){}
+            }
+
+            settingDialog.show()
+        }
+
+    }
+
+
+
+    //stuff for reveal menu
+    var isMenuHidden = true
+    private fun hideRevealView() {
+        if (attachment_menu.visibility == View.VISIBLE) {
+            attachment_menu.visibility = View.GONE
+            isMenuHidden = true
+        }
+    }
+
+
+    private fun animateAttachmentMenu(){
+        val mRevealView = attachment_menu
+        val cx = (mRevealView.left + mRevealView.right)
+        val cy = mRevealView.top
+        val radius = Math.max(mRevealView.width, mRevealView.height)
+
+        //Below Android LOLIPOP Version
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            val animator: SupportAnimator =
+                ViewAnimationUtils.createCircularReveal(mRevealView, cx, cy, 0f, radius.toFloat())
+            animator.interpolator = AccelerateDecelerateInterpolator()
+            animator.duration = 700
+
+            val animator_reverse = animator.reverse()
+
+            if (isMenuHidden) {
+                mRevealView.visibility = View.VISIBLE
+                animator.start()
+                isMenuHidden = false
+            } else {
+                animator_reverse.addListener(object  : SupportAnimator.AnimatorListener {
+                    override fun onAnimationRepeat() {
+                    }
+
+                    override fun onAnimationEnd() {
+                        mRevealView.visibility = View.INVISIBLE
+                        isMenuHidden = true
+                    }
+
+                    override fun onAnimationCancel() {
+                    }
+
+                    override fun onAnimationStart() {
+                    }
+
+                })
+                animator_reverse.start()
+            }
+        }
+        // Android LOLIPOP And ABOVE Version
+        else {
+            if (isMenuHidden) {
+                val anim = android.view.ViewAnimationUtils.createCircularReveal(mRevealView, cx, cy, 0F,
+                    radius.toFloat()
+                )
+                mRevealView.visibility = View.VISIBLE
+                anim.start()
+                isMenuHidden = false
+            } else {
+                val anim = android.view.ViewAnimationUtils.createCircularReveal(mRevealView, cx, cy,
+                    radius.toFloat(), 0f)
+                anim.addListener(object : AnimatorListenerAdapter() {
+                    override fun onAnimationEnd( animation: Animator) {
+                        super.onAnimationEnd(animation)
+                        mRevealView.visibility = View.INVISIBLE
+                        isMenuHidden = true
+                    }
+                })
+                anim.start()
+            }
+        }
+    }
 
 
 }

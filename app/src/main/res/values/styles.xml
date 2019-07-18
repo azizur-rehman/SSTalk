@@ -7,6 +7,7 @@
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+        <item name="android:textAppearance">@style/TextBaseFontStyle</item>
         <!--<item name="searchViewStyle">@style/MySearchViewStyle</item>-->
 
     </style>
@@ -21,7 +22,7 @@
 
     <style name="AppTheme.NoActionBar.Translucent" parent="AppTheme.NoActionBar">
         <item name="android:windowTranslucentStatus" tools:targetApi="kitkat">true</item>
-        <item name="android:statusBarColor" tools:targetApi="lollipop">@android:color/transparent</item>
+        <item name="android:windowTranslucentNavigation" tools:targetApi="kitkat">true</item>
     </style>
 
 
@@ -67,6 +68,10 @@
 
     <!--my styles-->
 
+    <style name="TextBaseFontStyle" >
+        <item name="android:fontFamily">@font/segoeui</item>
+    </style>
+
 
     <style name="RoundButton" parent="Base.Widget.AppCompat.Button">
         <item name="android:background">@drawable/button_round</item>
@@ -83,15 +88,18 @@
         <item name="android:textColor">@color/white</item>
         <item name="android:textSize">14sp</item>
         <item name="android:gravity">center</item>
-        <item name="android:fontFamily">@font/calibri</item>
+        <item name="android:fontFamily">@font/segoeui</item>
     </style>
 
     <style name="TextViewHeading">
         <item name="android:textColor">@color/colorAccent</item>
         <item name="android:textSize">16sp</item>
         <item name="android:gravity">center_vertical</item>
-        <item name="android:fontFamily">@font/roboto_regular</item>
-        <item name="android:padding">15dp</item>
+        <item name="android:fontFamily">@font/segoeui</item>
+        <item name="android:paddingLeft">15dp</item>
+        <item name="android:paddingRight">15dp</item>
+        <item name="android:paddingTop">15dp</item>
+        <item name="android:paddingBottom">15dp</item>
 
     </style>
 
