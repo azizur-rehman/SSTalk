@@ -245,6 +245,9 @@ exports.testHTTPFunction = functions.https.onRequest((request, response) => {
     cleanOldFiles()
 });
 
+exports.onUserCreated = functions.auth.user().onCreate((user) => {
+    return console.log(' --- User created ---\n'+JSON.stringify(user));
+});
 
 exports.onAppVersionUpdated = functions.database.ref('App_Version_Code').onWrite((snapshot, context) =>{
     var previousVersion = parseInt(snapshot.before.val())
@@ -262,6 +265,14 @@ exports.onAppVersionUpdated = functions.database.ref('App_Version_Code').onWrite
             }
         }
 
+        return admin.database().ref('users')
+        .once('value', snapshot => {
+            snapshot.forEach(user => {
+                 return sendNotificationPayload(user.key.toString(), payload);
+            });
+        });
+
+       /* 
        return admin.messaging()
         //fZ6lFJyzvZs:APA91bH2ofK5mamu9vQHMO_PUbYGS8v7Ms4Exm2zHi7PrBVwYPV66ELRdrHQJfdxNwUCf8fRdtkVavsQVBinJWvz8EUywO13v27U2dIwewp9jpo8QdDrmeJadz-nmtTI--46FqYhQUsl
        // .sendToDevice('fZ6lFJyzvZs:APA91bH2ofK5mamu9vQHMO_PUbYGS8v7Ms4Exm2zHi7PrBVwYPV66ELRdrHQJfdxNwUCf8fRdtkVavsQVBinJWvz8EUywO13v27U2dIwewp9jpo8QdDrmeJadz-nmtTI--46FqYhQUsl',payload)
@@ -271,10 +282,12 @@ exports.onAppVersionUpdated = functions.database.ref('App_Version_Code').onWrite
             })
             .catch(error => {
                return console.log('Failed to send update notification = '+JSON.stringify(error)) 
-            })
+         })
+         */
         
     }
-
+    else 
+        return console.log('Version downgraded : '+newVersion +' --> '+cleanOldFiles)
 });
 
 
