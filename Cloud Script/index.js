@@ -324,9 +324,7 @@ function sendNotificationPayload(uid, payload){
 
 
 function cleanOldFiles(){
-  //delete old files
-    console.log('--- Cleaning old files ----')
-
+  
   //getting currentTime in millis
   var currentTime  = new Date().getTime()
 
@@ -337,6 +335,9 @@ function cleanOldFiles(){
      * 60 
      * 60 * 1000)
 
+     //delete old files
+    console.log('--- Cleaning old files before '+endLimit+' ----')
+
 
   //fetching files stored before given limit
   admin.database()
@@ -345,23 +346,27 @@ function cleanOldFiles(){
   .endAt(endLimit)
   .once('value', fileSnapshot => {
       console.log('---> total files to delete = '+fileSnapshot.numChildren())
-      fileSnapshot.forEach(file => {
-          var fileID = file.child('fileID').val()
-          var fileType = file.child('fileType').val()
-          var bucket = file.child('bucket_path').val()
-          var fileExtension = file.child('file_extension').val()
-
-        deleteFile(bucket, fileID, fileType, fileExtension)
+      fileSnapshot.forEach(function(file) {
+        console.log('File data -> '+JSON.stringify(file.val()))
+         
+        deleteFile(file)
+        //deleteFile(bucket, fileID, fileType, fileExtension)
       })
   })
 
 }
 
 
-function deleteFile(bucket, fileID, fileType, fileExtension){
+function deleteFile(file){
 
+    var fileID = file.child('fileID').val().toString()
+    var fileType = file.child('fileType').val()
+    var bucket = file.child('bucket_path').val()
+    var fileExtension = file.child('file_extension').val()
+  
 
-    console.log('File to delete = '+fileType+'/'+fileID +fileExtension)
+  console.log('File to delete = '+bucket+fileType+'/'+fileID +fileExtension)
+
    var storage =  admin.storage()
 
     storage
