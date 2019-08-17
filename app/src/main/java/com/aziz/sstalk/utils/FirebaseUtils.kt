@@ -975,7 +975,7 @@ object FirebaseUtils {
                                 null, null,null)
                         }
                         userStatus.status.startsWith(VAL_TYPING) -> {
-                            if(userStatus.status.endsWith(uid))
+                            if(userStatus.status.endsWith(getUid()))
                                 textView.text = VAL_TYPING
                             else
                                 textView.text = VAL_ONLINE
