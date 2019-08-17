@@ -88,6 +88,13 @@ class ForwardActivity : AppCompatActivity() {
         if(supportActionBar!=null)
             supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
+        if(!FirebaseUtils.isLoggedIn()){
+            startActivity(packageManager.getLaunchIntentForPackage(packageName))
+            finish()
+            return
+        }
+
+
         fwd_snackbar = Snackbar.make(sendBtn, "", Snackbar.LENGTH_INDEFINITE)
 
         caption_layout.visibility = View.GONE
@@ -418,7 +425,7 @@ class ForwardActivity : AppCompatActivity() {
 
     }
 
-    lateinit var adapter: FirebaseRecyclerAdapter<Models.LastMessageDetail, ViewHolder>
+    var adapter: FirebaseRecyclerAdapter<Models.LastMessageDetail, ViewHolder>? = null
 
     private fun setFrequentAdapter(){
 
@@ -447,7 +454,7 @@ class ForwardActivity : AppCompatActivity() {
 
         frequentRecyclerView.adapter = adapter
 
-        adapter.startListening()
+        adapter?.startListening()
 
         lastMsgQuery.addListenerForSingleValueEvent(object : ValueEventListener{
             override fun onCancelled(p0: DatabaseError) {
@@ -687,7 +694,7 @@ class ForwardActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         asyncLoader?.cancel(true)
-        adapter.stopListening()
+        adapter?.stopListening()
         super.onDestroy()
     }
 

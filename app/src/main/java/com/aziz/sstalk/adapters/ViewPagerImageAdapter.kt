@@ -21,7 +21,8 @@ import java.util.ArrayList
 class ViewPagerImageAdapter(
     private val inflater: LayoutInflater,
     private val paths: ArrayList<String>,
-    private val type: String
+    private val type: ArrayList<String>,
+    private var isForPreview:Boolean = false
 ) : PagerAdapter() {
 
     var captions:MutableList<String>  = ArrayList()
@@ -40,11 +41,11 @@ class ViewPagerImageAdapter(
 
         val imgView = itemView.image_preview
 
-        if(type == utils.constants.FILE_TYPE_IMAGE) {
+        if(type[position] == utils.constants.FILE_TYPE_IMAGE) {
 
             imgView.setImageURI(utils.getUriFromFile(container.context, File(paths[position])))
         }
-        else if(type == utils.constants.FILE_TYPE_VIDEO){
+        else if(type[position] == utils.constants.FILE_TYPE_VIDEO){
             itemView.image_preview.visibility = View.GONE
 
             val thumb = ThumbnailUtils.createVideoThumbnail((paths[position]), MediaStore.Video.Thumbnails.MINI_KIND)
@@ -66,6 +67,7 @@ class ViewPagerImageAdapter(
         }
 
 
+        itemView.upload_caption_edittext_layout.visibility = if(isForPreview) View.GONE else View.VISIBLE
 
         itemView.captionEditText.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {

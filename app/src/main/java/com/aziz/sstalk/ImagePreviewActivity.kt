@@ -7,6 +7,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.util.Log
 import android.view.MenuItem
 import android.view.View
+import com.aziz.sstalk.adapters.ViewPagerImageAdapter
 import com.aziz.sstalk.utils.utils
 import com.squareup.picasso.NetworkPolicy
 import com.squareup.picasso.Picasso
@@ -22,6 +23,8 @@ class ImagePreviewActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_image_preview)
+
+
 
         var imgURL = intent.getStringExtra(utils.constants.KEY_IMG_PATH)
         var imgLocalPath = intent.getStringExtra(utils.constants.KEY_LOCAL_PATH)

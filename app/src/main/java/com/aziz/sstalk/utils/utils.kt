@@ -82,7 +82,7 @@ object utils {
         const val KEY_NAME = "name"
 
         const val IS_FOR_SINGLE_FILE = "isSingleFile"
-        const val URI_AUTHORITY = "com.aziz.sstalk"
+        const val URI_AUTHORITY = "com.mvc.imagepicker.provider"
 
         const val KEY_FILE_TYPE = "type"
         const val debugUserID = "user---2"

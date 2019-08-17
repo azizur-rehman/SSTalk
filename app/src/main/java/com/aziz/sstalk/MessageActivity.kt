@@ -1112,7 +1112,7 @@ class MessageActivity : AppCompatActivity() {
                                 if(isContextMenuActive)
                                     return@setOnClickListener
 
-                                downloadVideo(messageID)
+                                downloadVideo(model , messageID)
                                 it.visibility = View.GONE
                             }
 
@@ -1812,7 +1812,7 @@ class MessageActivity : AppCompatActivity() {
 
 
     //downloading video and saving to file in the form of file
-    private fun downloadVideo(messageID: String){
+    private fun downloadVideo(model: Models.MessageModel, messageID: String){
 
 
         val progressBar = CircularProgressBarsAt[messageID]
@@ -1820,8 +1820,10 @@ class MessageActivity : AppCompatActivity() {
         progressBar?.visibility = View.VISIBLE
         progressBar?.progress =0f
 
-        val storageRef = FirebaseStorage.getInstance().reference
-            .child(utils.constants.FILE_TYPE_VIDEO).child(messageID)
+        val storageRef =
+            FirebaseStorage.getInstance().getReferenceFromUrl(model.message)
+//            FirebaseStorage.getInstance().reference
+//            .child(utils.constants.FILE_TYPE_VIDEO).child(messageID)
 
 
 
@@ -2163,7 +2165,7 @@ class MessageActivity : AppCompatActivity() {
 
 
         if(model.file_local_path.isEmpty()){
-            downloadVideo(messageID)
+            downloadVideo(model, messageID)
         }
     }
 
@@ -2782,10 +2784,19 @@ class MessageActivity : AppCompatActivity() {
 
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
 
+
+
                 if(layoutManager.findLastVisibleItemPosition() == adapter.itemCount - 1 )
+                {
                     bottomScrollButton.hide()
+                    //todo hide bottom
+                    utils.slideUp(smart_reply_root_layout)
+                }
                 else if(adapter.itemCount > 5)
                     bottomScrollButton.show()
+                else{
+                    utils.slideDown(smart_reply_root_layout)
+                }
 
                 if(layoutManager.findFirstVisibleItemPosition() <= 1) {
                     dateStickyHeader.visibility = View.GONE

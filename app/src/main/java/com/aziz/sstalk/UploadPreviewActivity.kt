@@ -53,6 +53,9 @@ class UploadPreviewActivity : AppCompatActivity() {
             }
         }
 
+        val fileTypes = ArrayList<String>()
+        for (i in 0 until imagePaths.size)
+            fileTypes.add(intent.getStringExtra(utils.constants.KEY_FILE_TYPE))
 
         if (imagePaths.isEmpty()) {
             setResult(Activity.RESULT_CANCELED)
@@ -60,7 +63,7 @@ class UploadPreviewActivity : AppCompatActivity() {
             utils.longToast(this, "Failed to load image")
         }
 
-        val adapter = ViewPagerImageAdapter(layoutInflater, imagePaths as java.util.ArrayList<String>, intent.getStringExtra(utils.constants.KEY_FILE_TYPE))
+        val adapter = ViewPagerImageAdapter(layoutInflater, imagePaths as java.util.ArrayList<String>, fileTypes)
         viewPager.adapter = adapter
 
 
