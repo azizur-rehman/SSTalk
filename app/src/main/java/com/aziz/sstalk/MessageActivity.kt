@@ -33,6 +33,7 @@ import android.view.ViewGroup
 import androidx.appcompat.widget.SearchView
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.*
+import androidx.core.view.ViewPropertyAnimatorCompat
 import com.aziz.sstalk.firebase.MessagingService
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.DateFormatter
@@ -1080,6 +1081,7 @@ class MessageActivity : AppCompatActivity() {
                     if(!isContextMenuActive)
                         startActivity(
                             Intent(context, ImagePreviewActivity::class.java)
+                                .putExtra(utils.constants.KEY_MSG_MODEL, model)
                                 .putExtra(utils.constants.KEY_IMG_PATH, model.message.toString())
                                 .putExtra(utils.constants.KEY_LOCAL_PATH, model.file_local_path.toString())
                         )
@@ -2790,13 +2792,18 @@ class MessageActivity : AppCompatActivity() {
                 {
                     bottomScrollButton.hide()
                     //todo hide bottom
-                    utils.slideUp(smart_reply_root_layout)
+                    smart_reply_root_layout.animate().translationY(0f).withStartAction { smart_reply_root_layout.visibility = View.VISIBLE }
                 }
                 else if(adapter.itemCount > 5)
+                {
                     bottomScrollButton.show()
-                else{
-                    utils.slideDown(smart_reply_root_layout)
+                    smart_reply_root_layout.animate().translationY(smart_reply_root_layout.height.toFloat())
+                        .withEndAction { smart_reply_root_layout.visibility = View.GONE }
+
                 }
+
+
+
 
                 if(layoutManager.findFirstVisibleItemPosition() <= 1) {
                     dateStickyHeader.visibility = View.GONE

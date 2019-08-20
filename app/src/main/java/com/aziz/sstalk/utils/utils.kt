@@ -832,7 +832,7 @@ object utils {
             view.height.toFloat(),  // fromYDelta
                 0f)                // toYDelta
         animate.duration = 500
-        animate.fillAfter = false
+        animate.fillAfter = true
         view.startAnimation(animate)
     }
 

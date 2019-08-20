@@ -48,7 +48,7 @@ import java.util.concurrent.Future
 
 class UserProfileActivity : AppCompatActivity() {
 
-    val  messageModels:MutableList<Models.MessageModel> = ArrayList()
+    val  messageModels:MutableList<Models.MessageModel> = ArrayList<Models.MessageModel>()
     var myUID = ""
     var targetUID = ""
     var isBlockedByMe = false

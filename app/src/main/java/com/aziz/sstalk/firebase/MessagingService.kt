@@ -54,10 +54,11 @@ class MessagingService: FirebaseMessagingService() {
     }
 
 
-    override fun onMessageReceived(p0: RemoteMessage?) {
+
+    override fun onMessageReceived(p0: RemoteMessage) {
         super.onMessageReceived(p0)
 
-        Log.d("MessagingService", "onMessageReceived: ${p0!!.data}")
+        Log.d("MessagingService", "onMessageReceived: ${p0.data}")
         val data: MutableMap<String, String>? = p0.data ?: return
 
         val sender = data!![KEY_SENDER]!!
@@ -378,7 +379,7 @@ class MessagingService: FirebaseMessagingService() {
         messageString.split(MESSAGE_SEPERATOR)
     //should remove message seperator on last value
 
-    override fun onNewToken(p0: String?) {
+    override fun onNewToken(p0: String) {
 
         val token = p0
 

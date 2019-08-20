@@ -1,13 +1,17 @@
 package com.aziz.sstalk
 
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.graphics.drawable.Drawable
+import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import android.util.Log
 import android.view.MenuItem
 import android.view.View
 import com.aziz.sstalk.adapters.ViewPagerImageAdapter
+import com.aziz.sstalk.models.Models
+import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.utils
 import com.squareup.picasso.NetworkPolicy
 import com.squareup.picasso.Picasso
@@ -25,9 +29,33 @@ class ImagePreviewActivity : AppCompatActivity() {
         setContentView(R.layout.activity_image_preview)
 
 
+        setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            window.statusBarColor = Color.BLACK
+        }
+
+        title = ""
+
 
         var imgURL = intent.getStringExtra(utils.constants.KEY_IMG_PATH)
         var imgLocalPath = intent.getStringExtra(utils.constants.KEY_LOCAL_PATH)
+
+        val messageModel = intent.getSerializableExtra(utils.constants.KEY_MSG_MODEL) as? Models.MessageModel
+
+        messageModel?.let {
+
+            title = if(it.from == FirebaseUtils.getUid())
+                "You"
+            else
+                "Sender"
+
+
+            toolbar.subtitle = utils.getLocalDate(it.timeInMillis) +" "+utils.getLocalTime(it.timeInMillis)
+        }
+
+
 
         if(imgURL == null)
             imgURL = ""
@@ -91,13 +119,7 @@ class ImagePreviewActivity : AppCompatActivity() {
 
 
 
-        setSupportActionBar(toolbar)
-        if(supportActionBar!=null) {
-            supportActionBar!!.setDisplayHomeAsUpEnabled(true)
-            supportActionBar!!.setHomeButtonEnabled(true)
-        }
 
-        title = ""
     }
 
 
