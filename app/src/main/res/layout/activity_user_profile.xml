@@ -22,7 +22,7 @@
                 android:layout_height="match_parent"
                 app:toolbarId="@+id/toolbar"
                 app:title=""
-                app:expandedTitleGravity="top"
+                app:expandedTitleGravity="bottom"
                 app:layout_scrollFlags="scroll|exitUntilCollapsed"
                 app:contentScrim="?attr/colorPrimary">
 
