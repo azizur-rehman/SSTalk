@@ -51,12 +51,12 @@ class FragmentOTP : Fragment() {
     private var rootView:View? = null
 
     private var verificationStateChangedCallbacks = object  : PhoneAuthProvider.OnVerificationStateChangedCallbacks(){
-        override fun onVerificationCompleted(p0: PhoneAuthCredential?) {
+        override fun onVerificationCompleted(p0: PhoneAuthCredential) {
 
             Log.d("FragmentOTP", "onVerificationCompleted: ${p0.toString()}")
         }
 
-        override fun onVerificationFailed(p0: FirebaseException?) {
+        override fun onVerificationFailed(p0: FirebaseException) {
             utils.toast(context, "Failed to send OTP. Perhaps you are using an emulator.")
             Log.e("FragmentOTP", "onVerificationFailed: ${p0?.message.toString()}")
 
@@ -66,7 +66,7 @@ class FragmentOTP : Fragment() {
 
         }
 
-        override fun onCodeSent(p0: String?, p1: PhoneAuthProvider.ForceResendingToken?) {
+        override fun onCodeSent(p0: String, p1: PhoneAuthProvider.ForceResendingToken) {
             super.onCodeSent(p0, p1)
 
             verificationID = p0!!
@@ -189,6 +189,15 @@ class FragmentOTP : Fragment() {
 
 
                     val user = it.result!!.user
+
+                    if(user == null)
+                    {
+                        context?.toast("Something went wrong. Please try again")
+                        fragmentManager?.beginTransaction()!!
+                            .remove(this@FragmentOTP)
+                            .commit()
+                        return@addOnCompleteListener
+                    }
 
                     FirebaseUtils.ref.user(user.uid)
                         .addListenerForSingleValueEvent(object : ValueEventListener {

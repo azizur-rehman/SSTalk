@@ -139,6 +139,7 @@
                 android:name=".AboutTheDeveloperActivity"
                 android:theme="@style/AppTheme.NoActionBar"/>
         <activity android:name=".MultiContactChooserActivity"/>
+        <activity android:name=".FeedbackActivity"/>
 
         <service android:name=".firebase.MessagingService">
             <intent-filter>

@@ -33,6 +33,7 @@ import android.view.ViewGroup
 import androidx.appcompat.widget.SearchView
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.*
+import androidx.core.view.ViewPropertyAnimatorCompat
 import com.aziz.sstalk.firebase.MessagingService
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.DateFormatter
@@ -1080,6 +1081,7 @@ class MessageActivity : AppCompatActivity() {
                     if(!isContextMenuActive)
                         startActivity(
                             Intent(context, ImagePreviewActivity::class.java)
+                                .putExtra(utils.constants.KEY_MSG_MODEL, model)
                                 .putExtra(utils.constants.KEY_IMG_PATH, model.message.toString())
                                 .putExtra(utils.constants.KEY_LOCAL_PATH, model.file_local_path.toString())
                         )
@@ -1112,7 +1114,7 @@ class MessageActivity : AppCompatActivity() {
                                 if(isContextMenuActive)
                                     return@setOnClickListener
 
-                                downloadVideo(messageID)
+                                downloadVideo(model , messageID)
                                 it.visibility = View.GONE
                             }
 
@@ -1812,7 +1814,7 @@ class MessageActivity : AppCompatActivity() {
 
 
     //downloading video and saving to file in the form of file
-    private fun downloadVideo(messageID: String){
+    private fun downloadVideo(model: Models.MessageModel, messageID: String){
 
 
         val progressBar = CircularProgressBarsAt[messageID]
@@ -1820,8 +1822,10 @@ class MessageActivity : AppCompatActivity() {
         progressBar?.visibility = View.VISIBLE
         progressBar?.progress =0f
 
-        val storageRef = FirebaseStorage.getInstance().reference
-            .child(utils.constants.FILE_TYPE_VIDEO).child(messageID)
+        val storageRef =
+            FirebaseStorage.getInstance().getReferenceFromUrl(model.message)
+//            FirebaseStorage.getInstance().reference
+//            .child(utils.constants.FILE_TYPE_VIDEO).child(messageID)
 
 
 
@@ -2163,7 +2167,7 @@ class MessageActivity : AppCompatActivity() {
 
 
         if(model.file_local_path.isEmpty()){
-            downloadVideo(messageID)
+            downloadVideo(model, messageID)
         }
     }
 
@@ -2782,10 +2786,24 @@ class MessageActivity : AppCompatActivity() {
 
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
 
+
+
                 if(layoutManager.findLastVisibleItemPosition() == adapter.itemCount - 1 )
+                {
                     bottomScrollButton.hide()
+                    //todo hide bottom
+                    smart_reply_root_layout.animate().translationY(0f).withStartAction { smart_reply_root_layout.visibility = View.VISIBLE }
+                }
                 else if(adapter.itemCount > 5)
+                {
                     bottomScrollButton.show()
+                    smart_reply_root_layout.animate().translationY(smart_reply_root_layout.height.toFloat())
+                        .withEndAction { smart_reply_root_layout.visibility = View.GONE }
+
+                }
+
+
+
 
                 if(layoutManager.findFirstVisibleItemPosition() <= 1) {
                     dateStickyHeader.visibility = View.GONE

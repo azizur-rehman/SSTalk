@@ -5,7 +5,7 @@
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:fitsSystemWindows="false"
+        android:fitsSystemWindows="true"
         tools:context=".UserProfileActivity">
 
     <com.google.android.material.appbar.AppBarLayout
@@ -22,11 +22,13 @@
                 android:layout_height="match_parent"
                 app:toolbarId="@+id/toolbar"
                 app:title=""
+                app:expandedTitleGravity="bottom"
                 app:layout_scrollFlags="scroll|exitUntilCollapsed"
                 app:contentScrim="?attr/colorPrimary">
 
 
             <FrameLayout android:layout_width="match_parent"
+                         android:fitsSystemWindows="true"
                          android:background="@drawable/image_background_bottom_gradient"
                          android:layout_height="match_parent">
 
@@ -50,8 +52,8 @@
                           android:layout_height="wrap_content"
                           android:layout_gravity="bottom"
                           app:layout_collapseMode="pin"
-
-                          android:layout_marginBottom="28dp"
+                          android:fitsSystemWindows="true"
+                          android:layout_marginBottom="8dp"
                           android:layout_marginLeft="36dp"
                           android:id="@+id/toolbar_subtitle_textView"
                 />
@@ -71,6 +73,7 @@
 
 
     <androidx.core.widget.NestedScrollView android:layout_width="match_parent"
+                                           android:fitsSystemWindows="true"
                                            app:layout_behavior="@string/appbar_scrolling_view_behavior"
                                            android:layout_height="wrap_content">
 
