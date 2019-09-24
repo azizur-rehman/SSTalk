@@ -2,6 +2,7 @@ package com.aziz.sstalk.utils
 
 import android.Manifest
 import android.animation.Animator
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.ActivityManager
 import android.content.ContentValues
@@ -628,7 +629,7 @@ object utils {
     fun hideSoftKeyboard(activity: Activity) {
         try {
             val inputMethodManager = activity.getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
-            inputMethodManager.hideSoftInputFromWindow(activity.currentFocus.windowToken, 0)
+            inputMethodManager.hideSoftInputFromWindow(activity.currentFocus?.windowToken, 0)
         } catch (e:Exception) {
             e.printStackTrace()
         }
@@ -651,6 +652,7 @@ object utils {
         }
     }
 
+    @SuppressLint("NewApi")
     fun isAppIsInBackground(context: Context):Boolean {
         var isInBackground = true
         val am =  context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
@@ -668,7 +670,7 @@ object utils {
         } else {
             val taskInfo = am.getRunningTasks(1)
             val componentInfo = taskInfo[0].topActivity
-            if (componentInfo.packageName == context.packageName) {
+            if (componentInfo?.packageName == context.packageName) {
                 isInBackground = false
             }
         }

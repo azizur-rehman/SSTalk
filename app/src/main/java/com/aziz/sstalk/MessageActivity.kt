@@ -563,7 +563,7 @@ class MessageActivity : AppCompatActivity() {
 
 
         if(resultCode == Activity.RESULT_CANCELED && requestCode == RQ_CAMERA){
-            contentResolver.delete(cameraImageUri, null,null)
+            cameraImageUri?.let { contentResolver.delete(it, null,null) }
         }
 
 
@@ -2229,7 +2229,8 @@ class MessageActivity : AppCompatActivity() {
                                         else messages + message.message + "\n"
                                     }
                                     val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                    clipboard.primaryClip = (ClipData.newPlainText("Messages ", messages.trim()))
+
+                                    clipboard.setPrimaryClip (ClipData.newPlainText("Messages ", messages.trim()))
                                     utils.toast(context, "Messages copied")
                                 }
 

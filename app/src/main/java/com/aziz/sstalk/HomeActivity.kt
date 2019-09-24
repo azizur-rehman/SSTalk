@@ -25,6 +25,11 @@ import com.aziz.sstalk.utils.Pref
 import com.aziz.sstalk.utils.utils
 import com.firebase.ui.database.FirebaseRecyclerAdapter
 import com.firebase.ui.database.FirebaseRecyclerOptions
+import com.google.android.gms.ads.AdListener
+import com.google.android.gms.ads.AdLoader
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.MobileAds
+import com.google.android.gms.ads.formats.UnifiedNativeAd
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -35,6 +40,17 @@ import kotlinx.android.synthetic.main.app_bar_home.*
 import kotlinx.android.synthetic.main.content_home.*
 import kotlinx.android.synthetic.main.content_home.recycler_back_message
 import kotlinx.android.synthetic.main.item_conversation_layout.view.*
+import kotlinx.android.synthetic.main.item_conversation_layout.view.contact_checkbox
+import kotlinx.android.synthetic.main.item_conversation_layout.view.conversation_mute_icon
+import kotlinx.android.synthetic.main.item_conversation_layout.view.delivery_status_last_msg
+import kotlinx.android.synthetic.main.item_conversation_layout.view.messageInfoLayout
+import kotlinx.android.synthetic.main.item_conversation_layout.view.messageTime
+import kotlinx.android.synthetic.main.item_conversation_layout.view.mobile_number
+import kotlinx.android.synthetic.main.item_conversation_layout.view.name
+import kotlinx.android.synthetic.main.item_conversation_layout.view.online_status_imageview
+import kotlinx.android.synthetic.main.item_conversation_layout.view.pic
+import kotlinx.android.synthetic.main.item_conversation_layout.view.unreadCount
+import kotlinx.android.synthetic.main.item_conversation_native_ad.view.*
 import kotlinx.android.synthetic.main.layout_menu_badge.view.*
 import kotlinx.android.synthetic.main.layout_recycler_view.*
 import org.jetbrains.anko.*
@@ -76,6 +92,9 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             finish()
             return
         }
+
+        MobileAds.initialize(this)
+        initAd()
 
         //storing firebase token, if updated
         FirebaseUtils.updateFCMToken()
@@ -269,6 +288,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
                 }
 
+                loadNativeAd(holder.itemView, position)
 
 
                 FirebaseUtils.setMuteImageIcon(uid, holder.muteIcon)
@@ -291,7 +311,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     holder.checkbox.isChecked = false
                 }
 
-                holder.itemView.setOnClickListener {
+                holder.itemView.item_conversation_layout.setOnClickListener {
 
                     if(isContextToolbarActive){
 
@@ -336,7 +356,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
 
 
-                holder.itemView.setOnLongClickListener {
+                holder.itemView.item_conversation_layout.setOnLongClickListener {
 
                     if(isContextToolbarActive)
                         return@setOnLongClickListener false
@@ -654,4 +674,46 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         catch (e:Exception){}
     }
 
+    private fun loadNativeAd(itemView:View, position:Int){
+
+        with(itemView){
+            conversation_native_ad.iconView = itemView.pic
+            unifiedNativeAd?.let {
+                conversation_native_ad.setNativeAd(it)
+
+                itemView.ad_name.text = it.headline
+                itemView.ad_pic.setImageDrawable(it.icon.drawable)
+                itemView.ad_subtitle.text = it.body
+                itemView.ad_side_text.text = it.advertiser
+
+                Log.d("HomeActivity", "loadNativeAd: bind ad assets")
+            }
+            conversation_native_ad.visibility = View.VISIBLE
+
+
+        }
+
+    }
+
+    lateinit var adLoader:AdLoader
+    var unifiedNativeAd:UnifiedNativeAd? = null
+
+    private fun initAd(){
+
+        adLoader = AdLoader.Builder(this, getString(R.string.native_ad_conversation))
+            .forUnifiedNativeAd {
+                unifiedNativeAd = it
+                Log.d("HomeActivity", "initAd: Loaded")
+            }
+            .withAdListener(object : AdListener() {
+                override fun onAdFailedToLoad(p0: Int) {
+                    super.onAdFailedToLoad(p0)
+                    Log.d("HomeActivity", "onAdFailedToLoad: code = $p0")
+                }
+            })
+            .build()
+
+        adLoader.loadAd(AdRequest.Builder().build())
+
+    }
 }

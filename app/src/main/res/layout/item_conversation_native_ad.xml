@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.gms.ads.formats.UnifiedNativeAdView xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent"
               android:layout_height="wrap_content"
+        android:id="@+id/conversation_native_ad"
+
               xmlns:app="http://schemas.android.com/apk/res-auto"
-              android:background="?attr/selectableItemBackground"
               android:orientation="vertical">
 
     <LinearLayout
@@ -12,7 +13,7 @@
         android:layout_margin="8dp"
         android:gravity="center"
         android:padding="5dp"
-            android:id="@+id/item_conversation_layout"
+        android:background="?attr/selectableItemBackground"
         android:orientation="horizontal"
         >
 
@@ -23,7 +24,7 @@
 
 
             <de.hdodenhof.circleimageview.CircleImageView
-            android:id="@+id/pic"
+            android:id="@+id/ad_pic"
             android:layout_width="56dp"
             android:layout_height="56dp"
             app:civ_circle_background_color="@color/colorAccent"
@@ -41,17 +42,7 @@
            android:src="@drawable/shape_bubble_online"
            />
 
-           <com.aziz.sstalk.views.AnimCheckBox
-                   android:layout_width="22dp"
-                   android:layout_height="22dp"
-                   app:checked="false"
-                   android:visibility="invisible"
-                   app:stroke_color="@color/white"
-                   app:circle_color="@color/color4"
-                   app:stroke_width="2dp"
-                   android:id="@+id/contact_checkbox"
-                   android:layout_gravity="end|bottom"
-           />
+
 
        </FrameLayout>
 
@@ -68,7 +59,7 @@
             android:paddingLeft="15dp">
 
             <TextView
-                android:id="@+id/name"
+                android:id="@+id/ad_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="@color/black"
@@ -96,7 +87,7 @@
                 />
 
                 <TextView
-                android:id="@+id/mobile_number"
+                android:id="@+id/ad_subtitle"
                 android:layout_weight="1"
                 android:lines="1"
                 android:ellipsize="end"
@@ -128,7 +119,7 @@
                       android:layout_height="wrap_content"
                       android:gravity="center"
                       android:layout_gravity="end"
-                      android:id="@+id/messageTime"
+                      android:id="@+id/ad_side_text"
                       android:fontFamily="@font/roboto_thin"
                         android:text="Yesterday"
                       android:textSize="12sp"
@@ -176,15 +167,5 @@
     </LinearLayout>
 
 
-    <View android:layout_width="match_parent"
-          android:layout_height="0.01dp"
-    android:background="@color/black"
-          android:layout_marginRight="10dp"
-          android:layout_marginLeft="100dp"
-    />
 
-
-    <include layout="@layout/item_conversation_native_ad"/>
-
-
-</LinearLayout>
+</com.google.android.gms.ads.formats.UnifiedNativeAdView>
