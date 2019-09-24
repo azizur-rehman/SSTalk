@@ -10,7 +10,6 @@
             android:layout_width="42dp"
             android:layout_margin="15dp"
             android:layout_height="42dp"
-            app:civ_border_width="0.5dp"
             app:civ_circle_background_color="@color/colorPrimary"
             app:civ_border_color="@color/colorAccent"
             android:src="@drawable/contact_placeholder" />
