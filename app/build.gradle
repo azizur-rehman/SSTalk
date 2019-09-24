@@ -5,6 +5,7 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 
 apply plugin: 'com.google.gms.google-services'
+apply plugin: 'io.fabric'
 
 
 android {
@@ -96,6 +97,12 @@ dependencies {
 
     //Ads
     implementation 'com.google.android.gms:play-services-ads:18.2.0'
+
+    // (Recommended) Add Analytics
+    implementation 'com.google.firebase:firebase-analytics:17.2.0'
+
+    // Add dependency
+    implementation 'com.crashlytics.sdk.android:crashlytics:2.10.1'
 
     //coroutines
 

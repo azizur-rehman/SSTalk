@@ -20,9 +20,7 @@ import androidx.core.content.ContextCompat
 import com.aurelhubert.ahbottomnavigation.AHBottomNavigationItem
 import com.aziz.sstalk.fragments.FragmentOnlineFriends
 import com.aziz.sstalk.models.Models
-import com.aziz.sstalk.utils.FirebaseUtils
-import com.aziz.sstalk.utils.Pref
-import com.aziz.sstalk.utils.utils
+import com.aziz.sstalk.utils.*
 import com.firebase.ui.database.FirebaseRecyclerAdapter
 import com.firebase.ui.database.FirebaseRecyclerOptions
 import com.google.android.gms.ads.AdListener
@@ -522,6 +520,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         init {
             onlineStatus.visibility = View.GONE
+            checkbox.isEnabled = false
         }
 
     }
@@ -676,17 +675,33 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private fun loadNativeAd(itemView:View, position:Int){
 
+
+
         with(itemView){
-            conversation_native_ad.iconView = itemView.pic
+
+            conversation_native_ad.hide()
+
+
+
             unifiedNativeAd?.let {
+
+                if(position % 1 == 0 && position > 0)
+                    conversation_native_ad.show()
+                else{
+                    conversation_native_ad.hide()
+                    return
+                }
+
                 conversation_native_ad.setNativeAd(it)
 
+                conversation_native_ad.iconView = itemView.pic
                 itemView.ad_name.text = it.headline
                 itemView.ad_pic.setImageDrawable(it.icon.drawable)
                 itemView.ad_subtitle.text = it.body
                 itemView.ad_side_text.text = it.advertiser
 
-                Log.d("HomeActivity", "loadNativeAd: bind ad assets")
+                conversation_native_ad.priceView = itemView.ad_side_text
+                    Log.d("HomeActivity", "loadNativeAd: bind ad assets")
             }
             conversation_native_ad.visibility = View.VISIBLE
 
