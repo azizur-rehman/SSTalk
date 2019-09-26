@@ -28,6 +28,9 @@ import com.google.android.gms.ads.AdLoader
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.formats.UnifiedNativeAd
+import com.google.android.gms.ads.reward.RewardItem
+import com.google.android.gms.ads.reward.RewardedVideoAd
+import com.google.android.gms.ads.reward.RewardedVideoAdListener
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -49,11 +52,10 @@ import kotlinx.android.synthetic.main.item_conversation_layout.view.online_statu
 import kotlinx.android.synthetic.main.item_conversation_layout.view.pic
 import kotlinx.android.synthetic.main.item_conversation_layout.view.unreadCount
 import kotlinx.android.synthetic.main.item_conversation_native_ad.view.*
-import kotlinx.android.synthetic.main.layout_menu_badge.view.*
 import kotlinx.android.synthetic.main.layout_recycler_view.*
 import org.jetbrains.anko.*
 import org.jetbrains.anko.design.indefiniteSnackbar
-import org.jetbrains.anko.design.longSnackbar
+import org.jetbrains.anko.design.snackbar
 import java.lang.Exception
 import java.util.concurrent.Future
 import kotlin.collections.ArrayList
@@ -66,6 +68,8 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     val id = R.drawable.contact_placeholder
     var isAnyMuted = false
     var unreadConversation = 0
+    
+    lateinit var rewardedVideoAd:RewardedVideoAd
 
     lateinit var adapter:FirebaseRecyclerAdapter<Models.LastMessageDetail, ViewHolder>
 
@@ -91,8 +95,8 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             return
         }
 
-        MobileAds.initialize(this)
-        initAd()
+        MobileAds.initialize(this, getString(R.string.admob_id))
+        loadRewardedAd()
 
         //storing firebase token, if updated
         FirebaseUtils.updateFCMToken()
@@ -235,6 +239,21 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 startActivity(Intent(this@HomeActivity, AboutTheDeveloperActivity::class.java))
             }
 
+            R.id.nav_support -> {
+
+                if(!rewardedVideoAd.isLoaded)
+                {
+                    bottom_navigation_home.snackbar("Ad not available at the moment","Try again"){
+                        loadRewardedAd()
+                    }
+                    return false
+                }
+
+                showConfirmDialog("Support Us by watching a short video"){
+                    rewardedVideoAd.show()
+                }
+            }
+
         }
 
         drawer_layout.closeDrawer(GravityCompat.START)
@@ -286,7 +305,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
                 }
 
-                loadNativeAd(holder.itemView, position)
+                doAsync {  loadNativeAd(holder.itemView, position) }
 
 
                 FirebaseUtils.setMuteImageIcon(uid, holder.muteIcon)
@@ -374,7 +393,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     actionMode = startSupportActionMode(object : ActionMode.Callback {
                         override fun onActionItemClicked(p0: ActionMode?, p1: MenuItem?): Boolean {
 
-                            when(p1!!.itemId){
+                            when(p1?.itemId){
                                 R.id.action_delete_conversation -> {
                                     Log.d("HomeActivity", "onActionItemClicked: deleting pos = $selectedItemPosition")
                                     deleteSelectedConversations(selectedItemPosition.toMutableList())
@@ -390,13 +409,13 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                                 }
                             }
 
-                            p0!!.finish()
+                            p0?.finish()
                             return true
                         }
 
                         override fun onCreateActionMode(p0: ActionMode?, p1: Menu?): Boolean {
 
-                            p0!!.menuInflater.inflate(R.menu.converstation_option_menu, p1)
+                            p0?.menuInflater?.inflate(R.menu.converstation_option_menu, p1)
                             isContextToolbarActive = true
 
 
@@ -425,7 +444,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                         }
 
                     })
-                    actionMode!!.title = selectedItemPosition.size.toString()
+                    actionMode?.title = selectedItemPosition.size.toString()
 
                     true
                 }
@@ -683,52 +702,122 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
 
 
-            unifiedNativeAd?.let {
 
-                if(position % 1 == 0 && position > 0)
+            initAd {
+
+                if(position % utils.constants.ads_after_items == 0 && position > 0)
                     conversation_native_ad.show()
                 else{
                     conversation_native_ad.hide()
-                    return
+                    return@initAd
                 }
+                it?.let {
+
+
+                    conversation_native_ad.iconView = itemView.pic
+
+                    itemView.ad_name.text = it.headline
+                    itemView.ad_side_text.text = it.advertiser
+                    itemView.ad_subtitle.text = it.body
+
+                    if(it.icon != null)
+                    itemView.ad_pic.setImageDrawable(it.icon.drawable)
+
+                    if(it.starRating != null)
+                        itemView.ad_rating.rating = it.starRating.toFloat()
+                    else
+                        itemView.ad_rating.hide()
+
+                    with(itemView){
+                        ad_call_to_action.text = it.callToAction
+
+                        conversation_native_ad.callToActionView = ad_call_to_action
+                        conversation_native_ad.bodyView = ad_subtitle
+                        conversation_native_ad.headlineView = ad_name
+                        conversation_native_ad.advertiserView = ad_side_text
+                        conversation_native_ad.iconView = ad_pic
+                    }
+
+
+                    it.enableCustomClickGesture()
 
                 conversation_native_ad.setNativeAd(it)
 
-                conversation_native_ad.iconView = itemView.pic
-                itemView.ad_name.text = it.headline
-                itemView.ad_pic.setImageDrawable(it.icon.drawable)
-                itemView.ad_subtitle.text = it.body
-                itemView.ad_side_text.text = it.advertiser
-
-                conversation_native_ad.priceView = itemView.ad_side_text
-                    Log.d("HomeActivity", "loadNativeAd: bind ad assets")
-            }
-            conversation_native_ad.visibility = View.VISIBLE
-
-
+                }
+            if(it == null)
+                conversation_native_ad.hide()
         }
 
     }
 
-    lateinit var adLoader:AdLoader
-    var unifiedNativeAd:UnifiedNativeAd? = null
 
-    private fun initAd(){
+}
+
+    private lateinit var adLoader:AdLoader
+    private fun initAd(onLoaded: ((unifiedNativeAd:UnifiedNativeAd?) -> Unit)? = null){
+
+        var unifiedNativeAd:UnifiedNativeAd? = null
 
         adLoader = AdLoader.Builder(this, getString(R.string.native_ad_conversation))
             .forUnifiedNativeAd {
                 unifiedNativeAd = it
-                Log.d("HomeActivity", "initAd: Loaded")
+                onLoaded?.invoke(it)
             }
             .withAdListener(object : AdListener() {
+
+                override fun onAdLoaded() {
+
+                    onLoaded?.invoke(unifiedNativeAd)
+                    super.onAdLoaded()
+                }
+
                 override fun onAdFailedToLoad(p0: Int) {
                     super.onAdFailedToLoad(p0)
                     Log.d("HomeActivity", "onAdFailedToLoad: code = $p0")
+                    onLoaded?.invoke(null)
+
                 }
             })
             .build()
 
-        adLoader.loadAd(AdRequest.Builder().build())
+        adLoader.loadAds(AdRequest.Builder().addTestDevice(utils.constants.redmi_note_3_test_device_id).build(), 5)
 
+    }
+    
+
+    var isVideoAdLoaded = false
+    private fun loadRewardedAd(){
+
+        rewardedVideoAd = MobileAds.getRewardedVideoAdInstance(this)
+        rewardedVideoAd.rewardedVideoAdListener = object : RewardedVideoAdListener{
+            override fun onRewardedVideoAdClosed() {}
+
+            override fun onRewardedVideoAdLeftApplication() {
+            }
+
+            override fun onRewardedVideoAdLoaded() {
+                isVideoAdLoaded = true
+            }
+
+            override fun onRewardedVideoAdOpened() {
+            }
+
+            override fun onRewardedVideoCompleted() {
+            }
+
+            override fun onRewarded(p0: RewardItem?) {
+                bottom_navigation_home.snackbar("Thank you for your support")
+            }
+
+            override fun onRewardedVideoStarted() {
+            }
+
+            override fun onRewardedVideoAdFailedToLoad(p0: Int) {
+                isVideoAdLoaded = false
+            }
+
+        }
+        rewardedVideoAd.loadAd(getString(R.string.rewarded_ad_unit), AdRequest.Builder()
+            .addTestDevice(utils.constants.redmi_note_3_test_device_id).build())
     }
 }

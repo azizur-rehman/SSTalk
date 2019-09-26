@@ -33,6 +33,12 @@
                     android:id="@+id/nav_about"
                     android:icon="@drawable/ic_person_flat"
                     android:title="About" />
+
+            <item
+                    android:id="@+id/nav_support"
+                    android:icon="@drawable/ic_account_balance_white_24dp"
+                    android:title="Support us" />
+
         </menu>
     </item>
 

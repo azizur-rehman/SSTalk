@@ -19,12 +19,20 @@ import android.view.View
 import android.view.ViewGroup
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.FirebaseUtils
+import com.aziz.sstalk.utils.hide
+import com.aziz.sstalk.utils.show
 import com.aziz.sstalk.utils.utils
+import com.google.android.gms.ads.AdListener
+import com.google.android.gms.ads.AdLoader
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.MobileAds
+import com.google.android.gms.ads.formats.UnifiedNativeAd
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import kotlinx.android.synthetic.main.contact_screen.*
 import kotlinx.android.synthetic.main.item_conversation_layout.view.*
+import kotlinx.android.synthetic.main.item_conversation_native_ad.view.*
 import org.jetbrains.anko.doAsyncResult
 import org.jetbrains.anko.onComplete
 import org.jetbrains.anko.uiThread
@@ -45,6 +53,8 @@ class ContactsActivity : AppCompatActivity(){
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.contact_screen)
+
+        MobileAds.initialize(this, getString(R.string.admob_id))
 
         title = "My Contacts"
 
@@ -165,7 +175,7 @@ class ContactsActivity : AppCompatActivity(){
     }
 
 
-    val adapter = object : androidx.recyclerview.widget.RecyclerView.Adapter<ViewHolder>() {
+    val adapter = object : RecyclerView.Adapter<ViewHolder>() {
 
         override fun onCreateViewHolder(p0: ViewGroup, p1: Int): ViewHolder
                 = ViewHolder(layoutInflater.inflate(R.layout.item_conversation_layout, p0, false))
@@ -173,6 +183,9 @@ class ContactsActivity : AppCompatActivity(){
         override fun getItemCount(): Int = registeredAvailableUser.size
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+
+
+            loadNativeAd(holder.itemView, position)
 
             holder.name.text = registeredAvailableUser[position].name
             holder.number.text = registeredAvailableUser[position].number
@@ -263,7 +276,7 @@ class ContactsActivity : AppCompatActivity(){
         super.onActivityResult(requestCode, resultCode, data)
     }
 
-    class ViewHolder(itemView: View) : androidx.recyclerview.widget.RecyclerView.ViewHolder(itemView){
+    class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
                 val name = itemView.name
                 val number = itemView.mobile_number
                 val pic = itemView.pic
@@ -273,4 +286,98 @@ class ContactsActivity : AppCompatActivity(){
                     time.visibility = View.GONE
                 }
             }
+
+
+
+    private fun loadNativeAd(itemView:View, position:Int){
+
+
+
+        with(itemView){
+
+            conversation_native_ad.hide()
+
+
+
+
+            initAd {
+
+                if(position % utils.constants.ads_after_items == 0 && position > 0)
+                    conversation_native_ad.show()
+                else{
+                    conversation_native_ad.hide()
+                    return@initAd
+                }
+                it?.let {
+
+
+                    conversation_native_ad.iconView = itemView.pic
+
+                    itemView.ad_name.text = it.headline
+                    itemView.ad_side_text.text = it.advertiser
+                    itemView.ad_subtitle.text = it.body
+
+                    if(it.icon != null)
+                        itemView.ad_pic.setImageDrawable(it.icon.drawable)
+
+                    if(it.starRating != null)
+                        itemView.ad_rating.rating = it.starRating.toFloat()
+                    else
+                        itemView.ad_rating.hide()
+
+                    with(itemView){
+                        ad_call_to_action.text = it.callToAction
+
+                        conversation_native_ad.callToActionView = ad_call_to_action
+                        conversation_native_ad.bodyView = ad_subtitle
+                        conversation_native_ad.headlineView = ad_name
+                        conversation_native_ad.advertiserView = ad_side_text
+                        conversation_native_ad.iconView = ad_pic
+                    }
+
+
+                    it.enableCustomClickGesture()
+
+                    conversation_native_ad.setNativeAd(it)
+
+                }
+                if(it == null)
+                    conversation_native_ad.hide()
+            }
+
+        }
+
+
+    }
+
+    private lateinit var adLoader: AdLoader
+    private fun initAd(onLoaded: ((unifiedNativeAd: UnifiedNativeAd?) -> Unit)? = null){
+
+        var unifiedNativeAd: UnifiedNativeAd? = null
+
+        adLoader = AdLoader.Builder(this, getString(R.string.native_ad_conversation))
+            .forUnifiedNativeAd {
+                unifiedNativeAd = it
+                onLoaded?.invoke(it)
+            }
+            .withAdListener(object : AdListener() {
+
+                override fun onAdLoaded() {
+
+                    onLoaded?.invoke(unifiedNativeAd)
+                    super.onAdLoaded()
+                }
+
+                override fun onAdFailedToLoad(p0: Int) {
+                    super.onAdFailedToLoad(p0)
+                    Log.d("HomeActivity", "onAdFailedToLoad: code = $p0")
+                    onLoaded?.invoke(null)
+
+                }
+            })
+            .build()
+
+        adLoader.loadAds(AdRequest.Builder().addTestDevice(utils.constants.redmi_note_3_test_device_id).build(), 5)
+
+    }
 }
