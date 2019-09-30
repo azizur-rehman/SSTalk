@@ -40,23 +40,14 @@ import kotlinx.android.synthetic.main.activity_home.*
 import kotlinx.android.synthetic.main.app_bar_home.*
 import kotlinx.android.synthetic.main.content_home.*
 import kotlinx.android.synthetic.main.content_home.recycler_back_message
-import kotlinx.android.synthetic.main.item_conversation_layout.view.*
-import kotlinx.android.synthetic.main.item_conversation_layout.view.contact_checkbox
-import kotlinx.android.synthetic.main.item_conversation_layout.view.conversation_mute_icon
-import kotlinx.android.synthetic.main.item_conversation_layout.view.delivery_status_last_msg
-import kotlinx.android.synthetic.main.item_conversation_layout.view.messageInfoLayout
-import kotlinx.android.synthetic.main.item_conversation_layout.view.messageTime
-import kotlinx.android.synthetic.main.item_conversation_layout.view.mobile_number
-import kotlinx.android.synthetic.main.item_conversation_layout.view.name
-import kotlinx.android.synthetic.main.item_conversation_layout.view.online_status_imageview
-import kotlinx.android.synthetic.main.item_conversation_layout.view.pic
-import kotlinx.android.synthetic.main.item_conversation_layout.view.unreadCount
+import kotlinx.android.synthetic.main.item_conversation_layout2.view.*
 import kotlinx.android.synthetic.main.item_conversation_native_ad.view.*
 import kotlinx.android.synthetic.main.layout_recycler_view.*
 import org.jetbrains.anko.*
 import org.jetbrains.anko.design.indefiniteSnackbar
 import org.jetbrains.anko.design.snackbar
 import java.lang.Exception
+import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import kotlin.collections.ArrayList
 
@@ -249,7 +240,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     return false
                 }
 
-                showConfirmDialog("Support Us by watching a short video"){
+                showConfirmDialog("Support us by watching a short video"){
                     rewardedVideoAd.show()
                 }
             }
@@ -280,7 +271,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             .build()
 
          adapter = object : FirebaseRecyclerAdapter<Models.LastMessageDetail, ViewHolder>(options){
-            override fun onCreateViewHolder(p0: ViewGroup, p1: Int): ViewHolder = ViewHolder(layoutInflater.inflate(R.layout.item_conversation_layout, p0, false))
+            override fun onCreateViewHolder(p0: ViewGroup, p1: Int): ViewHolder = ViewHolder(layoutInflater.inflate(R.layout.item_conversation_layout2, p0, false))
 
             override fun onBindViewHolder(holder: ViewHolder, position: Int, model: Models.LastMessageDetail) {
 
@@ -305,7 +296,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
                 }
 
-                doAsync {  loadNativeAd(holder.itemView, position) }
+                loadNativeAd(holder.itemView, position)
 
 
                 FirebaseUtils.setMuteImageIcon(uid, holder.muteIcon)
@@ -313,7 +304,6 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 FirebaseUtils.setLastMessage(uid, holder.lastMessage, holder.deliveryTick)
 
 
-                holder.messageInfo.visibility = View.VISIBLE
 
                 holder.time.visibility = View.VISIBLE
 
@@ -321,7 +311,8 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
                 holder.time.text = utils.getHeaderFormattedDate(model.timeInMillis)
 
-                FirebaseUtils.setUnreadCount(uid, holder.unreadCount, holder.name, holder.lastMessage, holder.time)
+                Executors.newSingleThreadExecutor().submit { FirebaseUtils.setUnreadCount(uid, holder.unreadCount, holder.name, holder.lastMessage, holder.time) }
+
 
                 if(!isContextToolbarActive){
                     holder.checkbox.visibility = View.INVISIBLE
@@ -529,7 +520,6 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         val name = itemView.name!!
         val lastMessage = itemView.mobile_number!!
         val pic = itemView.pic!!
-        val messageInfo = itemView.messageInfoLayout!!
         val time = itemView.messageTime!!
         val unreadCount = itemView.unreadCount!!
         val onlineStatus = itemView.online_status_imageview!!
@@ -705,13 +695,16 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
             initAd {
 
-                if(position % utils.constants.ads_after_items == 0 && position > 0)
-                    conversation_native_ad.show()
-                else{
-                    conversation_native_ad.hide()
-                    return@initAd
-                }
+                Log.d("HomeActivity", "loadNativeAd: ${it?.headline}")
+                
                 it?.let {
+
+                    if(position % utils.constants.ads_after_items == 0 && position > 0)
+                        conversation_native_ad.show()
+                    else{
+                        conversation_native_ad.hide()
+                        return@initAd
+                    }
 
 
                     conversation_native_ad.iconView = itemView.pic
@@ -744,8 +737,6 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 conversation_native_ad.setNativeAd(it)
 
                 }
-            if(it == null)
-                conversation_native_ad.hide()
         }
 
     }
@@ -766,7 +757,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             .withAdListener(object : AdListener() {
 
                 override fun onAdLoaded() {
-
+                    Log.d("HomeActivity", "onAdLoaded: ")
                     onLoaded?.invoke(unifiedNativeAd)
                     super.onAdLoaded()
                 }
@@ -785,7 +776,6 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
     
 
-    var isVideoAdLoaded = false
     private fun loadRewardedAd(){
 
         rewardedVideoAd = MobileAds.getRewardedVideoAdInstance(this)
@@ -796,7 +786,6 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             }
 
             override fun onRewardedVideoAdLoaded() {
-                isVideoAdLoaded = true
             }
 
             override fun onRewardedVideoAdOpened() {
@@ -813,7 +802,6 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             }
 
             override fun onRewardedVideoAdFailedToLoad(p0: Int) {
-                isVideoAdLoaded = false
             }
 
         }

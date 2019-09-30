@@ -213,4 +213,6 @@
 
     <string name="admob_id">ca-app-pub-3219184867279814~2969943386</string>
 
+    <string name="single_line_string">This is a single line string to test text resources wherever possible</string>
+
 </resources>

@@ -183,7 +183,7 @@
     />
 
 
-    <include layout="@layout/item_conversation_native_ad"/>
+    <include layout="@layout/item_conversation_ad"/>
 
 
 </LinearLayout>

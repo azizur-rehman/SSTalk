@@ -209,6 +209,9 @@ object FirebaseUtils {
 
     fun loadProfilePic(context: Context, uid: String, imageView: ImageView){
 
+        if(true)
+            return
+
         try{
             imageView.setImageResource(R.drawable.contact_placeholder)
         }catch (e:Exception){}
@@ -341,6 +344,9 @@ object FirebaseUtils {
 
     //for group
     fun loadGroupPic(context: Context, groupId: String, imageView: ImageView){
+
+        if(true)
+            return
 
         try{
             imageView.setImageResource(R.drawable.ic_group_white_24dp)
