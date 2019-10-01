@@ -193,6 +193,19 @@ exports.triggerMessage = functions.database.ref('Message_Status/{UID}/{targetUID
 
 })
 
+exports.updateMessageTime = functions.database.ref('Messages/{UID}/{messageID}/')
+.onCreate((snapshot, context) => {
+    const time = Date.now();
+    snapshot.child('timeInMillis').set(time);
+    snapshot.child('reverseTimeStamp').set(time * -1);
+});
+
+exports.updateLastMessageTime = functions.database.ref('LastMessage/{UID}/{targetUID}/{messageID}/')
+.onCreate((snapshot, context) => {
+    const time = Date.now();
+    snapshot.child('timeInMillis').set(time);
+    snapshot.child('reverseTimeStamp').set(time * -1);
+});
 
 exports.onNewFileUploaded = functions.storage.object().onFinalize(object => {
 
@@ -326,7 +339,7 @@ function sendNotificationPayload(uid, payload){
 function cleanOldFiles(){
   
   //getting currentTime in millis
-  var currentTime  = new Date().getTime()
+  var currentTime  = Date.now();
 
   var dayLimit = 30  //30 days
 
