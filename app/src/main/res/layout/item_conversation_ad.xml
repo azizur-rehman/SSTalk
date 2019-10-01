@@ -4,7 +4,6 @@
         android:layout_width="match_parent"
               android:layout_height="wrap_content"
         android:id="@+id/conversation_native_ad"
-        android:padding="10dp"
               xmlns:app="http://schemas.android.com/apk/res-auto"
               android:orientation="vertical">
 
@@ -13,6 +12,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             tools:layout_editor_absoluteX="10dp"
+            android:paddingLeft="10dp"
+            android:paddingTop="10dp"
+            android:paddingRight="10dp"
             tools:layout_editor_absoluteY="10dp">
 
 
@@ -21,31 +23,30 @@
                 style="@android:style/Widget.DeviceDefault.RatingBar.Small"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="80dp"
-                android:layout_marginRight="80dp"
+                android:layout_marginTop="2dp"
+                android:layout_marginBottom="2dp"
                 android:isIndicator="true"
-                app:layout_constraintEnd_toStartOf="@+id/ad_call_to_action"
-                app:layout_constraintHorizontal_bias="1.0"
-                app:layout_constraintStart_toEndOf="@+id/ad_side_text"
-                app:layout_constraintTop_toBottomOf="@+id/ad_name" />
+                app:layout_constraintBottom_toTopOf="@+id/ad_subtitle"
+                app:layout_constraintStart_toStartOf="@+id/ad_side_text"
+                app:layout_constraintTop_toBottomOf="@+id/ad_side_text" />
 
         <TextView
                 android:id="@+id/ad_side_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
                 android:layout_weight="1"
                 android:fontFamily="@font/roboto_thin"
                 android:text="Sample subtitle"
                 android:textSize="10sp"
-                app:layout_constraintBottom_toBottomOf="@+id/ad_rating"
                 app:layout_constraintStart_toStartOf="@+id/ad_name"
-                app:layout_constraintTop_toBottomOf="@+id/ad_name"
-                app:layout_constraintVertical_bias="0.0" />
+                app:layout_constraintTop_toBottomOf="@+id/ad_name" />
 
         <TextView
                 android:id="@+id/ad_call_to_action"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="1dp"
                 android:background="@drawable/button_round_with_transparency"
                 android:paddingLeft="10dp"
                 android:paddingTop="5dp"
@@ -53,24 +54,23 @@
                 android:paddingBottom="5dp"
                 android:text="Learn more"
                 android:textColor="@color/white"
-                app:layout_constraintBottom_toBottomOf="@+id/ad_rating"
+                app:layout_constraintBottom_toTopOf="@+id/ad_subtitle"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintHorizontal_bias="1.0"
-                app:layout_constraintStart_toEndOf="@+id/ad_name"
-                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/ad_name"
                 app:layout_constraintVertical_bias="0.0" />
 
         <TextView
                 android:id="@+id/ad_name"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:layout_marginLeft="16dp"
                 android:fontFamily="@font/roboto_regular"
-                android:text="@string/action_copy"
+                android:text="@string/single_line_string"
                 android:textAllCaps="false"
                 android:textColor="@color/black"
                 android:textSize="14sp"
+
                 app:layout_constraintStart_toEndOf="@+id/ad_pic"
                 app:layout_constraintTop_toTopOf="@+id/ad_pic" />
 
@@ -78,6 +78,8 @@
                 android:id="@+id/ad_pic"
                 android:layout_width="56dp"
                 android:layout_height="56dp"
+                android:layout_marginStart="4dp"
+                android:layout_marginLeft="4dp"
                 app:civ_border_color="@color/colorAccent"
                 app:civ_circle_background_color="@color/colorAccent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -89,6 +91,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
+                android:layout_marginTop="2dp"
                 android:ellipsize="end"
                 android:fontFamily="@font/roboto_light"
                 android:text="@string/single_line_string"
@@ -98,6 +101,15 @@
                 app:layout_constraintHorizontal_bias="0.0"
                 app:layout_constraintStart_toStartOf="@+id/ad_side_text"
                 app:layout_constraintTop_toBottomOf="@+id/ad_side_text" />
+
+
+        <View
+                android:layout_width="0dp"
+                android:layout_height="0.01dp"
+                android:background="@color/gray_dark"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="@+id/ad_subtitle" />
+
 
 
     </androidx.constraintlayout.widget.ConstraintLayout>

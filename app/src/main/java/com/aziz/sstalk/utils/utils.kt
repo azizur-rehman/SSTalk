@@ -98,7 +98,7 @@ object utils {
         const val SHARING_TEXT = "Download SS Talk - A completely free & realtime chat app\n\nClick to Download : $APP_SHORT_LINK"
 
         const val redmi_note_3_test_device_id = "0E00FA90DF318861D8F4E6656987144C"
-        const val ads_after_items = 1
+        const val ads_after_items = 4
 
     }
 

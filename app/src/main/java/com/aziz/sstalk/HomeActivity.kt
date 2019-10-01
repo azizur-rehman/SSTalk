@@ -40,7 +40,7 @@ import kotlinx.android.synthetic.main.activity_home.*
 import kotlinx.android.synthetic.main.app_bar_home.*
 import kotlinx.android.synthetic.main.content_home.*
 import kotlinx.android.synthetic.main.content_home.recycler_back_message
-import kotlinx.android.synthetic.main.item_conversation_layout2.view.*
+import kotlinx.android.synthetic.main.item_conversation_layout.view.*
 import kotlinx.android.synthetic.main.item_conversation_native_ad.view.*
 import kotlinx.android.synthetic.main.layout_recycler_view.*
 import org.jetbrains.anko.*
@@ -271,7 +271,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             .build()
 
          adapter = object : FirebaseRecyclerAdapter<Models.LastMessageDetail, ViewHolder>(options){
-            override fun onCreateViewHolder(p0: ViewGroup, p1: Int): ViewHolder = ViewHolder(layoutInflater.inflate(R.layout.item_conversation_layout2, p0, false))
+            override fun onCreateViewHolder(p0: ViewGroup, p1: Int): ViewHolder = ViewHolder(layoutInflater.inflate(R.layout.item_conversation_layout, p0, false))
 
             override fun onBindViewHolder(holder: ViewHolder, position: Int, model: Models.LastMessageDetail) {
 
@@ -296,12 +296,12 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
                 }
 
-                loadNativeAd(holder.itemView, position)
+                Executors.newSingleThreadExecutor().submit { loadNativeAd(holder.itemView, position) }
 
 
-                FirebaseUtils.setMuteImageIcon(uid, holder.muteIcon)
+                Executors.newSingleThreadExecutor().submit { FirebaseUtils.setMuteImageIcon(uid, holder.muteIcon) }
 
-                FirebaseUtils.setLastMessage(uid, holder.lastMessage, holder.deliveryTick)
+                Executors.newSingleThreadExecutor().submit { FirebaseUtils.setLastMessage(uid, holder.lastMessage, holder.deliveryTick) }
 
 
 
@@ -530,6 +530,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         init {
             onlineStatus.visibility = View.GONE
             checkbox.isEnabled = false
+            muteIcon.visibility = View.GONE
         }
 
     }
@@ -699,7 +700,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 
                 it?.let {
 
-                    if(position % utils.constants.ads_after_items == 0 && position > 0)
+                    if(position == utils.constants.ads_after_items || position == utils.constants.ads_after_items + utils.constants.ads_after_items)
                         conversation_native_ad.show()
                     else{
                         conversation_native_ad.hide()

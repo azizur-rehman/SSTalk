@@ -209,8 +209,7 @@ object FirebaseUtils {
 
     fun loadProfilePic(context: Context, uid: String, imageView: ImageView){
 
-        if(true)
-            return
+
 
         try{
             imageView.setImageResource(R.drawable.contact_placeholder)
@@ -345,8 +344,6 @@ object FirebaseUtils {
     //for group
     fun loadGroupPic(context: Context, groupId: String, imageView: ImageView){
 
-        if(true)
-            return
 
         try{
             imageView.setImageResource(R.drawable.ic_group_white_24dp)
@@ -731,6 +728,8 @@ object FirebaseUtils {
 
         textView.text  = ""
 
+        messageStatusImageView.visibility = View.GONE
+
         ref.getChatRef(getUid(), targetUID)
             .limitToLast(1)
             .addValueEventListener(object : ValueEventListener {
@@ -739,7 +738,6 @@ object FirebaseUtils {
                 override fun onDataChange(p0: DataSnapshot) {
 
 
-                    messageStatusImageView.visibility = View.GONE
                     var messageModel:Models.MessageModel? = null
                     var messageID = ""
 
@@ -758,10 +756,10 @@ object FirebaseUtils {
 
                     //.replace("\n"," ")
                     when {
-                        messageModel!!.messageType == FirebaseUtils.EVENT_TYPE_LEFT -> textView.text = "❗ A member left"
-                        messageModel.messageType == FirebaseUtils.EVENT_TYPE_ADDED -> textView.text = "❗ A new member was added"
-                        messageModel.messageType == FirebaseUtils.EVENT_TYPE_CREATED -> textView.text = "❗ Group was created"
-                        messageModel.messageType == FirebaseUtils.EVENT_TYPE_REMOVED -> textView.text = "❗ A member was removed"
+                        messageModel?.messageType == EVENT_TYPE_LEFT -> textView.text = "❗ A member left"
+                        messageModel?.messageType == EVENT_TYPE_ADDED -> textView.text = "❗ A new member was added"
+                        messageModel?.messageType == EVENT_TYPE_CREATED -> textView.text = "❗ Group was created"
+                        messageModel?.messageType == EVENT_TYPE_REMOVED -> textView.text = "❗ A member was removed"
 
                     }
 
@@ -770,11 +768,11 @@ object FirebaseUtils {
 
 
                     if(p0.exists()) {
-                        textView.text = messageModel!!.message//.replace("\n"," ")
+                        textView.text = messageModel?.message//.replace("\n"," ")
                         textView.visibility = View.VISIBLE
 
 
-                        if(messageModel.from == getUid()){
+                        if(messageModel?.from == getUid()){
                             messageStatusImageView.visibility = View.VISIBLE
                             setDeliveryStatusTick(targetUID, messageID, messageStatusImageView)
                         }
@@ -783,9 +781,9 @@ object FirebaseUtils {
                         }
 
                         when {
-                            messageModel.messageType == utils.constants.FILE_TYPE_IMAGE -> textView.text = ("\uD83D\uDDBC Image")
-                            messageModel.messageType == utils.constants.FILE_TYPE_VIDEO -> textView.text = "\uD83C\uDFA5 Video"
-                            messageModel.messageType == utils.constants.FILE_TYPE_LOCATION -> textView.text = "\uD83D\uDCCC ${if(messageModel.caption.isEmpty()) " Location" else messageModel.caption}"
+                            messageModel?.messageType == utils.constants.FILE_TYPE_IMAGE -> textView.text = ("\uD83D\uDDBC Image")
+                            messageModel?.messageType == utils.constants.FILE_TYPE_VIDEO -> textView.text = "\uD83C\uDFA5 Video"
+                            messageModel?.messageType == utils.constants.FILE_TYPE_LOCATION -> textView.text = "\uD83D\uDCCC ${if(messageModel?.caption.isNullOrEmpty()) " Location" else messageModel?.caption}"
                         }
 
                     }

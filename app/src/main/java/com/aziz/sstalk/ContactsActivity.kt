@@ -147,6 +147,8 @@ class ContactsActivity : AppCompatActivity(){
 
                     }
 
+                    registeredAvailableUser.sortBy { it.name }
+
                     contacts_list.adapter = adapter
 
                     if(isForSelection)
@@ -169,7 +171,7 @@ class ContactsActivity : AppCompatActivity(){
     }
 
 
-    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
         finish()
         return super.onOptionsItemSelected(item)
     }
@@ -263,6 +265,7 @@ class ContactsActivity : AppCompatActivity(){
         }
 
 
+
     }
 
 
@@ -284,6 +287,10 @@ class ContactsActivity : AppCompatActivity(){
 
                 init {
                     time.visibility = View.GONE
+                    itemView.delivery_status_last_msg.visibility = View.GONE
+                    itemView.conversation_mute_icon.visibility = View.GONE
+
+
                 }
             }
 
@@ -302,7 +309,7 @@ class ContactsActivity : AppCompatActivity(){
 
             initAd {
 
-                if(position % utils.constants.ads_after_items == 0 && position > 0)
+                if(position == utils.constants.ads_after_items || position == utils.constants.ads_after_items + utils.constants.ads_after_items)
                     conversation_native_ad.show()
                 else{
                     conversation_native_ad.hide()

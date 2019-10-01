@@ -1,186 +1,166 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:layout_width="match_parent"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
               android:layout_height="wrap_content"
               xmlns:app="http://schemas.android.com/apk/res-auto"
               android:orientation="vertical">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:padding="10dp"
-            android:background="?attr/selectableItemBackground"
+    <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/item_conversation_layout"
-        android:orientation="horizontal"
-        >
-
-
-       <FrameLayout android:layout_width="wrap_content"
-                    android:layout_marginLeft="5dp"
-                    android:layout_height="wrap_content">
-
-
-            <de.hdodenhof.circleimageview.CircleImageView
-            android:id="@+id/pic"
-            android:layout_width="56dp"
-            android:layout_height="56dp"
-            app:civ_circle_background_color="@color/colorAccent"
-            app:civ_border_color="@color/colorAccent"
-            android:src="@drawable/contact_placeholder" />
-
-           <de.hdodenhof.circleimageview.CircleImageView
-                   android:layout_width="15dp"
-                      android:layout_height="15dp"
-           android:layout_gravity="end|top"
-                     app:civ_border_width="2dp"
-                   android:visibility="gone"
-                      app:civ_border_color="@color/white"
-                      android:id="@+id/online_status_imageview"
-           android:src="@drawable/shape_bubble_online"
-           />
-
-           <com.aziz.sstalk.views.AnimCheckBox
-                   android:layout_width="22dp"
-                   android:layout_height="22dp"
-                   app:checked="false"
-                   android:visibility="invisible"
-                   app:stroke_color="@color/white"
-                   app:circle_color="@color/color4"
-                   app:stroke_width="2dp"
-                   android:id="@+id/contact_checkbox"
-                   android:layout_gravity="end|bottom"
-           />
-
-       </FrameLayout>
-
-
-
-        <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_margin="5dp"
-            android:gravity="center_vertical"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:paddingLeft="15dp">
-
-            <TextView
-                android:id="@+id/name"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="@color/black"
-                android:textAllCaps="false"
-                android:fontFamily="@font/roboto_regular"
-                android:text="User name"
-                android:textSize="16sp" />
+            android:background="?attr/selectableItemBackground"
+            android:gravity="center"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:paddingTop="15dp">
 
 
-            <LinearLayout android:layout_width="match_parent"
-                          android:orientation="horizontal"
-                          android:layout_marginTop="5dp"
-                          android:gravity="center"
-                          android:layout_height="wrap_content">
-
-                <ImageView android:layout_width="12dp"
-                           android:scaleType="centerInside"
-                           android:layout_height="12dp"
-                           android:layout_marginRight="5dp"
-                           android:visibility="gone"
-                           android:id="@+id/delivery_status_last_msg"
-                           android:src="@drawable/ic_message_pending_gray_24dp"
-                           android:layout_gravity="center"
-
-                />
-
-                <TextView
+        <TextView
                 android:id="@+id/mobile_number"
-                android:layout_weight="1"
-                android:lines="1"
-                android:ellipsize="end"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:text="Phone no."
+                android:layout_weight="1"
+                android:ellipsize="end"
                 android:fontFamily="@font/roboto_light"
-                android:textSize="14sp" />
+                android:lines="1"
+                android:layout_marginLeft="3dp"
+                android:text="@string/single_line_string"
+                android:textSize="14sp"
+                app:layout_constraintBottom_toBottomOf="@+id/delivery_status_last_msg"
+                app:layout_constraintEnd_toStartOf="@+id/conversation_mute_icon"
+                app:layout_constraintHorizontal_bias="0.0"
+                app:layout_constraintStart_toEndOf="@+id/delivery_status_last_msg"
+                app:layout_constraintTop_toTopOf="@+id/delivery_status_last_msg"
+                android:layout_marginStart="3dp" />
 
-            </LinearLayout>
+        <TextView
+                android:id="@+id/name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginLeft="16dp"
+                android:layout_marginTop="4dp"
+                android:fontFamily="@font/roboto_regular"
+                android:text="User name"
+                android:textAllCaps="false"
+                android:textColor="@color/black"
+                android:textSize="16sp"
+                app:layout_constraintStart_toEndOf="@+id/pic"
+                app:layout_constraintTop_toTopOf="@+id/pic" />
+
+        <ImageView
+                android:id="@+id/conversation_mute_icon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginEnd="4dp"
+                android:layout_marginRight="4dp"
+                android:scaleType="fitXY"
+                android:src="@drawable/ic_mute_green"
+                android:tint="@color/colorPrimaryDark"
+                app:layout_constraintBottom_toBottomOf="@+id/mobile_number"
+                app:layout_constraintEnd_toStartOf="@+id/unreadCount"
+                app:layout_constraintTop_toTopOf="@+id/mobile_number"
+                app:layout_constraintVertical_bias="0.333" />
+
+        <ImageView
+                android:id="@+id/delivery_status_last_msg"
+                android:layout_width="15dp"
+                android:layout_height="15dp"
+                android:layout_gravity="center"
+                app:layout_goneMarginEnd="0dp"
+                app:layout_goneMarginRight="0dp"
+                android:layout_marginTop="8dp"
+                app:layout_goneMarginTop="8dp"
+                android:scaleType="centerInside"
+                app:layout_constraintLeft_toLeftOf="@id/mobile_number"
+                android:src="@drawable/ic_message_pending_gray_24dp"
+                app:layout_constraintBottom_toBottomOf="@+id/pic"
+                app:layout_constraintStart_toStartOf="@+id/name"
+                app:layout_constraintTop_toBottomOf="@+id/name"
+                android:layout_marginRight="8dp" />
+
+        <TextView
+                android:id="@+id/messageTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:layout_marginTop="4dp"
+                android:fontFamily="@font/roboto_thin"
+                android:gravity="center"
+                android:text="Yesterday"
+                android:textSize="12sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@+id/name" />
+
+        <com.nex3z.notificationbadge.NotificationBadge
+                android:id="@+id/unreadCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                app:layout_constraintBottom_toBottomOf="@+id/mobile_number"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@+id/mobile_number"
+                app:nbAnimationDuration="100"
+                app:nbAnimationEnabled="true"
+                app:nbEllipsizeText="99+"
+                app:nbMaxTextLength="2" />
+
+        <de.hdodenhof.circleimageview.CircleImageView
+                android:id="@+id/pic"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_marginStart="4dp"
+                android:layout_marginLeft="4dp"
+                android:src="@drawable/contact_placeholder"
+                app:civ_border_color="@color/colorAccent"
+                app:civ_circle_background_color="@color/colorAccent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+        <de.hdodenhof.circleimageview.CircleImageView
+                android:id="@+id/online_status_imageview"
+                android:layout_width="15dp"
+                android:layout_height="15dp"
+                android:layout_gravity="end|top"
+                android:src="@drawable/shape_bubble_online"
+                app:civ_border_color="@color/white"
+                app:civ_border_width="2dp"
+                android:visibility="gone"
+                app:layout_constraintEnd_toEndOf="@+id/pic"
+                app:layout_constraintTop_toTopOf="@+id/pic" />
+
+        <com.aziz.sstalk.views.AnimCheckBox
+                android:id="@+id/contact_checkbox"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_gravity="end|bottom"
+                android:visibility="invisible"
+                app:checked="false"
+                app:circle_color="@color/color4"
+                app:layout_constraintBottom_toBottomOf="@+id/pic"
+                app:layout_constraintEnd_toEndOf="@+id/pic"
+                app:stroke_color="@color/white"
+                app:stroke_width="2dp" />
 
 
-        </LinearLayout>
+        <View
+                android:layout_width="0dp"
+                android:layout_height="0.01dp"
+                android:layout_marginTop="15dp"
+                android:background="@color/gray_dark"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="@+id/name"
+                app:layout_constraintTop_toBottomOf="@+id/mobile_number" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 
 
-
-
-
-        <LinearLayout android:layout_width="wrap_content"
-                      android:orientation="vertical"
-                      android:gravity="end"
-                      android:layout_marginTop="5dp"
-                      android:id="@+id/messageInfoLayout"
-                      android:layout_height="match_parent">
-
-            <TextView android:layout_width="wrap_content"
-                      android:layout_height="wrap_content"
-                      android:gravity="center"
-                      android:layout_gravity="end"
-                      android:id="@+id/messageTime"
-                      android:fontFamily="@font/roboto_thin"
-                        android:text="Yesterday"
-                      android:textSize="12sp"
-            />
-
-
-            <LinearLayout android:layout_width="wrap_content"
-                          android:orientation="horizontal"
-                          android:gravity="end|center"
-                          android:layout_weight="1"
-                          android:layout_height="0dp">
-
-                <ImageView android:layout_width="24dp"
-                           android:layout_height="24dp"
-                           android:scaleType="fitXY"
-                           android:visibility="gone"
-                           android:src="@drawable/ic_mute_green"
-                           android:tint="@color/colorPrimaryDark"
-                           android:id="@+id/conversation_mute_icon"
-                />
-
-                <com.nex3z.notificationbadge.NotificationBadge
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        app:nbAnimationEnabled="true"
-                        app:nbAnimationDuration="100"
-                        android:layout_gravity="center"
-                        app:nbEllipsizeText="99+"
-                        app:nbMaxTextLength="2"
-                        android:visibility="gone"
-                        android:id="@+id/unreadCount"
-                        android:textColor="@color/white"
-                        android:textSize="12sp"
-                />
-
-            </LinearLayout>
-
-
-
-
-
-        </LinearLayout>
-
-
-    </LinearLayout>
-
-
-    <View android:layout_width="match_parent"
-          android:layout_height="0.01dp"
-    android:background="@color/black"
-          android:layout_marginRight="10dp"
-          android:layout_marginLeft="100dp"
-    />
 
 
     <include layout="@layout/item_conversation_ad"/>
