@@ -193,18 +193,23 @@ exports.triggerMessage = functions.database.ref('Message_Status/{UID}/{targetUID
 
 })
 
-exports.updateMessageTime = functions.database.ref('Messages/{UID}/{messageID}/')
-.onCreate((snapshot, context) => {
+exports.updateMessageTime = functions.database.ref('Messages/{UID}/{targetUID}/{messageID}/')
+.onWrite((snapshot, context) => {
     const time = Date.now();
-    snapshot.child('timeInMillis').set(time);
-    snapshot.child('reverseTimeStamp').set(time * -1);
+    const ref = snapshot.after.ref
+
+    ref.child('timeInMillis').set(time);
+    return ref.child('reverseTimeStamp').set(time * -1);
 });
 
 exports.updateLastMessageTime = functions.database.ref('LastMessage/{UID}/{targetUID}/{messageID}/')
-.onCreate((snapshot, context) => {
+.onWrite((change, context) => {
     const time = Date.now();
-    snapshot.child('timeInMillis').set(time);
-    snapshot.child('reverseTimeStamp').set(time * -1);
+    const ref = snapshot.after.ref
+
+    ref.child('timeInMillis').set(time);
+    return ref.child('reverseTimeStamp').set(time * -1);
+    
 });
 
 exports.onNewFileUploaded = functions.storage.object().onFinalize(object => {
