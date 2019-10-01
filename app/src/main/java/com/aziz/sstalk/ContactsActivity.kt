@@ -14,9 +14,13 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import android.util.Log
+import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Filter
+import android.widget.Filterable
+import androidx.appcompat.widget.SearchView
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.hide
@@ -36,6 +40,7 @@ import kotlinx.android.synthetic.main.item_conversation_native_ad.view.*
 import org.jetbrains.anko.doAsyncResult
 import org.jetbrains.anko.onComplete
 import org.jetbrains.anko.uiThread
+import java.util.*
 import java.util.concurrent.Future
 
 class ContactsActivity : AppCompatActivity(){
@@ -171,13 +176,59 @@ class ContactsActivity : AppCompatActivity(){
     }
 
 
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+
+        menuInflater.inflate(R.menu.menu_search, menu)
+        val searchView = menu?.findItem(R.id.app_bar_search)?.actionView as SearchView
+
+        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener{
+            override fun onQueryTextSubmit(query: String?): Boolean {
+
+                return false
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+
+
+                return false
+            }
+
+        })
+
+        return super.onCreateOptionsMenu(menu)
+    }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        finish()
+        if(item.itemId == android.R.id.home)
+            finish()
         return super.onOptionsItemSelected(item)
     }
 
 
-    val adapter = object : RecyclerView.Adapter<ViewHolder>() {
+
+    val adapter: RecyclerView.Adapter<ViewHolder> = object : RecyclerView.Adapter<ViewHolder>(), Filterable {
+
+        override fun getFilter(): Filter = object : Filter() {
+
+            override fun performFiltering(p0: CharSequence?): FilterResults {
+                val query = p0?.toString()?:"".toLowerCase(Locale.ENGLISH)
+                val filteredList = registeredAvailableUser
+
+                filteredList.filter { it.name.contains(query) || it.number.contains(query)}
+
+                return FilterResults().apply { values = filteredList; count = filteredList.size }
+            }
+
+            override fun publishResults(p0: CharSequence?, p1: FilterResults?) {
+
+                if(p1?.values == null)
+                    return
+
+                registeredAvailableUser = p1.values as MutableList<Models.Contact>
+                notifyDataSetChanged()
+            }
+
+        }
 
         override fun onCreateViewHolder(p0: ViewGroup, p1: Int): ViewHolder
                 = ViewHolder(layoutInflater.inflate(R.layout.item_conversation_layout, p0, false))
