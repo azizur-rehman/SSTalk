@@ -20,12 +20,13 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Filter
 import android.widget.Filterable
-import androidx.appcompat.widget.SearchView
+import android.widget.SearchView
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.hide
 import com.aziz.sstalk.utils.show
 import com.aziz.sstalk.utils.utils
+import com.ferfalk.simplesearchview.SimpleSearchView
 import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.AdLoader
 import com.google.android.gms.ads.AdRequest
@@ -42,6 +43,8 @@ import org.jetbrains.anko.onComplete
 import org.jetbrains.anko.uiThread
 import java.util.*
 import java.util.concurrent.Future
+import kotlin.collections.ArrayList
+import kotlin.collections.LinkedHashMap
 
 class ContactsActivity : AppCompatActivity(){
 
@@ -61,6 +64,7 @@ class ContactsActivity : AppCompatActivity(){
 
         MobileAds.initialize(this, getString(R.string.admob_id))
 
+        setSupportActionBar(toolbar)
         title = "My Contacts"
 
         contacts_list.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this@ContactsActivity)
@@ -123,6 +127,7 @@ class ContactsActivity : AppCompatActivity(){
 
         numberList = utils.getContactList(this)
 
+
         FirebaseUtils.ref.allUser()
             .addValueEventListener(object : ValueEventListener{
                 override fun onDataChange(p0: DataSnapshot) {
@@ -140,6 +145,9 @@ class ContactsActivity : AppCompatActivity(){
                         val number = utils.getFormattedTenDigitNumber(userModel!!.phone)
                         val uid = userModel.uid
 
+//                        numberList.filterIndexed { index, item ->
+//                            (item.number == number || item.number.contains(number) &&
+//                        }
 
                         for((index, item) in numberList.withIndex()) {
                             if (item.number == number || item.number.contains(number)) {
@@ -153,6 +161,7 @@ class ContactsActivity : AppCompatActivity(){
                     }
 
                     registeredAvailableUser.sortBy { it.name }
+
 
                     contacts_list.adapter = adapter
 
@@ -179,21 +188,47 @@ class ContactsActivity : AppCompatActivity(){
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
 
         menuInflater.inflate(R.menu.menu_search, menu)
+
+        menu?.findItem(R.id.action_search)?.let { searchView.setMenuItem(it) }
+
+        searchView.setOnQueryTextListener(object : SimpleSearchView.OnQueryTextListener{
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                return true
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                (adapter as? Filterable)?.filter?.filter(searchView.searchEditText.text.toString())
+                return true
+            }
+
+            override fun onQueryTextCleared(): Boolean {
+
+                return true
+            }
+
+        })
+
+        if(true)
+            return true
+
         val searchView = menu?.findItem(R.id.app_bar_search)?.actionView as SearchView
 
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener{
             override fun onQueryTextSubmit(query: String?): Boolean {
-
                 return false
             }
 
             override fun onQueryTextChange(newText: String?): Boolean {
-
+                (adapter as? Filterable)?.filter?.filter(searchView.query)
 
                 return false
             }
 
         })
+        searchView.setOnCloseListener {
+            (adapter as? Filterable)?.filter?.filter("")
+            return@setOnCloseListener true
+        }
 
         return super.onCreateOptionsMenu(menu)
     }
@@ -208,15 +243,22 @@ class ContactsActivity : AppCompatActivity(){
 
     val adapter: RecyclerView.Adapter<ViewHolder> = object : RecyclerView.Adapter<ViewHolder>(), Filterable {
 
+        var registeredUser:List<Models.Contact> = registeredAvailableUser
+
+
         override fun getFilter(): Filter = object : Filter() {
 
             override fun performFiltering(p0: CharSequence?): FilterResults {
                 val query = p0?.toString()?:"".toLowerCase(Locale.ENGLISH)
-                val filteredList = registeredAvailableUser
+                registeredUser = registeredAvailableUser
 
-                filteredList.filter { it.name.contains(query) || it.number.contains(query)}
+                registeredUser = registeredUser.filterIndexed { index, it -> it.name.contains(query) ||
+                        it.number.contains(query) ||  (!isForSelection && index in listOf(0,1,registeredUser.lastIndex)) }
 
-                return FilterResults().apply { values = filteredList; count = filteredList.size }
+
+
+                return FilterResults().apply { values = registeredUser; count = registeredUser.size }
+
             }
 
             override fun publishResults(p0: CharSequence?, p1: FilterResults?) {
@@ -224,7 +266,7 @@ class ContactsActivity : AppCompatActivity(){
                 if(p1?.values == null)
                     return
 
-                registeredAvailableUser = p1.values as MutableList<Models.Contact>
+                registeredUser = p1.values as MutableList<Models.Contact>
                 notifyDataSetChanged()
             }
 
@@ -233,25 +275,26 @@ class ContactsActivity : AppCompatActivity(){
         override fun onCreateViewHolder(p0: ViewGroup, p1: Int): ViewHolder
                 = ViewHolder(layoutInflater.inflate(R.layout.item_conversation_layout, p0, false))
 
-        override fun getItemCount(): Int = registeredAvailableUser.size
+        override fun getItemCount(): Int = registeredUser.size
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
 
 
             loadNativeAd(holder.itemView, position)
+            val user = registeredUser[position]
 
-            holder.name.text = registeredAvailableUser[position].name
-            holder.number.text = registeredAvailableUser[position].number
+            holder.name.text = user.name
+            holder.number.text = user.number
 
             holder.pic.borderWidth = holder.pic.borderWidth
             holder.number.visibility = View.VISIBLE
 
-            val uid = registeredAvailableUser.get(index = position).uid
+            val uid = user.uid
 
             FirebaseUtils.loadProfilePic(this@ContactsActivity, uid, holder.pic)
             holder.pic.setPadding(0,0,0,0)
 
-            if(position == registeredAvailableUser.size - 1 || position == 0 || position == 1) {
+            if(position == registeredUser.lastIndex || position == 0 || position == 1) {
                 holder.number.visibility = View.GONE
                 holder.pic.borderWidth = 0
             }
@@ -266,7 +309,7 @@ class ContactsActivity : AppCompatActivity(){
                     holder.pic.setImageResource(R.drawable.ic_group_add_white_24dp)
                     holder.pic.circleBackgroundColor = ContextCompat.getColor(this@ContactsActivity, R.color.colorPrimary)
                 }
-                registeredAvailableUser.lastIndex -> {
+                registeredUser.lastIndex -> {
                     holder.pic.setPadding(30,30,30,30)
                     holder.pic.circleBackgroundColor = Color.TRANSPARENT
                     holder.pic.setImageResource(android.R.drawable.ic_menu_share)
@@ -303,7 +346,7 @@ class ContactsActivity : AppCompatActivity(){
                     else -> {
                         startActivity(Intent(this@ContactsActivity, MessageActivity::class.java)
                             .putExtra(FirebaseUtils.KEY_UID, uid)
-                            .putExtra(utils.constants.KEY_NAME_OR_NUMBER, registeredAvailableUser[position].number)
+                            .putExtra(utils.constants.KEY_NAME_OR_NUMBER, user.number)
                             .putExtra(utils.constants.KEY_TARGET_TYPE, FirebaseUtils.KEY_CONVERSATION_SINGLE))
                         finish()
                     }
@@ -347,6 +390,8 @@ class ContactsActivity : AppCompatActivity(){
 
 
 
+    private var adsLoadedOnce = false
+    private val ads:MutableMap< Int, UnifiedNativeAd> = LinkedHashMap()
     private fun loadNativeAd(itemView:View, position:Int){
 
 
@@ -355,7 +400,15 @@ class ContactsActivity : AppCompatActivity(){
 
             conversation_native_ad.hide()
 
+            if(adsLoadedOnce)
+                return
+            adsLoadedOnce = true
 
+            if(ads.containsKey(position)){
+                conversation_native_ad.setNativeAd(ads[position])
+                conversation_native_ad.show()
+                return
+            }
 
 
             initAd {
@@ -367,6 +420,7 @@ class ContactsActivity : AppCompatActivity(){
                     return@initAd
                 }
                 it?.let {
+
 
 
                     conversation_native_ad.iconView = itemView.pic
@@ -398,6 +452,7 @@ class ContactsActivity : AppCompatActivity(){
 
                     conversation_native_ad.setNativeAd(it)
 
+                    ads[position] = it
                 }
                 if(it == null)
                     conversation_native_ad.hide()
