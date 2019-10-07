@@ -111,7 +111,7 @@
                 android:theme="@style/AppTheme.NoActionBar"
                 android:windowSoftInputMode="adjustPan">
         </activity>
-        <activity android:name=".ContactsActivity">
+        <activity android:name=".ContactsActivity" android:theme="@style/AppTheme.NoActionBar">
         </activity> <!-- Provider for the library -->
         <provider
                 android:name="androidx.core.content.FileProvider"

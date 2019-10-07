@@ -1083,7 +1083,7 @@ object FirebaseUtils {
                 override fun onDataChange(p0: DataSnapshot) {
                     if(p0.exists()){
                         if(p0.getValue(Boolean::class.java)!!) {
-                            imageView.visibility = View.VISIBLE
+                            imageView.show()
                             return
                         }
                     }

@@ -692,19 +692,19 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             conversation_native_ad.hide()
 
 
-
-
             initAd {
 
-                Log.d("HomeActivity", "loadNativeAd: ${it?.headline}")
                 
                 it?.let {
 
-                    if(position == utils.constants.ads_after_items || position == utils.constants.ads_after_items + utils.constants.ads_after_items)
-                        conversation_native_ad.show()
-                    else{
-                        conversation_native_ad.hide()
-                        return@initAd
+                    when (position) {
+                        utils.constants.ads_after_items, utils.constants.ads_after_items * 2 -> {
+
+                        }
+                        else -> {
+                            conversation_native_ad.hide()
+                            return@initAd
+                        }
                     }
 
 
@@ -734,6 +734,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
 
                     it.enableCustomClickGesture()
+                    conversation_native_ad.show()
 
                 conversation_native_ad.setNativeAd(it)
 
@@ -808,5 +809,12 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
         rewardedVideoAd.loadAd(getString(R.string.rewarded_ad_unit), AdRequest.Builder()
             .addTestDevice(utils.constants.redmi_note_3_test_device_id).build())
+    }
+
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_search, menu)
+
+        return super.onCreateOptionsMenu(menu)
     }
 }

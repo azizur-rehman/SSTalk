@@ -11,7 +11,6 @@ import android.provider.ContactsContract
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import android.util.Log
 import android.view.Menu
@@ -20,13 +19,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Filter
 import android.widget.Filterable
-import android.widget.SearchView
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.hide
 import com.aziz.sstalk.utils.show
 import com.aziz.sstalk.utils.utils
-import com.ferfalk.simplesearchview.SimpleSearchView
 import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.AdLoader
 import com.google.android.gms.ads.AdRequest
@@ -35,6 +32,7 @@ import com.google.android.gms.ads.formats.UnifiedNativeAd
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
+import com.miguelcatalan.materialsearchview.MaterialSearchView
 import kotlinx.android.synthetic.main.contact_screen.*
 import kotlinx.android.synthetic.main.item_conversation_layout.view.*
 import kotlinx.android.synthetic.main.item_conversation_native_ad.view.*
@@ -43,18 +41,18 @@ import org.jetbrains.anko.onComplete
 import org.jetbrains.anko.uiThread
 import java.util.*
 import java.util.concurrent.Future
-import kotlin.collections.ArrayList
 import kotlin.collections.LinkedHashMap
 
 class ContactsActivity : AppCompatActivity(){
 
     //number list has 10 digit formatted number
     var numberList:MutableList<Models.Contact> = mutableListOf()
-    var registeredAvailableUser:MutableList<Models.Contact> = mutableListOf()
+    var totalAvailableUser:MutableList<Models.Contact> = mutableListOf()
 
     var isForSelection = false
     private var asyncLoader: Future<Unit>? = null
 
+    val context = this
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -67,7 +65,7 @@ class ContactsActivity : AppCompatActivity(){
         setSupportActionBar(toolbar)
         title = "My Contacts"
 
-        contacts_list.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this@ContactsActivity)
+        contacts_list.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(context)
 
         isForSelection = intent.getBooleanExtra(utils.constants.KEY_IS_FOR_SELECTION, false)
 
@@ -76,7 +74,7 @@ class ContactsActivity : AppCompatActivity(){
             uiThread {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 
-                    if(ActivityCompat.checkSelfPermission(this@ContactsActivity, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED)
+                    if(ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED)
                         requestPermissions(arrayOf(Manifest.permission.READ_CONTACTS), 101)
                     else
                         loadRegisteredUsers()
@@ -133,11 +131,11 @@ class ContactsActivity : AppCompatActivity(){
                 override fun onDataChange(p0: DataSnapshot) {
 
                     if(!p0.exists()) {
-                        utils.toast(this@ContactsActivity, "No registered users")
+                        utils.toast(context, "No registered users")
                         return
                     }
 
-                    registeredAvailableUser.clear()
+                    totalAvailableUser.clear()
 
                     for (post in p0.children){
                         val userModel = post.getValue(Models.User ::class.java)
@@ -152,15 +150,15 @@ class ContactsActivity : AppCompatActivity(){
                         for((index, item) in numberList.withIndex()) {
                             if (item.number == number || item.number.contains(number)) {
                                 numberList[index].uid = uid
-                                if(uid!=FirebaseUtils.getUid() && !registeredAvailableUser.contains(numberList[index]))
-                                registeredAvailableUser.add(numberList[index])
+                                if(uid!=FirebaseUtils.getUid() && !totalAvailableUser.contains(numberList[index]))
+                                totalAvailableUser.add(numberList[index])
                             }
 
                         }
 
                     }
 
-                    registeredAvailableUser.sortBy { it.name }
+                    totalAvailableUser.sortBy { it.name }
 
 
                     contacts_list.adapter = adapter
@@ -168,9 +166,9 @@ class ContactsActivity : AppCompatActivity(){
                     if(isForSelection)
                         return
 
-                    registeredAvailableUser.add(Models.Contact("Invite Users"))
-                    registeredAvailableUser.add(0,Models.Contact("New Contact"))
-                    registeredAvailableUser.add(1,Models.Contact("New Group"))
+                    totalAvailableUser.add(Models.Contact("Invite Users"))
+                    totalAvailableUser.add(0,Models.Contact("New Contact"))
+                    totalAvailableUser.add(1,Models.Contact("New Group"))
 
                     adapter.notifyDataSetChanged()
                     contact_progressbar.visibility = View.GONE
@@ -191,44 +189,30 @@ class ContactsActivity : AppCompatActivity(){
 
         menu?.findItem(R.id.action_search)?.let { searchView.setMenuItem(it) }
 
-        searchView.setOnQueryTextListener(object : SimpleSearchView.OnQueryTextListener{
+
+
+        searchView.setOnQueryTextListener(object : MaterialSearchView.OnQueryTextListener{
             override fun onQueryTextSubmit(query: String?): Boolean {
+                (adapter as? Filterable)?.filter?.filter(query)
                 return true
             }
 
             override fun onQueryTextChange(newText: String?): Boolean {
-                (adapter as? Filterable)?.filter?.filter(searchView.searchEditText.text.toString())
-                return true
-            }
-
-            override fun onQueryTextCleared(): Boolean {
-
+                (adapter as? Filterable)?.filter?.filter(newText)
                 return true
             }
 
         })
 
-        if(true)
-            return true
-
-        val searchView = menu?.findItem(R.id.app_bar_search)?.actionView as SearchView
-
-        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener{
-            override fun onQueryTextSubmit(query: String?): Boolean {
-                return false
+        searchView.setOnSearchViewListener(object : MaterialSearchView.SearchViewListener{
+            override fun onSearchViewClosed() {
+                (adapter as? Filterable)?.filter?.filter("")
             }
 
-            override fun onQueryTextChange(newText: String?): Boolean {
-                (adapter as? Filterable)?.filter?.filter(searchView.query)
-
-                return false
+            override fun onSearchViewShown() {
             }
 
         })
-        searchView.setOnCloseListener {
-            (adapter as? Filterable)?.filter?.filter("")
-            return@setOnCloseListener true
-        }
 
         return super.onCreateOptionsMenu(menu)
     }
@@ -243,17 +227,20 @@ class ContactsActivity : AppCompatActivity(){
 
     val adapter: RecyclerView.Adapter<ViewHolder> = object : RecyclerView.Adapter<ViewHolder>(), Filterable {
 
-        var registeredUser:List<Models.Contact> = registeredAvailableUser
+        var registeredUser:List<Models.Contact> = totalAvailableUser
 
 
         override fun getFilter(): Filter = object : Filter() {
 
             override fun performFiltering(p0: CharSequence?): FilterResults {
-                val query = p0?.toString()?:"".toLowerCase(Locale.ENGLISH)
-                registeredUser = registeredAvailableUser
+                val query = p0?.toString()?:"".toLowerCase(Locale.getDefault())
+                registeredUser = totalAvailableUser
 
-                registeredUser = registeredUser.filterIndexed { index, it -> it.name.contains(query) ||
-                        it.number.contains(query) ||  (!isForSelection && index in listOf(0,1,registeredUser.lastIndex)) }
+                registeredUser = registeredUser.filterIndexed { index, it ->
+                    it.name.toLowerCase(Locale.getDefault()).contains(query) ||
+                        it.number.contains(query) ||
+                            (!isForSelection && index in listOf(0,1,registeredUser.lastIndex))
+                }
 
 
 
@@ -291,23 +278,23 @@ class ContactsActivity : AppCompatActivity(){
 
             val uid = user.uid
 
-            FirebaseUtils.loadProfilePic(this@ContactsActivity, uid, holder.pic)
+            FirebaseUtils.loadProfilePic(context, uid, holder.pic)
             holder.pic.setPadding(0,0,0,0)
 
             if(position == registeredUser.lastIndex || position == 0 || position == 1) {
-                holder.number.visibility = View.GONE
+                holder.number.hide()
                 holder.pic.borderWidth = 0
             }
 
             when(position){
                 0 -> {
                     holder.pic.setImageResource(R.drawable.ic_person_add_white_padded_24dp)
-                    holder.pic.circleBackgroundColor = ContextCompat.getColor(this@ContactsActivity, R.color.colorPrimary)
+                    holder.pic.circleBackgroundColor = ContextCompat.getColor(context, R.color.colorPrimary)
                 }
 
                 1-> {
                     holder.pic.setImageResource(R.drawable.ic_group_add_white_24dp)
-                    holder.pic.circleBackgroundColor = ContextCompat.getColor(this@ContactsActivity, R.color.colorPrimary)
+                    holder.pic.circleBackgroundColor = ContextCompat.getColor(context, R.color.colorPrimary)
                 }
                 registeredUser.lastIndex -> {
                     holder.pic.setPadding(30,30,30,30)
@@ -338,13 +325,14 @@ class ContactsActivity : AppCompatActivity(){
                     }
                     1 -> {
                         //new group
-                        startActivity(Intent(this@ContactsActivity, CreateGroupActivity::class.java))
+                        startActivity(Intent(context, CreateGroupActivity::class.java))
                         finish()
                     }
-                    registeredAvailableUser.lastIndex -> utils.shareInviteText(this@ContactsActivity)
+                    // invite users
+                    registeredUser.lastIndex -> utils.shareInviteText(context)
                     
                     else -> {
-                        startActivity(Intent(this@ContactsActivity, MessageActivity::class.java)
+                        startActivity(Intent(context, MessageActivity::class.java)
                             .putExtra(FirebaseUtils.KEY_UID, uid)
                             .putExtra(utils.constants.KEY_NAME_OR_NUMBER, user.number)
                             .putExtra(utils.constants.KEY_TARGET_TYPE, FirebaseUtils.KEY_CONVERSATION_SINGLE))
@@ -400,28 +388,23 @@ class ContactsActivity : AppCompatActivity(){
 
             conversation_native_ad.hide()
 
-            if(adsLoadedOnce)
-                return
-            adsLoadedOnce = true
 
-            if(ads.containsKey(position)){
-                conversation_native_ad.setNativeAd(ads[position])
-                conversation_native_ad.show()
+            if(adsLoadedOnce && position > utils.constants.ads_after_items)
                 return
-            }
+
 
 
             initAd {
 
-                if(position == utils.constants.ads_after_items || position == utils.constants.ads_after_items + utils.constants.ads_after_items)
+
+
+                if(position == utils.constants.ads_after_items || position == utils.constants.ads_after_items * 2)
                     conversation_native_ad.show()
                 else{
                     conversation_native_ad.hide()
                     return@initAd
                 }
                 it?.let {
-
-
 
                     conversation_native_ad.iconView = itemView.pic
 
@@ -453,9 +436,12 @@ class ContactsActivity : AppCompatActivity(){
                     conversation_native_ad.setNativeAd(it)
 
                     ads[position] = it
+
+                    adsLoadedOnce = true
                 }
                 if(it == null)
                     conversation_native_ad.hide()
+
             }
 
         }
@@ -476,14 +462,13 @@ class ContactsActivity : AppCompatActivity(){
             .withAdListener(object : AdListener() {
 
                 override fun onAdLoaded() {
-
+                    Log.d("ContactsActivity", "onAdLoaded: ")
                     onLoaded?.invoke(unifiedNativeAd)
                     super.onAdLoaded()
                 }
 
                 override fun onAdFailedToLoad(p0: Int) {
                     super.onAdFailedToLoad(p0)
-                    Log.d("HomeActivity", "onAdFailedToLoad: code = $p0")
                     onLoaded?.invoke(null)
 
                 }
