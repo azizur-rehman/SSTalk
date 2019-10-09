@@ -29,6 +29,7 @@
 
             <FrameLayout android:layout_width="match_parent"
                          android:fitsSystemWindows="true"
+                         app:layout_collapseMode="parallax"
                          android:background="@drawable/image_background_bottom_gradient"
                          android:layout_height="match_parent">
 
@@ -37,7 +38,6 @@
                                     android:alpha="1"
                                     android:src="@drawable/contact_placeholder"
                                     android:scaleType="centerCrop"
-                                    app:layout_collapseMode="parallax"
                                     android:layout_width="match_parent"/>
 
 

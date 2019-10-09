@@ -33,7 +33,10 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.miguelcatalan.materialsearchview.MaterialSearchView
+import kotlinx.android.synthetic.main.activity_forward.*
 import kotlinx.android.synthetic.main.contact_screen.*
+import kotlinx.android.synthetic.main.contact_screen.searchView
+import kotlinx.android.synthetic.main.contact_screen.toolbar
 import kotlinx.android.synthetic.main.item_conversation_layout.view.*
 import kotlinx.android.synthetic.main.item_conversation_native_ad.view.*
 import org.jetbrains.anko.doAsyncResult
@@ -183,6 +186,7 @@ class ContactsActivity : AppCompatActivity(){
     }
 
 
+    private var searchQuery = ""
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
 
         menuInflater.inflate(R.menu.menu_search, menu)
@@ -194,25 +198,20 @@ class ContactsActivity : AppCompatActivity(){
         searchView.setOnQueryTextListener(object : MaterialSearchView.OnQueryTextListener{
             override fun onQueryTextSubmit(query: String?): Boolean {
                 (adapter as? Filterable)?.filter?.filter(query)
+                searchQuery = query?:""
                 return true
             }
 
             override fun onQueryTextChange(newText: String?): Boolean {
-                (adapter as? Filterable)?.filter?.filter(newText)
+                if(searchQuery != newText)
+                    (adapter as? Filterable)?.filter?.filter(newText)
+
+                searchQuery = newText?:""
                 return true
             }
 
         })
 
-        searchView.setOnSearchViewListener(object : MaterialSearchView.SearchViewListener{
-            override fun onSearchViewClosed() {
-                (adapter as? Filterable)?.filter?.filter("")
-            }
-
-            override fun onSearchViewShown() {
-            }
-
-        })
 
         return super.onCreateOptionsMenu(menu)
     }
@@ -233,7 +232,7 @@ class ContactsActivity : AppCompatActivity(){
         override fun getFilter(): Filter = object : Filter() {
 
             override fun performFiltering(p0: CharSequence?): FilterResults {
-                val query = p0?.toString()?:"".toLowerCase(Locale.getDefault())
+                val query = p0?.toString()?:"".toLowerCase(Locale.getDefault()).trim()
                 registeredUser = totalAvailableUser
 
                 registeredUser = registeredUser.filterIndexed { index, it ->
@@ -279,30 +278,6 @@ class ContactsActivity : AppCompatActivity(){
             val uid = user.uid
 
             FirebaseUtils.loadProfilePic(context, uid, holder.pic)
-            holder.pic.setPadding(0,0,0,0)
-
-            if(position == registeredUser.lastIndex || position == 0 || position == 1) {
-                holder.number.hide()
-                holder.pic.borderWidth = 0
-            }
-
-            when(position){
-                0 -> {
-                    holder.pic.setImageResource(R.drawable.ic_person_add_white_padded_24dp)
-                    holder.pic.circleBackgroundColor = ContextCompat.getColor(context, R.color.colorPrimary)
-                }
-
-                1-> {
-                    holder.pic.setImageResource(R.drawable.ic_group_add_white_24dp)
-                    holder.pic.circleBackgroundColor = ContextCompat.getColor(context, R.color.colorPrimary)
-                }
-                registeredUser.lastIndex -> {
-                    holder.pic.setPadding(30,30,30,30)
-                    holder.pic.circleBackgroundColor = Color.TRANSPARENT
-                    holder.pic.setImageResource(android.R.drawable.ic_menu_share)
-                }
-            }
-
 
             holder.itemView.setOnClickListener {
 
@@ -330,7 +305,7 @@ class ContactsActivity : AppCompatActivity(){
                     }
                     // invite users
                     registeredUser.lastIndex -> utils.shareInviteText(context)
-                    
+
                     else -> {
                         startActivity(Intent(context, MessageActivity::class.java)
                             .putExtra(FirebaseUtils.KEY_UID, uid)
@@ -342,6 +317,33 @@ class ContactsActivity : AppCompatActivity(){
 
 
             }
+
+            if(isForSelection) return
+
+            holder.pic.setPadding(0,0,0,0)
+
+            if(position == registeredUser.lastIndex || position == 0 || position == 1) {
+                holder.number.hide()
+                holder.pic.borderWidth = 0
+            }
+
+            holder.pic.circleBackgroundColor = ContextCompat.getColor(context, R.color.colorPrimary)
+
+            when(position){
+                0 -> {
+                    holder.pic.setImageResource(R.drawable.ic_person_add_white_padded_24dp)
+                }
+
+                1-> {
+                    holder.pic.setImageResource(R.drawable.ic_group_add_white_24dp)
+                }
+                registeredUser.lastIndex -> {
+                    holder.pic.setPadding(30,30,30,30)
+                    holder.pic.circleBackgroundColor = Color.TRANSPARENT
+                    holder.pic.setImageResource(android.R.drawable.ic_menu_share)
+                }
+            }
+
 
 
         }
@@ -368,9 +370,9 @@ class ContactsActivity : AppCompatActivity(){
                 private val time = itemView.messageTime!!
 
                 init {
-                    time.visibility = View.GONE
-                    itemView.delivery_status_last_msg.visibility = View.GONE
-                    itemView.conversation_mute_icon.visibility = View.GONE
+                    time.hide()
+                    itemView.delivery_status_last_msg.hide()
+                    itemView.conversation_mute_icon.hide()
 
 
                 }
@@ -389,7 +391,7 @@ class ContactsActivity : AppCompatActivity(){
             conversation_native_ad.hide()
 
 
-            if(adsLoadedOnce && position > utils.constants.ads_after_items)
+            if(adsLoadedOnce)
                 return
 
 
@@ -437,7 +439,8 @@ class ContactsActivity : AppCompatActivity(){
 
                     ads[position] = it
 
-                    adsLoadedOnce = true
+                    if(position > utils.constants.ads_after_items && !adsLoadedOnce)
+                        adsLoadedOnce = true
                 }
                 if(it == null)
                     conversation_native_ad.hide()
@@ -475,7 +478,16 @@ class ContactsActivity : AppCompatActivity(){
             })
             .build()
 
-        adLoader.loadAds(AdRequest.Builder().addTestDevice(utils.constants.redmi_note_3_test_device_id).build(), 5)
+        adLoader.loadAd(AdRequest.Builder().addTestDevice(utils.constants.redmi_note_3_test_device_id).build())
 
+    }
+
+
+    override fun onBackPressed() {
+
+        if(searchView.isSearchOpen)
+            searchView.closeSearch()
+        else
+            super.onBackPressed()
     }
 }

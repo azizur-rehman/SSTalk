@@ -36,10 +36,11 @@
                 app:layout_constraintTop_toTopOf="@+id/delivery_status_last_msg"
                 android:layout_marginStart="3dp" />
 
+
         <TextView
                 android:id="@+id/name"
                 android:layout_width="wrap_content"
-                android:layout_height="0dp"
+                android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:layout_marginLeft="16dp"
                 android:layout_marginTop="4dp"
@@ -48,14 +49,10 @@
                 android:textAllCaps="false"
                 android:textColor="@color/black"
                 android:textSize="16sp"
+                app:layout_constraintBottom_toBottomOf="@+id/pic"
                 app:layout_constraintStart_toEndOf="@+id/pic"
-                app:layout_constraintTop_toTopOf="@+id/pic" />
-
-        <androidx.constraintlayout.widget.Barrier
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                tools:layout_editor_absoluteX="10dp"
-                tools:layout_editor_absoluteY="15dp" />
+                app:layout_constraintTop_toTopOf="@+id/pic"
+                app:layout_constraintVertical_bias="0.028" />
 
         <ImageView
                 android:id="@+id/conversation_mute_icon"
@@ -140,8 +137,8 @@
 
         <com.aziz.sstalk.views.AnimCheckBox
                 android:id="@+id/contact_checkbox"
-                android:layout_width="22dp"
-                android:layout_height="22dp"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
                 android:layout_gravity="end|bottom"
                 android:visibility="invisible"
                 app:checked="false"

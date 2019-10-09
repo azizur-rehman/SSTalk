@@ -14,14 +14,15 @@ import android.view.View
 import android.view.ViewGroup
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.FirebaseUtils
+import com.aziz.sstalk.utils.hide
+import com.aziz.sstalk.utils.hideOrShow
 import com.aziz.sstalk.utils.utils
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import kotlinx.android.synthetic.main.activity_multi_contact_chooser.*
 import kotlinx.android.synthetic.main.contact_screen.*
-import kotlinx.android.synthetic.main.item__forward_contact_list.view.*
-import kotlinx.android.synthetic.main.item_conversation_layout.view.*
+import kotlinx.android.synthetic.main.item_contact_layout.view.*
 import kotlinx.android.synthetic.main.item_grid_contact_layout.view.*
 import org.jetbrains.anko.*
 import java.util.concurrent.Future
@@ -47,6 +48,7 @@ class MultiContactChooserActivity : AppCompatActivity(){
         title = "Choose from contacts"
 
         excludedUIDs = intent.getStringArrayListExtra(utils.constants.KEY_EXCLUDED_LIST)
+        app_bar_layout?.hide()
 
         if(excludedUIDs.isNullOrEmpty())
             excludedUIDs = ArrayList()
@@ -116,8 +118,6 @@ class MultiContactChooserActivity : AppCompatActivity(){
     private fun loadRegisteredUsers(){
 
 
-
-
         numberList = utils.getContactList(this)
 
         FirebaseUtils.ref.allUser()
@@ -151,6 +151,8 @@ class MultiContactChooserActivity : AppCompatActivity(){
 
                     }
 
+
+                    registeredAvailableUser.sortBy { it.name }
 
                     contacts_list.adapter = adapter
                     participant_recyclerview.adapter = horizontalAdapter
@@ -196,7 +198,7 @@ class MultiContactChooserActivity : AppCompatActivity(){
     val adapter = object : androidx.recyclerview.widget.RecyclerView.Adapter<ViewHolder>() {
 
         override fun onCreateViewHolder(p0: ViewGroup, p1: Int): ViewHolder
-                = ViewHolder(layoutInflater.inflate(R.layout.item__forward_contact_list, p0, false))
+                = ViewHolder(layoutInflater.inflate(R.layout.item_contact_layout, p0, false))
 
         override fun getItemCount(): Int = registeredAvailableUser.size
 
@@ -207,14 +209,17 @@ class MultiContactChooserActivity : AppCompatActivity(){
             holder.pic.borderWidth = holder.pic.borderWidth
 
             val uid = registeredAvailableUser.get(index = position).uid
+            val user = registeredAvailableUser[holder.adapterPosition]
 
             FirebaseUtils.loadProfilePic(this@MultiContactChooserActivity, uid, holder.pic)
+
+            holder.checkBox.isChecked = selectedUsers.contains(user)
 
             holder.itemView.setOnClickListener {
 
                 holder.checkBox.isChecked = !holder.checkBox.isChecked
 
-                val user = registeredAvailableUser[holder.adapterPosition]
+                holder.checkBox.hideOrShow()
 
                 if(holder.checkBox.isChecked) {
                     selectedUsers.add(user)

@@ -5,12 +5,14 @@
 
     <com.google.android.material.appbar.AppBarLayout
             android:layout_width="match_parent"
+            android:id="@+id/app_bar_layout"
             android:layout_height="wrap_content">
 
 
         <FrameLayout
                 android:id="@+id/toolbar_container"
                 android:layout_width="match_parent"
+                app:layout_scrollFlags="scroll|enterAlways"
                 android:layout_height="wrap_content">
 
             <androidx.appcompat.widget.Toolbar

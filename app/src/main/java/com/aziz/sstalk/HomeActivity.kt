@@ -19,6 +19,7 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import com.aurelhubert.ahbottomnavigation.AHBottomNavigationItem
 import com.aziz.sstalk.fragments.FragmentOnlineFriends
+import com.aziz.sstalk.fragments.FragmentSearch
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.*
 import com.firebase.ui.database.FirebaseRecyclerAdapter
@@ -35,6 +36,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
+import com.miguelcatalan.materialsearchview.MaterialSearchView
 import de.hdodenhof.circleimageview.CircleImageView
 import kotlinx.android.synthetic.main.activity_home.*
 import kotlinx.android.synthetic.main.app_bar_home.*
@@ -340,9 +342,9 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                         if(selectedItemPosition.size==2)
                             actionMode?.invalidate()
 
-                        actionMode!!.title = selectedItemPosition.size.toString()
+                        actionMode?.title = selectedItemPosition.size.toString()
                         if(selectedItemPosition.isEmpty() && actionMode!=null)
-                            actionMode!!.finish()
+                            actionMode?.finish()
 
                         return@setOnClickListener
                     }
@@ -814,6 +816,29 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_search, menu)
+
+        searchView.setMenuItem(menu?.findItem(R.id.action_search))
+
+        val searchFragment = FragmentSearch()
+
+        searchView.setOnSearchViewListener(object : MaterialSearchView.SearchViewListener{
+            override fun onSearchViewClosed() {
+                // detach search fragment
+                supportFragmentManager.beginTransaction().remove(searchFragment).commit()
+                bottom_navigation_home.show()
+                show_contacts.show()
+
+            }
+
+            override fun onSearchViewShown() {
+                // attach search fragment
+                supportFragmentManager.beginTransaction().replace(R.id.homeLayoutContainer, searchFragment).commit()
+                bottom_navigation_home.hide()
+                show_contacts.hide()
+
+            }
+
+        })
 
         return super.onCreateOptionsMenu(menu)
     }

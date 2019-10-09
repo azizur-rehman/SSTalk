@@ -23,10 +23,9 @@ class BlockListActivity : AppCompatActivity() {
         setContentView(R.layout.activity_block_list)
 
         title = "Block List"
-        if(supportActionBar!=null) {
-            supportActionBar!!.setDisplayHomeAsUpEnabled(true)
-            supportActionBar!!.setHomeButtonEnabled(true)
-        }
+
+
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
 
         val query = FirebaseUtils.ref.getBlockedUserListQuery(FirebaseUtils.getUid())

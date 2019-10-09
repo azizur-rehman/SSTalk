@@ -10,6 +10,7 @@
                                                android:layout_height="wrap_content"
                                                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                                                app:stackFromEnd="true"
+                                                android:paddingTop="5dp"
                                                android:id="@+id/participant_recyclerview"
     />
 

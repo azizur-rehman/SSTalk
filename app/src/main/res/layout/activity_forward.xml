@@ -14,17 +14,32 @@
 
     <com.google.android.material.appbar.AppBarLayout android:layout_width="match_parent"
                                                      android:layout_height="wrap_content">
-        <androidx.appcompat.widget.Toolbar
+
+
+        <FrameLayout
+                android:id="@+id/toolbar_container"
                 android:layout_width="match_parent"
-                android:layout_height="?actionBarSize"
-                android:background="@color/colorPrimary"
-                android:id="@+id/toolbar"
-                app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
-                app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
-                app:titleTextColor="@color/white"
-                app:titleTextAppearance="@android:style/TextAppearance.DeviceDefault.Medium"
-                app:title="Forward to ..."
-        />
+                app:layout_scrollFlags="enterAlways|scroll"
+                android:layout_height="wrap_content">
+
+            <androidx.appcompat.widget.Toolbar
+                    android:layout_width="match_parent"
+                    android:layout_height="?actionBarSize"
+                    android:background="@color/colorPrimary"
+                    android:id="@+id/toolbar"
+                    app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+                    app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
+                    app:titleTextColor="@color/white"
+                    app:titleTextAppearance="@android:style/TextAppearance.DeviceDefault.Medium"
+                    app:title="Forward to ..."
+                    />
+
+            <com.miguelcatalan.materialsearchview.MaterialSearchView
+                    android:id="@+id/searchView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+
+        </FrameLayout>
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -39,8 +54,7 @@
         <androidx.core.widget.NestedScrollView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@color/white"
-            xmlns:android="http://schemas.android.com/apk/res/android">
+            android:background="@color/white">
 
 
 
@@ -109,8 +123,9 @@
             <TextView android:layout_width="match_parent"
                   android:layout_height="wrap_content"
                 android:text="Frequent contacts"
-                      android:background="@color/gray_light"
+                    android:background="@color/gray_transparent"
                       style="@style/TextViewHeading"
+                    android:padding="10dp"
         />
 
             <androidx.recyclerview.widget.RecyclerView android:layout_width="match_parent"
@@ -127,7 +142,8 @@
                   android:layout_height="wrap_content"
                   android:text="From contact book"
                   style="@style/TextViewHeading"
-                  android:background="@color/gray_light"
+                  android:background="@color/gray_transparent"
+                     android:padding="10dp"
         />
 
 
