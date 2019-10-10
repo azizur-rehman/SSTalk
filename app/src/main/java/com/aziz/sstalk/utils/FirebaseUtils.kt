@@ -112,6 +112,8 @@ object FirebaseUtils {
 
             fun fileRef(): DatabaseReference = root().child(NODE_FILE)
 
+            fun getChatRoot(uid: String) = root().child(NODE_MESSAGES).child(uid)
+
             fun getChatQuery(uid :String, targetUID: String) : Query{
                 return root()
                     .child(NODE_MESSAGES)
@@ -690,7 +692,7 @@ object FirebaseUtils {
     fun setUserDetailFromUID(context : Context,
             textView: TextView,
             uid: String,
-            shouldQueryFromContacts: Boolean){
+            shouldQueryFromContacts: Boolean, onLoaded: ((number: String) -> Unit?)? = null){
 
             user(uid)
                 .child(KEY_PHONE)
@@ -705,12 +707,12 @@ object FirebaseUtils {
                         }
 
 
-                        var phone = snapshot.getValue(String::class.java)
+                        val phone = snapshot.getValue(String::class.java)
 
 
                         textView.text = phone
 
-
+                        onLoaded?.invoke(phone.orEmpty())
 
                         if(shouldQueryFromContacts){
 
@@ -1187,9 +1189,8 @@ object FirebaseUtils {
             ))
     }
 
-    fun setGroupName(groupID: String, textView: TextView){
+    fun setGroupName(groupID: String, textView: TextView, onLoaded: ((name:String) -> Unit?)?=null){
 
-        Log.d("FirebaseUtils", "setGroupName: loading group name for $groupID")
 
         ref.groupInfo(groupID)
             .child(utils.constants.KEY_NAME)
@@ -1198,9 +1199,11 @@ object FirebaseUtils {
                 }
 
                 override fun onDataChange(p0: DataSnapshot) {
-                    Log.d("FirebaseUtils", "onDataChange: group name = ${p0.value}")
                     if(p0.exists())
-                    textView.text = p0.value.toString()
+                    {
+                        textView.text = p0.value.toString()
+                        onLoaded?.invoke(textView.text.toString())
+                    }
                     else
                         textView.text = "Unknown Group"
                 }

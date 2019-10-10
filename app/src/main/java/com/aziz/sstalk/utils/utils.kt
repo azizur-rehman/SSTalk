@@ -62,6 +62,7 @@ object utils {
 
         const val KEY_TARGET_TYPE = "target_type"
         const val KEY_NAME_OR_NUMBER = "name_or_number"
+        const val KEY_SELECTED_MSG_ID = "selectedMessageID"
 
         const val KEY_SELECTED = "selected"
         const val KEY_IS_GROUP = "isGroup"

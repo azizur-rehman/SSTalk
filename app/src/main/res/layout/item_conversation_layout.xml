@@ -48,7 +48,7 @@
                 android:text="User name"
                 android:textAllCaps="false"
                 android:textColor="@color/black"
-                android:textSize="16sp"
+                android:textSize="17sp"
                 app:layout_constraintBottom_toBottomOf="@+id/pic"
                 app:layout_constraintStart_toEndOf="@+id/pic"
                 app:layout_constraintTop_toTopOf="@+id/pic"

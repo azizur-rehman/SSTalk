@@ -37,8 +37,8 @@ import kotlinx.android.synthetic.main.activity_forward.*
 import kotlinx.android.synthetic.main.contact_screen.*
 import kotlinx.android.synthetic.main.contact_screen.searchView
 import kotlinx.android.synthetic.main.contact_screen.toolbar
+import kotlinx.android.synthetic.main.item_conversation_ad.view.*
 import kotlinx.android.synthetic.main.item_conversation_layout.view.*
-import kotlinx.android.synthetic.main.item_conversation_native_ad.view.*
 import org.jetbrains.anko.doAsyncResult
 import org.jetbrains.anko.onComplete
 import org.jetbrains.anko.uiThread

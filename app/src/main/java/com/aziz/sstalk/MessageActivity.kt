@@ -33,13 +33,9 @@ import android.view.ViewGroup
 import androidx.appcompat.widget.SearchView
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.*
-import androidx.core.view.ViewPropertyAnimatorCompat
 import com.aziz.sstalk.firebase.MessagingService
 import com.aziz.sstalk.models.Models
-import com.aziz.sstalk.utils.DateFormatter
-import com.aziz.sstalk.utils.FirebaseUtils
-import com.aziz.sstalk.utils.Pref
-import com.aziz.sstalk.utils.utils
+import com.aziz.sstalk.utils.*
 import com.aziz.sstalk.views.ColorGenerator
 import com.aziz.sstalk.views.Holders
 import com.firebase.ui.database.FirebaseRecyclerAdapter
@@ -131,14 +127,9 @@ class MessageActivity : AppCompatActivity() {
     var isGroup = false
     var nameOrNumber = ""
 
-    var imageFile:File? = null
      var cameraImagePath  = ""
      var cameraImageUri: Uri? = null
 
-    var user1 = "user---1"
-    var user2 = "user---2"
-
-    val storage_dir_initial = "/storage/"
 
     var isBlockedByMe = false
     var isBlockedByUser = false
@@ -177,15 +168,12 @@ class MessageActivity : AppCompatActivity() {
 
 
 
-        targetUid = intent.getStringExtra(FirebaseUtils.KEY_UID)
+        targetUid = intent.getStringExtra(FirebaseUtils.KEY_UID).orEmpty()
         val type:String? = intent.getStringExtra(utils.constants.KEY_TARGET_TYPE)
 
 
-        nameOrNumber = try {
-            intent.getStringExtra(utils.constants.KEY_NAME_OR_NUMBER)
-        } catch (e:Exception){
-            ""
-        }
+        nameOrNumber = intent.getStringExtra(utils.constants.KEY_NAME_OR_NUMBER).orEmpty()
+
         targetType = if(type.isNullOrEmpty()) FirebaseUtils.KEY_CONVERSATION_SINGLE
         else type
 
@@ -195,6 +183,13 @@ class MessageActivity : AppCompatActivity() {
         isGroup = targetType == FirebaseUtils.KEY_CONVERSATION_GROUP
 
         myUID = FirebaseUtils.getUid()
+
+        if(targetUid.isEmpty()){
+            toast("Something went wrong")
+            finish()
+            return
+        }
+
 
         loadGroupMembers()
 
@@ -778,6 +773,19 @@ class MessageActivity : AppCompatActivity() {
                  return super.getItemCount()
              }
 
+             override fun onDataChanged() {
+
+                 super.onDataChanged()
+                 val focusedMessage = intent.getSerializableExtra(utils.constants.KEY_MSG_MODEL) as? Models.MessageModel
+                     ?: return
+
+                 selectedPosition = snapshots.indexOf(focusedMessage)
+                 messagesList.scrollToPosition(selectedPosition)
+                 searchFilterItemPosition.add(selectedPosition)
+                 notifyItemChanged(selectedPosition)
+
+             }
+
 
             @SuppressLint("ObjectAnimatorBinding", "SetTextI18n")
             override fun onBindViewHolder(
@@ -1246,7 +1254,6 @@ class MessageActivity : AppCompatActivity() {
 
        adapter.startListening()
 
-//       findIndexOfFirstUnreadMessage()
 
 
 
@@ -1871,6 +1878,7 @@ class MessageActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
 
+
         try {
 
             adapter.startListening()
@@ -2494,7 +2502,7 @@ class MessageActivity : AppCompatActivity() {
 
 
         blockItem = menu.findItem(R.id.menu_action_block)
-        blockItem!!.title = if(isBlockedByMe) "Unblock" else "Block"
+        blockItem?.title = if(isBlockedByMe) "Unblock" else "Block"
 
 
         setSearchView(searchView)
@@ -2532,21 +2540,20 @@ class MessageActivity : AppCompatActivity() {
         downBtn.background = null
         downBtn.scaleType= ImageView.ScaleType.FIT_XY
 
-        upBtn.visibility = View.GONE
-        downBtn.visibility = View.GONE
+        upBtn.hide()
+        downBtn.hide()
 
         searchLayout.addView(upBtn)
         searchLayout.addView(downBtn)
 
 
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener{
-            override fun onQueryTextSubmit(p0: String?): Boolean {
+            override fun onQueryTextSubmit(query: String?): Boolean {
 
 
-                if(p0!!.isEmpty())
+                if(query!!.isEmpty())
                     return true
 
-                val query = p0
                 var resultCount = 0
                 searchFilterItemPosition.clear()
                 searchPosition = 0
@@ -2557,13 +2564,13 @@ class MessageActivity : AppCompatActivity() {
 
 
                     if(model.isFile){
-                        if (model.caption.toLowerCase().contains(searchQuery)) {
+                        if (model.caption.contains(searchQuery, true)) {
                             searchFilterItemPosition.add((index))
                             resultCount++
                         }
                     }
                     else {
-                        if (model.message.toLowerCase().contains(query.toString().toLowerCase())) {
+                        if (model.message.contains(query.toString(), true)) {
                             searchFilterItemPosition.add(index)
                             resultCount++
                         }
@@ -2960,37 +2967,25 @@ class MessageActivity : AppCompatActivity() {
                                     }
                                 }
 
-                                smart_reply_layout.visibility = if(it.suggestions.isNotEmpty()) View.VISIBLE else View.GONE
+                                smart_reply_layout.visible = (it.suggestions.isNotEmpty())
 
+                                smart_reply_recycler.setCustomAdapter(context, it.suggestions, R.layout.item_smart_reply){itemView, _,item ->
+                                    val suggestion  = item.text
+                                    itemView.item_text.text = suggestion
 
-                                smart_reply_recycler.adapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>(){
-                                    override fun onCreateViewHolder(p0: ViewGroup, p1: Int): RecyclerView.ViewHolder {
-                                        return object : RecyclerView.ViewHolder(LayoutInflater.from(context)
-                                            .inflate(R.layout.item_smart_reply,p0,false)){}
+                                    itemView.item_text.setOnClickListener {
+                                        messageInputField.inputEditText.setText(suggestion)
+                                        if(Pref.isTapToReply(context))
+                                            messageInputField.button.callOnClick()
                                     }
 
-                                    override fun getItemCount() = it.suggestions.size
-                                    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, p1: Int) {
-                                        val suggestion  = it.suggestions[p1].text
-                                        holder.itemView.item_text.text = suggestion
-
-
-                                        holder.itemView.item_text.setOnClickListener {
-                                            Log.d("MessageActivity", "onBindViewHolder: suggestion text clicked")
-                                            messageInputField.inputEditText.setText(suggestion)
-                                            if(Pref.isTapToReply(context))
+                                    itemView.setOnClickListener {
+                                        messageInputField.inputEditText.setText(suggestion)
+                                        if(Pref.isTapToReply(context))
                                             messageInputField.button.callOnClick()
-                                        }
-
-                                        holder.itemView.setOnClickListener {
-                                            Log.d("MessageActivity", "onBindViewHolder: suggestion clicked")
-                                            messageInputField.inputEditText.setText(suggestion)
-                                            if(Pref.isTapToReply(context))
-                                            messageInputField.button.callOnClick()
-                                        }
                                     }
-
                                 }
+
 
                             }
                     } catch (e: Exception) {
@@ -3015,8 +3010,6 @@ class MessageActivity : AppCompatActivity() {
             smartReplyCheckbox.setTextSize( TypedValue.COMPLEX_UNIT_SP, 18f)
 
             layout.addView(smartReplyCheckbox)
-
-//            switch.setSwitchTextAppearance(this, R.style.TextViewHeading)
 
             smartReplyCheckbox.isChecked = Pref.isTapToReply(this)
             smartReplyCheckbox.setOnCheckedChangeListener { _, isChecked ->

@@ -11,7 +11,6 @@ import android.os.Bundle
 import android.os.Parcelable
 import android.provider.MediaStore
 import com.google.android.material.snackbar.Snackbar
-import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.RecyclerView
 import android.util.Log
 import android.view.Menu
@@ -818,9 +817,6 @@ class ForwardActivity : AppCompatActivity() {
                         !p0.children.any {
                             it.getValue(Models.GroupMember::class.java)?.uid == myUID }
 
-                    Log.d("ForwardActivity", "bindHolder: group name = ${holder.title.text}")
-                    Log.d("ForwardActivity", "bindHolder: group id = $selectedGroupID")
-                    Log.d("ForwardActivity", "onDataChange: removed = $isMeRemoved")
 
                     try {
 

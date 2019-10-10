@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
 import com.google.android.material.navigation.NavigationView
 import androidx.core.view.GravityCompat
 import androidx.appcompat.app.ActionBarDrawerToggle
@@ -42,8 +43,8 @@ import kotlinx.android.synthetic.main.activity_home.*
 import kotlinx.android.synthetic.main.app_bar_home.*
 import kotlinx.android.synthetic.main.content_home.*
 import kotlinx.android.synthetic.main.content_home.recycler_back_message
+import kotlinx.android.synthetic.main.item_conversation_ad.view.*
 import kotlinx.android.synthetic.main.item_conversation_layout.view.*
-import kotlinx.android.synthetic.main.item_conversation_native_ad.view.*
 import kotlinx.android.synthetic.main.layout_recycler_view.*
 import org.jetbrains.anko.*
 import org.jetbrains.anko.design.indefiniteSnackbar
@@ -353,15 +354,9 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     catch (e:Exception){ 0 }
 
 
+                    startChat(uid, model.type, model.nameOrNumber, unreadCount)
 
-                    startActivity(Intent(context, MessageActivity::class.java)
-                        .apply {
-                            putExtra(FirebaseUtils.KEY_UID, uid)
-                            putExtra(utils.constants.KEY_TARGET_TYPE, model.type)
-                            putExtra(utils.constants.KEY_NAME_OR_NUMBER, model.nameOrNumber)
-                        putExtra(utils.constants.KEY_UNREAD, unreadCount) //optional
-                        }
-                    )
+
                 }
 
 
@@ -814,12 +809,24 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
 
+
+
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_search, menu)
 
         searchView.setMenuItem(menu?.findItem(R.id.action_search))
 
         val searchFragment = FragmentSearch()
+        var onSearched:OnSearched? = null
+
+        searchFragment.setOnItemClickedListener(object : FragmentSearch.OnItemClicked {
+            override fun onClicked() {
+                Handler().postDelayed({ searchView.closeSearch()},500)
+            }
+        }
+        )
+
+
 
         searchView.setOnSearchViewListener(object : MaterialSearchView.SearchViewListener{
             override fun onSearchViewClosed() {
@@ -832,7 +839,8 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
             override fun onSearchViewShown() {
                 // attach search fragment
-                supportFragmentManager.beginTransaction().replace(R.id.homeLayoutContainer, searchFragment).commit()
+                supportFragmentManager.beginTransaction().replace(R.id.homeLayoutContainer, searchFragment).addToBackStack(null).commit()
+                onSearched = searchFragment.setSearchAdapter()
                 bottom_navigation_home.hide()
                 show_contacts.hide()
 
@@ -840,6 +848,24 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         })
 
+        searchView.setOnQueryTextListener(object : MaterialSearchView.OnQueryTextListener{
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                onSearched?.onSubmit(query.orEmpty())
+                return false
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                onSearched?.onQueryChanged(newText.orEmpty())
+                return newText.isNullOrEmpty()
+            }
+
+        })
+
         return super.onCreateOptionsMenu(menu)
+    }
+
+    interface OnSearched{
+        fun onSubmit(query:String)
+        fun onQueryChanged(newQuery:String)
     }
 }
