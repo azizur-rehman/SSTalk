@@ -26,15 +26,11 @@
                 android:ellipsize="end"
                 android:fontFamily="@font/roboto_light"
                 android:lines="1"
-                android:layout_marginLeft="3dp"
                 android:text="@string/single_line_string"
                 android:textSize="14sp"
-                app:layout_constraintBottom_toBottomOf="@+id/delivery_status_last_msg"
+                app:layout_constraintBottom_toBottomOf="@+id/pic"
                 app:layout_constraintEnd_toStartOf="@+id/conversation_mute_icon"
-                app:layout_constraintHorizontal_bias="0.0"
-                app:layout_constraintStart_toEndOf="@+id/delivery_status_last_msg"
-                app:layout_constraintTop_toTopOf="@+id/delivery_status_last_msg"
-                android:layout_marginStart="3dp" />
+                app:layout_constraintStart_toEndOf="@+id/delivery_status_last_msg" />
 
 
         <TextView
@@ -72,16 +68,16 @@
                 android:id="@+id/delivery_status_last_msg"
                 android:layout_width="15dp"
                 android:layout_height="15dp"
+                android:paddingRight="5dp"
                 android:layout_gravity="center"
                 android:scaleType="centerInside"
                 android:src="@drawable/ic_message_pending_gray_24dp"
                 app:layout_constraintBottom_toBottomOf="@+id/pic"
-                app:layout_constraintLeft_toLeftOf="@id/mobile_number"
                 app:layout_constraintStart_toStartOf="@+id/name"
-                app:layout_constraintTop_toBottomOf="@+id/name"
                 app:layout_goneMarginEnd="0dp"
                 app:layout_goneMarginRight="0dp"
-                app:layout_goneMarginTop="8dp" />
+                app:layout_goneMarginTop="8dp"
+                tools:visibility="visible" />
 
         <TextView
                 android:id="@+id/messageTime"

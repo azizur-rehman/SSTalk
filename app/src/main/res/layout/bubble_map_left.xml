@@ -24,94 +24,98 @@
         />
 
 
-    <LinearLayout android:layout_height="wrap_content"
+    <androidx.constraintlayout.widget.ConstraintLayout android:layout_height="wrap_content"
                   android:layout_width="match_parent"
                   android:orientation="horizontal"
                   android:padding="3dp"
-                  android:id="@+id/message_layout_map_left"
-                  xmlns:android="http://schemas.android.com/apk/res/android">
+                  android:id="@+id/message_layout_map_left">
 
 
         <de.hdodenhof.circleimageview.CircleImageView
-                android:layout_width="50dp"
-                android:layout_marginLeft="2dp"
                 android:id="@+id/circle_sender_map"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
                 android:src="@drawable/contact_placeholder"
-                android:layout_height="50dp"/>
+                map:layout_constraintStart_toStartOf="parent"
+                map:layout_constraintTop_toTopOf="parent" />
 
 
-
-        <LinearLayout
-        android:layout_width="wrap_content"
-        android:padding="3dp"
-        android:layout_marginLeft="1dp"
-        android:layout_marginTop="1dp"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:background="@drawable/shape_bubble_left"
-        android:layout_height="wrap_content">
+        <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="2dp"
+                android:layout_marginLeft="2dp"
+                android:background="@drawable/shape_bubble_left"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="3dp"
+                map:layout_constraintStart_toEndOf="@+id/circle_sender_map"
+                map:layout_constraintTop_toTopOf="@+id/circle_sender_map">
 
 
             <TextView
+                    android:id="@+id/messageText_map_sender_left"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="start"
-                    android:padding="5dp"
-                    android:textSize="14sp"
                     android:maxWidth="240dp"
-                    android:visibility="gone"
+                    android:padding="5dp"
                     android:text="Sender"
                     android:textColor="@color/red"
-                    android:id="@+id/messageText_map_sender_left"
-            />
+                    android:textSize="14sp"
+                    android:visibility="gone"
+                    map:layout_constraintStart_toStartOf="parent"
+                    map:layout_constraintTop_toTopOf="parent" />
 
 
             <com.aziz.sstalk.views.RoundCornerLayout
-                    android:layout_width="240dp"
                     android:id="@+id/map_container_left_card"
+                    android:layout_width="240dp"
                     android:layout_height="210dp"
+                    android:orientation="vertical"
+                    app:bottomLeftEnabled="false"
+                    app:bottomRightEnabled="false"
                     app:cornerRadius="35dp"
                     app:topLeftEnabled="false"
                     app:topRightEnabled="true"
-                    app:bottomLeftEnabled="false"
-                    app:bottomRightEnabled="false"
-                    android:orientation="vertical">
-
+                    map:layout_constraintEnd_toEndOf="parent"
+                    map:layout_constraintStart_toStartOf="parent"
+                    map:layout_constraintTop_toBottomOf="@+id/messageText_map_sender_left">
 
 
                 <com.google.android.gms.maps.MapView
-                        android:layout_width="match_parent"
                         android:id="@+id/mapview_left"
-                        map:cameraZoom="15"
-                        map:mapType="normal"
-                        android:layout_gravity="center"
-                        map:liteMode="true"
+                        android:layout_width="match_parent"
                         android:layout_height="match_parent"
+                        android:layout_gravity="center"
+                        map:cameraZoom="15"
+                        map:liteMode="true"
+                        map:mapType="normal"
 
-                />
+                        />
 
 
             </com.aziz.sstalk.views.RoundCornerLayout>
 
 
+            <TextView
+                    android:id="@+id/messageText_map_left"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:maxWidth="240dp"
+                    android:padding="10dp"
+                    android:text="Caption is sed for image"
+                    map:layout_constraintEnd_toEndOf="@+id/map_container_left_card"
+                    map:layout_constraintStart_toStartOf="@+id/map_container_left_card"
+                    map:layout_constraintTop_toBottomOf="@+id/map_container_left_card" />
 
 
-        <TextView
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:padding="10dp"
-                android:gravity="center"
-                android:layout_weight="1"
-                android:maxWidth="240dp"
-                android:text="Caption is sed for image"
-                android:id="@+id/messageText_map_left"
-            />
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
 
-    </LinearLayout>
-
-
-    </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <TextView
             android:layout_width="wrap_content"
