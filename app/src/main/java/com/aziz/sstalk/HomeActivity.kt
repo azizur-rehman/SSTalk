@@ -202,7 +202,9 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     .commit()
                 bottom_navigation_home.setCurrentItem(0, false)
                 isOnlineFragmentLoaded = false
+                title = "Recent"
             }
+            searchView.isSearchOpen -> searchView.closeSearch()
             else -> super.onBackPressed()
         }
     }
