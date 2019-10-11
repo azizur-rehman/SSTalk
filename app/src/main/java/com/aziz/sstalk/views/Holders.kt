@@ -10,6 +10,7 @@ import kotlinx.android.synthetic.main.bubble_map_right.view.*
 import kotlinx.android.synthetic.main.bubble_right.view.*
 import kotlinx.android.synthetic.main.bubble_video_left.view.*
 import kotlinx.android.synthetic.main.bubble_video_right.view.*
+import kotlinx.android.synthetic.main.layout_video_bubble.view.*
 import kotlinx.android.synthetic.main.text_header.view.*
 
 object Holders {
@@ -77,17 +78,17 @@ object Holders {
 
     class MyVideoMsgHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
         val message = itemView.messageText_video_right!!
-        val time = itemView.time_video_right!!
-        val centerImageView = itemView.imageview_video_right!!
-        val progressBar = itemView.progress_bar_video_right!!
-        val tapToRetry = itemView.tap_retry_video_right!!
+        val time = itemView.time_video!!
+        val centerImageView = itemView.imageview_video!!
+        val progressBar = itemView.progress_bar_video!!
+        val tapToRetry = itemView.tap_retry_download_video!!
         val messageStatus = itemView.delivery_video_status!!
         val headerDateTime = itemView.header_video_right!!
-        val videoLayout = itemView.videoFrameLayoutRight!!
-        val thumbnail = itemView.thumbnail_right!!
-        val videoLengthText = itemView.video_length_right!!
 
-        val tap_to_download = itemView.tap_retry_download_video_right!!
+        val thumbnail = itemView.video_thumbnail!!
+        val videoLengthText = itemView.video_length!!
+
+        val tap_to_download = itemView.tap_retry_download_video!!
         val container = itemView.container_video_right!!
 
         val messageLayout = itemView.message_layout_video_right!!
@@ -100,14 +101,14 @@ object Holders {
 
     class TargetVideoMsgHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
         val message = itemView.messageText_video_left!!
-        val time = itemView.time_video_left!!
-        val centerImageView = itemView.imageview_video_left!!
+        val time = itemView.time_video!!
+        val centerImageView = itemView.imageview_video!!
         val headerDateTime = itemView.header_video_left!!
-        val videoLayout = itemView.videoFrameLayoutLeft!!
-        val thumbnail = itemView.thumbnail_left!!
-        val progressBar = itemView.progress_bar_video_left!!
-        val videoLengthText = itemView.video_length_left!!
-        val tap_to_download = itemView.tap_retry_download_video_left!!
+        val videoLayout = itemView.videoFrameLayout!!
+        val thumbnail = itemView.video_thumbnail!!
+        val progressBar = itemView.progress_bar_video!!
+        val videoLengthText = itemView.video_length!!
+        val tap_to_download = itemView.tap_retry_download_video!!
         val container = itemView.container_video_left!!
 
         val messageLayout = itemView.message_layout_video_left!!
