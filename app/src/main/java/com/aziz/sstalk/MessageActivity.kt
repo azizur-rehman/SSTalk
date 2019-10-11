@@ -855,7 +855,7 @@ class MessageActivity : AppCompatActivity() {
                 var tapToDownload:TextView? = null
                 var messageTextView:TextView? = null
 
-                var messageLayout:LinearLayout? = null
+                var messageLayout:View? = null
 
 
                 val date = Date(model.timeInMillis)
