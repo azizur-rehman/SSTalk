@@ -514,9 +514,9 @@ object FirebaseUtils {
                     }
 
                     if (p0.exists()) {
-                        val link: String? = p0.getValue(String::class.java)
+                        val link = p0.getValue(String::class.java)?:""
 
-                        if(link!!.isEmpty()) {
+                        if(link.isEmpty()) {
                             Log.d("FirebaseUtils", "onDataChange: profile pic not exists for $uid")
                             Picasso.get().load(R.drawable.contact_placeholder).into(imageView)
                             if(utils.hasStoragePermission(context)){
@@ -527,7 +527,7 @@ object FirebaseUtils {
                         }
 
 
-                        if(Pref.Profile.isProfileUrlSame(context, uid, link.toString())
+                        if(Pref.Profile.isProfileUrlSame(context, uid, link)
                             && fileExists){
                                 val file= File(utils.getProfilePicPath(context)+uid+".jpg")
                                 if(file.exists()){

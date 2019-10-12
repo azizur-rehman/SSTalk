@@ -205,7 +205,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 title = "Recent"
             }
             searchView.isSearchOpen -> searchView.closeSearch()
-            else -> super.onBackPressed()
+            else -> finish()
         }
     }
 
@@ -833,7 +833,10 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         searchView.setOnSearchViewListener(object : MaterialSearchView.SearchViewListener{
             override fun onSearchViewClosed() {
                 // detach search fragment
-                supportFragmentManager.beginTransaction().remove(searchFragment).commit()
+                repeat(supportFragmentManager.backStackEntryCount)
+                {
+                    supportFragmentManager.popBackStackImmediate()
+                }
                 bottom_navigation_home.show()
                 show_contacts.show()
 

@@ -1,44 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
 
+<LinearLayout xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:orientation="vertical">
 
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:tools="http://schemas.android.com/tools"
-        android:layout_width="match_parent" xmlns:app="http://schemas.android.com/apk/res-auto"
-              android:orientation="horizontal"
+
+<androidx.constraintlayout.widget.ConstraintLayout android:layout_width="match_parent"
+        android:orientation="horizontal"
         android:paddingTop="5dp"
         android:paddingLeft="5dp"
         android:paddingBottom="5dp"
-              android:layout_height="wrap_content">
-
-
-    <TextView
-            android:id="@+id/messageTime"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:layout_marginRight="8dp"
-            android:textSize="12sp"
-            app:layout_constraintBottom_toBottomOf="@+id/name"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/name" />
+        android:layout_height="wrap_content">
 
 
     <TextView
             android:id="@+id/name"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-
             android:layout_marginStart="20dp"
             android:layout_marginLeft="20dp"
+            android:layout_marginTop="2dp"
             android:layout_marginBottom="8dp"
-            android:layout_weight="1"
+            android:ellipsize="end"
             android:gravity="center_vertical"
+            android:singleLine="true"
+            android:text="@string/single_line_string"
             android:textColor="@color/black"
             android:textSize="18sp"
             app:layout_constraintBottom_toBottomOf="@+id/pic"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/pic"
             app:layout_constraintTop_toTopOf="@+id/pic"
-            app:layout_constraintVertical_bias="0.521" />
+            app:layout_constraintVertical_bias="0.517" />
 
     <de.hdodenhof.circleimageview.CircleImageView
             android:id="@+id/pic"
@@ -52,19 +47,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-    <com.aziz.sstalk.views.AnimCheckBox
-            android:id="@+id/checkbox"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:layout_gravity="end|bottom"
-            android:visibility="invisible"
-            app:checked="false"
-            android:clickable="false"
-            app:circle_color="@color/color4"
-            app:layout_constraintBottom_toBottomOf="@+id/pic"
-            app:layout_constraintEnd_toEndOf="@+id/pic"
-            app:stroke_color="@color/white"
-            app:stroke_width="2dp" />
 
     <View
             android:id="@+id/view"
@@ -79,4 +61,20 @@
             app:layout_constraintStart_toStartOf="@+id/name"
             app:layout_constraintTop_toBottomOf="@+id/name" />
 
+    <TextView
+            android:id="@+id/mobile_number"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="TextView"
+            app:layout_constraintBottom_toBottomOf="@+id/pic"
+            app:layout_constraintStart_toStartOf="@+id/name"
+            app:layout_constraintTop_toBottomOf="@+id/name" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+<include layout="@layout/item_conversation_ad"/>
+
+
+</LinearLayout>

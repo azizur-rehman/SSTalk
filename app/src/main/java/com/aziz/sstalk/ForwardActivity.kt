@@ -714,6 +714,9 @@ class ForwardActivity : AppCompatActivity() {
          val checkBox = view.checkbox!!
          val lastMessageTime:TextView = view.messageTime
 
+        init {
+            checkBox.isEnabled = false
+        }
     }
 
 

@@ -8,10 +8,6 @@ import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.provider.ContactsContract
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
-import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.RecyclerView
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
@@ -19,29 +15,22 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Filter
 import android.widget.Filterable
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.RecyclerView
 import com.aziz.sstalk.models.Models
-import com.aziz.sstalk.utils.FirebaseUtils
-import com.aziz.sstalk.utils.hide
-import com.aziz.sstalk.utils.show
-import com.aziz.sstalk.utils.utils
+import com.aziz.sstalk.utils.*
 import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.AdLoader
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.formats.UnifiedNativeAd
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.ValueEventListener
 import com.miguelcatalan.materialsearchview.MaterialSearchView
-import kotlinx.android.synthetic.main.activity_forward.*
-import kotlinx.android.synthetic.main.contact_screen.*
-import kotlinx.android.synthetic.main.contact_screen.searchView
-import kotlinx.android.synthetic.main.contact_screen.toolbar
+import kotlinx.android.synthetic.main.activity_contact_list.*
 import kotlinx.android.synthetic.main.item_conversation_ad.view.*
 import kotlinx.android.synthetic.main.item_conversation_layout.view.*
-import org.jetbrains.anko.doAsyncResult
-import org.jetbrains.anko.onComplete
-import org.jetbrains.anko.uiThread
+import org.jetbrains.anko.toast
 import java.util.*
 import java.util.concurrent.Future
 import kotlin.collections.LinkedHashMap
@@ -51,6 +40,7 @@ class ContactsActivity : AppCompatActivity(){
     //number list has 10 digit formatted number
     var numberList:MutableList<Models.Contact> = mutableListOf()
     var totalAvailableUser:MutableList<Models.Contact> = mutableListOf()
+    var registeredUser:List<Models.Contact> = totalAvailableUser
 
     var isForSelection = false
     private var asyncLoader: Future<Unit>? = null
@@ -61,7 +51,7 @@ class ContactsActivity : AppCompatActivity(){
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setContentView(R.layout.contact_screen)
+        setContentView(R.layout.activity_contact_list)
 
         MobileAds.initialize(this, getString(R.string.admob_id))
 
@@ -72,23 +62,19 @@ class ContactsActivity : AppCompatActivity(){
 
         isForSelection = intent.getBooleanExtra(utils.constants.KEY_IS_FOR_SELECTION, false)
 
-        asyncLoader = doAsyncResult {
 
-            uiThread {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 
-                    if(ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED)
+               if(ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED)
                         requestPermissions(arrayOf(Manifest.permission.READ_CONTACTS), 101)
-                    else
+               else
                         loadRegisteredUsers()
 
-                }
-                else
-                    loadRegisteredUsers()
-            }
-
-            onComplete { contact_progressbar.visibility = View.GONE  }
         }
+        else
+            loadRegisteredUsers()
+
+
 
 
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
@@ -99,10 +85,6 @@ class ContactsActivity : AppCompatActivity(){
     }
 
 
-    override fun onDestroy() {
-        asyncLoader?.cancel(true)
-        super.onDestroy()
-    }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
 
@@ -124,65 +106,31 @@ class ContactsActivity : AppCompatActivity(){
     private fun loadRegisteredUsers(){
 
 
+        loadAvailableUsers {
+            totalAvailableUser = it
+
+            contacts_list.adapter = adapter
+
+            if(it.isEmpty()) toast("No Contacts Available")
+
+
+            if(!isForSelection) {
+                totalAvailableUser.add(Models.Contact("Invite Users"))
+                totalAvailableUser.add(0, Models.Contact("New Contact"))
+                totalAvailableUser.add(1, Models.Contact("New Group"))
+            }
+
+            registeredUser = totalAvailableUser
+
+            adapter.notifyDataSetChanged()
+            contact_progressbar.visibility = View.GONE
+
+        }
 
 
         numberList = utils.getContactList(this)
 
 
-        FirebaseUtils.ref.allUser()
-            .addValueEventListener(object : ValueEventListener{
-                override fun onDataChange(p0: DataSnapshot) {
-
-                    if(!p0.exists()) {
-                        utils.toast(context, "No registered users")
-                        return
-                    }
-
-                    totalAvailableUser.clear()
-
-                    for (post in p0.children){
-                        val userModel = post.getValue(Models.User ::class.java)
-
-                        val number = utils.getFormattedTenDigitNumber(userModel!!.phone)
-                        val uid = userModel.uid
-
-//                        numberList.filterIndexed { index, item ->
-//                            (item.number == number || item.number.contains(number) &&
-//                        }
-
-                        for((index, item) in numberList.withIndex()) {
-                            if (item.number == number || item.number.contains(number)) {
-                                numberList[index].uid = uid
-                                if(uid!=FirebaseUtils.getUid() && !totalAvailableUser.contains(numberList[index]))
-                                totalAvailableUser.add(numberList[index])
-                            }
-
-                        }
-
-                    }
-
-                    totalAvailableUser.sortBy { it.name }
-
-
-                    contacts_list.adapter = adapter
-
-                    if(isForSelection)
-                        return
-
-                    totalAvailableUser.add(Models.Contact("Invite Users"))
-                    totalAvailableUser.add(0,Models.Contact("New Contact"))
-                    totalAvailableUser.add(1,Models.Contact("New Group"))
-
-                    adapter.notifyDataSetChanged()
-                    contact_progressbar.visibility = View.GONE
-
-
-                }
-
-                override fun onCancelled(p0: DatabaseError) {
-                }
-
-            })
     }
 
 
@@ -226,9 +174,6 @@ class ContactsActivity : AppCompatActivity(){
 
     val adapter: RecyclerView.Adapter<ViewHolder> = object : RecyclerView.Adapter<ViewHolder>(), Filterable {
 
-        var registeredUser:List<Models.Contact> = totalAvailableUser
-
-
         override fun getFilter(): Filter = object : Filter() {
 
             override fun performFiltering(p0: CharSequence?): FilterResults {
@@ -259,7 +204,7 @@ class ContactsActivity : AppCompatActivity(){
         }
 
         override fun onCreateViewHolder(p0: ViewGroup, p1: Int): ViewHolder
-                = ViewHolder(layoutInflater.inflate(R.layout.item_conversation_layout, p0, false))
+                = ViewHolder(layoutInflater.inflate(R.layout.item_phone_contact_layout, p0, false))
 
         override fun getItemCount(): Int = registeredUser.size
 
@@ -356,7 +301,6 @@ class ContactsActivity : AppCompatActivity(){
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
 
         if(resultCode == Activity.RESULT_OK) {
-            Log.d("ContactsActivity", "onActivityResult: ")
             //refresh list
             loadRegisteredUsers()
         }
@@ -367,15 +311,7 @@ class ContactsActivity : AppCompatActivity(){
                 val name = itemView.name
                 val number = itemView.mobile_number
                 val pic = itemView.pic
-                private val time = itemView.messageTime!!
 
-                init {
-                    time.hide()
-                    itemView.delivery_status_last_msg.hide()
-                    itemView.conversation_mute_icon.hide()
-
-
-                }
             }
 
 
