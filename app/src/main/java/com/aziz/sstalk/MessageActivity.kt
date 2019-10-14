@@ -77,6 +77,7 @@ import kotlinx.android.synthetic.main.bubble_right.view.*
 import kotlinx.android.synthetic.main.item_smart_reply.view.*
 import kotlinx.android.synthetic.main.layout_attachment_menu.*
 import kotlinx.android.synthetic.main.layout_include_message_activity_toolbar.*
+import kotlinx.android.synthetic.main.layout_video_bubble.view.*
 import kotlinx.android.synthetic.main.text_header.view.*
 import me.shaohui.advancedluban.Luban
 import me.shaohui.advancedluban.OnCompressListener
@@ -1330,7 +1331,6 @@ class MessageActivity : AppCompatActivity() {
         caption: String, fileType:String){
 
 
-        Log.d("MessageActivity", "setTapToRetryBtn: caption ")
 
         tapToRetry.visibility = View.GONE
 
@@ -1348,7 +1348,6 @@ class MessageActivity : AppCompatActivity() {
                     if(isUploading[messageID] == true)
                         tapToRetry.visibility = View.GONE
 
-                    Log.d("MessageActivity", "onDataChange: tap to retry changed to : visible = "+(tapToRetry.visibility == View.VISIBLE))
 
                 }
 
@@ -1661,21 +1660,22 @@ class MessageActivity : AppCompatActivity() {
     ) {
 
 
+
         val ref =  FirebaseStorage.getInstance()
             .reference.child(messageType).child(messageID)
 
         val uploadTask = ref.putFile(utils.getUriFromFile(context, file))
 
 
-
+        val progressBar = try { CircularProgressBarsAt[messageID] } catch (e:Exception){ null }
+        val mediaControl = try { mediaControlImageViewAt[messageID] } catch (e:Exception){ null }
         //setting initial value
-        if(CircularProgressBarsAt.containsKey(messageID)){
-                CircularProgressBarsAt[messageID]?.progress = 0f
-                CircularProgressBarsAt[messageID]?.enableIndeterminateMode(true)
 
-        }
+        progressBar?.progress = 0f
+        progressBar?.enableIndeterminateMode(true)
 
 
+        val position = adapter.snapshots.indexOfFirst { it.file_local_path == file.path }
 
 
         uploadTask.addOnProgressListener { taskSnapshot ->
@@ -1701,35 +1701,25 @@ class MessageActivity : AppCompatActivity() {
 
 
             //setting cancel button value
-            if(mediaControlImageViewAt.containsKey(messageID)){
-
-                if(mediaControlImageViewAt[messageID]!=null){
-
-                    val btnView = mediaControlImageViewAt[messageID]
-                    btnView!!.visibility = View.VISIBLE
+            mediaControl?.show()
+            mediaControl?.setOnClickListener {
 
 
-                    btnView.setOnClickListener {
-
-
-                        if(percentage >= 100)
-                            return@setOnClickListener
+                if(percentage >= 100)
+                    return@setOnClickListener
 
 
 
-                        Log.d("MessageActivity", "fileUpload: cancel clicked")
-                        if(BuildConfig.DEBUG)
-                            utils.toast(context, "Upload cancelled")
+                if(BuildConfig.DEBUG)
+                    utils.toast(context, "Upload cancelled")
 
 
-                        uploadTask.cancel()
-                        mediaControlImageViewAt[messageID]?.setImageResource(R.drawable.ic_play_white)
-                        adapter.notifyDataSetChanged()
-                    }
-                }
+                uploadTask.cancel()
+                mediaControl.setImageResource(R.drawable.ic_play_white)
+
+                try { adapter.notifyItemChanged(position) }
+                catch (e:Exception){ e.printStackTrace(); adapter.notifyDataSetChanged() }
             }
-
-
 
 
              }
@@ -1740,13 +1730,13 @@ class MessageActivity : AppCompatActivity() {
                     }
                 }
 
-//                FirebaseUtils.storeFileMetaData(messageID, task.result!!.metadata!!)
                 return@Continuation ref.downloadUrl
             })
             .addOnCanceledListener {
                 isUploading[messageID] = false
-                if(CircularProgressBarsAt[messageID]!=null)
-                    CircularProgressBarsAt[messageID]!!.visibility = View.GONE
+                    progressBar?.hide()
+                if(position in 0 until adapter.itemCount)
+                    adapter.notifyItemChanged(position)
 
                 Log.d("MessageActivity", "fileUpload: upload cancelled")
 
@@ -1754,12 +1744,8 @@ class MessageActivity : AppCompatActivity() {
             .addOnCompleteListener { task ->
 
                 isUploading[messageID] = false
-                if(mediaControlImageViewAt.containsKey(messageID)) {
-                    if (mediaControlImageViewAt[messageID] != null) {
-                        val btnView = mediaControlImageViewAt[messageID]
-                        btnView!!.visibility = View.GONE
-                    }
-                }
+
+                mediaControl?.hide()
 
 
                 if (task.isSuccessful) {
@@ -1805,12 +1791,7 @@ class MessageActivity : AppCompatActivity() {
 
 
                 } else {
-
-                      //  utils.longToast(context, "Upload failed. Your daily upload/download limit might have been exceeded. Please try again tomorrow")
-
-
-                    Log.e("MessageActivity", "fileUpload: error in upload : "+task.exception!!.toString())
-                    task.exception!!.printStackTrace()
+                    task.exception?.printStackTrace()
                 }
             }
 
@@ -1823,18 +1804,19 @@ class MessageActivity : AppCompatActivity() {
     //downloading video and saving to file in the form of file
     private fun downloadVideo(model: Models.MessageModel, messageID: String){
 
+        val itemHolder = messagesList.findViewHolderForAdapterPosition(adapter.snapshots.indexOf(model))
 
-        val progressBar = CircularProgressBarsAt[messageID]
+        val myHolder = itemHolder  as? Holders.MyVideoMsgHolder
+        val targetHolder = itemHolder as? Holders.TargetVideoMsgHolder
 
-        progressBar?.visibility = View.VISIBLE
+        val progressBar = myHolder?.progressBar?:targetHolder?.progressBar
+
+        progressBar?.show()
         progressBar?.progress =0f
+
 
         val storageRef =
             FirebaseStorage.getInstance().getReferenceFromUrl(model.message)
-//            FirebaseStorage.getInstance().reference
-//            .child(utils.constants.FILE_TYPE_VIDEO).child(messageID)
-
-
 
             val videoFile = utils.getVideoFile(context, messageID)
 
@@ -1847,23 +1829,21 @@ class MessageActivity : AppCompatActivity() {
 
                 }
                 .addOnCompleteListener{
-                    progressBar?.visibility = View.GONE
-                    try {
-                       // adapter.notifyDataSetChanged()
-                    }
-                    catch (e:Exception){}
+                    progressBar?.hide()
                 }
                 .addOnCanceledListener {
-                    progressBar?.visibility = View.GONE
+                    progressBar?.hide()
                 }
                 .addOnSuccessListener {
 
                     utils.addVideoToMediaStore(context, messageID, videoFile)
 
+                    val children = mapOf(FirebaseUtils.KEY_FILE_LOCAL_PATH to videoFile.path)
+
                     FirebaseUtils.ref.getChatRef(myUID,targetUid)
                         .child(messageID)
-                        .child(FirebaseUtils.KEY_FILE_LOCAL_PATH)
-                        .setValue(videoFile.path)
+                        .updateChildren(children)
+
                 }
 
 
@@ -2156,7 +2136,9 @@ class MessageActivity : AppCompatActivity() {
         holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
         holder.message.text = model.caption
         holder.cardContainer.setCornerEnabled(false,true, model.caption.isEmpty(), model.caption.isEmpty())
+        holder.tap_to_download.hide()
 
+        holder.itemView.delivery_video_status.hide()
 
 
         CircularProgressBarsAt[messageID] = holder.progressBar
@@ -2176,6 +2158,9 @@ class MessageActivity : AppCompatActivity() {
 
         if(model.file_local_path.isEmpty()){
             downloadVideo(model, messageID)
+        }
+        else if(!File(model.file_local_path).exists()){
+            holder.tap_to_download.show()
         }
     }
 

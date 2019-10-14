@@ -37,7 +37,7 @@
 
         <ProgressBar android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                style="@android:style/Widget.DeviceDefault.Light.ProgressBar.Large"
+                style="@android:style/Widget.DeviceDefault.Light.ProgressBar"
                 android:id="@+id/contact_progressbar"
                 />
 

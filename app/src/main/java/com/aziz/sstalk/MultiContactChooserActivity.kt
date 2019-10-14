@@ -205,12 +205,14 @@ class MultiContactChooserActivity : AppCompatActivity(){
             FirebaseUtils.loadProfilePic(this@MultiContactChooserActivity, uid, holder.pic)
 
             holder.checkBox.setChecked( selectedUsers.contains(user), false)
+            holder.checkBox.visible = holder.checkBox.isChecked
+
 
             holder.itemView.setOnClickListener {
 
 
                 holder.checkBox.setChecked(!holder.checkBox.isChecked, true)
-                holder.checkBox.hideOrShow()
+                holder.checkBox.isChecked = !holder.checkBox.isChecked
 
                 if(holder.checkBox.isChecked) {
                     selectedUsers.add(user)

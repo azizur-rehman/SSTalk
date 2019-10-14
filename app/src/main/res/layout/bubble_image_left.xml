@@ -125,6 +125,7 @@
                         android:layout_weight="1"
                         android:gravity="center"
                         android:maxWidth="240dp"
+                        android:textColor="@color/black"
                         android:paddingTop="10dp"
                         android:paddingBottom="10dp"
                         android:text="Caption is sed for image" />

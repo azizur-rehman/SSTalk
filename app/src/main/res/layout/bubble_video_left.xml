@@ -47,17 +47,13 @@
                 android:id="@+id/linearLayout5"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="3dp"
-                android:layout_marginLeft="3dp"
-                android:layout_marginEnd="3dp"
-                android:layout_marginRight="3dp"
                 android:layout_marginBottom="3dp"
                 android:orientation="vertical"
                 android:padding="3dp"
                 app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="@+id/circle_sender_video">
+                app:layout_constraintStart_toEndOf="@+id/circle_sender_video"
+                app:layout_constraintTop_toTopOf="@+id/circle_sender_video"
+                app:layout_constraintVertical_bias="0.0">
 
 
             <TextView
@@ -93,7 +89,7 @@
                         app:topLeftEnabled="false"
                         app:topRightEnabled="true">
 
-                    <include layout="@layout/layout_video_bubble"/>
+                    <include layout="@layout/layout_video_bubble" />
 
 
                 </com.aziz.sstalk.views.RoundCornerLayout>
@@ -107,6 +103,7 @@
                         android:autoLink="all"
                         android:gravity="center"
                         android:maxWidth="230dp"
+                        android:textColor="@color/black"
                         android:paddingTop="10dp"
                         android:paddingBottom="10dp"
                         android:text="Caption is used for image" />

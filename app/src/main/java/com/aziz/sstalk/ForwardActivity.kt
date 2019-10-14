@@ -577,12 +577,13 @@ class ForwardActivity : AppCompatActivity() {
         }
 
         holder.checkBox.isChecked = selectedUIDs.contains(uid)
+        holder.checkBox.visible = holder.checkBox.isChecked
 
 
         holder.itemView.setOnClickListener {
             holder.checkBox.isChecked = !holder.checkBox.isChecked
 
-            holder.checkBox.hideOrShow()
+            holder.checkBox.visible = holder.checkBox.isChecked
 
             if(holder.checkBox.isChecked) {
                 selectedUIDs.add(uid)
