@@ -136,6 +136,10 @@ object FirebaseUtils {
                     .child(uid)
             }
 
+            fun lastMessage(uid :String, targetUID: String) : DatabaseReference{
+                return lastMessage(uid).child(targetUID)
+            }
+
 
             fun user(uid : String): DatabaseReference  = root().child(NODE_USER).child(uid)
 
@@ -226,7 +230,7 @@ object FirebaseUtils {
         if(utils.hasStoragePermission(context)){
 
 
-            val file= File(utils.getProfilePicPath(context)+uid+".jpg")
+            val file= File(utils.profilePicPath +uid+".jpg")
             if(file.exists()){
                 fileExists = true
                 Log.d("FirebaseUtils", "loadProfilePic: exists of $uid")
@@ -252,7 +256,7 @@ object FirebaseUtils {
                             Log.d("FirebaseUtils", "onDataChange: profile pic not exists for $uid")
                             imageView.setImageResource(R.drawable.contact_placeholder)
                             if(utils.hasStoragePermission(context)){
-                                File(utils.getProfilePicPath(context)+uid+".jpg")
+                                File(utils.profilePicPath +uid+".jpg")
                                     .delete()
                             }
                             return
@@ -265,7 +269,7 @@ object FirebaseUtils {
                                 Log.d("FirebaseUtils", "onDataChange: profile pic not exists for $uid")
                                 Picasso.get().load(R.drawable.contact_placeholder).into(imageView)
                                 if(utils.hasStoragePermission(context)){
-                                    File(utils.getProfilePicPath(context)+uid+".jpg")
+                                    File(utils.profilePicPath +uid+".jpg")
                                         .delete()
                                 }
                                 return
@@ -278,7 +282,7 @@ object FirebaseUtils {
 
                                 Log.d("FirebaseUtils", "onDataChange: profile exists and is same for $uid")
 
-                                    val file= File(utils.getProfilePicPath(context)+uid+".jpg")
+                                    val file= File(utils.profilePicPath +uid+".jpg")
                                     if(file.exists()){
                                         Picasso.get().load(file)
 //                                            .memoryPolicy(MemoryPolicy.NO_CACHE,
@@ -311,7 +315,6 @@ object FirebaseUtils {
                                                 if (utils.hasStoragePermission(context)) {
                                                     Log.d("FirebaseUtils", "onSuccess: saving profile pic")
                                                     utils.saveBitmapToProfileFolder(
-                                                        context,
                                                         (imageView.drawable as BitmapDrawable).bitmap,
                                                         uid
                                                     )
@@ -361,7 +364,7 @@ object FirebaseUtils {
         if(utils.hasStoragePermission(context)){
 
 
-            val file= File(utils.getProfilePicPath(context)+groupId+".jpg")
+            val file= File(utils.profilePicPath +groupId+".jpg")
             if(file.exists()){
                 fileExists = true
 
@@ -387,7 +390,7 @@ object FirebaseUtils {
                         Log.d("FirebaseUtils", "onDataChange: group pic(snapshot) not exists for $groupId")
                         imageView.setImageResource(R.drawable.ic_group_white_24dp)
                         if(utils.hasStoragePermission(context)){
-                            File(utils.getProfilePicPath(context)+groupId+".jpg")
+                            File(utils.profilePicPath +groupId+".jpg")
                                 .delete()
                         }
                         return
@@ -401,7 +404,7 @@ object FirebaseUtils {
                             Log.d("FirebaseUtils", "onDataChange: group profile pic not exists for $groupId")
                             imageView.setImageResource(R.drawable.ic_group_white_24dp)
                             if(utils.hasStoragePermission(context)){
-                                File(utils.getProfilePicPath(context)+groupId+".jpg")
+                                File(utils.profilePicPath +groupId+".jpg")
                                     .delete()
                             }
                             return
@@ -411,7 +414,7 @@ object FirebaseUtils {
                             && fileExists){
 
 
-                            val file= File(utils.getProfilePicPath(context)+groupId+".jpg")
+                            val file= File(utils.profilePicPath +groupId+".jpg")
                             if(file.exists()){
 
                                 Picasso.get().load(file)
@@ -434,7 +437,6 @@ object FirebaseUtils {
                                     override fun onSuccess() {
                                         if (utils.hasStoragePermission(context)) {
                                             utils.saveBitmapToProfileFolder(
-                                                context,
                                                 (imageView.drawable as BitmapDrawable).bitmap,
                                                 groupId
                                             )
@@ -480,7 +482,7 @@ object FirebaseUtils {
         var fileExists = false
 
         if(utils.hasStoragePermission(context)){
-            val file= File(utils.getProfilePicPath(context)+uid+".jpg")
+            val file= File(utils.profilePicPath +uid+".jpg")
             if(file.exists()){
                 Log.d("FirebaseUtils", "loadProfileThumbnail: profile exists")
                 fileExists = true
@@ -507,7 +509,7 @@ object FirebaseUtils {
                         Log.d("FirebaseUtils", "onDataChange: profile thumbnail not exists for $uid")
                         imageView.setImageResource(R.drawable.contact_placeholder)
                         if(utils.hasStoragePermission(context)){
-                            File(utils.getProfilePicPath(context)+uid+".jpg")
+                            File(utils.profilePicPath +uid+".jpg")
                                 .delete()
                         }
                         return
@@ -520,7 +522,7 @@ object FirebaseUtils {
                             Log.d("FirebaseUtils", "onDataChange: profile pic not exists for $uid")
                             Picasso.get().load(R.drawable.contact_placeholder).into(imageView)
                             if(utils.hasStoragePermission(context)){
-                                File(utils.getProfilePicPath(context)+uid+".jpg")
+                                File(utils.profilePicPath +uid+".jpg")
                                     .delete()
                             }
                             return
@@ -529,7 +531,7 @@ object FirebaseUtils {
 
                         if(Pref.Profile.isProfileUrlSame(context, uid, link)
                             && fileExists){
-                                val file= File(utils.getProfilePicPath(context)+uid+".jpg")
+                                val file= File(utils.profilePicPath +uid+".jpg")
                                 if(file.exists()){
                                     Picasso.get().load(file)
                                         .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
@@ -551,9 +553,10 @@ object FirebaseUtils {
                                 .into(imageView, object : Callback {
                                     override fun onSuccess() {
                                         if (utils.hasStoragePermission(context)) {
-                                            utils.saveBitmapToProfileFolder(context,
+                                            utils.saveBitmapToProfileFolder(
                                                 (imageView.drawable as BitmapDrawable).bitmap,
-                                                uid)
+                                                uid
+                                            )
                                             Pref.Profile.setProfileUrl(context, uid, link.toString())
                                         }
                                     }
@@ -587,7 +590,7 @@ object FirebaseUtils {
         var fileExists = false
 
         if(utils.hasStoragePermission(context)){
-            val file= File(utils.getProfilePicPath(context)+groupId+".jpg")
+            val file= File(utils.profilePicPath +groupId+".jpg")
             if(file.exists()){
                 fileExists = true
                 Picasso.get().load(file)
@@ -613,7 +616,7 @@ object FirebaseUtils {
                         imageView.setImageResource(R.drawable.ic_group_white_24dp)
 
                         if(utils.hasStoragePermission(context)){
-                           File(utils.getProfilePicPath(context)+groupId+".jpg")
+                           File(utils.profilePicPath +groupId+".jpg")
                                .delete()
                         }
 
@@ -627,7 +630,7 @@ object FirebaseUtils {
                             Log.d("FirebaseUtils", "onDataChange: profile pic not exists for $groupId")
                             imageView.setImageResource(R.drawable.ic_group_white_24dp)
                             if(utils.hasStoragePermission(context)){
-                                File(utils.getProfilePicPath(context)+groupId+".jpg")
+                                File(utils.profilePicPath +groupId+".jpg")
                                     .delete()
                             }
                             return
@@ -635,7 +638,7 @@ object FirebaseUtils {
 
                         if(Pref.Profile.isProfileUrlSame(context, groupId, link.toString())
                             && fileExists){
-                            val file= File(utils.getProfilePicPath(context)+groupId+".jpg")
+                            val file= File(utils.profilePicPath +groupId+".jpg")
                             if(file.exists()){
                                 Picasso.get().load(file)
                                     .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
@@ -657,9 +660,10 @@ object FirebaseUtils {
                                 .into(imageView, object : Callback {
                                     override fun onSuccess() {
                                         if (utils.hasStoragePermission(context)) {
-                                            utils.saveBitmapToProfileFolder(context,
+                                            utils.saveBitmapToProfileFolder(
                                                 (imageView.drawable as BitmapDrawable).bitmap,
-                                                groupId)
+                                                groupId
+                                            )
                                             Pref.Profile.setProfileUrl(context, groupId, link.toString())
                                         }
                                     }

@@ -112,4 +112,6 @@ dependencies {
     //noinspection GradleDependency
     implementation 'com.miguelcatalan:materialsearchview:1.4.0'
 
+    implementation 'com.github.adrielcafe:AndroidAudioRecorder:0.3.0'
+
 }

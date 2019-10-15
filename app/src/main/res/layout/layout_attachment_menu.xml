@@ -45,6 +45,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:id="@+id/fab_camera"
+                            app:layout_anchor="@+id/attachment_menu"
                             app:backgroundTint="@color/md_deep_purple_A400"
                             android:src="@drawable/ic_camera_white_24dp"
 
@@ -74,6 +75,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:id="@+id/fab_gallery"
+                            app:layout_anchor="@+id/attachment_menu"
                             app:backgroundTint="@color/md_light_blue_500"
                             android:src="@drawable/ic_photo_library_white_24dp"
 
@@ -104,6 +106,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:id="@+id/fab_video"
+                            app:layout_anchor="@+id/attachment_menu"
                             app:backgroundTint="@color/md_deep_orange_600"
                             android:src="@drawable/ic_video_library_white_24dp"
 
@@ -135,6 +138,7 @@
                             android:layout_height="wrap_content"
                             app:backgroundTint="@color/red"
                             android:id="@+id/fab_location"
+                            app:layout_anchor="@+id/attachment_menu"
                             android:src="@drawable/ic_location_on_white_24dp"
                     />
 

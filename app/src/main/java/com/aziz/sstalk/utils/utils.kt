@@ -185,6 +185,9 @@ object utils {
 
     fun hasCallPermission(context: Context) = (ActivityCompat.checkSelfPermission(context, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED)
 
+    fun hasRecordingPermission(context: Context) = (ActivityCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED)
+
+
     fun hasStoragePermission(context: Context) = (ActivityCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
             && (ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
 
@@ -365,15 +368,14 @@ object utils {
     }
 
 
-    fun getProfilePicPath(context: Context):String = Environment.getExternalStorageDirectory().toString()+"/"+ context.getString(R.string.app_name).toString()+"" +
-            "/ProfilePics/"
+    val profilePicPath: String
+        get() = "$appFolder/ProfilePics/"
 
-    fun saveBitmapToProfileFolder(context: Context?, bitmap: Bitmap, messageIdForName:String):String{
+    fun saveBitmapToProfileFolder(bitmap: Bitmap, messageIdForName: String):String{
 
         val fileName = "$messageIdForName.jpg"
 
-        val path = Environment.getExternalStorageDirectory().toString()+"/"+ context!!.getString(R.string.app_name).toString()+"" +
-                "/ProfilePics/"
+        val path = "$appFolder/ProfilePics/"
 
         if(!File(path).exists())
             File(path).mkdirs()
@@ -419,12 +421,13 @@ object utils {
         return File(path, fileName)
     }
 
+    val appFolder:String
+    get() = Environment.getExternalStorageDirectory().toString()+"/SS Talk"
 
-    fun getReceivedBitmapFile(context: Context?, messageIdForName:String):File{
+    fun getReceivedBitmapFile(messageIdForName: String):File{
         val fileName = "$messageIdForName.jpg"
 
-        val path = Environment.getExternalStorageDirectory().toString()+"/"+ context!!.getString(R.string.app_name).toString()+"" +
-                "/Images/Received/"
+        val path = "${appFolder}Images/Received/"
 
         if(!File(path).exists())
             File(path).mkdirs()
@@ -435,7 +438,7 @@ object utils {
     fun saveBitmapToReceived(context: Context?, bitmap: Bitmap, messageIdForName:String):String{
 
 
-        val file = getReceivedBitmapFile(context, messageIdForName)
+        val file = getReceivedBitmapFile(messageIdForName)
 
         try {
 

@@ -2,6 +2,7 @@
 
 package com.aziz.sstalk.utils
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.view.LayoutInflater
@@ -184,4 +185,6 @@ inline fun <reified T> Query.onRealtimeEvent(crossinline onLoaded:(snapshot:T?) 
 
     })
 }
+
+
 

@@ -33,6 +33,7 @@ import android.view.ViewGroup
 import androidx.appcompat.widget.SearchView
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.*
+import cafe.adriel.androidaudiorecorder.AndroidAudioRecorder
 import com.aziz.sstalk.firebase.MessagingService
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.*
@@ -114,6 +115,7 @@ class MessageActivity : AppCompatActivity() {
     val RQ_PREVIEW_IMAGE = 102
     val RQ_LOCATION = 103
     val RQ_VIDEO = 104
+    val RQ_RECORDING = 105
 
     val RP_STORAGE_GALLERY = 101
     val RP_LOCATION = 102
@@ -121,6 +123,7 @@ class MessageActivity : AppCompatActivity() {
     val RP_STORAGE_VIDEO = 104
 
     val RP_INITAL_STORAGE_PERMISSION = 105
+    val RP_RECORDING = 106
 
     var targetUid : String = ""
     var targetType:String = FirebaseUtils.KEY_CONVERSATION_SINGLE
@@ -144,6 +147,7 @@ class MessageActivity : AppCompatActivity() {
 
     var searchFilterItemPosition:MutableList<Int> = ArrayList()
     var groupMembers:MutableList<Models.GroupMember> = ArrayList()
+    var hasLastMessageSelected = false
 
     private var asyncLoader: Future<Boolean>? = null
 
@@ -329,7 +333,6 @@ class MessageActivity : AppCompatActivity() {
 
         attachment_menu.visibility = View.INVISIBLE
 
-//        utils.hideFabs(fab_camera, fab_gallery, fab_video, fab_location)
         messageInputField.setAttachmentsListener {
 
 
@@ -350,6 +353,7 @@ class MessageActivity : AppCompatActivity() {
 
         }
 
+        setAudioRecordingBtn()
 
     }
 
@@ -516,6 +520,10 @@ class MessageActivity : AppCompatActivity() {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
 
+
+        if(grantResults.isEmpty())
+            toast("Permission not granted")
+
         when(requestCode){
             RP_STORAGE_GALLERY -> {
                 if(grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
@@ -549,6 +557,10 @@ class MessageActivity : AppCompatActivity() {
                     utils.toast(context, "Permission denied")
                     finish()
                 }
+            }
+
+            RP_RECORDING -> {
+                recordAudio()
             }
         }
 
@@ -836,7 +848,6 @@ class MessageActivity : AppCompatActivity() {
                     return
                 }
 
-                messagesList.setBackgroundColor(Color.WHITE)
 
                 setObserver()
 
@@ -1188,7 +1199,7 @@ class MessageActivity : AppCompatActivity() {
 
                     if(selectedPosition == position) {
                         val fadeAnim = ObjectAnimator.ofObject(messageLayout, "backgroundColor",
-                            ArgbEvaluator(),Color.parseColor("#51C1EE"), Color.WHITE)
+                            ArgbEvaluator(),Color.parseColor("#51C1EE"), Color.TRANSPARENT)
                         fadeAnim.duration = 2000
                         fadeAnim.start()
                         selectedPosition = -1
@@ -1969,6 +1980,8 @@ class MessageActivity : AppCompatActivity() {
         CircularProgressBarsAt[messageID] = holder.progressBar
         mediaControlImageViewAt[messageID] = holder.imageUploadControl
 
+        holder.imageUploadControl.hide()
+
         holder.cardContainer.setCornerEnabled(true,true, model.caption.isEmpty(), false)
 
 
@@ -1994,15 +2007,15 @@ class MessageActivity : AppCompatActivity() {
                 .into(holder.imageView, object: Callback{
 
                     override fun onSuccess() {
-                        holder.progressBar.visibility = if(isUploading[messageID] == true) View.VISIBLE else View.GONE
+                        holder.progressBar.visible = (isUploading[messageID] == true)
 
                     }
 
                     override fun onError(e: Exception?) {
 
-                        holder.progressBar.visibility = View.GONE
+                        holder.progressBar.hide()
 
-                        Log.d("MessageActivity", "onError: img file failed to load : " + e!!.message)
+                        Log.d("MessageActivity", "onError: img file failed to load : " + e?.message)
                     }
 
                 })
@@ -2072,7 +2085,7 @@ class MessageActivity : AppCompatActivity() {
         holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
 
 
-        if(holder.progressBar.visibility == View.VISIBLE)
+        if(holder.progressBar.visible)
             holder.centerImageView.setImageResource(R.drawable.ic_clear_white_24dp)
         else
             holder.centerImageView.setImageResource(R.drawable.ic_play_white)
@@ -2180,7 +2193,7 @@ class MessageActivity : AppCompatActivity() {
     private fun setContextualToolbarOnViewHolder(itemView: View, messageID: String, model:Models.MessageModel, position:Int){
 
         selectedDrawable = ColorDrawable(ContextCompat.getColor(context, R.color.transparent_green))
-        unselectedDrawable = ColorDrawable(Color.WHITE)
+        unselectedDrawable = ColorDrawable(Color.TRANSPARENT)
 
 
         if(selectedMessageIDs.contains(messageID))
@@ -2298,6 +2311,7 @@ class MessageActivity : AppCompatActivity() {
                             selectedMessageModel.clear()
                             isContextMenuActive = false
                             isTranslatorPressed = false
+                            hasLastMessageSelected = false
                         }
 
                     })
@@ -2348,7 +2362,7 @@ class MessageActivity : AppCompatActivity() {
     private fun translateMessage(itemView: View, model: Models.MessageModel):Unit {
 
         isTranslatorPressed = true
-        itemView.background = ColorDrawable(Color.WHITE)
+        itemView.background = ColorDrawable(Color.TRANSPARENT)
 
         var translationHeading = "Identifying Language"
 
@@ -2784,14 +2798,13 @@ class MessageActivity : AppCompatActivity() {
                 if(layoutManager.findLastVisibleItemPosition() == adapter.itemCount - 1 )
                 {
                     bottomScrollButton.hide()
-                    //todo hide bottom
-                    smart_reply_root_layout.animate().translationY(0f).withStartAction { smart_reply_root_layout.visibility = View.VISIBLE }
+                    smart_reply_root_layout.animate().translationY(0f).withStartAction { smart_reply_root_layout.show()}
                 }
                 else if(adapter.itemCount > 5)
                 {
                     bottomScrollButton.show()
                     smart_reply_root_layout.animate().translationY(smart_reply_root_layout.height.toFloat())
-                        .withEndAction { smart_reply_root_layout.visibility = View.GONE }
+                        .withEndAction { smart_reply_root_layout.hide() }
 
                 }
 
@@ -2819,11 +2832,10 @@ class MessageActivity : AppCompatActivity() {
     private fun deleteSelectedMessages(actionMode: ActionMode?){
 
 
-        Log.d("MessageActivity", "deleteSelectedMessages: $selectedItemPosition , msg ID = $selectedMessageIDs")
-
         AlertDialog.Builder(context)
             .setMessage("Delete selected messages?")
             .setPositiveButton("Yes") { _, _ ->
+
 
                 for ((index, messageID) in selectedMessageIDs.withIndex()) {
                     FirebaseUtils.ref.getChatRef(myUID, targetUid)
@@ -2832,6 +2844,11 @@ class MessageActivity : AppCompatActivity() {
                         .addOnCompleteListener {
                             if (index == selectedMessageIDs.lastIndex) {
                                 toast("Message deleted")
+
+                                //if last message was deleted
+                                if(selectedItemPosition.contains(adapter.itemCount-1)){
+                                    updateLastMessage()
+                                }
                             }
                         }
                 }
@@ -2844,6 +2861,19 @@ class MessageActivity : AppCompatActivity() {
 
     }
 
+
+    private fun updateLastMessage(){
+        FirebaseUtils.ref.getChatQuery(myUID, targetUid)
+            .limitToLast(1)
+            .onSingleListEvent<Models.MessageModel> { list, _ ->
+                list.forEach {
+                    if(it != null)
+                    FirebaseUtils.ref.lastMessage(myUID, targetUid)
+                        .updateChildren(mapOf("timeInMillis" to it.timeInMillis, "reverseTimeStamp" to it.reverseTimeStamp))
+                }
+            }
+
+    }
 
     //load members if group
     private fun loadGroupMembers(){
@@ -3086,4 +3116,32 @@ class MessageActivity : AppCompatActivity() {
     }
 
 
+    private fun setAudioRecordingBtn(){
+
+        messageInputField.button.setOnLongClickListener {
+            if(!utils.hasRecordingPermission(this)){
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), RP_RECORDING)
+                }
+                else
+                    recordAudio()
+            }
+            else
+                recordAudio()
+
+            return@setOnLongClickListener true
+        }
+    }
+
+    private fun recordAudio(){
+
+        val filePath = utils.appFolder+"/recorded_audio.wav"
+
+        AndroidAudioRecorder.with(this)
+            .setFilePath(filePath)
+            .setColor(ContextCompat.getColor(this, R.color.colorPrimary))
+            .setRequestCode(RQ_RECORDING)
+            .record()
+
+    }
 }
