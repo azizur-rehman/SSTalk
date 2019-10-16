@@ -2,14 +2,24 @@ package com.aziz.sstalk.views
 
 import androidx.recyclerview.widget.RecyclerView
 import android.view.View
+import kotlinx.android.synthetic.main.bubble_audio_left.view.*
+import kotlinx.android.synthetic.main.bubble_audio_right.view.*
 import kotlinx.android.synthetic.main.bubble_image_left.view.*
 import kotlinx.android.synthetic.main.bubble_image_right.view.*
 import kotlinx.android.synthetic.main.bubble_left.view.*
+import kotlinx.android.synthetic.main.bubble_left.view.circle_sender_text
+import kotlinx.android.synthetic.main.bubble_left.view.container_left
+import kotlinx.android.synthetic.main.bubble_left.view.header_left
+import kotlinx.android.synthetic.main.bubble_left.view.messageText_sender_left
+import kotlinx.android.synthetic.main.bubble_left.view.time_left
 import kotlinx.android.synthetic.main.bubble_map_left.view.*
 import kotlinx.android.synthetic.main.bubble_map_right.view.*
 import kotlinx.android.synthetic.main.bubble_right.view.*
+import kotlinx.android.synthetic.main.bubble_right.view.container_right
+import kotlinx.android.synthetic.main.bubble_right.view.header_right
 import kotlinx.android.synthetic.main.bubble_video_left.view.*
 import kotlinx.android.synthetic.main.bubble_video_right.view.*
+import kotlinx.android.synthetic.main.layout_item_audio.view.*
 import kotlinx.android.synthetic.main.layout_video_bubble.view.*
 import kotlinx.android.synthetic.main.text_header.view.*
 
@@ -152,6 +162,16 @@ object Holders {
     class TextHeaderHolder(itemView: View): RecyclerView.ViewHolder(itemView){
         val text = itemView.header_textView!!
         val dateTextView = itemView.header_date_text!!
+    }
+
+    class MyAudioHolder(itemView: View): RecyclerView.ViewHolder(itemView){
+        val title = itemView.item_audio_title!!
+        val dateTextView = itemView.header_right!!
+    }
+
+    class TargetAudioHolder(itemView: View): RecyclerView.ViewHolder(itemView){
+        val title = itemView.item_audio_title!!
+        val dateTextView = itemView.header_left!!
     }
 
 }

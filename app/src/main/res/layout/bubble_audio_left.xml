@@ -27,7 +27,7 @@
 
    <androidx.constraintlayout.widget.ConstraintLayout android:layout_width="match_parent"
                  android:orientation="horizontal"
-                 android:id="@+id/message_layout_text_left"
+                 android:id="@+id/message_layout_audio_left"
                  android:layout_height="wrap_content">
 
 
@@ -46,28 +46,27 @@
                android:layout_width="wrap_content"
                android:layout_height="wrap_content"
                android:layout_gravity="end"
-               android:layout_marginStart="3dp"
-               android:layout_marginLeft="3dp"
                android:paddingTop="2dp"
                android:paddingRight="10dp"
                android:paddingBottom="2dp"
                android:text="12:10 PM"
                android:textColor="@color/warm_grey"
                android:textSize="10sp"
-               app:layout_constraintStart_toEndOf="@+id/circle_sender_text"
-               app:layout_constraintTop_toTopOf="@+id/circle_sender_text" />
+               app:layout_constraintStart_toStartOf="@+id/bubble_container_left_text"
+               app:layout_constraintTop_toBottomOf="@+id/bubble_container_left_text" />
 
 
        <LinearLayout
                android:id="@+id/bubble_container_left_text"
                android:layout_width="wrap_content"
                android:layout_height="wrap_content"
-               android:background="@drawable/shape_bubble_left"
+               android:layout_marginStart="3dp"
+               android:layout_marginLeft="3dp"
                android:orientation="vertical"
-               android:padding="7dp"
                app:layout_constraintBottom_toBottomOf="parent"
-               app:layout_constraintStart_toStartOf="@+id/time_left"
-               app:layout_constraintTop_toBottomOf="@+id/time_left">
+               app:layout_constraintStart_toEndOf="@+id/circle_sender_text"
+               app:layout_constraintTop_toTopOf="@+id/circle_sender_text"
+               app:layout_constraintVertical_bias="0.0">
 
 
            <TextView

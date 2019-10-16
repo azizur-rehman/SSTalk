@@ -34,6 +34,9 @@ import androidx.appcompat.widget.SearchView
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.*
 import cafe.adriel.androidaudiorecorder.AndroidAudioRecorder
+import cafe.adriel.androidaudiorecorder.model.AudioChannel
+import cafe.adriel.androidaudiorecorder.model.AudioSampleRate
+import cafe.adriel.androidaudiorecorder.model.AudioSource
 import com.aziz.sstalk.firebase.MessagingService
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.*
@@ -47,6 +50,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.tasks.Continuation
 import com.google.android.gms.tasks.Task
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.firebase.FirebaseApp
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -75,6 +79,7 @@ import io.codetail.animation.ViewAnimationUtils
 import kotlinx.android.synthetic.main.activity_message.*
 import kotlinx.android.synthetic.main.bubble_left.view.*
 import kotlinx.android.synthetic.main.bubble_right.view.*
+import kotlinx.android.synthetic.main.dialog_audio_recorder.*
 import kotlinx.android.synthetic.main.item_smart_reply.view.*
 import kotlinx.android.synthetic.main.layout_attachment_menu.*
 import kotlinx.android.synthetic.main.layout_include_message_activity_toolbar.*
@@ -106,6 +111,8 @@ class MessageActivity : AppCompatActivity() {
     var TYPE_TARGET_IMAGE = 5
     val TYPE_MY_VIDEO = 6
     val TYPE_TARGET_VIDEO = 7
+    val TYPE_MY_AUDIO = 8
+    val TYPE_TARGET_AUDIO = 9
 
     val TYPE_EVENT = 10
 
@@ -158,6 +165,7 @@ class MessageActivity : AppCompatActivity() {
 
     lateinit var adapter:FirebaseRecyclerAdapter<Models.MessageModel, RecyclerView.ViewHolder>
 
+    private var audioFile:File? = null
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -611,7 +619,7 @@ class MessageActivity : AppCompatActivity() {
 
             val latitude = data!!.getDoubleExtra(utils.constants.KEY_LATITUDE,0.0)
             val longitude = data.getDoubleExtra(utils.constants.KEY_LONGITUDE,0.0)
-            val address = data.getStringExtra(utils.constants.KEY_ADDRESS)
+            val address = data.getStringExtra(utils.constants.KEY_ADDRESS)?:""
 
             if(latitude == 0.0 || longitude == 0.0){
                 utils.toast(context, "Failed to fetch location")
@@ -683,6 +691,14 @@ class MessageActivity : AppCompatActivity() {
                     )
                 }
 
+            }
+
+        }
+
+        else if(requestCode == RQ_RECORDING){
+            // on recording
+            audioFile?.let {
+                uploadFile(it.name, it, "", utils.constants.FILE_TYPE_AUDIO, false )
             }
 
         }
@@ -772,6 +788,8 @@ class MessageActivity : AppCompatActivity() {
 
                    TYPE_EVENT ->
                        Holders.TextHeaderHolder(LayoutInflater.from(context).inflate(R.layout.text_header, p0, false))
+
+
 
                    else -> Holders.TargetTextMsgHolder(LayoutInflater.from(this@MessageActivity)
                            .inflate(R.layout.bubble_left, p0, false))
@@ -1331,7 +1349,7 @@ class MessageActivity : AppCompatActivity() {
 
 
 
-            true
+            false
         }
 
     }
@@ -1540,6 +1558,14 @@ class MessageActivity : AppCompatActivity() {
 
         Log.d("MessageActivity", "fileUpload: dir = "+file.path)
 
+        val fileSizeInMB = (file.length()/(1024* 1024))
+
+        Log.d("MessageActivity", "uploadFile: file size = $fileSizeInMB")
+
+        if(fileSizeInMB > 16){
+            utils.longToast(context, "File size exceeded by 16 MB, Please choose a smaller file")
+            return
+        }
 
         val originalPath = file.path
 
@@ -1562,7 +1588,6 @@ class MessageActivity : AppCompatActivity() {
 
             utils.constants.FILE_TYPE_IMAGE -> {
 
-                Log.d("MessageActivity", "uploadFile: image")
                 //image compressor
                 Luban.compress(context, File(file.path))
                     .putGear(Luban.THIRD_GEAR)
@@ -1632,24 +1657,16 @@ class MessageActivity : AppCompatActivity() {
             //for video upload
             utils.constants.FILE_TYPE_VIDEO -> {
 
-
-                //for video file check
-                val fileSizeInMB = (file.length()/(1024* 1024))
-
-                Log.d("MessageActivity", "uploadFile: file size = $fileSizeInMB")
-
-                if(fileSizeInMB > 16){
-                    utils.longToast(context, "File size exceeded by 16 MB, Please choose a smaller file")
-                    return
-                }
-
-
-                Log.d("MessageActivity", "uploadFile: video")
                 fileUpload(messageID, file, originalPath, caption, messageType)
 
                 addMessageToMyNode(messageID, messageModel)
 
 
+            }
+
+            // for audio Upload
+            utils.constants.FILE_TYPE_AUDIO -> {
+                fileUpload(messageID, file, originalPath, caption, messageType)
             }
 
 
@@ -2092,6 +2109,9 @@ class MessageActivity : AppCompatActivity() {
 
     }
 
+    //setting my audio holder
+    private fun SetMyAudioHolder(){
+    }
 
 
     //setting target Holders
@@ -3041,81 +3061,6 @@ class MessageActivity : AppCompatActivity() {
     }
 
 
-
-    //stuff for reveal menu
-    var isMenuHidden = true
-    private fun hideRevealView() {
-        if (attachment_menu.visibility == View.VISIBLE) {
-            attachment_menu.visibility = View.GONE
-            isMenuHidden = true
-        }
-    }
-
-
-    private fun animateAttachmentMenu(){
-        val mRevealView = attachment_menu
-        val cx = (mRevealView.left + mRevealView.right)
-        val cy = mRevealView.top
-        val radius = Math.max(mRevealView.width, mRevealView.height)
-
-        //Below Android LOLIPOP Version
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-            val animator: SupportAnimator =
-                ViewAnimationUtils.createCircularReveal(mRevealView, cx, cy, 0f, radius.toFloat())
-            animator.interpolator = AccelerateDecelerateInterpolator()
-            animator.duration = 700
-
-            val animator_reverse = animator.reverse()
-
-            if (isMenuHidden) {
-                mRevealView.visibility = View.VISIBLE
-                animator.start()
-                isMenuHidden = false
-            } else {
-                animator_reverse.addListener(object  : SupportAnimator.AnimatorListener {
-                    override fun onAnimationRepeat() {
-                    }
-
-                    override fun onAnimationEnd() {
-                        mRevealView.visibility = View.INVISIBLE
-                        isMenuHidden = true
-                    }
-
-                    override fun onAnimationCancel() {
-                    }
-
-                    override fun onAnimationStart() {
-                    }
-
-                })
-                animator_reverse.start()
-            }
-        }
-        // Android LOLIPOP And ABOVE Version
-        else {
-            if (isMenuHidden) {
-                val anim = android.view.ViewAnimationUtils.createCircularReveal(mRevealView, cx, cy, 0F,
-                    radius.toFloat()
-                )
-                mRevealView.visibility = View.VISIBLE
-                anim.start()
-                isMenuHidden = false
-            } else {
-                val anim = android.view.ViewAnimationUtils.createCircularReveal(mRevealView, cx, cy,
-                    radius.toFloat(), 0f)
-                anim.addListener(object : AnimatorListenerAdapter() {
-                    override fun onAnimationEnd( animation: Animator) {
-                        super.onAnimationEnd(animation)
-                        mRevealView.visibility = View.INVISIBLE
-                        isMenuHidden = true
-                    }
-                })
-                anim.start()
-            }
-        }
-    }
-
-
     private fun setAudioRecordingBtn(){
 
         messageInputField.button.setOnLongClickListener {
@@ -3135,10 +3080,18 @@ class MessageActivity : AppCompatActivity() {
 
     private fun recordAudio(){
 
+        //  val filePath = utils.sentAudioPath+"/MSG${System.currentTimeMillis()}.wav"
         val filePath = utils.appFolder+"/recorded_audio.wav"
+
+        audioFile = File(filePath)
 
         AndroidAudioRecorder.with(this)
             .setFilePath(filePath)
+            .setAutoStart(true)
+            .setKeepDisplayOn(true)
+            .setSource(AudioSource.MIC)
+            .setChannel(AudioChannel.STEREO)
+            .setSampleRate(AudioSampleRate.HZ_48000)
             .setColor(ContextCompat.getColor(this, R.color.colorPrimary))
             .setRequestCode(RQ_RECORDING)
             .record()

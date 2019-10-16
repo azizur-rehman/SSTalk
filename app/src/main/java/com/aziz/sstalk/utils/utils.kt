@@ -56,6 +56,7 @@ object utils {
         const val FILE_TYPE_IMAGE = "image"
         const val FILE_TYPE_LOCATION = "location"
         const val FILE_TYPE_VIDEO = "video"
+        const val FILE_TYPE_AUDIO = "audio"
         const val KEY_IMG_PATH = "path"
         const val KEY_CAPTION = "caption"
         const val KEY_LOCAL_PATH = "local_path"
@@ -423,6 +424,9 @@ object utils {
 
     val appFolder:String
     get() = Environment.getExternalStorageDirectory().toString()+"/SS Talk"
+
+    val sentAudioPath:String
+    get() = "$appFolder/Audio/Sent"
 
     fun getReceivedBitmapFile(messageIdForName: String):File{
         val fileName = "$messageIdForName.jpg"

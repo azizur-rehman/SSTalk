@@ -114,4 +114,6 @@ dependencies {
 
     implementation 'com.github.adrielcafe:AndroidAudioRecorder:0.3.0'
 
+    implementation 'com.gauravbhola.ripplepulsebackground:library:1.0.0'
+
 }

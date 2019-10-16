@@ -103,6 +103,7 @@
                          android:orientation="horizontal"
                             android:id="@+id/smart_reply_layout"
                          android:gravity="center_vertical"
+                      android:background="@color/white"
                          android:layout_height="wrap_content">
 
                <androidx.recyclerview.widget.RecyclerView android:layout_width="wrap_content"
