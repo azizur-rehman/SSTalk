@@ -3,28 +3,47 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto"
         xmlns:tools="http://schemas.android.com/tools"
-        android:layout_width="240dp"
+        android:layout_width="wrap_content"
         android:paddingTop="5dp"
+        android:paddingRight="20dp"
+        android:maxWidth="240dp"
         android:paddingBottom="5dp"
         android:id="@+id/item_audio_container"
         android:layout_height="wrap_content"
         android:background="@drawable/shape_bubble_left">
 
 
+    <ImageView
+            android:id="@+id/play_icon"
+            android:layout_width="wrap_content"
+            android:visibility="gone"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="24dp"
+            android:layout_marginLeft="24dp"
+            android:tint="@color/white"
+            android:layout_marginTop="16dp"
+            android:src="@drawable/ic_play_black"
+            app:layout_constraintBottom_toBottomOf="@+id/linearLayout2"
+            app:layout_constraintStart_toEndOf="@+id/linearLayout2"
+            app:layout_constraintTop_toTopOf="@+id/linearLayout2"
+            app:layout_constraintVertical_bias="0.0" />
+
     <TextView
             android:id="@+id/item_audio_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="24dp"
-            android:layout_marginLeft="24dp"
-            android:layout_marginBottom="4dp"
-            android:text="TextView"
+            android:layout_marginStart="8dp"
+            android:layout_marginLeft="8dp"
+            android:drawablePadding="10dp"
+            android:text="Play"
+            android:textSize="22sp"
             android:textColor="@color/black"
-            app:layout_constraintBottom_toTopOf="@+id/item_audio_time"
-            app:layout_constraintStart_toEndOf="@+id/linearLayout2"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintBottom_toBottomOf="@+id/linearLayout2"
+            app:layout_constraintStart_toEndOf="@+id/play_icon"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.525" />
 
-    <LinearLayout
+    <FrameLayout
             android:id="@+id/linearLayout2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -38,33 +57,30 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
 
-        <ImageView
-                android:id="@+id/item_audio_icon"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:src="@drawable/ic_audiotrack_white_24dp"
-                android:tint="@color/dark_gray" />
+        <com.mikhaellopez.circularprogressbar.CircularProgressBar
+                android:layout_width="48dp"
+                android:id="@+id/audio_progress_bar"
+                app:cpb_progress="20"
+                app:cpb_progressbar_color="@color/colorAccent"
+                app:cpb_progressbar_width="2dp"
+                app:cpb_background_progressbar_width="2dp"
+                app:cpb_background_progressbar_color="@color/transparent"
+                android:layout_height="48dp"/>
 
         <TextView
                 android:id="@+id/item_audio_length_size"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="12:20"
+                android:background="?selectableItemBackground"
+                android:layout_gravity="center"
+                android:drawableTop="@drawable/ic_audiotrack_white_24dp"
                 android:textColor="@color/transparent_black_7"
                 android:textSize="10sp" />
 
 
-    </LinearLayout>
+    </FrameLayout>
 
-    <TextView
-            android:id="@+id/item_audio_time"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="TextView"
-            android:textSize="12sp"
-            app:layout_constraintBottom_toBottomOf="@+id/linearLayout2"
-            app:layout_constraintStart_toStartOf="@+id/item_audio_title"
-            app:layout_constraintTop_toBottomOf="@+id/item_audio_title" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

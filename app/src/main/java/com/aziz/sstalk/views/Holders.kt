@@ -1,9 +1,15 @@
 package com.aziz.sstalk.views
 
+import android.content.res.ColorStateList
+import android.graphics.Color
+import android.graphics.ColorFilter
+import android.os.Build
 import androidx.recyclerview.widget.RecyclerView
 import android.view.View
+import com.aziz.sstalk.R
 import kotlinx.android.synthetic.main.bubble_audio_left.view.*
 import kotlinx.android.synthetic.main.bubble_audio_right.view.*
+import kotlinx.android.synthetic.main.bubble_audio_right.view.time_right
 import kotlinx.android.synthetic.main.bubble_image_left.view.*
 import kotlinx.android.synthetic.main.bubble_image_right.view.*
 import kotlinx.android.synthetic.main.bubble_left.view.*
@@ -167,11 +173,35 @@ object Holders {
     class MyAudioHolder(itemView: View): RecyclerView.ViewHolder(itemView){
         val title = itemView.item_audio_title!!
         val dateTextView = itemView.header_right!!
+        val time = itemView.time_right
+        val lengthOrSize = itemView.item_audio_length_size!!
+        val audioProgressBar = itemView.audio_progress_bar
+        val messageLayout = itemView.message_layout_audio_right
+
+        init {
+            itemView.item_audio_container.setBackgroundResource(R.drawable.shape_bubble_right)
+            val color = Color.WHITE
+            title.setTextColor(color)
+            itemView.play_icon.setColorFilter(color)
+            lengthOrSize.setTextColor(color)
+        }
     }
 
     class TargetAudioHolder(itemView: View): RecyclerView.ViewHolder(itemView){
         val title = itemView.item_audio_title!!
         val dateTextView = itemView.header_left!!
+        val time = itemView.time_left
+        val lengthOrSize = itemView.item_audio_length_size!!
+        val audioProgressBar = itemView.audio_progress_bar
+        val messageLayout = itemView.message_layout_audio_left
+
+        init {
+            itemView.item_audio_container.setBackgroundResource(R.drawable.shape_bubble_left)
+            val color = Color.BLACK
+            title.setTextColor(color)
+            itemView.play_icon.setColorFilter(color)
+            lengthOrSize.setTextColor(color)
+        }
     }
 
 }

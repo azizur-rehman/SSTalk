@@ -11,6 +11,8 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
+import android.media.AudioManager
+import android.media.MediaPlayer
 import android.net.Uri
 import android.os.*
 import android.os.Environment.DIRECTORY_DCIM
@@ -698,7 +700,7 @@ class MessageActivity : AppCompatActivity() {
         else if(requestCode == RQ_RECORDING){
             // on recording
             audioFile?.let {
-                uploadFile(it.name, it, "", utils.constants.FILE_TYPE_AUDIO, false )
+                uploadFile("MSG${System.currentTimeMillis()}", it, "", utils.constants.FILE_TYPE_AUDIO, false )
             }
 
         }
@@ -789,6 +791,11 @@ class MessageActivity : AppCompatActivity() {
                    TYPE_EVENT ->
                        Holders.TextHeaderHolder(LayoutInflater.from(context).inflate(R.layout.text_header, p0, false))
 
+                   TYPE_MY_AUDIO ->
+                       Holders.MyAudioHolder(LayoutInflater.from(context).inflate(R.layout.bubble_audio_right,p0, false))
+
+                   TYPE_TARGET_AUDIO ->
+                       Holders.TargetAudioHolder(LayoutInflater.from(context).inflate(R.layout.bubble_audio_left,p0, false))
 
 
                    else -> Holders.TargetTextMsgHolder(LayoutInflater.from(this@MessageActivity)
@@ -1055,6 +1062,22 @@ class MessageActivity : AppCompatActivity() {
 
 
                     }
+
+                    is Holders.MyAudioHolder -> {
+                        messageLayout = holder.messageLayout
+                        container = holder.itemView.container_right
+                        dateHeader = holder.dateTextView
+                        holder.time.text = utils.getLocalTime(model.timeInMillis)
+                        holder.lengthOrSize.setOnClickListener { playAudio(model.file_local_path) }
+                    }
+
+                    is Holders.TargetAudioHolder -> {
+                        messageLayout = holder.messageLayout
+                        container = holder.itemView.container_left
+                        dateHeader = holder.dateTextView
+                        holder.time.text = utils.getLocalTime(model.timeInMillis)
+                        holder.lengthOrSize.setOnClickListener { playAudio(model.file_local_path) }
+                    }
                 }
 
 
@@ -1105,9 +1128,6 @@ class MessageActivity : AppCompatActivity() {
                     container.removeView(unreadView)
                     if (unreadMessageCount > 0 && (adapter.itemCount - unreadMessageCount - 1) == position) {
                         unreadView.header_textView.text = "$unreadMessageCount unread messages"
-                        Log.d("MessageActivity", "onBindViewHolder: adding unread view")
-//                        if(container.getChildAt(0)!=unreadView)
-//                        container.addView(unreadView)
                         unreadHeaderPosition = position
                         unreadMessageCount = 0
                     }
@@ -1130,12 +1150,11 @@ class MessageActivity : AppCompatActivity() {
                 //setting video intent
                 if(thumbnail != null){
 
-                    if(model.file_local_path.isNotEmpty() && File(model.file_local_path).exists()){
+                    if(File(model.file_local_path).exists()){
                         videoLengthTextView?.text = utils.getVideoLength(context, model.file_local_path)
 
                         utils.loadVideoThumbnailFromLocalAsync(context, thumbnail, model.file_local_path)
-
-                            tapToDownload!!.visibility = View.GONE
+                        tapToDownload?.hide()
                     }
                     else{
 
@@ -1144,9 +1163,7 @@ class MessageActivity : AppCompatActivity() {
 
                         Log.d("MessageActivity", "onBindViewHolder: $messageID file not found")
 
-                            tapToDownload?.visibility = View.VISIBLE
-
-
+                            tapToDownload?.show()
                             tapToDownload?.setOnClickListener {
 
                                 if(isContextMenuActive)
@@ -1179,31 +1196,24 @@ class MessageActivity : AppCompatActivity() {
 
 
 
-                messageTextView?.let { it.setLinkTextColor(Color.BLUE) }
+                messageTextView?.let { it.setLinkTextColor(Color.BLUE)
+                    val emojiProcessed = EmojiCompat.get().process(messageTextView.text)
+                    messageTextView.text = emojiProcessed
+                    messageTextView.setLinkTextColor(Color.RED)
+                }
 
-                val emojiProcessed = EmojiCompat.get().process(messageTextView!!.text)
-                messageTextView.text = emojiProcessed
-                messageTextView.setLinkTextColor(Color.RED)
 
                 //set date Header
 
-                dateHeader!!.text = utils.getHeaderFormattedDate(model.timeInMillis)
-
+                dateHeader?.text = utils.getHeaderFormattedDate(model.timeInMillis)
                 if(position>0){
-
                     val previousDate = Date(snapshots[position - 1].timeInMillis)
-
-                    dateHeader.visibility =  if(!DateFormatter.isSameDay(date ,  previousDate)){ View.VISIBLE }
-                    else{ View.GONE }
-
+                    dateHeader?.visible =  !DateFormatter.isSameDay(date ,  previousDate)
                 }
                 else{
-
-                    dateHeader.visibility = View.VISIBLE
-
+                    dateHeader?.show()
                 }
-
-                dateHeader.setPadding(20,80,20,80)
+                dateHeader?.setPadding(20,80,20,80)
 
 
 
@@ -1213,7 +1223,7 @@ class MessageActivity : AppCompatActivity() {
 
 
                 if(searchFilterItemPosition.contains(position) ){
-                    utils.highlightTextView(messageTextView, searchQuery, Color.parseColor("#51C1EE"))
+                    messageTextView?.let { utils.highlightTextView(it, searchQuery, Color.parseColor("#51C1EE")) }
 
                     if(selectedPosition == position) {
                         val fadeAnim = ObjectAnimator.ofObject(messageLayout, "backgroundColor",
@@ -1225,7 +1235,7 @@ class MessageActivity : AppCompatActivity() {
                 }
                 else{
 
-                    messageTextView.text = if(model.isFile || model.messageType == utils.constants.FILE_TYPE_LOCATION)
+                    messageTextView?.text = if(model.isFile || model.messageType == utils.constants.FILE_TYPE_LOCATION)
                         model.caption else model.message
                 }
 
@@ -1257,6 +1267,7 @@ class MessageActivity : AppCompatActivity() {
                         model.messageType == utils.constants.FILE_TYPE_LOCATION -> TYPE_MY_MAP
                         model.messageType == utils.constants.FILE_TYPE_IMAGE -> TYPE_MY_IMAGE
                         model.messageType == utils.constants.FILE_TYPE_VIDEO -> TYPE_MY_VIDEO
+                        model.messageType == utils.constants.FILE_TYPE_AUDIO -> TYPE_MY_AUDIO
                         else -> TYPE_MINE
                     }
                 } else{
@@ -1264,6 +1275,7 @@ class MessageActivity : AppCompatActivity() {
                         model.messageType == utils.constants.FILE_TYPE_LOCATION -> TYPE_TARGET_MAP
                         model.messageType == utils.constants.FILE_TYPE_IMAGE -> TYPE_TARGET_IMAGE
                         model.messageType == utils.constants.FILE_TYPE_VIDEO -> TYPE_TARGET_VIDEO
+                        model.messageType == utils.constants.FILE_TYPE_AUDIO -> TYPE_TARGET_AUDIO
                         else -> TYPE_TARGET
                     }
 
@@ -1410,7 +1422,7 @@ class MessageActivity : AppCompatActivity() {
                 getMapAsync { googleMap ->
 
 
-                    googleMap!!.addMarker(
+                    googleMap?.addMarker(
                         MarkerOptions()
                             .position(latLng).title("")
                             .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
@@ -1418,8 +1430,8 @@ class MessageActivity : AppCompatActivity() {
                     )
 
 
-                    googleMap.uiSettings.setAllGesturesEnabled(false)
-                    googleMap.moveCamera(
+                    googleMap?.uiSettings?.setAllGesturesEnabled(false)
+                    googleMap?.moveCamera(
                         CameraUpdateFactory.newLatLngZoom(
                             latLng,
                             12F
@@ -1667,6 +1679,7 @@ class MessageActivity : AppCompatActivity() {
             // for audio Upload
             utils.constants.FILE_TYPE_AUDIO -> {
                 fileUpload(messageID, file, originalPath, caption, messageType)
+                addMessageToMyNode(messageID, messageModel)
             }
 
 
@@ -1906,6 +1919,7 @@ class MessageActivity : AppCompatActivity() {
         try {
 
             adapter.stopListening()
+
 
     } catch (e:Exception){}
 
@@ -3097,4 +3111,33 @@ class MessageActivity : AppCompatActivity() {
             .record()
 
     }
+
+
+    private val mediaPlayer = MediaPlayer()
+    private fun playAudio(path:String){
+
+        try {
+
+            with(mediaPlayer) {
+                setDataSource(path)
+                setAudioStreamType(AudioManager.STREAM_MUSIC)
+                setOnTimedTextListener { mediaPlayer, timedText ->
+                    Log.d(
+                        "MessageActivity",
+                        "playAudio: $timedText"
+                    )
+                }
+                if (!isPlaying) {
+                    prepareAsync()
+                    start()
+                }
+            }
+
+        }
+        catch (e:Exception){
+            e.printStackTrace()
+        }
+    }
+
+
 }

@@ -28,13 +28,13 @@
                   android:padding="3dp"
             android:gravity="end"
                   android:layout_height="wrap_content"
-            android:id="@+id/message_layout_audio_left">
+            android:id="@+id/message_layout_audio_right">
 
 
         <include layout="@layout/layout_item_audio"/>
 
         <TextView
-                android:id="@+id/time_left"
+                android:id="@+id/time_right"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="end"
