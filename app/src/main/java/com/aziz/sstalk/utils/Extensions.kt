@@ -4,6 +4,10 @@ package com.aziz.sstalk.utils
 
 import android.content.Context
 import android.content.DialogInterface
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.view.View
+import android.view.View.MeasureSpec.UNSPECIFIED
 import org.jetbrains.anko.AlertBuilder
 import org.jetbrains.anko.alert
 import org.jetbrains.anko.okButton
@@ -30,3 +34,17 @@ inline fun Context.showConfirmDialog(dialogMessage:String, noinline onOkClick: (
     alert.show()
     return alert
 }
+
+
+val View.toBitmap: Bitmap
+    get() {
+        measure(UNSPECIFIED, UNSPECIFIED)
+        val bitmap = Bitmap.createBitmap(
+            measuredWidth, measuredHeight,
+            Bitmap.Config.ARGB_8888
+        )
+        val canvas = Canvas(bitmap)
+        layout(0, 0, width, height)
+        draw(canvas)
+        return bitmap
+    }

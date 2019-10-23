@@ -4,6 +4,7 @@ import android.Manifest
 import android.animation.*
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.ActivityOptions
 import android.app.NotificationManager
 import android.content.*
 import android.content.pm.PackageManager
@@ -285,7 +286,20 @@ class MessageActivity : AppCompatActivity() {
 
 
 
+
         layout_toolbar_title.setOnClickListener {
+            val thumbnailTransition = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                ActivityOptions.makeThumbnailScaleUpAnimation(it, it.toBitmap, 0,0).toBundle()
+            } else null
+
+            val sceneTransition = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                ActivityOptions.makeSceneTransitionAnimation(this).toBundle()
+            } else null
+
+            val scaleTransition = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                ActivityOptions.makeScaleUpAnimation(it, 0,0, it.width, it.height).toBundle()
+            } else null
+
             startActivity(Intent(this, UserProfileActivity::class.java)
                 .putExtra(FirebaseUtils.KEY_UID, targetUid)
                 .putExtra(FirebaseUtils.KEY_NAME, nameOrNumber)
@@ -3105,7 +3119,7 @@ class MessageActivity : AppCompatActivity() {
             .setKeepDisplayOn(true)
             .setSource(AudioSource.MIC)
             .setChannel(AudioChannel.STEREO)
-            .setSampleRate(AudioSampleRate.HZ_48000)
+            .setSampleRate(AudioSampleRate.HZ_16000)
             .setColor(ContextCompat.getColor(this, R.color.colorPrimary))
             .setRequestCode(RQ_RECORDING)
             .record()

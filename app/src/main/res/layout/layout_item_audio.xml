@@ -58,23 +58,23 @@
             app:layout_constraintTop_toTopOf="parent">
 
         <com.mikhaellopez.circularprogressbar.CircularProgressBar
-                android:layout_width="48dp"
                 android:id="@+id/audio_progress_bar"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                app:cpb_background_progressbar_color="@color/transparent"
+                app:cpb_background_progressbar_width="2dp"
                 app:cpb_progress="20"
                 app:cpb_progressbar_color="@color/colorAccent"
-                app:cpb_progressbar_width="2dp"
-                app:cpb_background_progressbar_width="2dp"
-                app:cpb_background_progressbar_color="@color/transparent"
-                android:layout_height="48dp"/>
+                app:cpb_progressbar_width="2dp" />
 
         <TextView
                 android:id="@+id/item_audio_length_size"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="12:20"
-                android:background="?selectableItemBackground"
                 android:layout_gravity="center"
+                android:background="?selectableItemBackground"
                 android:drawableTop="@drawable/ic_audiotrack_white_24dp"
+                android:text="12:20"
                 android:textColor="@color/transparent_black_7"
                 android:textSize="10sp" />
 

@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 
-<FrameLayout android:layout_height="wrap_content"
+<FrameLayout xmlns:tools="http://schemas.android.com/tools"
+        android:layout_height="wrap_content"
              android:layout_width="match_parent"
              android:layout_gravity="bottom"
              xmlns:android="http://schemas.android.com/apk/res/android"
@@ -18,141 +19,207 @@
     >
 
 
-        <androidx.cardview.widget.CardView android:layout_width="match_parent"
-                                           android:layout_marginTop="5dp"
-                                           app:cardCornerRadius="5dp"
-                                           app:cardElevation="5dp"
-                                           android:id="@+id/attachment_menu"
-                                           android:layout_height="wrap_content">
-            <LinearLayout android:layout_width="match_parent"
-                          android:padding="5dp"
-                          android:background="@color/white"
-                          android:layout_margin="2dp"
-                          android:orientation="horizontal"
-                          android:layout_height="wrap_content" android:baselineAligned="false">
+        <androidx.cardview.widget.CardView
+                android:id="@+id/attachment_menu"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                app:cardCornerRadius="5dp"
+                app:cardElevation="5dp">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="2dp"
+                    android:background="@color/white"
+                    android:baselineAligned="false"
+                    android:orientation="horizontal"
+                    android:padding="0dp">
 
 
-                <LinearLayout android:layout_height="match_parent"
-                              android:layout_width="0dp"
-                              android:id="@+id/camera_btn"
-                              android:padding="2dp"
-                              android:orientation="vertical"
-                              android:background="?attr/selectableItemBackground"
-                              android:gravity="center"
-                              android:layout_weight="1">
+                <LinearLayout
+                        android:id="@+id/camera_btn"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginStart="5dp"
+                        android:layout_marginLeft="5dp"
+                        android:layout_marginTop="8dp"
+                        android:layout_weight="1"
+                        android:background="?attr/selectableItemBackground"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="2dp"
+                        app:layout_constraintEnd_toStartOf="@+id/gallery_btn"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent">
 
                     <com.google.android.material.floatingactionbutton.FloatingActionButton
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
                             android:id="@+id/fab_camera"
-                            app:layout_anchor="@+id/attachment_menu"
-                            app:backgroundTint="@color/md_deep_purple_A400"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
                             android:src="@drawable/ic_camera_white_24dp"
+                            app:backgroundTint="@color/md_deep_purple_A400"
+                            app:layout_anchor="@+id/attachment_menu"
 
 
-                    />
+                            />
 
-                    <TextView android:layout_width="match_parent"
-                              style="@style/TextViewSmallWhite"
-                              android:text="Camera"
-                              android:textColor="@color/black"
-                              android:textSize="16sp"
-                              android:layout_marginTop="5dp"
-                              android:layout_height="wrap_content"/>
+                    <TextView
+                            style="@style/TextViewSmallWhite"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="5dp"
+                            android:text="Camera"
+                            android:textColor="@color/black"
+                            android:textSize="13sp" />
 
                 </LinearLayout>
 
-                <LinearLayout android:layout_height="match_parent"
-                              android:layout_width="0dp"
-                              android:id="@+id/gallery_btn"
-                              android:padding="2dp"
-                              android:orientation="vertical"
-                              android:background="?attr/selectableItemBackground"
-                              android:gravity="center"
-                              android:layout_weight="1">
+                <LinearLayout
+                        android:id="@+id/gallery_btn"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="?attr/selectableItemBackground"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="2dp"
+                        app:layout_constraintEnd_toStartOf="@+id/video_pick_btn"
+                        app:layout_constraintStart_toEndOf="@+id/camera_btn"
+                        app:layout_constraintTop_toTopOf="@+id/camera_btn">
 
                     <com.google.android.material.floatingactionbutton.FloatingActionButton
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
                             android:id="@+id/fab_gallery"
-                            app:layout_anchor="@+id/attachment_menu"
-                            app:backgroundTint="@color/md_light_blue_500"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
                             android:src="@drawable/ic_photo_library_white_24dp"
+                            app:backgroundTint="@color/md_light_blue_500"
+                            app:layout_anchor="@+id/attachment_menu"
 
 
-                    />
+                            />
 
-                    <TextView android:layout_width="match_parent"
-                              style="@style/TextViewSmallWhite"
-                              android:text="Picture"
-                              android:textColor="@color/black"
-                              android:textSize="16sp"
-                              android:layout_marginTop="8dp"
-                              android:layout_height="wrap_content"/>
+                    <TextView
+                            style="@style/TextViewSmallWhite"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="Picture"
+                            android:textColor="@color/black"
+                            android:textSize="13sp" />
 
                 </LinearLayout>
 
 
-                <LinearLayout android:layout_height="match_parent"
-                              android:layout_width="0dp"
-                              android:id="@+id/video_pick_btn"
-                              android:padding="2dp"
-                              android:orientation="vertical"
-                              android:background="?attr/selectableItemBackground"
-                              android:gravity="center"
-                              android:layout_weight="1">
+                <LinearLayout
+                        android:id="@+id/video_pick_btn"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="?attr/selectableItemBackground"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="2dp"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toEndOf="@+id/gallery_btn"
+                        app:layout_constraintTop_toTopOf="@+id/gallery_btn">
 
                     <com.google.android.material.floatingactionbutton.FloatingActionButton
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
                             android:id="@+id/fab_video"
-                            app:layout_anchor="@+id/attachment_menu"
-                            app:backgroundTint="@color/md_deep_orange_600"
-                            android:src="@drawable/ic_video_library_white_24dp"
-
-
-                    />
-
-                    <TextView android:layout_width="match_parent"
-                              style="@style/TextViewSmallWhite"
-                              android:text="Video"
-                              android:textColor="@color/black"
-                              android:textSize="16sp"
-                              android:layout_marginTop="8dp"
-                              android:layout_height="wrap_content"/>
-
-                </LinearLayout>
-
-
-                <LinearLayout android:layout_height="match_parent"
-                              android:layout_width="0dp"
-                              android:padding="2dp"
-                              android:id="@+id/location_btn"
-                              android:orientation="vertical"
-                              android:background="?attr/selectableItemBackground"
-                              android:gravity="center"
-                              android:layout_weight="1">
-
-                    <com.google.android.material.floatingactionbutton.FloatingActionButton
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            app:backgroundTint="@color/red"
-                            android:id="@+id/fab_location"
+                            android:src="@drawable/ic_video_library_white_24dp"
+                            app:backgroundTint="@color/md_deep_orange_600"
                             app:layout_anchor="@+id/attachment_menu"
-                            android:src="@drawable/ic_location_on_white_24dp"
-                    />
 
-                    <TextView android:layout_width="match_parent"
-                              style="@style/TextViewSmallWhite"
-                              android:text="Location"
-                              android:textColor="@color/black"
-                              android:textSize="16sp"
-                              android:layout_marginTop="5dp"
-                              android:layout_height="wrap_content"/>
+
+                            />
+
+                    <TextView
+                            style="@style/TextViewSmallWhite"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="Video"
+                            android:textColor="@color/black"
+                            android:textSize="13sp" />
 
                 </LinearLayout>
 
-            </LinearLayout>
+                <LinearLayout
+                        android:id="@+id/audio_btn"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="6dp"
+                        android:layout_weight="1"
+                        android:background="?attr/selectableItemBackground"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="2dp"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="@+id/camera_btn"
+                        app:layout_constraintStart_toStartOf="@+id/camera_btn"
+                        app:layout_constraintTop_toBottomOf="@+id/camera_btn">
+
+                    <com.google.android.material.floatingactionbutton.FloatingActionButton
+                            android:id="@+id/fab_audio"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:src="@drawable/ic_audiotrack_white_24dp"
+                            app:backgroundTint="#3D5AFE"
+                            app:layout_anchor="@+id/attachment_menu" />
+
+                    <TextView
+                            style="@style/TextViewSmallWhite"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="5dp"
+                            android:text="Audio"
+                            android:textColor="@color/black"
+                            android:textSize="13sp" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                        android:id="@+id/location_btn"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="6dp"
+                        android:layout_weight="1"
+                        android:background="?attr/selectableItemBackground"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="2dp"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="@+id/gallery_btn"
+                        app:layout_constraintStart_toEndOf="@+id/camera_btn"
+                        app:layout_constraintTop_toBottomOf="@+id/camera_btn">
+
+                    <com.google.android.material.floatingactionbutton.FloatingActionButton
+                            android:id="@+id/fab_location"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:src="@drawable/ic_location_on_white_24dp"
+                            app:backgroundTint="@color/red"
+                            app:layout_anchor="@+id/attachment_menu" />
+
+                    <TextView
+                            style="@style/TextViewSmallWhite"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="5dp"
+                            android:text="Location"
+                            android:textColor="@color/black"
+                            android:textSize="13sp" />
+
+                </LinearLayout>
+
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+
 
         </androidx.cardview.widget.CardView>
 
