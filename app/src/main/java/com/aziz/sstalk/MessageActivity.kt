@@ -34,7 +34,6 @@ import android.view.MenuItem
 import android.view.*
 import android.view.ViewGroup
 import androidx.appcompat.widget.SearchView
-import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.*
 import cafe.adriel.androidaudiorecorder.AndroidAudioRecorder
 import cafe.adriel.androidaudiorecorder.model.AudioChannel
@@ -53,7 +52,6 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.tasks.Continuation
 import com.google.android.gms.tasks.Task
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.firebase.FirebaseApp
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -73,16 +71,14 @@ import com.squareup.picasso.Picasso
 import com.squareup.picasso.Target
 import com.stfalcon.chatkit.messages.MessageInput
 import com.vincent.filepicker.Constant
+import com.vincent.filepicker.activity.AudioPickActivity
 import com.vincent.filepicker.activity.ImagePickActivity
 import com.vincent.filepicker.activity.VideoPickActivity
 import com.vincent.filepicker.filter.entity.ImageFile
 import com.vincent.filepicker.filter.entity.VideoFile
-import io.codetail.animation.SupportAnimator
-import io.codetail.animation.ViewAnimationUtils
 import kotlinx.android.synthetic.main.activity_message.*
 import kotlinx.android.synthetic.main.bubble_left.view.*
 import kotlinx.android.synthetic.main.bubble_right.view.*
-import kotlinx.android.synthetic.main.dialog_audio_recorder.*
 import kotlinx.android.synthetic.main.item_smart_reply.view.*
 import kotlinx.android.synthetic.main.layout_attachment_menu.*
 import kotlinx.android.synthetic.main.layout_include_message_activity_toolbar.*
@@ -126,6 +122,7 @@ class MessageActivity : AppCompatActivity() {
     val RQ_LOCATION = 103
     val RQ_VIDEO = 104
     val RQ_RECORDING = 105
+    val RQ_AUDIO = 106
 
     val RP_STORAGE_GALLERY = 101
     val RP_LOCATION = 102
@@ -377,7 +374,6 @@ class MessageActivity : AppCompatActivity() {
 
         }
 
-        setAudioRecordingBtn()
 
     }
 
@@ -411,6 +407,12 @@ class MessageActivity : AppCompatActivity() {
         videoIntent.putExtra(VideoPickActivity.IS_NEED_FOLDER_LIST, true)
         videoIntent.putExtra(Constant.MAX_NUMBER, 5)
 
+
+        val audioIntent = intentFor<AudioPickActivity>().apply {
+            putExtra(Constant.MAX_NUMBER, 5)
+            putExtra(AudioPickActivity.IS_NEED_RECORDER, true)
+        }
+
         camera_btn.setOnClickListener {
 
             if(attachment_menu.visibility != View.VISIBLE) utils.setEnterRevealEffect(this, attachment_menu) else utils.setExitRevealEffect(attachment_menu)
@@ -443,7 +445,7 @@ class MessageActivity : AppCompatActivity() {
 
         gallery_btn.setOnClickListener {
 
-            if(attachment_menu.visibility != View.VISIBLE) utils.setEnterRevealEffect(this, attachment_menu) else utils.setExitRevealEffect(attachment_menu)
+            if(!attachment_menu.visible) utils.setEnterRevealEffect(this, attachment_menu) else utils.setExitRevealEffect(attachment_menu)
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 if (ActivityCompat.checkSelfPermission(
@@ -519,6 +521,26 @@ class MessageActivity : AppCompatActivity() {
 
         }
 
+        audio_btn.setOnClickListener {
+            if(!attachment_menu.visible) utils.setEnterRevealEffect(this, attachment_menu) else utils.setExitRevealEffect(attachment_menu)
+
+            startActivityForResult(audioIntent, RQ_AUDIO)
+
+        }
+
+        recording_btn.setOnClickListener {
+            if(!attachment_menu.visible) utils.setEnterRevealEffect(this, attachment_menu) else utils.setExitRevealEffect(attachment_menu)
+            if(!utils.hasRecordingPermission(this)){
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), RP_RECORDING)
+                }
+                else
+                    startAudioRecording()
+            }
+            else
+                startAudioRecording()
+
+        }
     }
 
     private fun startCamera(){
@@ -584,7 +606,7 @@ class MessageActivity : AppCompatActivity() {
             }
 
             RP_RECORDING -> {
-                recordAudio()
+                startAudioRecording()
             }
         }
 
@@ -606,117 +628,131 @@ class MessageActivity : AppCompatActivity() {
         var messageID = "MSG" +System.currentTimeMillis()
 
 
-        if(requestCode == RQ_GALLERY ){
+        when (requestCode) {
+            RQ_GALLERY -> {
 
 
-            val filePaths = data!!.getParcelableArrayListExtra<ImageFile>(Constant.RESULT_PICK_IMAGE)
-
-
-
-            if(filePaths.isEmpty())
-                return
-
-
-            startActivityForResult(Intent(context, UploadPreviewActivity::class.java)
-                .putParcelableArrayListExtra(utils.constants.KEY_IMG_PATH, filePaths)
-                .putExtra(utils.constants.IS_FOR_SINGLE_FILE, false)
-                .putExtra(utils.constants.KEY_FILE_TYPE, utils.constants.FILE_TYPE_IMAGE)
-                , RQ_PREVIEW_IMAGE)
+                val filePaths = data!!.getParcelableArrayListExtra<ImageFile>(Constant.RESULT_PICK_IMAGE)
 
 
 
-
-         }
-
-
+                if(filePaths.isNullOrEmpty())
+                    return
 
 
-        else if(requestCode == RQ_LOCATION){
+                startActivityForResult(Intent(context, UploadPreviewActivity::class.java)
+                    .putParcelableArrayListExtra(utils.constants.KEY_IMG_PATH, filePaths)
+                    .putExtra(utils.constants.IS_FOR_SINGLE_FILE, false)
+                    .putExtra(utils.constants.KEY_FILE_TYPE, utils.constants.FILE_TYPE_IMAGE)
+                    ,
+                    RQ_PREVIEW_IMAGE)
 
-            val latitude = data!!.getDoubleExtra(utils.constants.KEY_LATITUDE,0.0)
-            val longitude = data.getDoubleExtra(utils.constants.KEY_LONGITUDE,0.0)
-            val address = data.getStringExtra(utils.constants.KEY_ADDRESS)?:""
 
-            if(latitude == 0.0 || longitude == 0.0){
-                utils.toast(context, "Failed to fetch location")
-                return
+            }
+            RQ_LOCATION -> {
+
+                val latitude = data!!.getDoubleExtra(utils.constants.KEY_LATITUDE,0.0)
+                val longitude = data.getDoubleExtra(utils.constants.KEY_LONGITUDE,0.0)
+                val address = data.getStringExtra(utils.constants.KEY_ADDRESS)?:""
+
+                if(latitude == 0.0 || longitude == 0.0){
+                    utils.toast(context, "Failed to fetch location")
+                    return
+                }
+
+                val message = "$latitude,$longitude"
+
+                addMessageToBoth(messageID, Models.MessageModel(message,
+                    myUID,
+                    targetUid,
+                    System.currentTimeMillis(),
+                    isFile = false,
+                    caption = address,
+                    messageType = utils.constants.FILE_TYPE_LOCATION))
             }
 
-            val message = "$latitude,$longitude"
+            RQ_CAMERA -> {
+                val file = File(cameraImagePath)
+                Log.d("MessageActivity", "onActivityResult: "+file.path)
 
-            addMessageToBoth(messageID, Models.MessageModel(message,
-                myUID,
-                targetUid,
-                System.currentTimeMillis(),
-                isFile = false,
-                caption = address,
-                messageType = utils.constants.FILE_TYPE_LOCATION))
-        }
+                if(file.path.isEmpty()){
+                    utils.toast(context, "Failed to capture image")
+                    return
+                }
 
 
-        else if(requestCode == RQ_CAMERA){
-            val file = File(cameraImagePath)
-            Log.d("MessageActivity", "onActivityResult: "+file.path)
+                startActivityForResult(Intent(context, UploadPreviewActivity::class.java)
+                    .putExtra(utils.constants.KEY_IMG_PATH, file.path)
+                    .putExtra(utils.constants.IS_FOR_SINGLE_FILE, true)
+                    .putExtra(utils.constants.KEY_FILE_TYPE, utils.constants.FILE_TYPE_IMAGE)
+                    ,
+                    RQ_PREVIEW_IMAGE)
 
-            if(file.path.isEmpty()){
-                utils.toast(context, "Failed to capture image")
-                return
+            }
+
+            RQ_VIDEO -> {
+                val videoPaths = data!!.getParcelableArrayListExtra<VideoFile>(Constant.RESULT_PICK_VIDEO)
+
+
+                startActivityForResult(Intent(context, UploadPreviewActivity::class.java)
+                    .putParcelableArrayListExtra(utils.constants.KEY_IMG_PATH, videoPaths)
+                    .putExtra(utils.constants.IS_FOR_SINGLE_FILE, false)
+                    .putExtra(utils.constants.KEY_FILE_TYPE, utils.constants.FILE_TYPE_VIDEO)
+                    ,
+                    RQ_PREVIEW_IMAGE)
+
             }
 
 
-            startActivityForResult(Intent(context, UploadPreviewActivity::class.java)
-                .putExtra(utils.constants.KEY_IMG_PATH, file.path)
-                .putExtra(utils.constants.IS_FOR_SINGLE_FILE, true)
-                .putExtra(utils.constants.KEY_FILE_TYPE, utils.constants.FILE_TYPE_IMAGE)
-                , RQ_PREVIEW_IMAGE)
+            // after returning from preview
+            RQ_PREVIEW_IMAGE -> {
+                val caption = data!!.getStringArrayListExtra(utils.constants.KEY_CAPTION)
+                val imgPaths = data.getStringArrayListExtra(utils.constants.KEY_IMG_PATH)
 
-        }
+                if (!imgPaths.isNullOrEmpty()) {
 
-
-        else if(requestCode == RQ_VIDEO){
-            val videoPaths = data!!.getParcelableArrayListExtra<VideoFile>(Constant.RESULT_PICK_VIDEO)
+                    Log.d("MessageActivity", "onActivityResult: Uploading Image")
 
 
-            startActivityForResult(Intent(context, UploadPreviewActivity::class.java)
-                .putParcelableArrayListExtra(utils.constants.KEY_IMG_PATH, videoPaths)
-                .putExtra(utils.constants.IS_FOR_SINGLE_FILE, false)
-                .putExtra(utils.constants.KEY_FILE_TYPE, utils.constants.FILE_TYPE_VIDEO)
-                , RQ_PREVIEW_IMAGE)
+                    for((index, path) in imgPaths.withIndex()) {
+                        messageID = "MSG" +System.currentTimeMillis()
 
-        }
+                        uploadFile(
+                            messageID, File(path.toString()),
+                            caption[index],
+                            data.getStringExtra(utils.constants.KEY_FILE_TYPE),
+                            true
+                        )
+                    }
 
-
-        // after returning from preview
-        else if(requestCode == RQ_PREVIEW_IMAGE ){
-            val caption = data!!.getStringArrayListExtra(utils.constants.KEY_CAPTION)
-            val imgPaths = data.getStringArrayListExtra(utils.constants.KEY_IMG_PATH)
-
-            if (imgPaths.isNotEmpty()) {
-
-                Log.d("MessageActivity", "onActivityResult: Uploading Image")
-
-
-                for((index, path) in imgPaths.withIndex()) {
-                    messageID = "MSG" +System.currentTimeMillis()
-
-                    uploadFile(
-                        messageID, File(path.toString()),
-                        caption[index],
-                        data.getStringExtra(utils.constants.KEY_FILE_TYPE),
-                        true
-                    )
                 }
 
             }
+            RQ_AUDIO -> {
+                val imgPaths = data?.getStringArrayListExtra(utils.constants.KEY_IMG_PATH)
 
-        }
+                if (!imgPaths.isNullOrEmpty()) {
 
-        else if(requestCode == RQ_RECORDING){
-            // on recording
-            audioFile?.let {
-                uploadFile("MSG${System.currentTimeMillis()}", it, "", utils.constants.FILE_TYPE_AUDIO, false )
+                    Log.d("MessageActivity", "onActivityResult: Uploading Image")
+
+
+                    for((index, path) in imgPaths.withIndex()) {
+                        messageID = "MSG" +System.currentTimeMillis()
+
+                        uploadFile(
+                            messageID, File(path.toString()),
+                            "",
+                            utils.constants.FILE_TYPE_AUDIO,
+                            true
+                        )
+                    }
+
+                }
             }
-
+            RQ_RECORDING -> // on recording
+                audioFile?.let {
+                    uploadFile("MSG${System.currentTimeMillis()}", it, "", utils.constants.FILE_TYPE_AUDIO, false )
+                }
         }
 
         super.onActivityResult(requestCode, resultCode, data)
@@ -3089,24 +3125,8 @@ class MessageActivity : AppCompatActivity() {
     }
 
 
-    private fun setAudioRecordingBtn(){
 
-        messageInputField.button.setOnLongClickListener {
-            if(!utils.hasRecordingPermission(this)){
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), RP_RECORDING)
-                }
-                else
-                    recordAudio()
-            }
-            else
-                recordAudio()
-
-            return@setOnLongClickListener true
-        }
-    }
-
-    private fun recordAudio(){
+    private fun startAudioRecording(){
 
         //  val filePath = utils.sentAudioPath+"/MSG${System.currentTimeMillis()}.wav"
         val filePath = utils.appFolder+"/recorded_audio.wav"
@@ -3129,6 +3149,13 @@ class MessageActivity : AppCompatActivity() {
 
     private val mediaPlayer = MediaPlayer()
     private fun playAudio(path:String){
+
+        val playIntent = Intent(Intent.ACTION_VIEW)
+        playIntent.setDataAndType(utils.getUriFromFile(context, File(path)), "audio/*")
+        startActivity(playIntent)
+
+        if(true)
+            return
 
         try {
 
