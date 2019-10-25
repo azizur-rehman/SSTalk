@@ -177,13 +177,15 @@ object Holders {
         val lengthOrSize = itemView.item_audio_length_size!!
         val audioProgressBar = itemView.audio_progress_bar
         val messageLayout = itemView.message_layout_audio_right
+        val audioIcon = itemView.item_audio_icon
 
         init {
-            itemView.item_audio_container.setBackgroundResource(R.drawable.shape_bubble_right)
+            itemView.item_audio_container.setBackgroundResource(R.drawable.shape_bubble_rounded_right)
             val color = Color.WHITE
             title.setTextColor(color)
-            itemView.play_icon.setColorFilter(color)
             lengthOrSize.setTextColor(color)
+            audioProgressBar.color = Color.WHITE
+            audioIcon.setColorFilter(color)
         }
     }
 
@@ -194,13 +196,14 @@ object Holders {
         val lengthOrSize = itemView.item_audio_length_size!!
         val audioProgressBar = itemView.audio_progress_bar
         val messageLayout = itemView.message_layout_audio_left
+        val audioIcon = itemView.item_audio_icon
 
         init {
-            itemView.item_audio_container.setBackgroundResource(R.drawable.shape_bubble_left)
+            itemView.item_audio_container.setBackgroundResource(R.drawable.shape_bubble_rounded_left)
             val color = Color.BLACK
             title.setTextColor(color)
-            itemView.play_icon.setColorFilter(color)
             lengthOrSize.setTextColor(color)
+            audioIcon.setColorFilter(color)
         }
     }
 

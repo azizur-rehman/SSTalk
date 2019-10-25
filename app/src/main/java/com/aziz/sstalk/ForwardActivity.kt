@@ -344,7 +344,7 @@ class ForwardActivity : AppCompatActivity() {
                         finish()
                     }
 
-                        videoLength.text = utils.getVideoLength(context, videoFile.path)
+                        videoLength.text = utils.getAudioVideoLength(context, videoFile.path)
 
                      utils.setVideoThumbnailFromWebAsync(context, videoFile.path, preview)
 

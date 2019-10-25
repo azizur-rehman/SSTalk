@@ -74,6 +74,7 @@ import com.vincent.filepicker.Constant
 import com.vincent.filepicker.activity.AudioPickActivity
 import com.vincent.filepicker.activity.ImagePickActivity
 import com.vincent.filepicker.activity.VideoPickActivity
+import com.vincent.filepicker.filter.entity.AudioFile
 import com.vincent.filepicker.filter.entity.ImageFile
 import com.vincent.filepicker.filter.entity.VideoFile
 import kotlinx.android.synthetic.main.activity_message.*
@@ -82,6 +83,7 @@ import kotlinx.android.synthetic.main.bubble_right.view.*
 import kotlinx.android.synthetic.main.item_smart_reply.view.*
 import kotlinx.android.synthetic.main.layout_attachment_menu.*
 import kotlinx.android.synthetic.main.layout_include_message_activity_toolbar.*
+import kotlinx.android.synthetic.main.layout_item_audio.view.*
 import kotlinx.android.synthetic.main.layout_video_bubble.view.*
 import kotlinx.android.synthetic.main.text_header.view.*
 import me.shaohui.advancedluban.Luban
@@ -729,18 +731,18 @@ class MessageActivity : AppCompatActivity() {
 
             }
             RQ_AUDIO -> {
-                val imgPaths = data?.getStringArrayListExtra(utils.constants.KEY_IMG_PATH)
+                val audioPaths = data?.getParcelableArrayListExtra<AudioFile>(Constant.RESULT_PICK_AUDIO)
 
-                if (!imgPaths.isNullOrEmpty()) {
-
-                    Log.d("MessageActivity", "onActivityResult: Uploading Image")
+                if (!audioPaths.isNullOrEmpty()) {
 
 
-                    for((index, path) in imgPaths.withIndex()) {
+
+                    for(file in audioPaths) {
                         messageID = "MSG" +System.currentTimeMillis()
 
+
                         uploadFile(
-                            messageID, File(path.toString()),
+                            messageID, File(file.path),
                             "",
                             utils.constants.FILE_TYPE_AUDIO,
                             true
@@ -1118,7 +1120,30 @@ class MessageActivity : AppCompatActivity() {
                         container = holder.itemView.container_right
                         dateHeader = holder.dateTextView
                         holder.time.text = utils.getLocalTime(model.timeInMillis)
-                        holder.lengthOrSize.setOnClickListener { playAudio(model.file_local_path) }
+
+                        holder.itemView.item_audio_container.setOnClickListener {
+                            if(File(model.file_local_path).exists()) playAudio(model.file_local_path) else downloadAudio(model, messageID)
+                        }
+                        CircularProgressBarsAt[messageID] = holder.audioProgressBar
+
+                        val audioFile = File(model.file_local_path)
+                         holder.lengthOrSize.text = if(audioFile.exists()) utils.getAudioVideoLength(context, audioFile.path)
+                        else utils.getFileSize(model.file_size_in_bytes)
+
+                        if(model.message.isEmpty()){
+                            //show retry
+                            holder.audioIcon.setImageResource(R.drawable.ic_file_upload_white_24dp)
+                            holder.audioIcon.setOnClickListener {
+                                fileUpload(messageID, File(model.file_local_path), model.file_local_path,"", utils.constants.FILE_TYPE_AUDIO)
+                            }
+
+                         }
+
+                        if(!audioFile.exists())
+                            holder.audioIcon.setImageResource(R.drawable.ic_file_download_white_24dp)
+
+                        downloadAudio(model, messageID)
+
                     }
 
                     is Holders.TargetAudioHolder -> {
@@ -1126,9 +1151,22 @@ class MessageActivity : AppCompatActivity() {
                         container = holder.itemView.container_left
                         dateHeader = holder.dateTextView
                         holder.time.text = utils.getLocalTime(model.timeInMillis)
-                        holder.lengthOrSize.setOnClickListener { playAudio(model.file_local_path) }
+
+                        holder.itemView.item_audio_container.setOnClickListener {
+                            if(File(model.file_local_path).exists()) playAudio(model.file_local_path) else downloadAudio(model, messageID)
+                        }
+                        CircularProgressBarsAt[messageID] = holder.audioProgressBar
+
+                        val audioFile = File(model.file_local_path)
+                        holder.lengthOrSize.text = if(audioFile.exists()) utils.getAudioVideoLength(context, audioFile.path)
+                        else utils.getFileSize(model.file_size_in_bytes)
+
+                        downloadAudio(model, messageID)
+
                     }
                 }
+
+
 
 
                 //setting sender icon
@@ -1201,7 +1239,7 @@ class MessageActivity : AppCompatActivity() {
                 if(thumbnail != null){
 
                     if(File(model.file_local_path).exists()){
-                        videoLengthTextView?.text = utils.getVideoLength(context, model.file_local_path)
+                        videoLengthTextView?.text = utils.getAudioVideoLength(context, model.file_local_path)
 
                         utils.loadVideoThumbnailFromLocalAsync(context, thumbnail, model.file_local_path)
                         tapToDownload?.hide()
@@ -1351,6 +1389,10 @@ class MessageActivity : AppCompatActivity() {
 
     }
 
+
+    private fun <T:RecyclerView.ViewHolder> bindAudioHolder(){
+
+    }
 
     private fun setObserver(){
         adapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
@@ -1751,6 +1793,7 @@ class MessageActivity : AppCompatActivity() {
     ) {
 
 
+        Log.d("MessageActivity", "fileUpload: path = ${file.path}")
 
         val ref =  FirebaseStorage.getInstance()
             .reference.child(messageType).child(messageID)
@@ -1882,6 +1925,7 @@ class MessageActivity : AppCompatActivity() {
 
 
                 } else {
+                    toast("Failed to upload. File might not be found.")
                     task.exception?.printStackTrace()
                 }
             }
@@ -1909,7 +1953,7 @@ class MessageActivity : AppCompatActivity() {
         val storageRef =
             FirebaseStorage.getInstance().getReferenceFromUrl(model.message)
 
-            val videoFile = utils.getVideoFile(context, messageID)
+            val videoFile = utils.getVideoFile(messageID, model.from == myUID)
 
         Log.d("MessageActivity", "downloadVideo: downloading video to location = ${videoFile.path}")
 
@@ -1927,7 +1971,7 @@ class MessageActivity : AppCompatActivity() {
                 }
                 .addOnSuccessListener {
 
-                    utils.addVideoToMediaStore(context, messageID, videoFile)
+                    utils.addMediaToMediaStore(context, messageID, videoFile)
 
                     val children = mapOf(FirebaseUtils.KEY_FILE_LOCAL_PATH to videoFile.path)
 
@@ -1944,6 +1988,59 @@ class MessageActivity : AppCompatActivity() {
     }
 
 
+    //downloading audio and saving to file in the form of file
+    private fun downloadAudio(model: Models.MessageModel, messageID: String){
+
+        if(model.message.isEmpty()) return
+
+        val itemHolder = messagesList.findViewHolderForAdapterPosition(adapter.snapshots.indexOf(model))
+
+        val myHolder = itemHolder  as? Holders.MyAudioHolder
+        val targetHolder = itemHolder as? Holders.TargetAudioHolder
+
+        val progressBar = myHolder?.audioProgressBar?:targetHolder?.audioProgressBar
+
+        progressBar?.show()
+        progressBar?.progress =0f
+
+
+        val storageRef =
+            FirebaseStorage.getInstance().getReferenceFromUrl(model.message)
+
+        val audioFile = utils.getAudioFile(messageID, model.from == myUID)
+
+        Log.d("MessageActivity", "downloadVideo: downloading audio to location = ${audioFile.path}")
+
+        storageRef.getFile(audioFile)
+            .addOnProgressListener {
+                val percentage:Double = (100.0 * it.bytesTransferred) / it.totalByteCount
+                Log.d("MessageActivity", "downloadAudio: progress = $percentage")
+                progressBar?.progress = percentage.toFloat()
+
+            }
+            .addOnCompleteListener{
+                progressBar?.hide()
+            }
+            .addOnCanceledListener {
+                progressBar?.hide()
+            }
+            .addOnSuccessListener {
+
+                utils.addMediaToMediaStore(context, messageID, audioFile, "audio/mp3")
+
+                val children = mapOf(FirebaseUtils.KEY_FILE_LOCAL_PATH to audioFile.path)
+
+                FirebaseUtils.ref.getChatRef(myUID,targetUid)
+                    .child(messageID)
+                    .updateChildren(children)
+
+            }
+
+
+
+
+
+    }
 
 
     override fun onStart() {

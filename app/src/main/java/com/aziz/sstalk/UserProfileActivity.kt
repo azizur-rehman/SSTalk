@@ -4,9 +4,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.ProgressDialog
 import android.content.Intent
-import android.graphics.BitmapFactory
 import android.graphics.Color
-import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Bundle
 import android.provider.ContactsContract
@@ -30,14 +28,12 @@ import com.squareup.picasso.Picasso
 import com.theartofdev.edmodo.cropper.CropImage
 import com.theartofdev.edmodo.cropper.CropImageView
 import com.vincent.filepicker.DividerGridItemDecoration
-import com.yarolegovich.lovelydialog.LovelyInfoDialog
 import com.yarolegovich.lovelydialog.LovelyTextInputDialog
 import kotlinx.android.synthetic.main.activity_user_profile.*
 import kotlinx.android.synthetic.main.content_user_profile.*
 import kotlinx.android.synthetic.main.item_group_member_layout.view.*
 import kotlinx.android.synthetic.main.item_image.view.*
 import kotlinx.android.synthetic.main.item_video.view.*
-import kotlinx.android.synthetic.main.layout_profile_image_picker.*
 import me.shaohui.advancedluban.Luban
 import me.shaohui.advancedluban.OnCompressListener
 import org.jetbrains.anko.*
@@ -198,7 +194,7 @@ class UserProfileActivity : AppCompatActivity() {
                                         } else if (holder is videoHolder) {
 
                                             utils.loadVideoThumbnailFromLocalAsync(this@UserProfileActivity, holder.imageView, messageModels[p1].file_local_path)
-                                            holder.length.text = utils.getVideoLength(
+                                            holder.length.text = utils.getAudioVideoLength(
                                                 this@UserProfileActivity,
                                                 messageModels[p1].file_local_path
                                             )

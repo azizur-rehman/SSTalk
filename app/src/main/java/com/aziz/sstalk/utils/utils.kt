@@ -467,8 +467,8 @@ object utils {
         return file.path
     }
 
-    fun getVideoLength(context: Context?, videoFilePath:String):String{
-        try {
+    fun getAudioVideoLength(context: Context?, videoFilePath:String):String{
+        return try {
 
             val retriever = MediaMetadataRetriever()
             retriever.setDataSource(context, utils.getUriFromFile(context,  File(videoFilePath)))
@@ -477,9 +477,10 @@ object utils {
 
             retriever.release()
 
-            return getDurationString(timeInMillisec)
+            getDurationString(timeInMillisec)
+        } catch (e:Exception){
+            ""
         }
-        catch (e:Exception){return ""}
 
     }
 
@@ -498,7 +499,7 @@ object utils {
     }
 
 
-    fun getDurationString(duration: Long): String {
+    private fun getDurationString(duration: Long): String {
 
         val hours = duration % (1000 * 60 * 60 * 24) / (1000 * 60 * 60)
         val minutes = duration % (1000 * 60 * 60) / (1000 * 60)
@@ -548,20 +549,30 @@ object utils {
     }
 
 
-    fun getVideoFile(context: Context?, messageIdForName: String):File {
+    fun getVideoFile(messageIdForName: String, sentFile:Boolean):File {
 
         val fileName = "$messageIdForName.mp4"
 
-        val path =
-            Environment.getExternalStorageDirectory().toString() + "/" + context!!.getString(R.string.app_name).toString() + "" +
-                    "/Video/Received/"
+        val path = "$appFolder/Video/${if (sentFile) "Sent" else "Received"}/"
 
         if (!File(path).exists())
             File(path).mkdirs()
 
-        val file = File(path, fileName)
-        return file
+        return File(path, fileName)
     }
+
+    fun getAudioFile(messageIdForName: String, sentFile:Boolean):File {
+
+        val fileName = "$messageIdForName.mp3"
+
+        val path = "$appFolder/Audio/${if (sentFile) "Sent" else "Received"}/"
+
+        if (!File(path).exists())
+            File(path).mkdirs()
+
+        return File(path, fileName)
+    }
+
 
     fun saveVideo(context: Context?, fileBytes: ByteArray, messageIdForName:String):String{
 
@@ -582,7 +593,7 @@ object utils {
           //  bitmap.compress(Bitmap.CompressFormat.PNG, 100, fout)
             Log.d("utils", "saveVideo: file saved to ${file.path}")
 
-            addVideoToMediaStore(context, messageIdForName, file)
+            addMediaToMediaStore(context, messageIdForName, file)
         }
         catch (e:Exception){
             Log.d("utils", "saveVideo: File not found")
@@ -592,14 +603,14 @@ object utils {
     }
 
 
-    fun addVideoToMediaStore(context:Context, messageIdForName: String, file: File){
+    fun addMediaToMediaStore(context:Context, messageIdForName: String, file: File, mimeType:String = "video/mp4"){
 
         if(!Pref.isMediaVisible(context))
             return
 
         val values = ContentValues(3)
         values.put(MediaStore.Video.Media.TITLE, messageIdForName)
-        values.put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
+        values.put(MediaStore.Video.Media.MIME_TYPE, mimeType)
         values.put(MediaStore.Video.Media.DATA, file.absolutePath)
 
         //getting video length
