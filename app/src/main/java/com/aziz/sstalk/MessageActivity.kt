@@ -56,11 +56,13 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.ml.common.modeldownload.FirebaseModelManager
+import com.google.firebase.ml.common.modeldownload.FirebaseRemoteModel
 import com.google.firebase.ml.naturallanguage.FirebaseNaturalLanguage
 import com.google.firebase.ml.naturallanguage.smartreply.FirebaseTextMessage
 import com.google.firebase.ml.naturallanguage.smartreply.SmartReplySuggestionResult
 import com.google.firebase.ml.naturallanguage.translate.FirebaseTranslateLanguage
-import com.google.firebase.ml.naturallanguage.translate.FirebaseTranslateModelManager
+import com.google.firebase.ml.naturallanguage.translate.FirebaseTranslateRemoteModel
 import com.google.firebase.ml.naturallanguage.translate.FirebaseTranslator
 import com.google.firebase.ml.naturallanguage.translate.FirebaseTranslatorOptions
 import com.google.firebase.storage.FirebaseStorage
@@ -287,7 +289,7 @@ class MessageActivity : AppCompatActivity() {
 
 
         layout_toolbar_title.setOnClickListener {
-            val thumbnailTransition = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            /*val thumbnailTransition = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 ActivityOptions.makeThumbnailScaleUpAnimation(it, it.toBitmap, 0,0).toBundle()
             } else null
 
@@ -298,7 +300,7 @@ class MessageActivity : AppCompatActivity() {
             val scaleTransition = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 ActivityOptions.makeScaleUpAnimation(it, 0,0, it.width, it.height).toBundle()
             } else null
-
+*/
             startActivity(Intent(this, UserProfileActivity::class.java)
                 .putExtra(FirebaseUtils.KEY_UID, targetUid)
                 .putExtra(FirebaseUtils.KEY_NAME, nameOrNumber)
@@ -1124,6 +1126,7 @@ class MessageActivity : AppCompatActivity() {
                         holder.itemView.item_audio_container.setOnClickListener {
                             if(File(model.file_local_path).exists()) playAudio(model.file_local_path) else downloadAudio(model, messageID)
                         }
+                        holder.audioProgressBar.progress = 0f
                         CircularProgressBarsAt[messageID] = holder.audioProgressBar
 
                         val audioFile = File(model.file_local_path)
@@ -1144,6 +1147,8 @@ class MessageActivity : AppCompatActivity() {
 
                         downloadAudio(model, messageID)
 
+                        FirebaseUtils.setDeliveryStatusTick(targetUid, messageID, holder.messageStatus)
+
                     }
 
                     is Holders.TargetAudioHolder -> {
@@ -1151,6 +1156,7 @@ class MessageActivity : AppCompatActivity() {
                         container = holder.itemView.container_left
                         dateHeader = holder.dateTextView
                         holder.time.text = utils.getLocalTime(model.timeInMillis)
+                        targetSenderTitle = holder.senderTitle
 
                         holder.itemView.item_audio_container.setOnClickListener {
                             if(File(model.file_local_path).exists()) playAudio(model.file_local_path) else downloadAudio(model, messageID)
@@ -1160,6 +1166,9 @@ class MessageActivity : AppCompatActivity() {
                         val audioFile = File(model.file_local_path)
                         holder.lengthOrSize.text = if(audioFile.exists()) utils.getAudioVideoLength(context, audioFile.path)
                         else utils.getFileSize(model.file_size_in_bytes)
+
+                        if(!audioFile.exists())
+                            holder.audioIcon.setImageResource(R.drawable.ic_file_download_white_24dp)
 
                         downloadAudio(model, messageID)
 
@@ -1207,6 +1216,7 @@ class MessageActivity : AppCompatActivity() {
                         it.setTextColor(ColorGenerator.MATERIAL
                             .getColor(it.text.toString()))
                     }
+                    else it.hide()
                 }
 
 
@@ -1896,6 +1906,7 @@ class MessageActivity : AppCompatActivity() {
 
                     if (BuildConfig.DEBUG)
                         utils.toast(context, "Uploaded")
+                    progressBar?.progress = 0f
 
 
                     if(isGroup) addMessageToGroupMembers(messageID, targetModel)
@@ -1991,7 +2002,6 @@ class MessageActivity : AppCompatActivity() {
     //downloading audio and saving to file in the form of file
     private fun downloadAudio(model: Models.MessageModel, messageID: String){
 
-        if(model.message.isEmpty()) return
 
         val itemHolder = messagesList.findViewHolderForAdapterPosition(adapter.snapshots.indexOf(model))
 
@@ -2003,6 +2013,7 @@ class MessageActivity : AppCompatActivity() {
         progressBar?.show()
         progressBar?.progress =0f
 
+        if(model.message.isEmpty() || File(model.file_local_path).exists()) return
 
         val storageRef =
             FirebaseStorage.getInstance().getReferenceFromUrl(model.message)
@@ -2575,35 +2586,34 @@ class MessageActivity : AppCompatActivity() {
 
                 val firebaseTranslator =  FirebaseNaturalLanguage.getInstance().getTranslator(translatorOptions)
 
-                FirebaseApp.initializeApp(this)?.let { firebaseApp ->
-                    FirebaseTranslateModelManager.getInstance().getAvailableModels(firebaseApp).addOnSuccessListener {
+
+                FirebaseModelManager.getInstance().getDownloadedModels(FirebaseTranslateRemoteModel::class.java).addOnSuccessListener {
 
 
-                        if (it.any { remoteModel -> remoteModel.language == Pref.getDefaultLanguage(context) }) {
-                            // model is available to translate
-                            Log.d("MessageActivity", "translateMessage: Translator Model is available")
-                            onTranslatorDownloaded(itemView, model, firebaseTranslator, languageName)
+                    if (it.any { remoteModel -> remoteModel.language == Pref.getDefaultLanguage(context) }) {
+                        // model is available to translate
+                        Log.d("MessageActivity", "translateMessage: Translator Model is available")
+                        onTranslatorDownloaded(itemView, model, firebaseTranslator, languageName)
+                    }
+
+                    else {
+                        // download translator, and then translate
+                        translationHeading = "Downloading files for $languageName"
+
+                        when (myUID) {
+                            model.from -> itemView.bubble_right_translation.text = translationHeading
+                            else -> itemView.bubble_left_translation.text = translationHeading
                         }
 
-                        else {
-                            // download translator, and then translate
-                            translationHeading = "Downloading files for $languageName"
-
-                            when (myUID) {
-                                model.from -> itemView.bubble_right_translation.text = translationHeading
-                                else -> itemView.bubble_left_translation.text = translationHeading
+                        firebaseTranslator.downloadModelIfNeeded()
+                            .addOnSuccessListener {
+                                Log.d("MessageActivity", "translateMessage: translator downloaded")
+                                onTranslatorDownloaded(itemView, model, firebaseTranslator, languageName)
+                            }
+                            .addOnFailureListener {
+                                toast(it.localizedMessage)
                             }
 
-                            firebaseTranslator.downloadModelIfNeeded()
-                                .addOnSuccessListener {
-                                    Log.d("MessageActivity", "translateMessage: translator downloaded")
-                                    onTranslatorDownloaded(itemView, model, firebaseTranslator, languageName)
-                                }
-                                .addOnFailureListener {
-                                    toast(it.localizedMessage)
-                                }
-
-                        }
                     }
                 }
 
@@ -2952,16 +2962,15 @@ class MessageActivity : AppCompatActivity() {
 
                 if(newState == RecyclerView.SCROLL_STATE_IDLE || newState == RecyclerView.SCROLL_STATE_SETTLING) {
 
-                    if(dateStickyHeader.visibility == View.VISIBLE && !isRunning) {
-                        isRunning = true
-                        handler.postDelayed({
+                    val runnable = {
                             runOnUiThread {
-                                if (layoutManager.findLastVisibleItemPosition() < adapter.itemCount - 1)
+//                                if (layoutManager.findLastVisibleItemPosition() < adapter.itemCount - 1)
                                     dateStickyHeader.visibility = View.GONE
-                                isRunning = false
                             }
-                        }, 1500)
-                    }
+                        }
+                        handler.removeCallbacks(runnable)
+                        handler.postDelayed(runnable, 1500)
+
                 }
 
                 if(newState == RecyclerView.SCROLL_STATE_DRAGGING){
@@ -3247,9 +3256,8 @@ class MessageActivity : AppCompatActivity() {
     private val mediaPlayer = MediaPlayer()
     private fun playAudio(path:String){
 
-        val playIntent = Intent(Intent.ACTION_VIEW)
-        playIntent.setDataAndType(utils.getUriFromFile(context, File(path)), "audio/*")
-        startActivity(playIntent)
+        utils.startAudioIntent(context, path)
+
 
         if(true)
             return

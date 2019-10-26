@@ -16,8 +16,9 @@ import com.aziz.sstalk.views.AnimCheckBox
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.ml.common.modeldownload.FirebaseModelManager
+import com.google.firebase.ml.common.modeldownload.FirebaseRemoteModel
 import com.google.firebase.ml.naturallanguage.translate.FirebaseTranslateLanguage
-import com.google.firebase.ml.naturallanguage.translate.FirebaseTranslateModelManager
 import com.google.firebase.ml.naturallanguage.translate.FirebaseTranslateRemoteModel
 import kotlinx.android.synthetic.main.activity_settings.*
 import kotlinx.android.synthetic.main.dialog_list_selector.*
@@ -173,16 +174,13 @@ class SettingsActivity : AppCompatActivity() {
                     item_checkbox.isChecked = Pref.getDefaultLanguage(context) == position
                     if(item_checkbox.isChecked) lastCheckbox = item_checkbox
 
-                    FirebaseApp.initializeApp(context)?.let { firebaseApp ->
-                        FirebaseTranslateModelManager.getInstance().getAvailableModels(firebaseApp)
-                            .addOnSuccessListener {
+                    FirebaseModelManager.getInstance().getDownloadedModels(FirebaseTranslateRemoteModel::class.java)
+                        .addOnSuccessListener {
 
-                                if (it.any { it.language == position }){
-                                    item_sub_title.text = "Downloaded"
-                                }
+                            if (it.any { it.language == position }){
+                                item_sub_title.text = "Downloaded"
                             }
-                    }
-
+                        }
                     item_selector_layout.setOnClickListener {
                         lastCheckbox?.isChecked = false
                         item_checkbox.isChecked = true
@@ -195,7 +193,7 @@ class SettingsActivity : AppCompatActivity() {
                         popupMenu.menu.add("Delete")
                         popupMenu.setOnMenuItemClickListener {
                             //delete selected model
-                            FirebaseTranslateModelManager.getInstance()
+                            FirebaseModelManager.getInstance()
                                 .deleteDownloadedModel(FirebaseTranslateRemoteModel.Builder(position).build())
                                 .addOnSuccessListener {
                                     toast("Language deleted")

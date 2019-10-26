@@ -301,7 +301,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
                 }
 
-                Executors.newSingleThreadExecutor().submit { loadNativeAd(holder.itemView, position) }
+                loadNativeAd(holder.itemView, position)
 
 
                 Executors.newSingleThreadExecutor().submit { FirebaseUtils.setMuteImageIcon(uid, holder.muteIcon) }

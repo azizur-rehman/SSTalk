@@ -17,6 +17,8 @@ import android.util.Log
 import android.view.*
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.FirebaseUtils
+import com.aziz.sstalk.utils.hide
+import com.aziz.sstalk.utils.show
 import com.aziz.sstalk.utils.utils
 import com.google.android.gms.tasks.Continuation
 import com.google.android.gms.tasks.Task
@@ -122,7 +124,7 @@ class UserProfileActivity : AppCompatActivity() {
             uiThread {
 
                 if(!isGroup)
-                    FirebaseUtils.loadProfilePic(this@UserProfileActivity, targetUID, user_profile_imageview)
+                    FirebaseUtils.loadProfilePic(context, targetUID, user_profile_imageview)
                 else
                     FirebaseUtils.loadGroupPic(context, targetUID, user_profile_imageview)
 
@@ -184,7 +186,7 @@ class UserProfileActivity : AppCompatActivity() {
 
                                             holder.imageView.setOnClickListener {
                                                 startActivity(
-                                                    Intent(this@UserProfileActivity, ImagePreviewActivity::class.java)
+                                                    Intent(context, ImagePreviewActivity::class.java)
                                                         .putExtra(
                                                             utils.constants.KEY_LOCAL_PATH,
                                                             messageModels[p1].file_local_path
@@ -193,17 +195,35 @@ class UserProfileActivity : AppCompatActivity() {
                                             }
                                         } else if (holder is videoHolder) {
 
-                                            utils.loadVideoThumbnailFromLocalAsync(this@UserProfileActivity, holder.imageView, messageModels[p1].file_local_path)
+
+                                            if(messageModels[p1].messageType == utils.constants.FILE_TYPE_AUDIO)
+                                            {
+                                                holder.imageView.setImageResource(R.color.colorPrimary)
+                                                holder.layoutDuration.background = null
+                                                holder.thumbnailIcon.show()
+                                            }
+                                            else
+                                            {
+                                                utils.loadVideoThumbnailFromLocalAsync(context, holder.imageView, messageModels[p1].file_local_path)
+                                            }
+
+
                                             holder.length.text = utils.getAudioVideoLength(
-                                                this@UserProfileActivity,
+                                                context,
                                                 messageModels[p1].file_local_path
                                             )
 
                                             holder.imageView.setOnClickListener {
-                                                utils.startVideoIntent(
-                                                    this@UserProfileActivity,
+
+
+                                                if(messageModels[p1].messageType == utils.constants.FILE_TYPE_AUDIO){
+                                                    utils.startAudioIntent(context,
+                                                        messageModels[p1].file_local_path)
+                                                }
+                                                else
+                                                 utils.startVideoIntent(context,
                                                     messageModels[p1].file_local_path
-                                                )
+                                                 )
                                             }
                                         }
                                     }
@@ -268,7 +288,7 @@ class UserProfileActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            AlertDialog.Builder(this@UserProfileActivity).setMessage("${if (isBlockedByMe) "Unblock" else "Block"} this user")
+            AlertDialog.Builder(context).setMessage("${if (isBlockedByMe) "Unblock" else "Block"} this user")
                 .setPositiveButton("Yes") { _, _ ->
                     FirebaseUtils.ref.blockedUser(myUID, targetUID)
                         .setValue(!isBlockedByMe)
@@ -433,7 +453,7 @@ class UserProfileActivity : AppCompatActivity() {
 
                             override fun onDataChange(p0: DataSnapshot) {
                                 val phone = p0.getValue(String::class.java)
-                                val subtitle = "Created by ${utils.getNameFromNumber(this@UserProfileActivity,phone!!)}" +
+                                val subtitle = "Created by ${utils.getNameFromNumber(context,phone!!)}" +
                                         " on ${utils.getHeaderFormattedDate(group.createdOn)}"
 
                                 Log.d("UserProfileActivity", "onDataChange: $subtitle")
@@ -518,9 +538,9 @@ class UserProfileActivity : AppCompatActivity() {
 
             override fun onBindViewHolder(p0: memberHolder, p1: Int) {
 
-                FirebaseUtils.loadProfileThumbnail(this@UserProfileActivity, groupMembers[p1].uid,
+                FirebaseUtils.loadProfileThumbnail(context, groupMembers[p1].uid,
                     p0.profilePic)
-                p0.name.text = utils.getNameFromNumber(this@UserProfileActivity, groupMembers[p1].phoneNumber)
+                p0.name.text = utils.getNameFromNumber(context, groupMembers[p1].phoneNumber)
 
                 p0.admin.visibility =  if(groupMembers[p1].admin)  View.VISIBLE else View.GONE
 
@@ -532,7 +552,7 @@ class UserProfileActivity : AppCompatActivity() {
                         return@setOnClickListener
 
 
-                    FirebaseUtils.showTargetOptionMenuFromProfile(this@UserProfileActivity,
+                    FirebaseUtils.showTargetOptionMenuFromProfile(context,
                         groupMember.uid, targetUID, groupMember.phoneNumber,groupMember.admin, isAdmin ,
                         groupMembers, name)
 
@@ -646,6 +666,12 @@ class UserProfileActivity : AppCompatActivity() {
     class videoHolder(itemView:View): RecyclerView.ViewHolder(itemView){
         val imageView = itemView.iv_thumbnail_video
         val length = itemView.txt_duration
+        val thumbnailIcon = itemView.iv_camera_video
+        val layoutDuration = itemView.layout_duration
+        init {
+            thumbnailIcon.hide()
+            layoutDuration.setBackgroundResource(R.color.vw_ShadowItem)
+        }
 
     }
 

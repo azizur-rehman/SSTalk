@@ -789,7 +789,7 @@ object FirebaseUtils {
                         when {
                             messageModel?.messageType == utils.constants.FILE_TYPE_IMAGE -> textView.text = ("\uD83D\uDDBC Image")
                             messageModel?.messageType == utils.constants.FILE_TYPE_VIDEO -> textView.text = ("\uD83C\uDFA5 Video")
-                            messageModel?.messageType == utils.constants.FILE_TYPE_AUDIO -> textView.text = ("♫ Audio")
+                            messageModel?.messageType == utils.constants.FILE_TYPE_AUDIO -> textView.text = ("\uD83C\uDFB5 Audio")
                             messageModel?.messageType == utils.constants.FILE_TYPE_LOCATION -> textView.text = ("\uD83D\uDCCC ${if(messageModel?.caption.isNullOrEmpty()) " Location" else messageModel?.caption}")
                         }
 

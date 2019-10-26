@@ -115,15 +115,17 @@
         </activity>
         <activity android:name=".ContactsActivity" android:theme="@style/AppTheme.NoActionBar">
         </activity> <!-- Provider for the library -->
+
+
         <provider
                 android:name="androidx.core.content.FileProvider"
-                android:authorities="com.mvc.imagepicker.provider"
+                android:authorities="com.aziz.sstalk.provider"
                 android:exported="false"
                 android:grantUriPermissions="true"
                 tools:replace="android:authorities">
             <meta-data
                     android:name="android.support.FILE_PROVIDER_PATHS"
-                    android:resource="@xml/provider_paths"
+                    android:resource="@xml/file_provider"
                     tools:replace="android:resource"/>
         </provider>
 

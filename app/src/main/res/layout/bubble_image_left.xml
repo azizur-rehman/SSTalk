@@ -39,7 +39,6 @@
                 android:layout_height="50dp"
                 android:src="@drawable/contact_placeholder"
                 app:civ_border_color="@color/colorPrimary"
-                app:civ_border_width="0.5dp"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 

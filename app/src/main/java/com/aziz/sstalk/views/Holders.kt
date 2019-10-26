@@ -7,7 +7,9 @@ import android.os.Build
 import androidx.recyclerview.widget.RecyclerView
 import android.view.View
 import com.aziz.sstalk.R
+import com.aziz.sstalk.utils.visible
 import kotlinx.android.synthetic.main.bubble_audio_left.view.*
+import kotlinx.android.synthetic.main.bubble_audio_left.view.audio_progress_bar
 import kotlinx.android.synthetic.main.bubble_audio_right.view.*
 import kotlinx.android.synthetic.main.bubble_audio_right.view.time_right
 import kotlinx.android.synthetic.main.bubble_image_left.view.*
@@ -26,6 +28,7 @@ import kotlinx.android.synthetic.main.bubble_right.view.header_right
 import kotlinx.android.synthetic.main.bubble_video_left.view.*
 import kotlinx.android.synthetic.main.bubble_video_right.view.*
 import kotlinx.android.synthetic.main.layout_item_audio.view.*
+import kotlinx.android.synthetic.main.layout_item_audio.view.delivery_status
 import kotlinx.android.synthetic.main.layout_video_bubble.view.*
 import kotlinx.android.synthetic.main.text_header.view.*
 
@@ -173,37 +176,41 @@ object Holders {
     class MyAudioHolder(itemView: View): RecyclerView.ViewHolder(itemView){
         val title = itemView.item_audio_title!!
         val dateTextView = itemView.header_right!!
-        val time = itemView.time_right
+        val time = itemView.time_right!!
         val lengthOrSize = itemView.item_audio_length_size!!
-        val audioProgressBar = itemView.audio_progress_bar
-        val messageLayout = itemView.message_layout_audio_right
-        val audioIcon = itemView.item_audio_icon
+        val audioProgressBar = itemView.audio_progress_bar!!
+        val messageLayout = itemView.message_layout_audio_right!!
+        val audioIcon = itemView.item_audio_icon!!
+        val messageStatus = itemView.delivery_status!!
 
         init {
-            itemView.item_audio_container.setBackgroundResource(R.drawable.shape_bubble_rounded_right)
+            itemView.item_audio_container.setBackgroundResource(R.drawable.shape_bubble_right)
             val color = Color.WHITE
             title.setTextColor(color)
             lengthOrSize.setTextColor(color)
-            audioProgressBar.color = Color.WHITE
             audioIcon.setColorFilter(color)
+            audioProgressBar.progress = 0f
         }
     }
 
     class TargetAudioHolder(itemView: View): RecyclerView.ViewHolder(itemView){
         val title = itemView.item_audio_title!!
         val dateTextView = itemView.header_left!!
-        val time = itemView.time_left
+        val time = itemView.time_left!!
         val lengthOrSize = itemView.item_audio_length_size!!
-        val audioProgressBar = itemView.audio_progress_bar
-        val messageLayout = itemView.message_layout_audio_left
-        val audioIcon = itemView.item_audio_icon
+        val audioProgressBar = itemView.audio_progress_bar!!
+        val messageLayout = itemView.message_layout_audio_left!!
+        val audioIcon = itemView.item_audio_icon!!
+        val senderTitle = itemView.sender!!
 
         init {
-            itemView.item_audio_container.setBackgroundResource(R.drawable.shape_bubble_rounded_left)
+            itemView.item_audio_container.setBackgroundResource(R.drawable.shape_bubble_left)
             val color = Color.BLACK
             title.setTextColor(color)
             lengthOrSize.setTextColor(color)
             audioIcon.setColorFilter(color)
+            itemView.delivery_status.visible = false
+            audioProgressBar.progress = 0f
         }
     }
 

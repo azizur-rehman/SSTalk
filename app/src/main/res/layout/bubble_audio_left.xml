@@ -34,14 +34,15 @@
        <de.hdodenhof.circleimageview.CircleImageView
                android:id="@+id/circle_sender_text"
                android:layout_width="50dp"
+               android:layout_marginStart="2dp"
                android:layout_height="50dp"
                android:src="@drawable/contact_placeholder"
                app:civ_border_color="@color/colorPrimary"
-               app:civ_border_width="0.5dp"
                app:layout_constraintStart_toStartOf="parent"
-               app:layout_constraintTop_toTopOf="parent" />
+               app:layout_constraintTop_toTopOf="parent"
+               android:layout_marginLeft="2dp" />
 
-       dle<TextView
+       <TextView
                android:id="@+id/time_left"
                android:layout_width="wrap_content"
                android:layout_height="wrap_content"
@@ -70,7 +71,7 @@
 
 
            <TextView
-                   android:id="@+id/messageText_sender_left"
+                   android:id="@+id/sender"
                    android:layout_width="wrap_content"
                    android:layout_height="wrap_content"
                    android:maxWidth="240dp"
@@ -79,7 +80,28 @@
                    android:textColor="@color/red"
                    android:textSize="13sp" />
 
-           <include layout="@layout/layout_item_audio" />
+
+           <LinearLayout
+                   android:layout_width="wrap_content"
+                   android:gravity="center"
+                   android:layout_height="wrap_content">
+
+               <include layout="@layout/layout_item_audio"/>
+
+               <com.mikhaellopez.circularprogressbar.CircularProgressBar
+                       android:id="@+id/audio_progress_bar"
+                       android:layout_width="16dp"
+                       android:layout_height="16dp"
+                       app:cpb_background_progressbar_color="@color/transparent"
+                       app:cpb_background_progressbar_width="2dp"
+                       app:cpb_progress="100"
+                       android:layout_marginStart="10sp"
+                       app:cpb_progressbar_color="@color/colorAccent"
+                       app:cpb_progressbar_width="2dp"
+                       android:layout_marginLeft="10sp" />
+
+
+           </LinearLayout>
 
 
        </LinearLayout>

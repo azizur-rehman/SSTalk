@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:id="@+id/container_right"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/container_right"
 
-    android:orientation="vertical"
-    android:layout_height="wrap_content">
+        android:orientation="vertical"
+        android:layout_height="wrap_content">
 
 
     <TextView
@@ -30,8 +30,28 @@
                   android:layout_height="wrap_content"
             android:id="@+id/message_layout_audio_right">
 
+        <LinearLayout
+                android:layout_width="wrap_content"
+                android:gravity="center"
+                android:layout_height="wrap_content">
 
-        <include layout="@layout/layout_item_audio"/>
+
+            <com.mikhaellopez.circularprogressbar.CircularProgressBar
+                    android:id="@+id/audio_progress_bar"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    app:cpb_background_progressbar_color="@color/transparent"
+                    app:cpb_background_progressbar_width="2dp"
+                    app:cpb_progress="100"
+                    android:layout_marginEnd="10sp"
+                    app:cpb_progressbar_color="@color/colorAccent"
+                    app:cpb_progressbar_width="2dp"
+                    android:layout_marginRight="10sp" />
+
+            <include layout="@layout/layout_item_audio"/>
+
+        </LinearLayout>
+
 
         <TextView
                 android:id="@+id/time_right"

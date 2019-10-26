@@ -37,6 +37,7 @@ import com.aziz.sstalk.R
 import com.aziz.sstalk.models.Models
 import com.bumptech.glide.Glide
 import com.google.firebase.auth.FirebaseAuth
+import org.jetbrains.anko.toast
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -85,7 +86,7 @@ object utils {
         const val KEY_NAME = "name"
 
         const val IS_FOR_SINGLE_FILE = "isSingleFile"
-        const val URI_AUTHORITY = "com.mvc.imagepicker.provider"
+        const val URI_AUTHORITY = "com.aziz.sstalk.provider"
 
         const val KEY_FILE_TYPE = "type"
         const val debugUserID = "user---2"
@@ -499,6 +500,23 @@ object utils {
     }
 
 
+
+    fun startAudioIntent(context: Context, path:String){
+
+        try {
+            val playIntent = Intent(Intent.ACTION_VIEW)
+            playIntent.setDataAndType(utils.getUriFromFile(context, File(path)), "audio/*")
+            playIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            context.startActivity(playIntent)
+        }
+        catch (e:Exception){
+            e.printStackTrace()
+            context.toast("Cannot play this audio")
+        }
+
+    }
+
+
     private fun getDurationString(duration: Long): String {
 
         val hours = duration % (1000 * 60 * 60 * 24) / (1000 * 60 * 60)
@@ -659,20 +677,27 @@ object utils {
 
 
 
-    fun getUriFromFile(context: Context?, file:File) : Uri {
+    fun getUriFromFile(context: Context?, file:File, authority:String = constants.URI_AUTHORITY) : Uri {
 
-        var uri = Uri.fromFile(file)
         return try {
 
-            if (Build.VERSION.SDK_INT >= 24)
-                uri = FileProvider.getUriForFile(context!!, constants.URI_AUTHORITY, file)
 
-            uri
+            val uri = if (Build.VERSION.SDK_INT >= 24)
+                FileProvider.getUriForFile(context!!, authority, file)
+            else
+                Uri.fromFile(file)
+
+            context?.grantUriPermission(context.packageName, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION )
+            return uri
+
         } catch (e:Exception){
             Log.e("utils", "utils: getUriFromFile = ${e.message}")
-            uri
+            Uri.fromFile(file)
         }
     }
+
+
+
 
     @SuppressLint("NewApi")
     fun isAppIsInBackground(context: Context):Boolean {
