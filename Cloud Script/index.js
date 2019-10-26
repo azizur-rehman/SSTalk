@@ -7,6 +7,7 @@ const test_user_ID = 'Q7raoE5Jw7gWdx1JsxSbNd1kBgs1'; //emulator
 const  FILE_TYPE_IMAGE = "image"
 const  FILE_TYPE_LOCATION = "location"
 const  FILE_TYPE_VIDEO = "video"
+const  FILE_TYPE_AUDIO = "audio"
 
 const MESSAGE_SEPERATOR = "<--MESSAGE_SEPERATOR-->";
 
@@ -64,9 +65,8 @@ exports.triggerMessage = functions.database.ref('Message_Status/{UID}/{targetUID
 
 
 
-        console.log('--- Message from ---- '+sender_uid)
+        console.log('--- Message from ---- '+sender_uid + ' to '+myUID)
     
-        console.log('my uid = '+myUID)
     
         var index = 0;
         var messages = '';
@@ -91,9 +91,6 @@ exports.triggerMessage = functions.database.ref('Message_Status/{UID}/{targetUID
             .once('value', statusSnapshot => {
                 var totalMessages = statusSnapshot.numChildren()
                 var msgIDs = []
-        
-        
-                console.log('total unread messages '+totalMessages)
         
                 statusSnapshot.forEach(msg=>{
                     msgIDs.push(msg.key.toString())
@@ -123,7 +120,10 @@ exports.triggerMessage = functions.database.ref('Message_Status/{UID}/{targetUID
         
                         else if(type === FILE_TYPE_VIDEO){
                             messageText = '🎥 Video';
+                        }else if(type === FILE_TYPE_AUDIO){
+                            messageText = '🎵 Audio';
                         }
+                    
                         else{
                             messageText = messageSnapshot.child('message').val();
                         }
@@ -133,14 +133,9 @@ exports.triggerMessage = functions.database.ref('Message_Status/{UID}/{targetUID
                         messages = messages + messageText + MESSAGE_SEPERATOR;
         
                         if(index === totalMessages - 1){
-        
-                            console.log('Messages = '+messages);
 
                             var groupNameIfAny = msg.child('groupNameIfGroup').val()
-                            console.log('Group name if any - '+groupNameIfAny)
-        
-        
-
+    
                             if(groupNameIfAny === null)
                                 groupNameIfAny = ''
           
@@ -200,44 +195,9 @@ exports.onNewFileUploaded = functions.storage.object().onFinalize(object => {
     var timeCreated = object.timeCreated
     var name = object.name
 
-
-  
-
-    console.log('---- FIle uploaded ----')
-
-    console.log('Time = '+timeCreated)
-    console.log('Name = '+name)
-
     cleanOldFiles();
 
 });
-
-exports.updateLastMessageNodeOnMessageDelete = functions.database.ref('Messages/{UID}/{targetUID}/{messageID}/')
-.onDelete((snapshot, context) => {
-
-    var myUID = context.params.UID;
-    var target_uid = context.params.targetUID;
-    var message_id = context.params.messageID;
-
-   return admin.database()
-    .ref('Messages').child(myUID).child(target_uid)
-    .limitToLast(1)
-    .once('value', msgSnapshot => {
-
-        var timeInMillis = 0
-        msgSnapshot.forEach(msg=>{
-            timeInMillis = msg.child('timeInMillis').val()
-        })
-
-        if(timeInMillis !== 0){
-            admin.database().ref('LastMessage').child(myUID).child(target_uid)
-            .child('timeInMillis').set(timeInMillis)
-            admin.database().ref('LastMessage').child(myUID).child(target_uid)
-            .child('reverseTimeStamp').set(timeInMillis * -1)
-            
-        }
-    })
-})
 
 
 //just a test function
@@ -342,14 +302,13 @@ function cleanOldFiles(){
 
 
   //fetching files stored before given limit
-  admin.database()
+ return admin.database()
   .ref('Files')
   .orderByChild('uploadTime')
   .endAt(endLimit)
   .once('value', fileSnapshot => {
       console.log('---> total files to delete = '+fileSnapshot.numChildren())
       fileSnapshot.forEach(function(file) {
-        console.log('File data -> '+JSON.stringify(file.val()))
          
         deleteFile(file)
         //deleteFile(bucket, fileID, fileType, fileExtension)
