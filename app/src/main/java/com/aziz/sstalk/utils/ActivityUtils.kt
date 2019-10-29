@@ -187,4 +187,4 @@ inline fun <reified T> Query.onRealtimeEvent(crossinline onLoaded:(snapshot:T?) 
 }
 
 
-
+const val max_file_size:Long = 16 * 1024 * 1024

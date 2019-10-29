@@ -2,34 +2,50 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto"
         xmlns:tools="http://schemas.android.com/tools"
+        android:background="@color/colorPrimary"
         android:orientation="vertical" android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
     <ImageView
             android:id="@+id/cancelBtn"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
             android:layout_marginTop="2dp"
             android:padding="10dp"
-            android:tint="@color/green"
+            android:tint="@color/white"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:srcCompat="@android:drawable/ic_menu_close_clear_cancel" />
 
+
+    <TextView
+            android:id="@+id/timer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-thin"
+            android:text="00:00:00"
+            android:textColor="@android:color/white"
+            android:textSize="60sp"
+            app:layout_constraintBottom_toTopOf="@+id/frameLayout"
+            app:layout_constraintEnd_toStartOf="@+id/imageView3"
+            app:layout_constraintStart_toEndOf="@+id/cancelBtn" />
+
+
     <ImageView
             android:id="@+id/imageView3"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
             android:padding="10dp"
             android:adjustViewBounds="true"
             android:scaleType="fitXY"
-            android:tint="@color/colorPrimary"
+            android:tint="@color/white"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             android:src="@drawable/ic_done_tick_white_24dp" />
 
 
     <FrameLayout
+            android:id="@+id/frameLayout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -38,24 +54,24 @@
             app:layout_constraintTop_toBottomOf="@+id/cancelBtn">
 
         <com.gauravbhola.ripplepulsebackground.RipplePulseLayout
+                android:id="@+id/pulsator"
                 android:layout_width="200dp"
                 android:layout_height="200dp"
                 android:clipChildren="false"
+                android:gravity="center"
+                app:duration="800"
+                android:visibility="gone"
+                app:endRadius="100dp"
                 app:rippleColor="@color/transparent_green"
                 app:rippleType="fill"
-                app:strokeWidth="2dp"
                 app:startRadius="42dp"
-                app:endRadius="100dp"
-                app:duration="800"
-                android:gravity="center"
-                android:id="@+id/pulsator">
+                app:strokeWidth="2dp">
 
             <ImageView
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:padding="50dp"
-
                     android:layout_gravity="center"
+                    android:padding="50dp"
                     android:src="@drawable/ic_mic_white_24dp"
                     android:tint="@color/white" />
 
@@ -64,6 +80,53 @@
 
     </FrameLayout>
 
+
+    <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/aar_footer_height"
+            android:layout_alignParentBottom="true"
+            app:layout_constraintTop_toBottomOf="@+id/frameLayout">
+
+        <ImageButton
+                android:id="@+id/restart"
+                style="@style/Widget.AppCompat.Button.Borderless"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_centerVertical="true"
+                android:layout_marginTop="50dp"
+                android:layout_toStartOf="@+id/record"
+                android:layout_toLeftOf="@+id/record"
+                android:padding="10dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/aar_ic_restart"
+                android:visibility="invisible" />
+
+        <ImageButton
+                android:id="@+id/record"
+                style="@style/Widget.AppCompat.Button.Borderless"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                android:layout_centerInParent="true"
+                android:layout_margin="15dp"
+                android:layout_marginTop="50dp"
+                android:padding="10dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/aar_ic_rec" />
+
+        <ImageButton
+                android:id="@+id/play"
+                style="@style/Widget.AppCompat.Button.Borderless"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_centerVertical="true"
+                android:layout_marginTop="50dp"
+                android:layout_toEndOf="@+id/record"
+                android:layout_toRightOf="@+id/record"
+                android:padding="10dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/aar_ic_play" />
+
+    </RelativeLayout>
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

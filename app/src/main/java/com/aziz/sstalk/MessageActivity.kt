@@ -14,6 +14,7 @@ import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.media.AudioManager
 import android.media.MediaPlayer
+import android.media.MediaRecorder
 import android.net.Uri
 import android.os.*
 import android.os.Environment.DIRECTORY_DCIM
@@ -666,7 +667,7 @@ class MessageActivity : AppCompatActivity() {
 
                 val message = "$latitude,$longitude"
 
-                addMessageToBoth(messageID, Models.MessageModel(message,
+                addMessageToBoth(messageID.replace("MSG", "LOC_"), Models.MessageModel(message,
                     myUID,
                     targetUid,
                     System.currentTimeMillis(),
@@ -719,7 +720,7 @@ class MessageActivity : AppCompatActivity() {
 
 
                     for((index, path) in imgPaths.withIndex()) {
-                        messageID = "MSG" +System.currentTimeMillis()
+                        messageID = "IMG_" +System.currentTimeMillis()
 
                         uploadFile(
                             messageID, File(path.toString()),
@@ -740,7 +741,7 @@ class MessageActivity : AppCompatActivity() {
 
 
                     for(file in audioPaths) {
-                        messageID = "MSG" +System.currentTimeMillis()
+                        messageID = "AUD_" +System.currentTimeMillis()
 
 
                         uploadFile(
@@ -755,7 +756,7 @@ class MessageActivity : AppCompatActivity() {
             }
             RQ_RECORDING -> // on recording
                 audioFile?.let {
-                    uploadFile("MSG${System.currentTimeMillis()}", it, "", utils.constants.FILE_TYPE_AUDIO, false )
+                    uploadFile("REC_${System.currentTimeMillis()}", it, "", utils.constants.FILE_TYPE_AUDIO, false )
                 }
         }
 
@@ -3234,10 +3235,16 @@ class MessageActivity : AppCompatActivity() {
 
     private fun startAudioRecording(){
 
-        //  val filePath = utils.sentAudioPath+"/MSG${System.currentTimeMillis()}.wav"
-        val filePath = utils.appFolder+"/recorded_audio.wav"
+          val filePath = utils.sentAudioPath+"/REC_${System.currentTimeMillis()}.aac"
+       // val filePath = utils.appFolder+"/recorded_audio.wav"
 
         audioFile = File(filePath)
+
+
+        recordAudio(audioFile!!)
+
+        if(true)
+            return
 
         AndroidAudioRecorder.with(this)
             .setFilePath(filePath)
@@ -3285,5 +3292,33 @@ class MessageActivity : AppCompatActivity() {
         }
     }
 
+
+    private val mediaRecorder = MediaRecorder()
+    private fun recordAudio(file:File){
+
+        with(mediaRecorder){
+            setAudioSource(MediaRecorder.AudioSource.MIC)
+            setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
+            setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
+            setAudioSamplingRate(AudioSampleRate.HZ_16000.sampleRate)
+            setMaxFileSize(max_file_size)
+            setOutputFile(file.path)
+
+            prepare()
+
+            start()
+
+            setOnInfoListener { _, i, i2 ->
+                Log.d("MessageActivity", "recordAudio: $i , $i2")
+            }
+
+            toast("Recording started")
+
+            Handler().apply {
+                postDelayed({ mediaRecorder.stop(); mediaRecorder.reset(); mediaRecorder.release(); toast("Recording finished") }, 5000)
+            }
+        }
+
+    }
 
 }
