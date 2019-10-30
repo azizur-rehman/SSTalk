@@ -2,20 +2,24 @@
 
 package com.aziz.sstalk.utils
 
-import android.app.Activity
+import android.app.Dialog
 import android.content.Context
 import android.content.Intent
+import android.graphics.drawable.InsetDrawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Filter
-import android.widget.Filterable
+import android.view.WindowManager
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.aziz.sstalk.MessageActivity
 import com.aziz.sstalk.models.Models
-import com.google.firebase.database.*
-import org.jetbrains.anko.collections.forEachWithIndex
-import java.lang.Exception
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.Query
+import com.google.firebase.database.ValueEventListener
+
+import com.aziz.sstalk.R
 
 inline fun View.hide(){
     visibility = View.GONE
@@ -188,3 +192,9 @@ inline fun <reified T> Query.onRealtimeEvent(crossinline onLoaded:(snapshot:T?) 
 
 
 const val max_file_size:Long = 16 * 1024 * 1024
+
+inline fun Dialog.makeRound(width:Int = WindowManager.LayoutParams.MATCH_PARENT, height:Int = WindowManager.LayoutParams.WRAP_CONTENT) {
+    val insetDrawable = InsetDrawable(ContextCompat.getDrawable(this.context, R.drawable.rounded_white_background), 30)
+    window?.setLayout(width,height)
+    window?.setBackgroundDrawable(insetDrawable)
+}

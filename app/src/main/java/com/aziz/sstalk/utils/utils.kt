@@ -517,7 +517,7 @@ object utils {
     }
 
 
-    private fun getDurationString(duration: Long): String {
+    fun getDurationString(duration: Long): String {
 
         val hours = duration % (1000 * 60 * 60 * 24) / (1000 * 60 * 60)
         val minutes = duration % (1000 * 60 * 60) / (1000 * 60)
@@ -639,8 +639,17 @@ object utils {
 
         retriever.release()
 
-        values.put(MediaStore.Video.Media.DURATION, timeInMillisec )
-        context.contentResolver.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values)
+        if(mimeType.startsWith("video"))
+        {
+            values.put(MediaStore.Video.Media.DURATION, timeInMillisec )
+            context.contentResolver.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values)
+        }
+        else
+        {
+            values.put(MediaStore.Audio.Media.DURATION, timeInMillisec)
+            context.contentResolver.insert(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, values)
+        }
+
 
     }
 

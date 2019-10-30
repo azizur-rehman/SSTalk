@@ -5,6 +5,7 @@ import android.animation.*
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.ActivityOptions
+import android.app.Dialog
 import android.app.NotificationManager
 import android.content.*
 import android.content.pm.PackageManager
@@ -41,6 +42,7 @@ import cafe.adriel.androidaudiorecorder.model.AudioChannel
 import cafe.adriel.androidaudiorecorder.model.AudioSampleRate
 import cafe.adriel.androidaudiorecorder.model.AudioSource
 import com.aziz.sstalk.firebase.MessagingService
+import com.aziz.sstalk.fragments.FragmentRecording
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.*
 import com.aziz.sstalk.views.ColorGenerator
@@ -53,6 +55,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.tasks.Continuation
 import com.google.android.gms.tasks.Task
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.firebase.FirebaseApp
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -170,7 +173,6 @@ class MessageActivity : AppCompatActivity() {
 
     lateinit var adapter:FirebaseRecyclerAdapter<Models.MessageModel, RecyclerView.ViewHolder>
 
-    private var audioFile:File? = null
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -755,9 +757,9 @@ class MessageActivity : AppCompatActivity() {
                 }
             }
             RQ_RECORDING -> // on recording
-                audioFile?.let {
-                    uploadFile("REC_${System.currentTimeMillis()}", it, "", utils.constants.FILE_TYPE_AUDIO, false )
-                }
+            {
+
+            }
         }
 
         super.onActivityResult(requestCode, resultCode, data)
@@ -1125,7 +1127,14 @@ class MessageActivity : AppCompatActivity() {
                         holder.time.text = utils.getLocalTime(model.timeInMillis)
 
                         holder.itemView.item_audio_container.setOnClickListener {
-                            if(File(model.file_local_path).exists()) playAudio(model.file_local_path) else downloadAudio(model, messageID)
+                            val file = File(model.file_local_path)
+                            if(file.exists()) playAudio(model.file_local_path) else downloadAudio(model, messageID)
+
+                            if(file.exists() && model.message.isEmpty()){
+                                //file not uploaded
+                                holder.audioIcon.setOnClickListener { uploadFile(model.message, file, "", utils.constants.FILE_TYPE_AUDIO, false) }
+                            }
+
                         }
                         holder.audioProgressBar.progress = 0f
                         CircularProgressBarsAt[messageID] = holder.audioProgressBar
@@ -3235,90 +3244,36 @@ class MessageActivity : AppCompatActivity() {
 
     private fun startAudioRecording(){
 
-          val filePath = utils.sentAudioPath+"/REC_${System.currentTimeMillis()}.aac"
-       // val filePath = utils.appFolder+"/recorded_audio.wav"
-
-        audioFile = File(filePath)
 
 
-        recordAudio(audioFile!!)
+        val recorder = FragmentRecording()
+        recorder.isCancelable = false
+        recorder.setRecordingListener(object : FragmentRecording.OnRecordingFinished{
+            override fun onRecorded(file: File?) {
+                Log.d("MessageActivity", "onRecorded: ${file?.path}")
 
-        if(true)
-            return
+                recorder.dismiss()
+                file?.let {
+                    uploadFile("REC_${System.currentTimeMillis()}", it, "", utils.constants.FILE_TYPE_AUDIO, false )
+                }
+            }
 
-        AndroidAudioRecorder.with(this)
-            .setFilePath(filePath)
-            .setAutoStart(true)
-            .setKeepDisplayOn(true)
-            .setSource(AudioSource.MIC)
-            .setChannel(AudioChannel.STEREO)
-            .setSampleRate(AudioSampleRate.HZ_16000)
-            .setColor(ContextCompat.getColor(this, R.color.colorPrimary))
-            .setRequestCode(RQ_RECORDING)
-            .record()
+            override fun onCancelled() {
+                Log.d("MessageActivity", "onCancelled: ")
+                recorder.dismiss()
+            }
+
+        })
+        recorder.show(supportFragmentManager, "recording")
 
     }
 
 
-    private val mediaPlayer = MediaPlayer()
     private fun playAudio(path:String){
 
         utils.startAudioIntent(context, path)
 
-
-        if(true)
-            return
-
-        try {
-
-            with(mediaPlayer) {
-                setDataSource(path)
-                setAudioStreamType(AudioManager.STREAM_MUSIC)
-                setOnTimedTextListener { mediaPlayer, timedText ->
-                    Log.d(
-                        "MessageActivity",
-                        "playAudio: $timedText"
-                    )
-                }
-                if (!isPlaying) {
-                    prepareAsync()
-                    start()
-                }
-            }
-
-        }
-        catch (e:Exception){
-            e.printStackTrace()
-        }
     }
 
-
-    private val mediaRecorder = MediaRecorder()
-    private fun recordAudio(file:File){
-
-        with(mediaRecorder){
-            setAudioSource(MediaRecorder.AudioSource.MIC)
-            setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
-            setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
-            setAudioSamplingRate(AudioSampleRate.HZ_16000.sampleRate)
-            setMaxFileSize(max_file_size)
-            setOutputFile(file.path)
-
-            prepare()
-
-            start()
-
-            setOnInfoListener { _, i, i2 ->
-                Log.d("MessageActivity", "recordAudio: $i , $i2")
-            }
-
-            toast("Recording started")
-
-            Handler().apply {
-                postDelayed({ mediaRecorder.stop(); mediaRecorder.reset(); mediaRecorder.release(); toast("Recording finished") }, 5000)
-            }
-        }
-
-    }
 
 }
