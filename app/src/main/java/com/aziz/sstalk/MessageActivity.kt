@@ -4,8 +4,6 @@ import android.Manifest
 import android.animation.*
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.app.ActivityOptions
-import android.app.Dialog
 import android.app.NotificationManager
 import android.content.*
 import android.content.pm.PackageManager
@@ -13,9 +11,6 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
-import android.media.AudioManager
-import android.media.MediaPlayer
-import android.media.MediaRecorder
 import android.net.Uri
 import android.os.*
 import android.os.Environment.DIRECTORY_DCIM
@@ -37,10 +32,6 @@ import android.view.*
 import android.view.ViewGroup
 import androidx.appcompat.widget.SearchView
 import android.widget.*
-import cafe.adriel.androidaudiorecorder.AndroidAudioRecorder
-import cafe.adriel.androidaudiorecorder.model.AudioChannel
-import cafe.adriel.androidaudiorecorder.model.AudioSampleRate
-import cafe.adriel.androidaudiorecorder.model.AudioSource
 import com.aziz.sstalk.firebase.MessagingService
 import com.aziz.sstalk.fragments.FragmentRecording
 import com.aziz.sstalk.models.Models
@@ -55,13 +46,10 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.tasks.Continuation
 import com.google.android.gms.tasks.Task
-import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.google.firebase.FirebaseApp
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.ml.common.modeldownload.FirebaseModelManager
-import com.google.firebase.ml.common.modeldownload.FirebaseRemoteModel
 import com.google.firebase.ml.naturallanguage.FirebaseNaturalLanguage
 import com.google.firebase.ml.naturallanguage.smartreply.FirebaseTextMessage
 import com.google.firebase.ml.naturallanguage.smartreply.SmartReplySuggestionResult
@@ -803,8 +791,7 @@ class MessageActivity : AppCompatActivity() {
 
 
         val options = FirebaseRecyclerOptions.Builder<Models.MessageModel>()
-            .setQuery(FirebaseUtils.ref.getChatRef(myUID, targetUid)
-
+            .setQuery(FirebaseUtils.ref.getChatQuery(myUID, targetUid)
                // .limitToLast(20)
                 ,Models.MessageModel::class.java)
             .build()
@@ -949,7 +936,7 @@ class MessageActivity : AppCompatActivity() {
                 var tapToDownload:TextView? = null
                 var messageTextView:TextView? = null
 
-                var messageLayout:View? = null
+                val messageLayout:View? = holder.getMessageLayout()
 
 
                 val date = Date(model.timeInMillis)
@@ -984,7 +971,6 @@ class MessageActivity : AppCompatActivity() {
                         holder.message.text = model.message
                         container = holder.container
                         messageTextView = holder.message
-                        messageLayout = holder.messageLayout
                         dateHeader = holder.headerDateTime
 
                         holder.itemView.bubble_left_translation.visibility = View.GONE
@@ -1000,7 +986,6 @@ class MessageActivity : AppCompatActivity() {
                         container = holder.container
                         FirebaseUtils.setDeliveryStatusTick(targetUid, messageID, holder.messageStatus)
                         messageTextView = holder.message
-                        messageLayout = holder.messageLayout
                         holder.itemView.bubble_right_translation.visibility = View.GONE
                         //end of my holder
 
@@ -1016,7 +1001,6 @@ class MessageActivity : AppCompatActivity() {
 
 
                         messageTextView = holder.message
-                        messageLayout = holder.messageLayout
 
 
                         //setting holder config
@@ -1029,7 +1013,6 @@ class MessageActivity : AppCompatActivity() {
                         container = holder.container
                         holder.time.text = utils.getLocalTime(model.timeInMillis)
                         messageTextView = holder.message
-                        messageLayout = holder.messageLayout
 
                         targetSenderIcon = holder.senderIcon
                         targetSenderTitle = holder.senderTitle
@@ -1051,7 +1034,6 @@ class MessageActivity : AppCompatActivity() {
 
                         FirebaseUtils.setDeliveryStatusTick(targetUid, messageID, holder.messageStatus)
                         messageTextView = holder.message
-                        messageLayout = holder.messageLayout
 
                         //setting holder config
                         setMyVideoHolder(holder, model, messageID)
@@ -1071,7 +1053,6 @@ class MessageActivity : AppCompatActivity() {
                         targetSenderTitle = holder.senderTitle
 
                         messageTextView = holder.message
-                        messageLayout = holder.messageLayout
 
 
                         //setting holder config
@@ -1086,7 +1067,6 @@ class MessageActivity : AppCompatActivity() {
                         holder.message.text = model.caption
                         holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
                         holder.time.text = utils.getLocalTime(model.timeInMillis)
-                        messageLayout = holder.messageLayout
                         dateHeader = holder.dateHeader
                         messageTextView = holder.message
                         container = holder.container
@@ -1103,7 +1083,6 @@ class MessageActivity : AppCompatActivity() {
                         dateHeader = holder.dateHeader
                         container = holder.container
                         holder.time.text = utils.getLocalTime(model.timeInMillis)
-                        messageLayout = holder.messageLayout
                         messageTextView = holder.message
 
                         targetSenderIcon = holder.senderIcon
@@ -1121,48 +1100,50 @@ class MessageActivity : AppCompatActivity() {
                     }
 
                     is Holders.MyAudioHolder -> {
-                        messageLayout = holder.messageLayout
                         container = holder.itemView.container_right
                         dateHeader = holder.dateTextView
                         holder.time.text = utils.getLocalTime(model.timeInMillis)
-
-                        holder.itemView.item_audio_container.setOnClickListener {
-                            val file = File(model.file_local_path)
-                            if(file.exists()) playAudio(model.file_local_path) else downloadAudio(model, messageID)
-
-                            if(file.exists() && model.message.isEmpty()){
-                                //file not uploaded
-                                holder.audioIcon.setOnClickListener { uploadFile(model.message, file, "", utils.constants.FILE_TYPE_AUDIO, false) }
-                            }
-
-                        }
                         holder.audioProgressBar.progress = 0f
                         CircularProgressBarsAt[messageID] = holder.audioProgressBar
-
                         val audioFile = File(model.file_local_path)
-                         holder.lengthOrSize.text = if(audioFile.exists()) utils.getAudioVideoLength(context, audioFile.path)
+                        holder.lengthOrSize.text = if(audioFile.exists()) utils.getAudioVideoLength(context, audioFile.path)
                         else utils.getFileSize(model.file_size_in_bytes)
 
+
+                        holder.itemView.item_audio_container.setOnClickListener {
+
+                            if(audioFile.exists()) playAudio(model.file_local_path) else downloadAudio(model, messageID)
+
+                        }
+
+
                         if(model.message.isEmpty()){
-                            //show retry
+                            //show upload retry
                             holder.audioIcon.setImageResource(R.drawable.ic_file_upload_white_24dp)
                             holder.audioIcon.setOnClickListener {
-                                fileUpload(messageID, File(model.file_local_path), model.file_local_path,"", utils.constants.FILE_TYPE_AUDIO)
+
+                                if(!audioFile.exists()){
+                                    toast("File does not exist on this device")
+                                    return@setOnClickListener
+                                }
+
+                                uploadFile(messageID, audioFile, model.file_local_path, utils.constants.FILE_TYPE_AUDIO, false)
                             }
 
                          }
 
-                        if(!audioFile.exists())
+                        if(!audioFile.exists()) {
                             holder.audioIcon.setImageResource(R.drawable.ic_file_download_white_24dp)
-
-                        downloadAudio(model, messageID)
+                            downloadAudio(model, messageID)
+                        }
+                        else
+                            holder.audioIcon.setImageResource(R.drawable.ic_audiotrack_white_24dp)
 
                         FirebaseUtils.setDeliveryStatusTick(targetUid, messageID, holder.messageStatus)
 
                     }
 
                     is Holders.TargetAudioHolder -> {
-                        messageLayout = holder.messageLayout
                         container = holder.itemView.container_left
                         dateHeader = holder.dateTextView
                         holder.time.text = utils.getLocalTime(model.timeInMillis)
@@ -1179,6 +1160,8 @@ class MessageActivity : AppCompatActivity() {
 
                         if(!audioFile.exists())
                             holder.audioIcon.setImageResource(R.drawable.ic_file_download_white_24dp)
+                        else
+                            holder.audioIcon.setImageResource(R.drawable.ic_audiotrack_white_24dp)
 
                         downloadAudio(model, messageID)
 
@@ -1331,6 +1314,7 @@ class MessageActivity : AppCompatActivity() {
 
 
                 if(searchFilterItemPosition.contains(position) ){
+                    // when searched
                     messageTextView?.let { utils.highlightTextView(it, searchQuery, Color.parseColor("#51C1EE")) }
 
                     if(selectedPosition == position) {
@@ -1410,9 +1394,6 @@ class MessageActivity : AppCompatActivity() {
     }
 
 
-    private fun <T:RecyclerView.ViewHolder> bindAudioHolder(){
-
-    }
 
     private fun setObserver(){
         adapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
@@ -1456,7 +1437,7 @@ class MessageActivity : AppCompatActivity() {
         messageInputField.setInputListener {
 
             if(isBlockedByMe || isBlockedByUser) {
-                return@setInputListener true
+                return@setInputListener false
             }
 
             val message = messageInputField.inputEditText.text.toString()
@@ -1473,7 +1454,7 @@ class MessageActivity : AppCompatActivity() {
 
 
 
-            false
+            true
         }
 
     }
@@ -2013,6 +1994,8 @@ class MessageActivity : AppCompatActivity() {
     private fun downloadAudio(model: Models.MessageModel, messageID: String){
 
 
+        if(model.message.isEmpty() || File(model.file_local_path).exists()) return
+
         val itemHolder = messagesList.findViewHolderForAdapterPosition(adapter.snapshots.indexOf(model))
 
         val myHolder = itemHolder  as? Holders.MyAudioHolder
@@ -2023,7 +2006,6 @@ class MessageActivity : AppCompatActivity() {
         progressBar?.show()
         progressBar?.progress =0f
 
-        if(model.message.isEmpty() || File(model.file_local_path).exists()) return
 
         val storageRef =
             FirebaseStorage.getInstance().getReferenceFromUrl(model.message)
@@ -2502,10 +2484,10 @@ class MessageActivity : AppCompatActivity() {
                         }
 
                         override fun onDestroyActionMode(p0: ActionMode?) {
-                            for (pos in selectedItemPosition)
-                            {
-                                if(!isTranslatorPressed)
-                                    adapter.notifyItemChanged(pos)
+                            selectedItemPosition.forEach {
+                                if(!isTranslatorPressed) {
+                                    messagesList.findViewHolderForAdapterPosition(it)?.getMessageLayout()?.background = unselectedDrawable
+                                }
                             }
 
                             selectedItemPosition.clear()
@@ -2795,8 +2777,9 @@ class MessageActivity : AppCompatActivity() {
 
                 utils.hideSoftKeyboard(this@MessageActivity)
 
-                for(pos in searchFilterItemPosition)
-                adapter.notifyItemChanged(pos)
+                searchFilterItemPosition.forEach { pos ->
+                    adapter.notifyItemChanged(pos)
+                }
 
                 return true
             }
@@ -3026,6 +3009,51 @@ class MessageActivity : AppCompatActivity() {
             }
 
         })
+    }
+/*
+    private fun <T :RecyclerView.ViewHolder> getHolder(holder:RecyclerView.ViewHolder):T{
+
+
+        return when (holder) {
+            is Holders.TargetTextMsgHolder -> T as Holders.TargetTextMsgHolder
+            is Holders.MyTextMsgHolder -> holder as Holders.MyTextMsgHolder
+//
+//            is Holders.MyImageMsgHolder -> messageLayout
+//            is Holders.TargetImageMsgHolder -> messageLayout
+//
+//            is Holders.MyVideoMsgHolder -> messageLayout
+//            is Holders.TargetVideoMsgHolder -> messageLayout
+//
+//            is Holders.MyMapHolder -> messageLayout
+//            is Holders.TargetMapHolder -> messageLayout
+//
+//            is Holders.MyAudioHolder -> messageLayout
+//            is Holders.TargetAudioHolder -> messageLayout
+
+            else -> null
+        }
+
+    }*/
+
+    private fun RecyclerView.ViewHolder.getMessageLayout():View?{
+       return when (this) {
+            is Holders.TargetTextMsgHolder ->  messageLayout
+            is Holders.MyTextMsgHolder -> messageLayout
+
+            is Holders.MyImageMsgHolder -> messageLayout
+            is Holders.TargetImageMsgHolder -> messageLayout
+
+            is Holders.MyVideoMsgHolder -> messageLayout
+            is Holders.TargetVideoMsgHolder -> messageLayout
+
+            is Holders.MyMapHolder -> messageLayout
+            is Holders.TargetMapHolder -> messageLayout
+
+            is Holders.MyAudioHolder -> messageLayout
+            is Holders.TargetAudioHolder -> messageLayout
+
+            else -> null
+        }
     }
 
 

@@ -424,8 +424,11 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
                             Log.d("HomeActivity", "onDestroyActionMode: $selectedItemPosition")
 
-                            for(pos in selectedItemPosition)
-                                adapter.notifyItemChanged(pos)
+                            selectedItemPosition.forEach { pos ->
+                                val vh = conversationRecycler.findViewHolderForAdapterPosition(pos) as? ViewHolder
+                                vh?.checkbox?.visibility = View.INVISIBLE
+                                vh?.checkbox?.setChecked(false, true)
+                            }
 
                             selectedItemPosition.clear()
                             selectedRecipients.clear()

@@ -1,8 +1,10 @@
 package com.aziz.sstalk.utils
 
 import android.app.Activity
+import android.app.ActivityOptions
 import android.content.Context
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.graphics.Typeface
 import android.graphics.drawable.BitmapDrawable
 import android.os.Build
@@ -93,17 +95,18 @@ object FirebaseUtils {
                 try{
                     FirebaseDatabase.getInstance().setPersistenceEnabled(true)
                     FirebaseDatabase.getInstance().reference
+                        .child(NODE_USER_ACTIVITY_STATUS)
+                        .keepSynced(true)
+                    /*FirebaseDatabase.getInstance().reference
                         .child(NODE_MESSAGES)
                         .keepSynced(true)
 
-                    FirebaseDatabase.getInstance().reference
-                        .child(NODE_USER_ACTIVITY_STATUS)
-                        .keepSynced(true)
+
 
 
                     FirebaseDatabase.getInstance().reference
                         .child(NODE_MESSAGE_STATUS)
-                        .keepSynced(true)
+                        .keepSynced(true)*/
                 }
                 catch (e:Exception){ }
 
@@ -229,8 +232,10 @@ object FirebaseUtils {
 
         if(utils.hasStoragePermission(context)){
 
-
             val file= File(utils.profilePicPath +uid+".jpg")
+//            val transitionBundle =  ActivityOptions.makeThumbnailScaleUpAnimation(imageView,
+//                BitmapFactory.decodeFile(file.path),0,0).toBundle()
+
             if(file.exists()){
                 fileExists = true
                 Log.d("FirebaseUtils", "loadProfilePic: exists of $uid")
@@ -736,7 +741,7 @@ object FirebaseUtils {
 
         messageStatusImageView.visibility = View.GONE
 
-        ref.getChatRef(getUid(), targetUID)
+        ref.getChatQuery(getUid(), targetUID)
             .limitToLast(1)
             .addValueEventListener(object : ValueEventListener {
                 override fun onCancelled(p0: DatabaseError) {}

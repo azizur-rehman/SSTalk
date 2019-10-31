@@ -131,6 +131,8 @@ class FragmentRecording: BottomSheetDialogFragment() {
 
     private fun stopRecording(){
 
+        if(!isRecording) return
+
         timer.cancel()
         try {
             mediaRecorder.stop()

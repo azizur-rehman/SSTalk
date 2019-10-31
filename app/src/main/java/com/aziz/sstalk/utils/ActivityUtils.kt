@@ -2,10 +2,13 @@
 
 package com.aziz.sstalk.utils
 
+import android.app.Activity
+import android.app.ActivityOptions
 import android.app.Dialog
 import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.InsetDrawable
+import android.os.Build
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -118,16 +121,21 @@ fun <T> RecyclerView.setCustomAdapter(context: Context, items: Collection<T>, re
 
 
 fun Context.startChat(uid:String, type:String, nameOrNumber:String, unreadCount:Int = 0, message:Models.MessageModel? = null){
-    startActivity(
-        Intent(this, MessageActivity::class.java)
-            .apply {
-                putExtra(FirebaseUtils.KEY_UID, uid)
-                putExtra(utils.constants.KEY_TARGET_TYPE, type)
-                putExtra(utils.constants.KEY_NAME_OR_NUMBER, nameOrNumber)
-                putExtra(utils.constants.KEY_MSG_MODEL, message)
-                putExtra(utils.constants.KEY_UNREAD, unreadCount) //optional
-            }
-    )
+
+    val transition = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) ActivityOptions.makeSceneTransitionAnimation(this as Activity ).toBundle()
+    else null
+
+        startActivity(
+            Intent(this, MessageActivity::class.java)
+                .apply {
+                    putExtra(FirebaseUtils.KEY_UID, uid)
+                    putExtra(utils.constants.KEY_TARGET_TYPE, type)
+                    putExtra(utils.constants.KEY_NAME_OR_NUMBER, nameOrNumber)
+                    putExtra(utils.constants.KEY_MSG_MODEL, message)
+                    putExtra(utils.constants.KEY_UNREAD, unreadCount) //optional
+                }
+        )
+
 }
 
 
