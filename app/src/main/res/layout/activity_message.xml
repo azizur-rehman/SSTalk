@@ -129,6 +129,7 @@
             <com.stfalcon.chatkit.messages.MessageInput
                     android:layout_width="match_parent"
                     android:id="@+id/messageInputField"
+
                     app:attachmentButtonDefaultBgColor="@color/white"
                     app:inputBackground="@color/white"
                     app:attachmentButtonBackground="?android:selectableItemBackground"

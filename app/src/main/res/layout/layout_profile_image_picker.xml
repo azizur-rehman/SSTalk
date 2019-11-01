@@ -28,7 +28,7 @@
         android:layout_gravity="end"
 
         android:layout_marginTop="20dp"
-        android:src="@drawable/ic_add_blue"
+        android:src="@drawable/ic_add_red"
         android:id="@+id/profile_pick_btn"
         />
 

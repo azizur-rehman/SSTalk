@@ -19,6 +19,7 @@ import android.view.*
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import com.aurelhubert.ahbottomnavigation.AHBottomNavigationItem
+import com.aziz.sstalk.fragments.FragmentMyProfile
 import com.aziz.sstalk.fragments.FragmentOnlineFriends
 import com.aziz.sstalk.fragments.FragmentSearch
 import com.aziz.sstalk.models.Models
@@ -73,7 +74,6 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     var actionMode:ActionMode? = null
 
     var isContextToolbarActive = false
-    private var asyncLoader: Future<Boolean>? = null
     private var isOnlineFragmentLoaded = false
     private val fragmentOnline = FragmentOnlineFriends()
 
@@ -117,40 +117,34 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private fun initComponents(){
         conversation_progressbar.visibility = View.GONE
-        asyncLoader = doAsyncResult {
+        nav_view.setNavigationItemSelectedListener(this@HomeActivity )
 
-            onComplete {  }
+        setBottomNavigationView()
 
-            activityUiThread {
-                nav_view.setNavigationItemSelectedListener(this@HomeActivity )
+        hasPermission = utils.hasContactPermission(this@HomeActivity) && utils.hasStoragePermission(context)
 
-                setBottomNavigationView()
-
-                hasPermission = utils.hasContactPermission(this@HomeActivity) && utils.hasStoragePermission(context)
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    if(!hasPermission) {
-                        requestPermissions(arrayOf(Manifest.permission.READ_CONTACTS, Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                            Manifest.permission.READ_EXTERNAL_STORAGE), 101)
-                    }
-                    else
-                        setAdapter()
-                }
-                else
-                    setAdapter()
-
-
-
-                //setting update navigation drawer
-                if(FirebaseUtils.isLoggedIn()) {
-
-                    (nav_view.getHeaderView(0).findViewById(R.id.nav_header_title) as TextView).text = FirebaseAuth.getInstance().currentUser!!.displayName
-                    (nav_view.getHeaderView(0).findViewById(R.id.nav_header_subtitle) as TextView).text = FirebaseAuth.getInstance().currentUser!!.phoneNumber
-                    FirebaseUtils.loadProfileThumbnail(this@HomeActivity, FirebaseUtils.getUid(),
-                        nav_view.getHeaderView(0).findViewById<CircleImageView>(R.id.drawer_profile_image_view))
-                }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if(!hasPermission) {
+                requestPermissions(arrayOf(Manifest.permission.READ_CONTACTS, Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                    Manifest.permission.READ_EXTERNAL_STORAGE), 101)
             }
+            else
+                setAdapter()
         }
+        else
+            setAdapter()
+
+
+
+        //setting update navigation drawer
+        if(FirebaseUtils.isLoggedIn()) {
+
+            (nav_view.getHeaderView(0).findViewById(R.id.nav_header_title) as TextView).text = FirebaseAuth.getInstance().currentUser!!.displayName
+            (nav_view.getHeaderView(0).findViewById(R.id.nav_header_subtitle) as TextView).text = FirebaseAuth.getInstance().currentUser!!.phoneNumber
+            FirebaseUtils.loadProfileThumbnail(this@HomeActivity, FirebaseUtils.getUid(),
+                nav_view.getHeaderView(0).findViewById<CircleImageView>(R.id.drawer_profile_image_view))
+        }
+
     }
 
 
@@ -196,14 +190,17 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     override fun onBackPressed() {
         when {
             drawer_layout.isDrawerOpen(GravityCompat.START) -> drawer_layout.closeDrawer(GravityCompat.START)
-            isOnlineFragmentLoaded -> {
-                supportFragmentManager.beginTransaction()
-                    .remove(fragmentOnline)
-                    .commit()
+
+            supportFragmentManager.backStackEntryCount>0 -> {
+                repeat(supportFragmentManager.backStackEntryCount) {
+                    supportFragmentManager.popBackStackImmediate()
+                }
                 bottom_navigation_home.setCurrentItem(0, false)
                 isOnlineFragmentLoaded = false
                 title = "Recent"
+
             }
+
             searchView.isSearchOpen -> searchView.closeSearch()
             else -> finish()
         }
@@ -218,10 +215,6 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 startActivity(Intent(context, CreateGroupActivity::class.java))
             }
 
-            R.id.nav_my_profile -> {
-
-                startActivity(Intent(context, EditProfile::class.java))
-            }
             R.id.nav_setting -> {
 
                 startActivity(Intent(context, SettingsActivity::class.java))
@@ -304,9 +297,9 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 loadNativeAd(holder.itemView, position)
 
 
-                Executors.newSingleThreadExecutor().submit { FirebaseUtils.setMuteImageIcon(uid, holder.muteIcon) }
+                FirebaseUtils.setMuteImageIcon(uid, holder.muteIcon)
 
-                Executors.newSingleThreadExecutor().submit { FirebaseUtils.setLastMessage(uid, holder.lastMessage, holder.deliveryTick) }
+                FirebaseUtils.setLastMessage(uid, holder.lastMessage, holder.deliveryTick)
 
 
 
@@ -515,9 +508,6 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
 
-
-
-
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
         val name = itemView.name!!
         val lastMessage = itemView.mobile_number!!
@@ -540,9 +530,6 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     override fun onDestroy() {
 
         try {
-            if(asyncLoader?.isDone!!)
-                asyncLoader?.cancel(true)
-
 
             adapter.stopListening()
             FirebaseUtils.setMeAsOffline()
@@ -641,29 +628,44 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         title = "Recent"
 
+        supportFragmentManager.addOnBackStackChangedListener {
+            if(supportFragmentManager.backStackEntryCount == 0) show_contacts.show()
+            else show_contacts.hide()
+        }
 
         with(bottom_navigation_home){
             addItem(AHBottomNavigationItem("Recent", R.drawable.ic_chat))
-            addItem(AHBottomNavigationItem("Online", R.drawable.ic_person_outlined))
+            addItem(AHBottomNavigationItem("Online", R.drawable.ic_online_small))
+            addItem(AHBottomNavigationItem("My Profile", R.drawable.ic_person_outlined))
+
             accentColor = ContextCompat.getColor(context, R.color.colorPrimary)
 
             setUseElevation(true)
-            setOnTabSelectedListener { position, wasSelected ->
+            setOnTabSelectedListener { position, _ ->
+
+                repeat(supportFragmentManager.backStackEntryCount){supportFragmentManager.popBackStackImmediate()}
+
                 when(position){
                     0 ->  {
                         title = "Recent"
-                        supportFragmentManager.beginTransaction()
-                            .remove( fragmentOnline)
-                            .commit()
-                        isOnlineFragmentLoaded = false
+                        repeat(supportFragmentManager.backStackEntryCount) {
+                            supportFragmentManager.popBackStackImmediate()
+                        }
                     }
 
                     1 -> {
                         supportFragmentManager.beginTransaction()
                             .replace(R.id.homeLayoutContainer, fragmentOnline)
+                            .addToBackStack(null)
                             .commit()
-                        isOnlineFragmentLoaded = true
                         title = "Online contacts"
+                    }
+
+                    2 -> {
+                        supportFragmentManager.beginTransaction()
+                            .replace(R.id.homeLayoutContainer, FragmentMyProfile())
+                            .addToBackStack(null).commit()
+                        title = "My Profile"
                     }
                 }
 

@@ -32,10 +32,10 @@ class FragmentSearch : Fragment() {
     lateinit var rootView:View
     private val handler = Handler(Looper.getMainLooper()); lateinit var runnable:Runnable
 
-    var registeredUsers:List<Models.Contact> = listOf()
-    var groups:MutableMap<String, Models.LastMessageDetail?> = mutableMapOf()
-    var messagesMap:MutableMap<String, DataSnapshot?> = mutableMapOf()
-    var messageSnapshot:DataSnapshot? = null
+    private var registeredUsers:List<Models.Contact> = listOf()
+    private var groups:MutableMap<String, Models.LastMessageDetail?> = mutableMapOf()
+    private var messagesMap:MutableMap<String, DataSnapshot?> = mutableMapOf()
+    private var messageSnapshot:DataSnapshot? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.fragment_search,container, false)
@@ -169,7 +169,7 @@ class FragmentSearch : Fragment() {
         messagesMap.clear()
         messagesRecyclerView.adapter = null
 
-        if(query?.length?:0 < 5)
+        if(query?.length?:0 < 4)
                 return
 
 

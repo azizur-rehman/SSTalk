@@ -24,6 +24,7 @@
             android:layout_height="match_parent"
             android:clipToPadding="false"
             app:stackFromEnd="false"
+            android:layoutAnimation="@anim/layout_anim_recycler"
             android:paddingBottom="100dp"
             android:id="@+id/conversationRecycler"
             tools:showIn="@layout/app_bar_home"/>

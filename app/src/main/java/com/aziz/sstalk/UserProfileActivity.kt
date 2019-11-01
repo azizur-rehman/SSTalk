@@ -198,7 +198,7 @@ class UserProfileActivity : AppCompatActivity() {
 
                                             if(messageModels[p1].messageType == utils.constants.FILE_TYPE_AUDIO)
                                             {
-                                                holder.imageView.setImageResource(R.color.colorPrimary)
+                                                holder.imageView.setImageResource(R.color.transparent_black_1)
                                                 holder.layoutDuration.background = null
                                                 holder.thumbnailIcon.show()
                                             }

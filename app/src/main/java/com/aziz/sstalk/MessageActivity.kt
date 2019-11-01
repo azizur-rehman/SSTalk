@@ -83,6 +83,7 @@ import kotlinx.android.synthetic.main.text_header.view.*
 import me.shaohui.advancedluban.Luban
 import me.shaohui.advancedluban.OnCompressListener
 import org.jetbrains.anko.*
+import org.jetbrains.anko.design.snackbar
 import java.io.File
 import java.io.Serializable
 import java.lang.Exception
@@ -934,16 +935,15 @@ class MessageActivity : AppCompatActivity() {
                 var container:LinearLayout? = null
 
                 var tapToDownload:TextView? = null
-                var messageTextView:TextView? = null
+                val messageTextView:TextView? = holder.messageTextView
 
-                val messageLayout:View? = holder.getMessageLayout()
+                val messageLayout:View? = holder.messageLayout
 
 
                 val date = Date(model.timeInMillis)
 
 
                  try {
-
 
                     if(model.from != FirebaseUtils.getUid())
                         FirebaseUtils.setReadStatusToMessage(messageID, targetUid)
@@ -970,7 +970,7 @@ class MessageActivity : AppCompatActivity() {
                         holder.time.text = utils.getLocalTime(model.timeInMillis)
                         holder.message.text = model.message
                         container = holder.container
-                        messageTextView = holder.message
+
                         dateHeader = holder.headerDateTime
 
                         holder.itemView.bubble_left_translation.visibility = View.GONE
@@ -985,7 +985,7 @@ class MessageActivity : AppCompatActivity() {
                         dateHeader = holder.headerDateTime
                         container = holder.container
                         FirebaseUtils.setDeliveryStatusTick(targetUid, messageID, holder.messageStatus)
-                        messageTextView = holder.message
+
                         holder.itemView.bubble_right_translation.visibility = View.GONE
                         //end of my holder
 
@@ -1000,7 +1000,7 @@ class MessageActivity : AppCompatActivity() {
                         FirebaseUtils.setDeliveryStatusTick(targetUid, messageID, holder.messageStatus)
 
 
-                        messageTextView = holder.message
+
 
 
                         //setting holder config
@@ -1012,7 +1012,7 @@ class MessageActivity : AppCompatActivity() {
                         dateHeader = holder.headerDateTime
                         container = holder.container
                         holder.time.text = utils.getLocalTime(model.timeInMillis)
-                        messageTextView = holder.message
+
 
                         targetSenderIcon = holder.senderIcon
                         targetSenderTitle = holder.senderTitle
@@ -1033,7 +1033,7 @@ class MessageActivity : AppCompatActivity() {
 
 
                         FirebaseUtils.setDeliveryStatusTick(targetUid, messageID, holder.messageStatus)
-                        messageTextView = holder.message
+
 
                         //setting holder config
                         setMyVideoHolder(holder, model, messageID)
@@ -1052,7 +1052,7 @@ class MessageActivity : AppCompatActivity() {
                         targetSenderIcon = holder.senderIcon
                         targetSenderTitle = holder.senderTitle
 
-                        messageTextView = holder.message
+
 
 
                         //setting holder config
@@ -1068,7 +1068,7 @@ class MessageActivity : AppCompatActivity() {
                         holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
                         holder.time.text = utils.getLocalTime(model.timeInMillis)
                         dateHeader = holder.dateHeader
-                        messageTextView = holder.message
+
                         container = holder.container
 
                         loadMap(holder.mapView, LatLng(latitude,longitude))
@@ -1083,7 +1083,7 @@ class MessageActivity : AppCompatActivity() {
                         dateHeader = holder.dateHeader
                         container = holder.container
                         holder.time.text = utils.getLocalTime(model.timeInMillis)
-                        messageTextView = holder.message
+
 
                         targetSenderIcon = holder.senderIcon
                         targetSenderTitle = holder.senderTitle
@@ -1229,10 +1229,10 @@ class MessageActivity : AppCompatActivity() {
                 messageImage?.setOnClickListener {
                     if(!isContextMenuActive)
                         startActivity(
-                            Intent(context, ImagePreviewActivity::class.java)
-                                .putExtra(utils.constants.KEY_MSG_MODEL, model)
-                                .putExtra(utils.constants.KEY_IMG_PATH, model.message.toString())
-                                .putExtra(utils.constants.KEY_LOCAL_PATH, model.file_local_path.toString())
+                            intentFor<ImagePreviewActivity>(utils.constants.KEY_MSG_MODEL to model,
+                                utils.constants.KEY_IMG_PATH to model.message.toString(),
+                                utils.constants.KEY_LOCAL_PATH to model.file_local_path.toString()
+                                )
                         )
                 }
 
@@ -2486,7 +2486,7 @@ class MessageActivity : AppCompatActivity() {
                         override fun onDestroyActionMode(p0: ActionMode?) {
                             selectedItemPosition.forEach {
                                 if(!isTranslatorPressed) {
-                                    messagesList.findViewHolderForAdapterPosition(it)?.getMessageLayout()?.background = unselectedDrawable
+                                    messagesList.findViewHolderForAdapterPosition(it)?.messageLayout?.background = unselectedDrawable
                                 }
                             }
 
@@ -2791,15 +2791,16 @@ class MessageActivity : AppCompatActivity() {
 
         searchView.setOnCloseListener {
 
-            upBtn.visibility = View.GONE
-            downBtn.visibility = View.GONE
+            upBtn.hide()
+            downBtn.hide()
 
             selectedPosition = -1
             searchQuery = ""
             searchView.onActionViewCollapsed()
-            searchFilterItemPosition.clear()
 
-            adapter.notifyDataSetChanged()
+            searchFilterItemPosition.forEach { adapter.notifyItemChanged(it) }
+
+            searchFilterItemPosition.clear()
 
             true
         }
@@ -3009,52 +3010,56 @@ class MessageActivity : AppCompatActivity() {
             }
 
         })
+
     }
-/*
-    private fun <T :RecyclerView.ViewHolder> getHolder(holder:RecyclerView.ViewHolder):T{
 
 
-        return when (holder) {
-            is Holders.TargetTextMsgHolder -> T as Holders.TargetTextMsgHolder
-            is Holders.MyTextMsgHolder -> holder as Holders.MyTextMsgHolder
-//
-//            is Holders.MyImageMsgHolder -> messageLayout
-//            is Holders.TargetImageMsgHolder -> messageLayout
-//
-//            is Holders.MyVideoMsgHolder -> messageLayout
-//            is Holders.TargetVideoMsgHolder -> messageLayout
-//
-//            is Holders.MyMapHolder -> messageLayout
-//            is Holders.TargetMapHolder -> messageLayout
-//
-//            is Holders.MyAudioHolder -> messageLayout
-//            is Holders.TargetAudioHolder -> messageLayout
 
-            else -> null
+
+    private val RecyclerView.ViewHolder.messageLayout: View?
+        get() {
+
+
+            return when (this) {
+                is Holders.TargetTextMsgHolder -> messageLayout
+                is Holders.MyTextMsgHolder -> messageLayout
+
+                is Holders.MyImageMsgHolder -> messageLayout
+                is Holders.TargetImageMsgHolder -> messageLayout
+
+                is Holders.MyVideoMsgHolder -> messageLayout
+                is Holders.TargetVideoMsgHolder -> messageLayout
+
+                is Holders.MyMapHolder -> messageLayout
+                is Holders.TargetMapHolder -> messageLayout
+
+                is Holders.MyAudioHolder -> messageLayout
+                is Holders.TargetAudioHolder -> messageLayout
+
+                else -> null
+            }
         }
 
-    }*/
+    private val RecyclerView.ViewHolder.messageTextView: TextView?
+        get() {
 
-    private fun RecyclerView.ViewHolder.getMessageLayout():View?{
-       return when (this) {
-            is Holders.TargetTextMsgHolder ->  messageLayout
-            is Holders.MyTextMsgHolder -> messageLayout
 
-            is Holders.MyImageMsgHolder -> messageLayout
-            is Holders.TargetImageMsgHolder -> messageLayout
+            return when (this) {
+                is Holders.TargetTextMsgHolder -> message
+                is Holders.MyTextMsgHolder -> message
 
-            is Holders.MyVideoMsgHolder -> messageLayout
-            is Holders.TargetVideoMsgHolder -> messageLayout
+                is Holders.MyImageMsgHolder -> message
+                is Holders.TargetImageMsgHolder -> message
 
-            is Holders.MyMapHolder -> messageLayout
-            is Holders.TargetMapHolder -> messageLayout
+                is Holders.MyVideoMsgHolder -> message
+                is Holders.TargetVideoMsgHolder -> message
 
-            is Holders.MyAudioHolder -> messageLayout
-            is Holders.TargetAudioHolder -> messageLayout
+                is Holders.MyMapHolder -> message
+                is Holders.TargetMapHolder -> message
 
-            else -> null
+                else -> null
+            }
         }
-    }
 
 
     private fun deleteSelectedMessages(actionMode: ActionMode?){
@@ -3064,19 +3069,21 @@ class MessageActivity : AppCompatActivity() {
             .setMessage("Delete selected messages?")
             .setPositiveButton("Yes") { _, _ ->
 
+                val totalMessages = selectedMessageIDs.size
+                //val shouldUpdateLastMessage = selectedItemPosition.contains(adapter.itemCount-1)
 
-                for ((index, messageID) in selectedMessageIDs.withIndex()) {
+                selectedMessageIDs.withIndex().forEach { (index, messageID) ->
                     FirebaseUtils.ref.getChatRef(myUID, targetUid)
                         .child(messageID)
                         .removeValue()
                         .addOnCompleteListener {
-                            if (index == selectedMessageIDs.lastIndex) {
-                                toast("Message deleted")
+                            if (index == totalMessages - 1) {
+                                messageInputField.snackbar("Message deleted")
 
                                 //if last message was deleted
-                                if(selectedItemPosition.contains(adapter.itemCount-1)){
+                                //if(shouldUpdateLastMessage){
                                     updateLastMessage()
-                                }
+                                //}
                             }
                         }
                 }
@@ -3121,7 +3128,7 @@ class MessageActivity : AppCompatActivity() {
                     var members = ""
 
 
-                    for(post in p0.children){
+                    p0.children.forEach { post ->
                         val member = post.getValue(Models.GroupMember::class.java)!!
                         groupMembers.add(member)
                         members += utils.getNameFromNumber(context, member.phoneNumber) +", "
@@ -3299,7 +3306,8 @@ class MessageActivity : AppCompatActivity() {
 
     private fun playAudio(path:String){
 
-        utils.startAudioIntent(context, path)
+        if(!isContextMenuActive)
+            utils.startAudioIntent(context, path)
 
     }
 
