@@ -15,7 +15,6 @@
             android:layout_width="160dp"
             android:layout_height="160dp"
             android:layout_marginTop="20dp"
-            app:civ_border_width="2dp"
             app:civ_circle_background_color="@color/white"
             android:scaleType="centerCrop"
             android:id="@+id/profile_circleimageview"
@@ -29,7 +28,7 @@
         android:layout_gravity="end"
 
         android:layout_marginTop="20dp"
-        android:src="@drawable/ic_add_blue"
+        android:src="@drawable/ic_add_red"
         android:id="@+id/profile_pick_btn"
         />
 

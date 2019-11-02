@@ -279,7 +279,7 @@ class MessagingService: FirebaseMessagingService() {
 
         notificationCompatBuilder.setChannelId(channelIDSingle)
 
-        val profilePicFile = File(utils.getProfilePicPath(this)+remoteMessage.data[KEY_SENDER]!!+".jpg")
+        val profilePicFile = File(utils.profilePicPath +remoteMessage.data[KEY_SENDER]!!+".jpg")
 
         val messages = getMessages(remoteMessage.data[KEY_MESSAGES]!!)
 

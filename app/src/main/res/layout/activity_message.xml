@@ -3,7 +3,6 @@
 
 <androidx.coordinatorlayout.widget.CoordinatorLayout android:layout_height="match_parent"
                                                      android:layout_width="match_parent"
-                                                     android:background="@color/white"
                                                      xmlns:android="http://schemas.android.com/apk/res/android"
                                                      xmlns:app="http://schemas.android.com/apk/res-auto">
 
@@ -103,7 +102,7 @@
                          android:orientation="horizontal"
                             android:id="@+id/smart_reply_layout"
                          android:gravity="center_vertical"
-                            android:background="@color/white"
+                      android:background="@color/white"
                          android:layout_height="wrap_content">
 
                <androidx.recyclerview.widget.RecyclerView android:layout_width="wrap_content"
@@ -131,6 +130,8 @@
                     android:layout_width="match_parent"
                     android:id="@+id/messageInputField"
                     android:background="@color/white"
+                    app:attachmentButtonDefaultBgColor="@color/white"
+                    app:inputBackground="@color/white"
                     app:attachmentButtonBackground="?android:selectableItemBackground"
                     app:attachmentButtonDefaultIconColor="@color/colorAccent"
                     app:inputButtonBackground="@drawable/round_badge"

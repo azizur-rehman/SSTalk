@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
 import com.google.android.material.navigation.NavigationView
 import androidx.core.view.GravityCompat
 import androidx.appcompat.app.ActionBarDrawerToggle
@@ -17,30 +18,43 @@ import android.util.Log
 import android.view.*
 import android.widget.TextView
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProviders
 import com.aurelhubert.ahbottomnavigation.AHBottomNavigationItem
+import com.aziz.sstalk.fragments.FragmentMyProfile
 import com.aziz.sstalk.fragments.FragmentOnlineFriends
+import com.aziz.sstalk.fragments.FragmentSearch
+import com.aziz.sstalk.fragments.OnlineVM
 import com.aziz.sstalk.models.Models
-import com.aziz.sstalk.utils.FirebaseUtils
-import com.aziz.sstalk.utils.Pref
-import com.aziz.sstalk.utils.utils
+import com.aziz.sstalk.utils.*
 import com.firebase.ui.database.FirebaseRecyclerAdapter
 import com.firebase.ui.database.FirebaseRecyclerOptions
+import com.google.android.gms.ads.AdListener
+import com.google.android.gms.ads.AdLoader
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.MobileAds
+import com.google.android.gms.ads.formats.UnifiedNativeAd
+import com.google.android.gms.ads.reward.RewardItem
+import com.google.android.gms.ads.reward.RewardedVideoAd
+import com.google.android.gms.ads.reward.RewardedVideoAdListener
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
+import com.miguelcatalan.materialsearchview.MaterialSearchView
 import de.hdodenhof.circleimageview.CircleImageView
 import kotlinx.android.synthetic.main.activity_home.*
 import kotlinx.android.synthetic.main.app_bar_home.*
 import kotlinx.android.synthetic.main.content_home.*
 import kotlinx.android.synthetic.main.content_home.recycler_back_message
+import kotlinx.android.synthetic.main.item_conversation_ad.view.*
 import kotlinx.android.synthetic.main.item_conversation_layout.view.*
-import kotlinx.android.synthetic.main.layout_menu_badge.view.*
 import kotlinx.android.synthetic.main.layout_recycler_view.*
 import org.jetbrains.anko.*
 import org.jetbrains.anko.design.indefiniteSnackbar
-import org.jetbrains.anko.design.longSnackbar
+import org.jetbrains.anko.design.snackbar
 import java.lang.Exception
+import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import kotlin.collections.ArrayList
 
@@ -52,6 +66,8 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     val id = R.drawable.contact_placeholder
     var isAnyMuted = false
     var unreadConversation = 0
+    
+    lateinit var rewardedVideoAd:RewardedVideoAd
 
     lateinit var adapter:FirebaseRecyclerAdapter<Models.LastMessageDetail, ViewHolder>
 
@@ -61,9 +77,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     var actionMode:ActionMode? = null
 
     var isContextToolbarActive = false
-    private var asyncLoader: Future<Boolean>? = null
     private var isOnlineFragmentLoaded = false
-    private val fragmentOnline = FragmentOnlineFriends()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -76,6 +90,9 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             finish()
             return
         }
+
+        MobileAds.initialize(this, getString(R.string.admob_id))
+        loadRewardedAd()
 
         //storing firebase token, if updated
         FirebaseUtils.updateFCMToken()
@@ -90,7 +107,6 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         toggle.syncState()
 
         show_contacts.setOnClickListener {
-
             startActivity(Intent(context, ContactsActivity::class.java))
         }
 
@@ -98,44 +114,42 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         conversation_progressbar.visibility = View.VISIBLE
         initComponents()
 
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT && BuildConfig.DEBUG) {
+            reportFullyDrawn()
+        }
     }
 
     private fun initComponents(){
         conversation_progressbar.visibility = View.GONE
-        asyncLoader = doAsyncResult {
+        nav_view.setNavigationItemSelectedListener(this@HomeActivity )
 
-            onComplete {  }
+        setBottomNavigationView()
 
-            activityUiThread {
-                nav_view.setNavigationItemSelectedListener(this@HomeActivity )
+        hasPermission = utils.hasContactPermission(this@HomeActivity) && utils.hasStoragePermission(context)
 
-                setBottomNavigationView()
-
-                hasPermission = utils.hasContactPermission(this@HomeActivity) && utils.hasStoragePermission(context)
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    if(!hasPermission) {
-                        requestPermissions(arrayOf(Manifest.permission.READ_CONTACTS, Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                            Manifest.permission.READ_EXTERNAL_STORAGE), 101)
-                    }
-                    else
-                        setAdapter()
-                }
-                else
-                    setAdapter()
-
-
-
-                //setting update navigation drawer
-                if(FirebaseUtils.isLoggedIn()) {
-
-                    (nav_view.getHeaderView(0).findViewById(R.id.nav_header_title) as TextView).text = FirebaseAuth.getInstance().currentUser!!.displayName
-                    (nav_view.getHeaderView(0).findViewById(R.id.nav_header_subtitle) as TextView).text = FirebaseAuth.getInstance().currentUser!!.phoneNumber
-                    FirebaseUtils.loadProfileThumbnail(this@HomeActivity, FirebaseUtils.getUid(),
-                        nav_view.getHeaderView(0).findViewById<CircleImageView>(R.id.drawer_profile_image_view))
-                }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if(!hasPermission) {
+                requestPermissions(arrayOf(Manifest.permission.READ_CONTACTS, Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                    Manifest.permission.READ_EXTERNAL_STORAGE), 101)
             }
+            else
+                setAdapter()
         }
+        else
+            setAdapter()
+
+
+
+        //setting update navigation drawer
+        if(FirebaseUtils.isLoggedIn()) {
+
+            (nav_view.getHeaderView(0).findViewById(R.id.nav_header_title) as TextView).text = FirebaseAuth.getInstance().currentUser!!.displayName
+            (nav_view.getHeaderView(0).findViewById(R.id.nav_header_subtitle) as TextView).text = FirebaseAuth.getInstance().currentUser!!.phoneNumber
+            FirebaseUtils.loadProfileThumbnail(this@HomeActivity, FirebaseUtils.getUid(),
+                nav_view.getHeaderView(0).findViewById<CircleImageView>(R.id.drawer_profile_image_view))
+        }
+
     }
 
 
@@ -147,8 +161,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     override fun onPause() {
 
-        if(utils.isAppIsInBackground(this))
-            FirebaseUtils.setMeAsOffline()
+        FirebaseUtils.setMeAsOffline()
         super.onPause()
     }
 
@@ -181,14 +194,19 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     override fun onBackPressed() {
         when {
             drawer_layout.isDrawerOpen(GravityCompat.START) -> drawer_layout.closeDrawer(GravityCompat.START)
-            isOnlineFragmentLoaded -> {
-                supportFragmentManager.beginTransaction()
-                    .remove(fragmentOnline)
-                    .commit()
+
+            supportFragmentManager.backStackEntryCount>0 -> {
+                repeat(supportFragmentManager.backStackEntryCount) {
+                    supportFragmentManager.popBackStackImmediate()
+                }
                 bottom_navigation_home.setCurrentItem(0, false)
                 isOnlineFragmentLoaded = false
+                title = "Recent"
+
             }
-            else -> super.onBackPressed()
+
+            searchView.isSearchOpen -> searchView.closeSearch()
+            else -> finish()
         }
     }
 
@@ -201,10 +219,6 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 startActivity(Intent(context, CreateGroupActivity::class.java))
             }
 
-            R.id.nav_my_profile -> {
-
-                startActivity(Intent(context, EditProfile::class.java))
-            }
             R.id.nav_setting -> {
 
                 startActivity(Intent(context, SettingsActivity::class.java))
@@ -218,6 +232,21 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 startActivity(Intent(this@HomeActivity, AboutTheDeveloperActivity::class.java))
             }
 
+            R.id.nav_support -> {
+
+                if(!rewardedVideoAd.isLoaded)
+                {
+                    bottom_navigation_home.snackbar("Ad not available at the moment","Try again"){
+                        loadRewardedAd()
+                    }
+                    return false
+                }
+
+                showConfirmDialog("Support us by watching a short video"){
+                    rewardedVideoAd.show()
+                }
+            }
+
         }
 
         drawer_layout.closeDrawer(GravityCompat.START)
@@ -226,6 +255,8 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
 
     private fun setAdapter(){
+
+        loadOnlineUsers()
 
         conversation_progressbar.visibility = View.VISIBLE
 
@@ -269,6 +300,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
                 }
 
+                loadNativeAd(holder.itemView, position)
 
 
                 FirebaseUtils.setMuteImageIcon(uid, holder.muteIcon)
@@ -276,7 +308,6 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 FirebaseUtils.setLastMessage(uid, holder.lastMessage, holder.deliveryTick)
 
 
-                holder.messageInfo.visibility = View.VISIBLE
 
                 holder.time.visibility = View.VISIBLE
 
@@ -284,14 +315,15 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
                 holder.time.text = utils.getHeaderFormattedDate(model.timeInMillis)
 
-                FirebaseUtils.setUnreadCount(uid, holder.unreadCount, holder.name, holder.lastMessage, holder.time)
+                Executors.newSingleThreadExecutor().submit { FirebaseUtils.setUnreadCount(uid, holder.unreadCount, holder.name, holder.lastMessage, holder.time) }
+
 
                 if(!isContextToolbarActive){
                     holder.checkbox.visibility = View.INVISIBLE
                     holder.checkbox.isChecked = false
                 }
 
-                holder.itemView.setOnClickListener {
+                holder.itemView.item_conversation_layout.setOnClickListener {
 
                     if(isContextToolbarActive){
 
@@ -312,9 +344,9 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                         if(selectedItemPosition.size==2)
                             actionMode?.invalidate()
 
-                        actionMode!!.title = selectedItemPosition.size.toString()
+                        actionMode?.title = selectedItemPosition.size.toString()
                         if(selectedItemPosition.isEmpty() && actionMode!=null)
-                            actionMode!!.finish()
+                            actionMode?.finish()
 
                         return@setOnClickListener
                     }
@@ -323,20 +355,14 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     catch (e:Exception){ 0 }
 
 
+                    startChat(uid, model.type, model.nameOrNumber, unreadCount)
 
-                    startActivity(Intent(context, MessageActivity::class.java)
-                        .apply {
-                            putExtra(FirebaseUtils.KEY_UID, uid)
-                            putExtra(utils.constants.KEY_TARGET_TYPE, model.type)
-                            putExtra(utils.constants.KEY_NAME_OR_NUMBER, model.nameOrNumber)
-                        putExtra(utils.constants.KEY_UNREAD, unreadCount) //optional
-                        }
-                    )
+
                 }
 
 
 
-                holder.itemView.setOnLongClickListener {
+                holder.itemView.item_conversation_layout.setOnLongClickListener {
 
                     if(isContextToolbarActive)
                         return@setOnLongClickListener false
@@ -356,7 +382,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     actionMode = startSupportActionMode(object : ActionMode.Callback {
                         override fun onActionItemClicked(p0: ActionMode?, p1: MenuItem?): Boolean {
 
-                            when(p1!!.itemId){
+                            when(p1?.itemId){
                                 R.id.action_delete_conversation -> {
                                     Log.d("HomeActivity", "onActionItemClicked: deleting pos = $selectedItemPosition")
                                     deleteSelectedConversations(selectedItemPosition.toMutableList())
@@ -372,13 +398,13 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                                 }
                             }
 
-                            p0!!.finish()
+                            p0?.finish()
                             return true
                         }
 
                         override fun onCreateActionMode(p0: ActionMode?, p1: Menu?): Boolean {
 
-                            p0!!.menuInflater.inflate(R.menu.converstation_option_menu, p1)
+                            p0?.menuInflater?.inflate(R.menu.converstation_option_menu, p1)
                             isContextToolbarActive = true
 
 
@@ -397,8 +423,11 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
                             Log.d("HomeActivity", "onDestroyActionMode: $selectedItemPosition")
 
-                            for(pos in selectedItemPosition)
-                                adapter.notifyItemChanged(pos)
+                            selectedItemPosition.forEach { pos ->
+                                val vh = conversationRecycler.findViewHolderForAdapterPosition(pos) as? ViewHolder
+                                vh?.checkbox?.visibility = View.INVISIBLE
+                                vh?.checkbox?.setChecked(false, true)
+                            }
 
                             selectedItemPosition.clear()
                             selectedRecipients.clear()
@@ -407,7 +436,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                         }
 
                     })
-                    actionMode!!.title = selectedItemPosition.size.toString()
+                    actionMode?.title = selectedItemPosition.size.toString()
 
                     true
                 }
@@ -485,14 +514,10 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
 
-
-
-
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
         val name = itemView.name!!
         val lastMessage = itemView.mobile_number!!
         val pic = itemView.pic!!
-        val messageInfo = itemView.messageInfoLayout!!
         val time = itemView.messageTime!!
         val unreadCount = itemView.unreadCount!!
         val onlineStatus = itemView.online_status_imageview!!
@@ -502,6 +527,8 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         init {
             onlineStatus.visibility = View.GONE
+            checkbox.isEnabled = false
+            muteIcon.visibility = View.GONE
         }
 
     }
@@ -509,9 +536,6 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     override fun onDestroy() {
 
         try {
-            if(asyncLoader?.isDone!!)
-                asyncLoader?.cancel(true)
-
 
             adapter.stopListening()
             FirebaseUtils.setMeAsOffline()
@@ -610,29 +634,54 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         title = "Recent"
 
+        supportFragmentManager.addOnBackStackChangedListener {
+            if(supportFragmentManager.backStackEntryCount == 0) {
+                show_contacts.show()
+            }
+            else show_contacts.hide()
+        }
+
+        val fragmentOnline = FragmentOnlineFriends()
+
 
         with(bottom_navigation_home){
             addItem(AHBottomNavigationItem("Recent", R.drawable.ic_chat))
-            addItem(AHBottomNavigationItem("Online", R.drawable.ic_person_outlined))
+            addItem(AHBottomNavigationItem("Online", R.drawable.ic_online_small))
+            addItem(AHBottomNavigationItem("My Profile", R.drawable.ic_person_outlined))
+
             accentColor = ContextCompat.getColor(context, R.color.colorPrimary)
 
             setUseElevation(true)
-            setOnTabSelectedListener { position, wasSelected ->
+            setOnTabSelectedListener { position, _ ->
+
+                repeat(supportFragmentManager.backStackEntryCount){supportFragmentManager.popBackStackImmediate()}
+
+
                 when(position){
                     0 ->  {
                         title = "Recent"
-                        supportFragmentManager.beginTransaction()
-                            .remove( fragmentOnline)
-                            .commit()
-                        isOnlineFragmentLoaded = false
+                        repeat(supportFragmentManager.backStackEntryCount) {
+                            supportFragmentManager.popBackStackImmediate()
+                        }
                     }
 
                     1 -> {
                         supportFragmentManager.beginTransaction()
                             .replace(R.id.homeLayoutContainer, fragmentOnline)
+                            .addToBackStack(null)
                             .commit()
-                        isOnlineFragmentLoaded = true
                         title = "Online contacts"
+                        //set online users
+                        if(onOnlineUsersLoaded == null)
+                        onOnlineUsersLoaded = fragmentOnline.setOnlineListener()
+
+                    }
+
+                    2 -> {
+                        supportFragmentManager.beginTransaction()
+                            .replace(R.id.homeLayoutContainer, FragmentMyProfile())
+                            .addToBackStack(null).commit()
+                        title = "My Profile"
                     }
                 }
 
@@ -647,11 +696,223 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
 
-    fun setOnlineCount(count:Int) {
+    private fun setOnlineCount(count:Int) {
         try {
             bottom_navigation_home.setNotification(count.toString().takeIf { count > 0 }?:"", 1)
         }
         catch (e:Exception){}
     }
 
+    private fun loadNativeAd(itemView:View, position:Int){
+
+
+
+        with(itemView){
+
+            conversation_native_ad.hide()
+
+
+            initAd {
+
+                
+                it?.let {
+
+                    when (position) {
+                        utils.constants.ads_after_items, utils.constants.ads_after_items * 2 -> {
+
+                        }
+                        else -> {
+                            conversation_native_ad.hide()
+                            return@initAd
+                        }
+                    }
+
+
+                    conversation_native_ad.iconView = itemView.pic
+
+                    itemView.ad_name.text = it.headline
+                    itemView.ad_side_text.text = it.advertiser
+                    itemView.ad_subtitle.text = it.body
+
+                    if(it.icon != null)
+                    itemView.ad_pic.setImageDrawable(it.icon.drawable)
+
+                    if(it.starRating != null)
+                        itemView.ad_rating.rating = it.starRating.toFloat()
+                    else
+                        itemView.ad_rating.hide()
+
+                    with(itemView){
+                        ad_call_to_action.text = it.callToAction
+
+                        conversation_native_ad.callToActionView = ad_call_to_action
+                        conversation_native_ad.bodyView = ad_subtitle
+                        conversation_native_ad.headlineView = ad_name
+                        conversation_native_ad.advertiserView = ad_side_text
+                        conversation_native_ad.iconView = ad_pic
+                    }
+
+
+                    it.enableCustomClickGesture()
+                    conversation_native_ad.show()
+
+                conversation_native_ad.setNativeAd(it)
+
+                }
+        }
+
+    }
+
+
+}
+
+    private lateinit var adLoader:AdLoader
+    private fun initAd(onLoaded: ((unifiedNativeAd:UnifiedNativeAd?) -> Unit)? = null){
+
+        var unifiedNativeAd:UnifiedNativeAd? = null
+
+        adLoader = AdLoader.Builder(this, getString(R.string.native_ad_conversation))
+            .forUnifiedNativeAd {
+                unifiedNativeAd = it
+                onLoaded?.invoke(it)
+            }
+            .withAdListener(object : AdListener() {
+
+                override fun onAdLoaded() {
+                    Log.d("HomeActivity", "onAdLoaded: ")
+                    onLoaded?.invoke(unifiedNativeAd)
+                    super.onAdLoaded()
+                }
+
+                override fun onAdFailedToLoad(p0: Int) {
+                    super.onAdFailedToLoad(p0)
+                    Log.d("HomeActivity", "onAdFailedToLoad: code = $p0")
+                    onLoaded?.invoke(null)
+
+                }
+            })
+            .build()
+
+        adLoader.loadAds(AdRequest.Builder().addTestDevice(utils.constants.redmi_note_3_test_device_id).build(), 5)
+
+    }
+    
+
+    private fun loadRewardedAd(){
+
+        rewardedVideoAd = MobileAds.getRewardedVideoAdInstance(this)
+        rewardedVideoAd.rewardedVideoAdListener = object : RewardedVideoAdListener{
+            override fun onRewardedVideoAdClosed() {}
+
+            override fun onRewardedVideoAdLeftApplication() {
+            }
+
+            override fun onRewardedVideoAdLoaded() {
+            }
+
+            override fun onRewardedVideoAdOpened() {
+            }
+
+            override fun onRewardedVideoCompleted() {
+            }
+
+            override fun onRewarded(p0: RewardItem?) {
+                bottom_navigation_home.snackbar("Thank you for your support")
+            }
+
+            override fun onRewardedVideoStarted() {
+            }
+
+            override fun onRewardedVideoAdFailedToLoad(p0: Int) {
+            }
+
+        }
+        rewardedVideoAd.loadAd(getString(R.string.rewarded_ad_unit), AdRequest.Builder()
+            .addTestDevice(utils.constants.redmi_note_3_test_device_id).build())
+    }
+
+
+
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_search, menu)
+
+        searchView.setMenuItem(menu?.findItem(R.id.action_search))
+
+        val searchFragment = FragmentSearch()
+        var onSearched:OnSearched? = null
+
+        searchFragment.setOnItemClickedListener(object : FragmentSearch.OnItemClicked {
+            override fun onClicked() {
+                Handler().postDelayed({ searchView.closeSearch()},500)
+            }
+        }
+        )
+
+
+
+        searchView.setOnSearchViewListener(object : MaterialSearchView.SearchViewListener{
+            override fun onSearchViewClosed() {
+                // detach search fragment
+                repeat(supportFragmentManager.backStackEntryCount)
+                {
+                    supportFragmentManager.popBackStackImmediate()
+                }
+                bottom_navigation_home.show()
+                show_contacts.show()
+
+            }
+
+            override fun onSearchViewShown() {
+                // attach search fragment
+                supportFragmentManager.beginTransaction().replace(R.id.homeLayoutContainer, searchFragment).addToBackStack(null).commit()
+                onSearched = searchFragment.setSearchAdapter()
+                bottom_navigation_home.hide()
+                show_contacts.hide()
+
+            }
+
+        })
+
+        searchView.setOnQueryTextListener(object : MaterialSearchView.OnQueryTextListener{
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                onSearched?.onSubmit(query.orEmpty())
+                return false
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                onSearched?.onQueryChanged(newText.orEmpty())
+                return newText.isNullOrEmpty()
+            }
+
+        })
+
+        return super.onCreateOptionsMenu(menu)
+    }
+
+    var onlineUsers:List<Models.Contact> = listOf()
+    private fun loadOnlineUsers(){
+
+        ViewModelProviders.of(this)[OnlineVM::class.java]
+            .getOnlineUsers(context)
+            .observe(this, Observer { onlineUsers ->
+
+               setOnlineCount(onlineUsers.size)
+                this.onlineUsers = onlineUsers
+                onOnlineUsersLoaded?.onLoaded(onlineUsers)
+
+            })
+
+    }
+
+
+    var onOnlineUsersLoaded:OnlineUsersLoaded? = null
+    interface OnlineUsersLoaded{
+        fun onLoaded(users:List<Models.Contact>)
+    }
+
+    interface OnSearched{
+        fun onSubmit(query:String)
+        fun onQueryChanged(newQuery:String)
+    }
 }

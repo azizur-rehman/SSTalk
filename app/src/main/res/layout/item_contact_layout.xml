@@ -1,45 +1,82 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:layout_width="match_parent" xmlns:app="http://schemas.android.com/apk/res-auto"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent" xmlns:app="http://schemas.android.com/apk/res-auto"
               android:orientation="horizontal"
+        android:paddingTop="5dp"
+        android:paddingLeft="5dp"
+        android:paddingBottom="5dp"
               android:layout_height="wrap_content">
+
+
+    <TextView
+            android:id="@+id/messageTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_marginRight="8dp"
+            android:textSize="12sp"
+            app:layout_constraintBottom_toBottomOf="@+id/name"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/name" />
+
+
+    <TextView
+            android:id="@+id/name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+
+            android:layout_marginStart="20dp"
+            android:layout_marginLeft="20dp"
+            android:layout_marginBottom="8dp"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:textColor="@color/black"
+            android:textSize="18sp"
+            app:layout_constraintBottom_toBottomOf="@+id/pic"
+            app:layout_constraintStart_toEndOf="@+id/pic"
+            app:layout_constraintTop_toTopOf="@+id/pic"
+            app:layout_constraintVertical_bias="0.521" />
+
     <de.hdodenhof.circleimageview.CircleImageView
             android:id="@+id/pic"
-            android:layout_width="42dp"
-            android:layout_margin="15dp"
-            android:layout_height="42dp"
-            app:civ_border_width="0.5dp"
-            app:civ_circle_background_color="@color/colorPrimary"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_margin="10dp"
+            android:src="@drawable/contact_placeholder"
             app:civ_border_color="@color/colorAccent"
-            android:src="@drawable/contact_placeholder" />
+            app:civ_circle_background_color="@color/colorPrimary"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
-    <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_gravity="center"
-            android:gravity="center_vertical"
-            android:orientation="vertical"
-            android:paddingLeft="20dp">
+    <com.aziz.sstalk.views.AnimCheckBox
+            android:id="@+id/checkbox"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_gravity="end|bottom"
+            android:visibility="invisible"
+            app:checked="false"
+            android:clickable="false"
+            app:circle_color="@color/color4"
+            app:layout_constraintBottom_toBottomOf="@+id/pic"
+            app:layout_constraintEnd_toEndOf="@+id/pic"
+            app:stroke_color="@color/white"
+            app:stroke_width="2dp" />
 
-        <TextView
-                android:id="@+id/name"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:gravity="center_vertical"
-                android:layout_weight="1"
-                android:textColor="@color/black"
+    <View
+            android:id="@+id/view"
+            android:layout_width="0dp"
+            android:layout_height="0.1dp"
+            android:layout_marginStart="2dp"
+            android:layout_marginLeft="2dp"
+            android:layout_marginTop="21dp"
+            android:background="@color/gray_light"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="@+id/name"
+            app:layout_constraintTop_toBottomOf="@+id/name" />
 
-                android:text="User name"
-                android:textSize="16sp" />
-
-
-        <View android:layout_width="match_parent"
-              android:layout_height="0.1dp"
-              android:background="@color/colorPrimary"/>
-
-
-    </LinearLayout>
-
-</LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

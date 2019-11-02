@@ -39,7 +39,6 @@ class AboutTheDeveloperActivity : AppCompatActivity(){
             .addItem(Element("Feedback to the developer",android.R.drawable.ic_dialog_info).setOnClickListener
             { showFeedbackDialog(FirebaseUtils.getUid()) })
 
-        Log.d("about", "onCreate: uid = ${FirebaseUtils.getUid()}")
 
         if(FirebaseUtils.getUid()  == utils.constants.debugUserID ||
                 FirebaseUtils.getUid() == "LPVjVKbpTzeUDpank04sxkoparE2" ||

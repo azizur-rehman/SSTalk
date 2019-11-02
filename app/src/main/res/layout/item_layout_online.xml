@@ -4,7 +4,7 @@
               android:orientation="horizontal"
               android:layout_height="wrap_content">
 
-    <include layout="@layout/item_contact_layout_2"
+    <include layout="@layout/item_contact_layout"
              android:layout_height="wrap_content"
     android:layout_weight="1"
              android:layout_width="0dp"

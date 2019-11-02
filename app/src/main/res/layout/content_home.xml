@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <FrameLayout android:layout_height="match_parent"
-             android:layout_width="match_parent"
-             android:id="@+id/homeLayoutContainer"
-             xmlns:app="http://schemas.android.com/apk/res-auto"
-             android:fitsSystemWindows="true"
-             app:layout_behavior="@string/appbar_scrolling_view_behavior"
-             xmlns:android="http://schemas.android.com/apk/res/android">
+        android:layout_width="match_parent"
+        android:id="@+id/homeLayoutContainer"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:fitsSystemWindows="true"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        xmlns:android="http://schemas.android.com/apk/res/android">
 
 
     <ProgressBar android:layout_width="wrap_content"
-                 android:layout_gravity="center"
-                 android:id="@+id/conversation_progressbar"
-                 android:layout_height="wrap_content"/>
+            android:layout_gravity="center"
+            android:id="@+id/conversation_progressbar"
+            android:layout_height="wrap_content"/>
 
 
 
@@ -24,21 +24,22 @@
             android:layout_height="match_parent"
             android:clipToPadding="false"
             app:stackFromEnd="false"
+            android:layoutAnimation="@anim/layout_anim_recycler"
             android:paddingBottom="100dp"
             android:id="@+id/conversationRecycler"
             tools:showIn="@layout/app_bar_home"/>
 
 
     <TextView android:layout_width="match_parent" android:layout_height="match_parent"
-              android:gravity="center"
-              android:id="@+id/recycler_back_message"
-              android:text="You have no conversation so far. Tap to choose from contact"
-              style="@style/ChatHeaderTitle"
-              android:textColor="@color/gray_dark"
-              android:fontFamily="@font/segoeui"
-              android:textSize="16sp"
-              android:visibility="gone"
-    />
+            android:gravity="center"
+            android:id="@+id/recycler_back_message"
+            android:text="You have no conversation so far. Tap to choose from contact"
+            style="@style/ChatHeaderTitle"
+            android:textColor="@color/gray_dark"
+            android:fontFamily="@font/segoeui"
+            android:textSize="16sp"
+            android:visibility="gone"
+            />
 
 
 </FrameLayout>

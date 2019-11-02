@@ -2,127 +2,70 @@ package com.aziz.sstalk.fragments
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.fragment.app.Fragment
-import androidx.recyclerview.widget.RecyclerView
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelProviders
+import androidx.recyclerview.widget.RecyclerView
 import com.aziz.sstalk.HomeActivity
 import com.aziz.sstalk.MessageActivity
 import com.aziz.sstalk.R
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.utils
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.ValueEventListener
-import kotlinx.android.synthetic.main.item_contact_layout_2.view.*
+import com.aziz.sstalk.utils.visible
+import kotlinx.android.synthetic.main.item_contact_layout.view.*
 import kotlinx.android.synthetic.main.layout_recycler_view.*
 import kotlinx.android.synthetic.main.layout_recycler_view.view.*
-import org.jetbrains.anko.collections.forEachWithIndex
-import java.lang.Exception
 
 class FragmentOnlineFriends : Fragment() {
+
+    private var rootView:View? = null
+
+    fun setOnlineListener() = object : HomeActivity.OnlineUsersLoaded{
+        override fun onLoaded(users: List<Models.Contact>) {
+            //setOnlineAdapter(users)
+        }
+
+    }
 
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
 
         val view = inflater.inflate(R.layout.layout_recycler_view,container, false)
-        loadRegisteredUsers(view)
+        rootView = view
+
+        activity?.let {
+
+        ViewModelProviders.of(activity!!)[OnlineVM::class.java]
+            .getOnlineUsers(context)
+            .observe(it, Observer { contacts ->
+                Log.d("FragmentOnlineFriends", "onCreateView: $contacts")
+                setOnlineAdapter(contacts, view)
+            })
+
+    }
+
         return view
 
 
     }
 
 
-    private fun loadRegisteredUsers(view: View){
-
-        if(!utils.hasContactPermission(context!!))
-            return
 
 
 
-        FirebaseUtils.ref.allUser()
-            .addValueEventListener(object : ValueEventListener{
-                override fun onDataChange(p0: DataSnapshot) {
+    private fun setOnlineAdapter(onlineUsers: List<Models.Contact>, view:View){
 
 
-                    if(context == null)
-                        return
-
-                    val numberList: MutableList<Models.Contact> = utils.getContactList(context)
-                    val registeredAvailableUser:MutableList<Models.Contact> = mutableListOf()
+        Log.e("FragmentOnlineFriends", "setOnlineAdapter: root view is null = ${view == null}, list size = ${onlineUsers.size}")
 
 
-                    registeredAvailableUser.clear()
-
-                    for (post in p0.children){
-                        val userModel = post.getValue(Models.User ::class.java)
-
-                        val number = utils.getFormattedTenDigitNumber(userModel!!.phone)
-                        val uid = userModel.uid
-
-
-                        for((index, item) in numberList.withIndex()) {
-                            if (item.number == number || item.number.contains(number)) {
-                                numberList[index].uid = uid
-                                if(uid!=FirebaseUtils.getUid() && !registeredAvailableUser.contains(numberList[index]))
-                                    registeredAvailableUser.add(numberList[index])
-                            }
-
-                        }
-
-                    }
-
-
-                    val onlineUsers = mutableListOf<Models.Contact>()
-
-
-                    registeredAvailableUser.forEachWithIndex { _, it ->
-                        FirebaseUtils.ref.userStatus(it.uid)
-                        .addValueEventListener(object : ValueEventListener {
-                            override fun onCancelled(p0: DatabaseError) {
-                            }
-
-                            override fun onDataChange(p0: DataSnapshot) {
-
-                                if(!p0.exists())
-                                    return
-
-                                val onlineStatus = p0.getValue(Models.UserActivityStatus::class.java)
-
-                                if(onlineStatus?.status == FirebaseUtils.VAL_ONLINE ||
-                                        onlineStatus?.status!!.startsWith(FirebaseUtils.VAL_TYPING)) {
-                                    if (!onlineUsers.contains(it)) {
-                                        onlineUsers.add(it)
-                                    }
-                                }
-                                else
-                                    onlineUsers.remove(it)
-
-                                try {
-                                    setOnlineAdapter(onlineUsers, view)
-                                }
-                                catch (e:Exception){ }
-                            }
-
-                        })}
-
-
-                }
-
-                override fun onCancelled(p0: DatabaseError) {
-                }
-
-            })
-    }
-
-    private fun setOnlineAdapter(onlineUsers:MutableList<Models.Contact>, view: View){
-
-
-        recycler_back_message.visibility =if(onlineUsers.isNotEmpty()) View.GONE
-        else View.VISIBLE
+        view.recycler_back_message?.visible =onlineUsers.isEmpty()
 
         class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
             val name = itemView.name
@@ -130,10 +73,7 @@ class FragmentOnlineFriends : Fragment() {
 
         }
 
-       try { (context as HomeActivity).setOnlineCount(onlineUsers.size) }
-       catch (e:Exception){}
-
-        view.recyclerView.adapter = object : RecyclerView.Adapter<ViewHolder>() {
+        view.recyclerView?.adapter = object : RecyclerView.Adapter<ViewHolder>() {
             override fun onCreateViewHolder(p0: ViewGroup, p1: Int): ViewHolder {
                 return ViewHolder(layoutInflater.inflate(R.layout.item_layout_online,
                     p0, false))

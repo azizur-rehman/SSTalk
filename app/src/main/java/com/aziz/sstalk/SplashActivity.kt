@@ -6,6 +6,9 @@ import android.os.Bundle
 import android.os.Handler
 import android.view.View
 import com.aziz.sstalk.utils.FirebaseUtils
+import com.crashlytics.android.Crashlytics
+import io.fabric.sdk.android.Fabric
+import java.lang.Exception
 
 class SplashActivity : AppCompatActivity() {
 
@@ -17,7 +20,13 @@ class SplashActivity : AppCompatActivity() {
         if(FirebaseUtils.isLoggedIn()){
             startActivity(Intent(this, HomeActivity::class.java))
             finish()
+            try {
+                if (Fabric.isInitialized())
+                    Crashlytics.setUserIdentifier(FirebaseUtils.getUid())
+            }
+            catch (e:Exception){e.printStackTrace()}
         }
+
 
     }
 

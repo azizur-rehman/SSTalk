@@ -1,15 +1,35 @@
 package com.aziz.sstalk.views
 
+import android.content.res.ColorStateList
+import android.graphics.Color
+import android.graphics.ColorFilter
+import android.os.Build
 import androidx.recyclerview.widget.RecyclerView
 import android.view.View
+import com.aziz.sstalk.R
+import com.aziz.sstalk.utils.visible
+import kotlinx.android.synthetic.main.bubble_audio_left.view.*
+import kotlinx.android.synthetic.main.bubble_audio_left.view.audio_progress_bar
+import kotlinx.android.synthetic.main.bubble_audio_right.view.*
+import kotlinx.android.synthetic.main.bubble_audio_right.view.time_right
 import kotlinx.android.synthetic.main.bubble_image_left.view.*
 import kotlinx.android.synthetic.main.bubble_image_right.view.*
 import kotlinx.android.synthetic.main.bubble_left.view.*
+import kotlinx.android.synthetic.main.bubble_left.view.circle_sender_text
+import kotlinx.android.synthetic.main.bubble_left.view.container_left
+import kotlinx.android.synthetic.main.bubble_left.view.header_left
+import kotlinx.android.synthetic.main.bubble_left.view.messageText_sender_left
+import kotlinx.android.synthetic.main.bubble_left.view.time_left
 import kotlinx.android.synthetic.main.bubble_map_left.view.*
 import kotlinx.android.synthetic.main.bubble_map_right.view.*
 import kotlinx.android.synthetic.main.bubble_right.view.*
+import kotlinx.android.synthetic.main.bubble_right.view.container_right
+import kotlinx.android.synthetic.main.bubble_right.view.header_right
 import kotlinx.android.synthetic.main.bubble_video_left.view.*
 import kotlinx.android.synthetic.main.bubble_video_right.view.*
+import kotlinx.android.synthetic.main.layout_item_audio.view.*
+import kotlinx.android.synthetic.main.layout_item_audio.view.delivery_status
+import kotlinx.android.synthetic.main.layout_video_bubble.view.*
 import kotlinx.android.synthetic.main.text_header.view.*
 
 object Holders {
@@ -22,7 +42,6 @@ object Holders {
         val container = itemView.container_left!!
         val messageLayout = itemView.message_layout_text_left!!
         val senderIcon = itemView.circle_sender_text!!
-        val bubbleContainer = itemView.bubble_container_left_text!!
         val senderTitle = itemView.messageText_sender_left!!
 
     }
@@ -33,7 +52,6 @@ object Holders {
         val headerDateTime = itemView.header_right!!
         val container = itemView.container_right!!
         val messageLayout = itemView.message_layout_text_right!!
-        val bubbleContainer = itemView.bubble_container_right_text!!
 
 
     }
@@ -77,17 +95,17 @@ object Holders {
 
     class MyVideoMsgHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
         val message = itemView.messageText_video_right!!
-        val time = itemView.time_video_right!!
-        val centerImageView = itemView.imageview_video_right!!
-        val progressBar = itemView.progress_bar_video_right!!
-        val tapToRetry = itemView.tap_retry_video_right!!
+        val time = itemView.time_video!!
+        val centerImageView = itemView.imageview_video!!
+        val progressBar = itemView.progress_bar_video!!
+        val tapToRetry = itemView.tap_retry_download_video!!
         val messageStatus = itemView.delivery_video_status!!
         val headerDateTime = itemView.header_video_right!!
-        val videoLayout = itemView.videoFrameLayoutRight!!
-        val thumbnail = itemView.thumbnail_right!!
-        val videoLengthText = itemView.video_length_right!!
 
-        val tap_to_download = itemView.tap_retry_download_video_right!!
+        val thumbnail = itemView.video_thumbnail!!
+        val videoLengthText = itemView.video_length!!
+
+        val tap_to_download = itemView.tap_retry_download_video!!
         val container = itemView.container_video_right!!
 
         val messageLayout = itemView.message_layout_video_right!!
@@ -100,14 +118,14 @@ object Holders {
 
     class TargetVideoMsgHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
         val message = itemView.messageText_video_left!!
-        val time = itemView.time_video_left!!
-        val centerImageView = itemView.imageview_video_left!!
+        val time = itemView.time_video!!
+        val centerImageView = itemView.imageview_video!!
         val headerDateTime = itemView.header_video_left!!
-        val videoLayout = itemView.videoFrameLayoutLeft!!
-        val thumbnail = itemView.thumbnail_left!!
-        val progressBar = itemView.progress_bar_video_left!!
-        val videoLengthText = itemView.video_length_left!!
-        val tap_to_download = itemView.tap_retry_download_video_left!!
+        val videoLayout = itemView.videoFrameLayout!!
+        val thumbnail = itemView.video_thumbnail!!
+        val progressBar = itemView.progress_bar_video!!
+        val videoLengthText = itemView.video_length!!
+        val tap_to_download = itemView.tap_retry_download_video!!
         val container = itemView.container_video_left!!
 
         val messageLayout = itemView.message_layout_video_left!!
@@ -153,6 +171,47 @@ object Holders {
     class TextHeaderHolder(itemView: View): RecyclerView.ViewHolder(itemView){
         val text = itemView.header_textView!!
         val dateTextView = itemView.header_date_text!!
+    }
+
+    class MyAudioHolder(itemView: View): RecyclerView.ViewHolder(itemView){
+        val title = itemView.item_audio_title!!
+        val dateTextView = itemView.header_right!!
+        val time = itemView.time_right!!
+        val lengthOrSize = itemView.item_audio_length_size!!
+        val audioProgressBar = itemView.audio_progress_bar!!
+        val messageLayout = itemView.message_layout_audio_right!!
+        val audioIcon = itemView.item_audio_icon!!
+        val messageStatus = itemView.delivery_status!!
+
+        init {
+            itemView.item_audio_container.setBackgroundResource(R.drawable.shape_bubble_right)
+            val color = Color.WHITE
+            title.setTextColor(color)
+            lengthOrSize.setTextColor(color)
+            audioIcon.setColorFilter(color)
+            audioProgressBar.progress = 0f
+        }
+    }
+
+    class TargetAudioHolder(itemView: View): RecyclerView.ViewHolder(itemView){
+        val title = itemView.item_audio_title!!
+        val dateTextView = itemView.header_left!!
+        val time = itemView.time_left!!
+        val lengthOrSize = itemView.item_audio_length_size!!
+        val audioProgressBar = itemView.audio_progress_bar!!
+        val messageLayout = itemView.message_layout_audio_left!!
+        val audioIcon = itemView.item_audio_icon!!
+        val senderTitle = itemView.sender!!
+
+        init {
+            itemView.item_audio_container.setBackgroundResource(R.drawable.shape_bubble_left)
+            val color = Color.BLACK
+            title.setTextColor(color)
+            lengthOrSize.setTextColor(color)
+            audioIcon.setColorFilter(color)
+            itemView.delivery_status.visible = false
+            audioProgressBar.progress = 0f
+        }
     }
 
 }

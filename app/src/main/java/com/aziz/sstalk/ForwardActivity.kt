@@ -11,15 +11,17 @@ import android.os.Bundle
 import android.os.Parcelable
 import android.provider.MediaStore
 import com.google.android.material.snackbar.Snackbar
-import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.RecyclerView
 import android.util.Log
+import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Filter
+import android.widget.Filterable
+import android.widget.TextView
 import com.aziz.sstalk.models.Models
-import com.aziz.sstalk.utils.FirebaseUtils
-import com.aziz.sstalk.utils.utils
+import com.aziz.sstalk.utils.*
 import com.firebase.ui.database.FirebaseRecyclerAdapter
 import com.firebase.ui.database.FirebaseRecyclerOptions
 import com.google.android.gms.tasks.Continuation
@@ -29,8 +31,8 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.UploadTask
+import com.miguelcatalan.materialsearchview.MaterialSearchView
 import kotlinx.android.synthetic.main.activity_forward.*
-import kotlinx.android.synthetic.main.item__forward_contact_list.view.*
 import kotlinx.android.synthetic.main.item_contact_layout.view.*
 import me.shaohui.advancedluban.Luban
 import me.shaohui.advancedluban.OnCompressListener
@@ -41,13 +43,15 @@ import org.jetbrains.anko.onComplete
 import org.jetbrains.anko.uiThread
 import java.io.File
 import java.lang.Exception
+import java.util.*
 import java.util.concurrent.Future
+import kotlin.collections.ArrayList
 
 class ForwardActivity : AppCompatActivity() {
 
-    val selectedUIDs:MutableList<String> = ArrayList()
-    val selectedTitles:MutableList<String> = ArrayList()
-    val selectedNumbers:MutableList<String> = ArrayList()
+    private val selectedUIDs:MutableList<String> = ArrayList()
+    private val selectedTitles:MutableList<String> = ArrayList()
+    private val selectedNumbers:MutableList<String> = ArrayList()
 
     val allFrequentUIDs:MutableList<String> = ArrayList()
 
@@ -60,6 +64,10 @@ class ForwardActivity : AppCompatActivity() {
     //number list has 10 digit formatted number
     var numberList:MutableList<Models.Contact> = mutableListOf()
     var registeredAvailableUser:MutableList<Models.Contact> = mutableListOf()
+
+
+    private lateinit var allAvailableUsers:MutableList<Models.Contact>
+
 
     var nameOfRecipient :String = ""
 
@@ -84,9 +92,7 @@ class ForwardActivity : AppCompatActivity() {
 
         setSupportActionBar(toolbar)
 
-
-        if(supportActionBar!=null)
-            supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         if(!FirebaseUtils.isLoggedIn()){
             startActivity(packageManager.getLaunchIntentForPackage(packageName))
@@ -108,10 +114,8 @@ class ForwardActivity : AppCompatActivity() {
 
         myUID = FirebaseUtils.getUid()
 
-        try {
-            messageModels = intent.getSerializableExtra(utils.constants.KEY_MSG_MODEL) as MutableList<Models.MessageModel>
-        }
-        catch (e:Exception){ messageModels = ArrayList()}
+        messageModels = intent.getSerializableExtra(utils.constants.KEY_MSG_MODEL) as? MutableList<Models.MessageModel>
+
 
         if(messageModels.isNullOrEmpty())
             handleIncomingIntents(intent)
@@ -298,10 +302,10 @@ class ForwardActivity : AppCompatActivity() {
         if(intent.action == Intent.ACTION_SEND){
             when {
                 intent.type == "text/plain" -> {
-                    val text = intent.getStringExtra(Intent.EXTRA_TEXT)
-                    messageModels!!.add(Models.MessageModel(text ))
+                    val text = intent.getStringExtra(Intent.EXTRA_TEXT)?:return
+                    messageModels?.add(Models.MessageModel(text ))
                     isTextFromIntent = true
-                    caption_layout.visibility = View.GONE
+                    caption_layout?.visibility = View.GONE
                 }
                 intent.type?.startsWith( "image/")?:false -> {
 
@@ -340,7 +344,7 @@ class ForwardActivity : AppCompatActivity() {
                         finish()
                     }
 
-                        videoLength.text = utils.getVideoLength(context, videoFile.path)
+                        videoLength.text = utils.getAudioVideoLength(context, videoFile.path)
 
                      utils.setVideoThumbnailFromWebAsync(context, videoFile.path, preview)
 
@@ -394,7 +398,6 @@ class ForwardActivity : AppCompatActivity() {
                        task.exception?.let {
                            throw it
                        }
-//                       FirebaseUtils.storeFileMetaData(messageID, task.result!!.metadata!!)
 
                    }
                    return@Continuation ref.downloadUrl
@@ -438,13 +441,14 @@ class ForwardActivity : AppCompatActivity() {
 
         adapter = object : FirebaseRecyclerAdapter<Models.LastMessageDetail, ViewHolder>(options){
             override fun onCreateViewHolder(p0: ViewGroup, p1: Int): ViewHolder =
-                ViewHolder(layoutInflater.inflate(R.layout.item__forward_contact_list, p0, false))
+                ViewHolder(layoutInflater.inflate(R.layout.item_contact_layout, p0, false))
 
             override fun onBindViewHolder(holder: ViewHolder, position: Int, model: Models.LastMessageDetail) {
 
                 val uid = super.getRef(position).key.toString()
 
                 val type = model.type
+                holder.lastMessageTime.text = utils.getHeaderFormattedDate(model.timeInMillis)
 
                 bindHolder(holder, uid,model.nameOrNumber, type)
 
@@ -479,14 +483,41 @@ class ForwardActivity : AppCompatActivity() {
     }
 
 
+    val recyclerFilter = object : Filter(){
+        override fun performFiltering(p0: CharSequence?): FilterResults {
+            val query = p0.toString().toLowerCase(Locale.getDefault()).trim()
+
+            registeredAvailableUser = allAvailableUsers
+
+            registeredAvailableUser = registeredAvailableUser.filter { it.name.toLowerCase().contains(query)
+                    ||  it.number.toLowerCase().contains(query)}.toMutableList()
+
+            return FilterResults().apply { values = registeredAvailableUser; count = registeredAvailableUser.size }
+
+        }
+
+        override fun publishResults(p0: CharSequence?, p1: FilterResults?) {
+            p1?.let {
+                allContactAdapter?.notifyDataSetChanged()
+            }
+        }
+
+    }
 
     private fun setAllContactAdapter(){
 
-        Log.d("ForwardActivity", "setAllContactAdapter: $registeredAvailableUser")
+        registeredAvailableUser.sortBy { it.name }
+        allAvailableUsers = registeredAvailableUser
 
-        allContactAdapter = object : RecyclerView.Adapter<ViewHolder>(){
+
+        allContactAdapter = object : RecyclerView.Adapter<ViewHolder>(), Filterable{
+
+            override fun getFilter(): Filter {
+                return recyclerFilter
+            }
+
             override fun onCreateViewHolder(p0: ViewGroup, p1: Int): ViewHolder =
-                ViewHolder(layoutInflater.inflate(R.layout.item__forward_contact_list, p0, false))
+                ViewHolder(layoutInflater.inflate(R.layout.item_contact_layout, p0, false))
 
 
             override fun getItemCount(): Int = registeredAvailableUser.size
@@ -545,11 +576,14 @@ class ForwardActivity : AppCompatActivity() {
             checkIfInGroup(uid, holder)
         }
 
+        holder.checkBox.isChecked = selectedUIDs.contains(uid)
+        holder.checkBox.visible = holder.checkBox.isChecked
 
 
         holder.itemView.setOnClickListener {
             holder.checkBox.isChecked = !holder.checkBox.isChecked
 
+            holder.checkBox.visible = holder.checkBox.isChecked
 
             if(holder.checkBox.isChecked) {
                 selectedUIDs.add(uid)
@@ -568,9 +602,7 @@ class ForwardActivity : AppCompatActivity() {
 
             sendBtn.visibility = if(selectedUIDs.isEmpty()) View.GONE else View.VISIBLE
 
-            if(selectedUIDs.isEmpty()) {fwd_snackbar!!.dismiss()
-            nameOfRecipient = ""
-            }
+            if(selectedUIDs.isEmpty()) { fwd_snackbar!!.dismiss(); nameOfRecipient = "" }
             else { if(!fwd_snackbar!!.isShown) fwd_snackbar!!.show() }
 
         }
@@ -681,14 +713,42 @@ class ForwardActivity : AppCompatActivity() {
          val title = view.name!!
          val pic = view.pic!!
          val checkBox = view.checkbox!!
+         val lastMessageTime:TextView = view.messageTime
 
+        init {
+            checkBox.isEnabled = false
+        }
     }
 
 
 
-    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if(item.itemId == android.R.id.home)
         finish()
         return super.onOptionsItemSelected(item)
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+
+        menuInflater.inflate(R.menu.menu_search, menu)
+         menu?.findItem(R.id.action_search)?.let { searchView.setMenuItem(it) }
+        searchView.setOnQueryTextListener(object : MaterialSearchView.OnQueryTextListener{
+            override fun onQueryTextSubmit(query: String?): Boolean {
+
+                (allContactAdapter as? Filterable)?.filter?.filter(query)
+
+                return query.isNullOrEmpty()
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+
+                (allContactAdapter as? Filterable)?.filter?.filter(newText)
+                return newText.isNullOrEmpty()
+            }
+
+        })
+
+        return super.onCreateOptionsMenu(menu)
     }
 
 
@@ -761,9 +821,6 @@ class ForwardActivity : AppCompatActivity() {
                         !p0.children.any {
                             it.getValue(Models.GroupMember::class.java)?.uid == myUID }
 
-                    Log.d("ForwardActivity", "bindHolder: group name = ${holder.title.text}")
-                    Log.d("ForwardActivity", "bindHolder: group id = $selectedGroupID")
-                    Log.d("ForwardActivity", "onDataChange: removed = $isMeRemoved")
 
                     try {
 
@@ -776,6 +833,15 @@ class ForwardActivity : AppCompatActivity() {
 
                 }
             })
+    }
+
+
+    override fun onBackPressed() {
+
+        if(searchView.isSearchOpen)
+            searchView.closeSearch()
+        else
+            super.onBackPressed()
     }
 
 }

@@ -31,15 +31,11 @@ import android.view.MenuItem
 import android.view.*
 import android.view.ViewGroup
 import androidx.appcompat.widget.SearchView
-import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.*
-import androidx.core.view.ViewPropertyAnimatorCompat
 import com.aziz.sstalk.firebase.MessagingService
+import com.aziz.sstalk.fragments.FragmentRecording
 import com.aziz.sstalk.models.Models
-import com.aziz.sstalk.utils.DateFormatter
-import com.aziz.sstalk.utils.FirebaseUtils
-import com.aziz.sstalk.utils.Pref
-import com.aziz.sstalk.utils.utils
+import com.aziz.sstalk.utils.*
 import com.aziz.sstalk.views.ColorGenerator
 import com.aziz.sstalk.views.Holders
 import com.firebase.ui.database.FirebaseRecyclerAdapter
@@ -50,15 +46,15 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.tasks.Continuation
 import com.google.android.gms.tasks.Task
-import com.google.firebase.FirebaseApp
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.ml.common.modeldownload.FirebaseModelManager
 import com.google.firebase.ml.naturallanguage.FirebaseNaturalLanguage
 import com.google.firebase.ml.naturallanguage.smartreply.FirebaseTextMessage
 import com.google.firebase.ml.naturallanguage.smartreply.SmartReplySuggestionResult
 import com.google.firebase.ml.naturallanguage.translate.FirebaseTranslateLanguage
-import com.google.firebase.ml.naturallanguage.translate.FirebaseTranslateModelManager
+import com.google.firebase.ml.naturallanguage.translate.FirebaseTranslateRemoteModel
 import com.google.firebase.ml.naturallanguage.translate.FirebaseTranslator
 import com.google.firebase.ml.naturallanguage.translate.FirebaseTranslatorOptions
 import com.google.firebase.storage.FirebaseStorage
@@ -69,22 +65,25 @@ import com.squareup.picasso.Picasso
 import com.squareup.picasso.Target
 import com.stfalcon.chatkit.messages.MessageInput
 import com.vincent.filepicker.Constant
+import com.vincent.filepicker.activity.AudioPickActivity
 import com.vincent.filepicker.activity.ImagePickActivity
 import com.vincent.filepicker.activity.VideoPickActivity
+import com.vincent.filepicker.filter.entity.AudioFile
 import com.vincent.filepicker.filter.entity.ImageFile
 import com.vincent.filepicker.filter.entity.VideoFile
-import io.codetail.animation.SupportAnimator
-import io.codetail.animation.ViewAnimationUtils
 import kotlinx.android.synthetic.main.activity_message.*
 import kotlinx.android.synthetic.main.bubble_left.view.*
 import kotlinx.android.synthetic.main.bubble_right.view.*
 import kotlinx.android.synthetic.main.item_smart_reply.view.*
 import kotlinx.android.synthetic.main.layout_attachment_menu.*
 import kotlinx.android.synthetic.main.layout_include_message_activity_toolbar.*
+import kotlinx.android.synthetic.main.layout_item_audio.view.*
+import kotlinx.android.synthetic.main.layout_video_bubble.view.*
 import kotlinx.android.synthetic.main.text_header.view.*
 import me.shaohui.advancedluban.Luban
 import me.shaohui.advancedluban.OnCompressListener
 import org.jetbrains.anko.*
+import org.jetbrains.anko.design.snackbar
 import java.io.File
 import java.io.Serializable
 import java.lang.Exception
@@ -108,6 +107,8 @@ class MessageActivity : AppCompatActivity() {
     var TYPE_TARGET_IMAGE = 5
     val TYPE_MY_VIDEO = 6
     val TYPE_TARGET_VIDEO = 7
+    val TYPE_MY_AUDIO = 8
+    val TYPE_TARGET_AUDIO = 9
 
     val TYPE_EVENT = 10
 
@@ -117,6 +118,8 @@ class MessageActivity : AppCompatActivity() {
     val RQ_PREVIEW_IMAGE = 102
     val RQ_LOCATION = 103
     val RQ_VIDEO = 104
+    val RQ_RECORDING = 105
+    val RQ_AUDIO = 106
 
     val RP_STORAGE_GALLERY = 101
     val RP_LOCATION = 102
@@ -124,6 +127,7 @@ class MessageActivity : AppCompatActivity() {
     val RP_STORAGE_VIDEO = 104
 
     val RP_INITAL_STORAGE_PERMISSION = 105
+    val RP_RECORDING = 106
 
     var targetUid : String = ""
     var targetType:String = FirebaseUtils.KEY_CONVERSATION_SINGLE
@@ -131,14 +135,9 @@ class MessageActivity : AppCompatActivity() {
     var isGroup = false
     var nameOrNumber = ""
 
-    var imageFile:File? = null
      var cameraImagePath  = ""
      var cameraImageUri: Uri? = null
 
-    var user1 = "user---1"
-    var user2 = "user---2"
-
-    val storage_dir_initial = "/storage/"
 
     var isBlockedByMe = false
     var isBlockedByUser = false
@@ -152,6 +151,7 @@ class MessageActivity : AppCompatActivity() {
 
     var searchFilterItemPosition:MutableList<Int> = ArrayList()
     var groupMembers:MutableList<Models.GroupMember> = ArrayList()
+    var hasLastMessageSelected = false
 
     private var asyncLoader: Future<Boolean>? = null
 
@@ -177,15 +177,12 @@ class MessageActivity : AppCompatActivity() {
 
 
 
-        targetUid = intent.getStringExtra(FirebaseUtils.KEY_UID)
+        targetUid = intent.getStringExtra(FirebaseUtils.KEY_UID).orEmpty()
         val type:String? = intent.getStringExtra(utils.constants.KEY_TARGET_TYPE)
 
 
-        nameOrNumber = try {
-            intent.getStringExtra(utils.constants.KEY_NAME_OR_NUMBER)
-        } catch (e:Exception){
-            ""
-        }
+        nameOrNumber = intent.getStringExtra(utils.constants.KEY_NAME_OR_NUMBER).orEmpty()
+
         targetType = if(type.isNullOrEmpty()) FirebaseUtils.KEY_CONVERSATION_SINGLE
         else type
 
@@ -195,6 +192,13 @@ class MessageActivity : AppCompatActivity() {
         isGroup = targetType == FirebaseUtils.KEY_CONVERSATION_GROUP
 
         myUID = FirebaseUtils.getUid()
+
+        if(targetUid.isEmpty()){
+            toast("Something went wrong")
+            finish()
+            return
+        }
+
 
         loadGroupMembers()
 
@@ -275,7 +279,20 @@ class MessageActivity : AppCompatActivity() {
 
 
 
+
         layout_toolbar_title.setOnClickListener {
+            /*val thumbnailTransition = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                ActivityOptions.makeThumbnailScaleUpAnimation(it, it.toBitmap, 0,0).toBundle()
+            } else null
+
+            val sceneTransition = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                ActivityOptions.makeSceneTransitionAnimation(this).toBundle()
+            } else null
+
+            val scaleTransition = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                ActivityOptions.makeScaleUpAnimation(it, 0,0, it.width, it.height).toBundle()
+            } else null
+*/
             startActivity(Intent(this, UserProfileActivity::class.java)
                 .putExtra(FirebaseUtils.KEY_UID, targetUid)
                 .putExtra(FirebaseUtils.KEY_NAME, nameOrNumber)
@@ -333,7 +350,6 @@ class MessageActivity : AppCompatActivity() {
 
         attachment_menu.visibility = View.INVISIBLE
 
-//        utils.hideFabs(fab_camera, fab_gallery, fab_video, fab_location)
         messageInputField.setAttachmentsListener {
 
 
@@ -387,6 +403,12 @@ class MessageActivity : AppCompatActivity() {
         videoIntent.putExtra(VideoPickActivity.IS_NEED_FOLDER_LIST, true)
         videoIntent.putExtra(Constant.MAX_NUMBER, 5)
 
+
+        val audioIntent = intentFor<AudioPickActivity>().apply {
+            putExtra(Constant.MAX_NUMBER, 5)
+            putExtra(AudioPickActivity.IS_NEED_RECORDER, true)
+        }
+
         camera_btn.setOnClickListener {
 
             if(attachment_menu.visibility != View.VISIBLE) utils.setEnterRevealEffect(this, attachment_menu) else utils.setExitRevealEffect(attachment_menu)
@@ -419,7 +441,7 @@ class MessageActivity : AppCompatActivity() {
 
         gallery_btn.setOnClickListener {
 
-            if(attachment_menu.visibility != View.VISIBLE) utils.setEnterRevealEffect(this, attachment_menu) else utils.setExitRevealEffect(attachment_menu)
+            if(!attachment_menu.visible) utils.setEnterRevealEffect(this, attachment_menu) else utils.setExitRevealEffect(attachment_menu)
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 if (ActivityCompat.checkSelfPermission(
@@ -495,6 +517,26 @@ class MessageActivity : AppCompatActivity() {
 
         }
 
+        audio_btn.setOnClickListener {
+            if(!attachment_menu.visible) utils.setEnterRevealEffect(this, attachment_menu) else utils.setExitRevealEffect(attachment_menu)
+
+            startActivityForResult(audioIntent, RQ_AUDIO)
+
+        }
+
+        recording_btn.setOnClickListener {
+            if(!attachment_menu.visible) utils.setEnterRevealEffect(this, attachment_menu) else utils.setExitRevealEffect(attachment_menu)
+            if(!utils.hasRecordingPermission(this)){
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), RP_RECORDING)
+                }
+                else
+                    startAudioRecording()
+            }
+            else
+                startAudioRecording()
+
+        }
     }
 
     private fun startCamera(){
@@ -519,6 +561,10 @@ class MessageActivity : AppCompatActivity() {
 
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+
+
+        if(grantResults.isEmpty())
+            toast("Permission not granted")
 
         when(requestCode){
             RP_STORAGE_GALLERY -> {
@@ -554,6 +600,10 @@ class MessageActivity : AppCompatActivity() {
                     finish()
                 }
             }
+
+            RP_RECORDING -> {
+                startAudioRecording()
+            }
         }
 
     }
@@ -563,7 +613,7 @@ class MessageActivity : AppCompatActivity() {
 
 
         if(resultCode == Activity.RESULT_CANCELED && requestCode == RQ_CAMERA){
-            contentResolver.delete(cameraImageUri, null,null)
+            cameraImageUri?.let { contentResolver.delete(it, null,null) }
         }
 
 
@@ -574,109 +624,131 @@ class MessageActivity : AppCompatActivity() {
         var messageID = "MSG" +System.currentTimeMillis()
 
 
-        if(requestCode == RQ_GALLERY ){
+        when (requestCode) {
+            RQ_GALLERY -> {
 
 
-            val filePaths = data!!.getParcelableArrayListExtra<ImageFile>(Constant.RESULT_PICK_IMAGE)
-
-
-
-            if(filePaths.isEmpty())
-                return
-
-
-            startActivityForResult(Intent(context, UploadPreviewActivity::class.java)
-                .putParcelableArrayListExtra(utils.constants.KEY_IMG_PATH, filePaths)
-                .putExtra(utils.constants.IS_FOR_SINGLE_FILE, false)
-                .putExtra(utils.constants.KEY_FILE_TYPE, utils.constants.FILE_TYPE_IMAGE)
-                , RQ_PREVIEW_IMAGE)
+                val filePaths = data!!.getParcelableArrayListExtra<ImageFile>(Constant.RESULT_PICK_IMAGE)
 
 
 
-
-         }
-
-
+                if(filePaths.isNullOrEmpty())
+                    return
 
 
-        else if(requestCode == RQ_LOCATION){
+                startActivityForResult(Intent(context, UploadPreviewActivity::class.java)
+                    .putParcelableArrayListExtra(utils.constants.KEY_IMG_PATH, filePaths)
+                    .putExtra(utils.constants.IS_FOR_SINGLE_FILE, false)
+                    .putExtra(utils.constants.KEY_FILE_TYPE, utils.constants.FILE_TYPE_IMAGE)
+                    ,
+                    RQ_PREVIEW_IMAGE)
 
-            val latitude = data!!.getDoubleExtra(utils.constants.KEY_LATITUDE,0.0)
-            val longitude = data.getDoubleExtra(utils.constants.KEY_LONGITUDE,0.0)
-            val address = data.getStringExtra(utils.constants.KEY_ADDRESS)
 
-            if(latitude == 0.0 || longitude == 0.0){
-                utils.toast(context, "Failed to fetch location")
-                return
+            }
+            RQ_LOCATION -> {
+
+                val latitude = data!!.getDoubleExtra(utils.constants.KEY_LATITUDE,0.0)
+                val longitude = data.getDoubleExtra(utils.constants.KEY_LONGITUDE,0.0)
+                val address = data.getStringExtra(utils.constants.KEY_ADDRESS)?:""
+
+                if(latitude == 0.0 || longitude == 0.0){
+                    utils.toast(context, "Failed to fetch location")
+                    return
+                }
+
+                val message = "$latitude,$longitude"
+
+                addMessageToBoth(messageID.replace("MSG", "LOC_"), Models.MessageModel(message,
+                    myUID,
+                    targetUid,
+                    System.currentTimeMillis(),
+                    isFile = false,
+                    caption = address,
+                    messageType = utils.constants.FILE_TYPE_LOCATION))
             }
 
-            val message = "$latitude,$longitude"
+            RQ_CAMERA -> {
+                val file = File(cameraImagePath)
+                Log.d("MessageActivity", "onActivityResult: "+file.path)
 
-            addMessageToBoth(messageID, Models.MessageModel(message,
-                myUID,
-                targetUid,
-                System.currentTimeMillis(),
-                isFile = false,
-                caption = address,
-                messageType = utils.constants.FILE_TYPE_LOCATION))
-        }
+                if(file.path.isEmpty()){
+                    utils.toast(context, "Failed to capture image")
+                    return
+                }
 
 
-        else if(requestCode == RQ_CAMERA){
-            val file = File(cameraImagePath)
-            Log.d("MessageActivity", "onActivityResult: "+file.path)
+                startActivityForResult(Intent(context, UploadPreviewActivity::class.java)
+                    .putExtra(utils.constants.KEY_IMG_PATH, file.path)
+                    .putExtra(utils.constants.IS_FOR_SINGLE_FILE, true)
+                    .putExtra(utils.constants.KEY_FILE_TYPE, utils.constants.FILE_TYPE_IMAGE)
+                    ,
+                    RQ_PREVIEW_IMAGE)
 
-            if(file.path.isEmpty()){
-                utils.toast(context, "Failed to capture image")
-                return
+            }
+
+            RQ_VIDEO -> {
+                val videoPaths = data!!.getParcelableArrayListExtra<VideoFile>(Constant.RESULT_PICK_VIDEO)
+
+
+                startActivityForResult(Intent(context, UploadPreviewActivity::class.java)
+                    .putParcelableArrayListExtra(utils.constants.KEY_IMG_PATH, videoPaths)
+                    .putExtra(utils.constants.IS_FOR_SINGLE_FILE, false)
+                    .putExtra(utils.constants.KEY_FILE_TYPE, utils.constants.FILE_TYPE_VIDEO)
+                    ,
+                    RQ_PREVIEW_IMAGE)
+
             }
 
 
-            startActivityForResult(Intent(context, UploadPreviewActivity::class.java)
-                .putExtra(utils.constants.KEY_IMG_PATH, file.path)
-                .putExtra(utils.constants.IS_FOR_SINGLE_FILE, true)
-                .putExtra(utils.constants.KEY_FILE_TYPE, utils.constants.FILE_TYPE_IMAGE)
-                , RQ_PREVIEW_IMAGE)
+            // after returning from preview
+            RQ_PREVIEW_IMAGE -> {
+                val caption = data!!.getStringArrayListExtra(utils.constants.KEY_CAPTION)
+                val imgPaths = data.getStringArrayListExtra(utils.constants.KEY_IMG_PATH)
 
-        }
+                if (!imgPaths.isNullOrEmpty()) {
 
-
-        else if(requestCode == RQ_VIDEO){
-            val videoPaths = data!!.getParcelableArrayListExtra<VideoFile>(Constant.RESULT_PICK_VIDEO)
+                    Log.d("MessageActivity", "onActivityResult: Uploading Image")
 
 
-            startActivityForResult(Intent(context, UploadPreviewActivity::class.java)
-                .putParcelableArrayListExtra(utils.constants.KEY_IMG_PATH, videoPaths)
-                .putExtra(utils.constants.IS_FOR_SINGLE_FILE, false)
-                .putExtra(utils.constants.KEY_FILE_TYPE, utils.constants.FILE_TYPE_VIDEO)
-                , RQ_PREVIEW_IMAGE)
+                    for((index, path) in imgPaths.withIndex()) {
+                        messageID = "IMG_" +System.currentTimeMillis()
 
-        }
+                        uploadFile(
+                            messageID, File(path.toString()),
+                            caption[index],
+                            data.getStringExtra(utils.constants.KEY_FILE_TYPE),
+                            true
+                        )
+                    }
 
-
-        // after returning from preview
-        else if(requestCode == RQ_PREVIEW_IMAGE ){
-            val caption = data!!.getStringArrayListExtra(utils.constants.KEY_CAPTION)
-            val imgPaths = data.getStringArrayListExtra(utils.constants.KEY_IMG_PATH)
-
-            if (imgPaths.isNotEmpty()) {
-
-                Log.d("MessageActivity", "onActivityResult: Uploading Image")
-
-
-                for((index, path) in imgPaths.withIndex()) {
-                    messageID = "MSG" +System.currentTimeMillis()
-
-                    uploadFile(
-                        messageID, File(path.toString()),
-                        caption[index],
-                        data.getStringExtra(utils.constants.KEY_FILE_TYPE),
-                        true
-                    )
                 }
 
             }
+            RQ_AUDIO -> {
+                val audioPaths = data?.getParcelableArrayListExtra<AudioFile>(Constant.RESULT_PICK_AUDIO)
 
+                if (!audioPaths.isNullOrEmpty()) {
+
+
+
+                    for(file in audioPaths) {
+                        messageID = "AUD_" +System.currentTimeMillis()
+
+
+                        uploadFile(
+                            messageID, File(file.path),
+                            "",
+                            utils.constants.FILE_TYPE_AUDIO,
+                            true
+                        )
+                    }
+
+                }
+            }
+            RQ_RECORDING -> // on recording
+            {
+
+            }
         }
 
         super.onActivityResult(requestCode, resultCode, data)
@@ -720,8 +792,7 @@ class MessageActivity : AppCompatActivity() {
 
 
         val options = FirebaseRecyclerOptions.Builder<Models.MessageModel>()
-            .setQuery(FirebaseUtils.ref.getChatRef(myUID, targetUid)
-
+            .setQuery(FirebaseUtils.ref.getChatQuery(myUID, targetUid)
                // .limitToLast(20)
                 ,Models.MessageModel::class.java)
             .build()
@@ -765,6 +836,13 @@ class MessageActivity : AppCompatActivity() {
                    TYPE_EVENT ->
                        Holders.TextHeaderHolder(LayoutInflater.from(context).inflate(R.layout.text_header, p0, false))
 
+                   TYPE_MY_AUDIO ->
+                       Holders.MyAudioHolder(LayoutInflater.from(context).inflate(R.layout.bubble_audio_right,p0, false))
+
+                   TYPE_TARGET_AUDIO ->
+                       Holders.TargetAudioHolder(LayoutInflater.from(context).inflate(R.layout.bubble_audio_left,p0, false))
+
+
                    else -> Holders.TargetTextMsgHolder(LayoutInflater.from(this@MessageActivity)
                            .inflate(R.layout.bubble_left, p0, false))
                }
@@ -776,6 +854,19 @@ class MessageActivity : AppCompatActivity() {
                  message_progressbar.visibility = View.GONE
 
                  return super.getItemCount()
+             }
+
+             override fun onDataChanged() {
+
+                 super.onDataChanged()
+                 val focusedMessage = intent.getSerializableExtra(utils.constants.KEY_MSG_MODEL) as? Models.MessageModel
+                     ?: return
+
+                 selectedPosition = snapshots.indexOf(focusedMessage)
+                 messagesList.scrollToPosition(selectedPosition)
+                 searchFilterItemPosition.add(selectedPosition)
+                 notifyItemChanged(selectedPosition)
+
              }
 
 
@@ -827,7 +918,6 @@ class MessageActivity : AppCompatActivity() {
                     return
                 }
 
-                messagesList.setBackgroundColor(Color.WHITE)
 
                 setObserver()
 
@@ -845,16 +935,15 @@ class MessageActivity : AppCompatActivity() {
                 var container:LinearLayout? = null
 
                 var tapToDownload:TextView? = null
-                var messageTextView:TextView? = null
+                val messageTextView:TextView? = holder.messageTextView
 
-                var messageLayout:LinearLayout? = null
+                val messageLayout:View? = holder.messageLayout
 
 
                 val date = Date(model.timeInMillis)
 
 
                  try {
-
 
                     if(model.from != FirebaseUtils.getUid())
                         FirebaseUtils.setReadStatusToMessage(messageID, targetUid)
@@ -881,8 +970,7 @@ class MessageActivity : AppCompatActivity() {
                         holder.time.text = utils.getLocalTime(model.timeInMillis)
                         holder.message.text = model.message
                         container = holder.container
-                        messageTextView = holder.message
-                        messageLayout = holder.messageLayout
+
                         dateHeader = holder.headerDateTime
 
                         holder.itemView.bubble_left_translation.visibility = View.GONE
@@ -897,8 +985,7 @@ class MessageActivity : AppCompatActivity() {
                         dateHeader = holder.headerDateTime
                         container = holder.container
                         FirebaseUtils.setDeliveryStatusTick(targetUid, messageID, holder.messageStatus)
-                        messageTextView = holder.message
-                        messageLayout = holder.messageLayout
+
                         holder.itemView.bubble_right_translation.visibility = View.GONE
                         //end of my holder
 
@@ -913,8 +1000,7 @@ class MessageActivity : AppCompatActivity() {
                         FirebaseUtils.setDeliveryStatusTick(targetUid, messageID, holder.messageStatus)
 
 
-                        messageTextView = holder.message
-                        messageLayout = holder.messageLayout
+
 
 
                         //setting holder config
@@ -926,8 +1012,7 @@ class MessageActivity : AppCompatActivity() {
                         dateHeader = holder.headerDateTime
                         container = holder.container
                         holder.time.text = utils.getLocalTime(model.timeInMillis)
-                        messageTextView = holder.message
-                        messageLayout = holder.messageLayout
+
 
                         targetSenderIcon = holder.senderIcon
                         targetSenderTitle = holder.senderTitle
@@ -948,8 +1033,7 @@ class MessageActivity : AppCompatActivity() {
 
 
                         FirebaseUtils.setDeliveryStatusTick(targetUid, messageID, holder.messageStatus)
-                        messageTextView = holder.message
-                        messageLayout = holder.messageLayout
+
 
                         //setting holder config
                         setMyVideoHolder(holder, model, messageID)
@@ -968,8 +1052,7 @@ class MessageActivity : AppCompatActivity() {
                         targetSenderIcon = holder.senderIcon
                         targetSenderTitle = holder.senderTitle
 
-                        messageTextView = holder.message
-                        messageLayout = holder.messageLayout
+
 
 
                         //setting holder config
@@ -984,9 +1067,8 @@ class MessageActivity : AppCompatActivity() {
                         holder.message.text = model.caption
                         holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
                         holder.time.text = utils.getLocalTime(model.timeInMillis)
-                        messageLayout = holder.messageLayout
                         dateHeader = holder.dateHeader
-                        messageTextView = holder.message
+
                         container = holder.container
 
                         loadMap(holder.mapView, LatLng(latitude,longitude))
@@ -1001,8 +1083,7 @@ class MessageActivity : AppCompatActivity() {
                         dateHeader = holder.dateHeader
                         container = holder.container
                         holder.time.text = utils.getLocalTime(model.timeInMillis)
-                        messageLayout = holder.messageLayout
-                        messageTextView = holder.message
+
 
                         targetSenderIcon = holder.senderIcon
                         targetSenderTitle = holder.senderTitle
@@ -1017,7 +1098,77 @@ class MessageActivity : AppCompatActivity() {
 
 
                     }
+
+                    is Holders.MyAudioHolder -> {
+                        container = holder.itemView.container_right
+                        dateHeader = holder.dateTextView
+                        holder.time.text = utils.getLocalTime(model.timeInMillis)
+                        holder.audioProgressBar.progress = 0f
+                        CircularProgressBarsAt[messageID] = holder.audioProgressBar
+                        val audioFile = File(model.file_local_path)
+                        holder.lengthOrSize.text = if(audioFile.exists()) utils.getAudioVideoLength(context, audioFile.path)
+                        else utils.getFileSize(model.file_size_in_bytes)
+
+
+                        holder.itemView.item_audio_container.setOnClickListener {
+
+                            if(audioFile.exists()) playAudio(model.file_local_path) else downloadAudio(model, messageID)
+
+                        }
+
+
+                        if(model.message.isEmpty()){
+                            //show upload retry
+                            holder.audioIcon.setImageResource(R.drawable.ic_file_upload_white_24dp)
+                            holder.audioIcon.setOnClickListener {
+
+                                if(!audioFile.exists()){
+                                    toast("File does not exist on this device")
+                                    return@setOnClickListener
+                                }
+
+                                uploadFile(messageID, audioFile, model.file_local_path, utils.constants.FILE_TYPE_AUDIO, false)
+                            }
+
+                         }
+
+                        if(!audioFile.exists()) {
+                            holder.audioIcon.setImageResource(R.drawable.ic_file_download_white_24dp)
+                            downloadAudio(model, messageID)
+                        }
+                        else
+                            holder.audioIcon.setImageResource(R.drawable.ic_audiotrack_white_24dp)
+
+                        FirebaseUtils.setDeliveryStatusTick(targetUid, messageID, holder.messageStatus)
+
+                    }
+
+                    is Holders.TargetAudioHolder -> {
+                        container = holder.itemView.container_left
+                        dateHeader = holder.dateTextView
+                        holder.time.text = utils.getLocalTime(model.timeInMillis)
+                        targetSenderTitle = holder.senderTitle
+
+                        holder.itemView.item_audio_container.setOnClickListener {
+                            if(File(model.file_local_path).exists()) playAudio(model.file_local_path) else downloadAudio(model, messageID)
+                        }
+                        CircularProgressBarsAt[messageID] = holder.audioProgressBar
+
+                        val audioFile = File(model.file_local_path)
+                        holder.lengthOrSize.text = if(audioFile.exists()) utils.getAudioVideoLength(context, audioFile.path)
+                        else utils.getFileSize(model.file_size_in_bytes)
+
+                        if(!audioFile.exists())
+                            holder.audioIcon.setImageResource(R.drawable.ic_file_download_white_24dp)
+                        else
+                            holder.audioIcon.setImageResource(R.drawable.ic_audiotrack_white_24dp)
+
+                        downloadAudio(model, messageID)
+
+                    }
                 }
+
+
 
 
                 //setting sender icon
@@ -1058,6 +1209,7 @@ class MessageActivity : AppCompatActivity() {
                         it.setTextColor(ColorGenerator.MATERIAL
                             .getColor(it.text.toString()))
                     }
+                    else it.hide()
                 }
 
 
@@ -1067,9 +1219,6 @@ class MessageActivity : AppCompatActivity() {
                     container.removeView(unreadView)
                     if (unreadMessageCount > 0 && (adapter.itemCount - unreadMessageCount - 1) == position) {
                         unreadView.header_textView.text = "$unreadMessageCount unread messages"
-                        Log.d("MessageActivity", "onBindViewHolder: adding unread view")
-//                        if(container.getChildAt(0)!=unreadView)
-//                        container.addView(unreadView)
                         unreadHeaderPosition = position
                         unreadMessageCount = 0
                     }
@@ -1080,10 +1229,10 @@ class MessageActivity : AppCompatActivity() {
                 messageImage?.setOnClickListener {
                     if(!isContextMenuActive)
                         startActivity(
-                            Intent(context, ImagePreviewActivity::class.java)
-                                .putExtra(utils.constants.KEY_MSG_MODEL, model)
-                                .putExtra(utils.constants.KEY_IMG_PATH, model.message.toString())
-                                .putExtra(utils.constants.KEY_LOCAL_PATH, model.file_local_path.toString())
+                            intentFor<ImagePreviewActivity>(utils.constants.KEY_MSG_MODEL to model,
+                                utils.constants.KEY_IMG_PATH to model.message.toString(),
+                                utils.constants.KEY_LOCAL_PATH to model.file_local_path.toString()
+                                )
                         )
                 }
 
@@ -1092,12 +1241,11 @@ class MessageActivity : AppCompatActivity() {
                 //setting video intent
                 if(thumbnail != null){
 
-                    if(model.file_local_path.isNotEmpty() && File(model.file_local_path).exists()){
-                        videoLengthTextView?.text = utils.getVideoLength(context, model.file_local_path)
+                    if(File(model.file_local_path).exists()){
+                        videoLengthTextView?.text = utils.getAudioVideoLength(context, model.file_local_path)
 
                         utils.loadVideoThumbnailFromLocalAsync(context, thumbnail, model.file_local_path)
-
-                            tapToDownload!!.visibility = View.GONE
+                        tapToDownload?.hide()
                     }
                     else{
 
@@ -1106,9 +1254,7 @@ class MessageActivity : AppCompatActivity() {
 
                         Log.d("MessageActivity", "onBindViewHolder: $messageID file not found")
 
-                            tapToDownload?.visibility = View.VISIBLE
-
-
+                            tapToDownload?.show()
                             tapToDownload?.setOnClickListener {
 
                                 if(isContextMenuActive)
@@ -1141,31 +1287,24 @@ class MessageActivity : AppCompatActivity() {
 
 
 
-                messageTextView?.let { it.setLinkTextColor(Color.BLUE) }
+                messageTextView?.let { it.setLinkTextColor(Color.BLUE)
+                    val emojiProcessed = EmojiCompat.get().process(messageTextView.text)
+                    messageTextView.text = emojiProcessed
+                    messageTextView.setLinkTextColor(Color.RED)
+                }
 
-                val emojiProcessed = EmojiCompat.get().process(messageTextView!!.text)
-                messageTextView.text = emojiProcessed
-                messageTextView.setLinkTextColor(Color.RED)
 
                 //set date Header
 
-                dateHeader!!.text = utils.getHeaderFormattedDate(model.timeInMillis)
-
+                dateHeader?.text = utils.getHeaderFormattedDate(model.timeInMillis)
                 if(position>0){
-
                     val previousDate = Date(snapshots[position - 1].timeInMillis)
-
-                    dateHeader.visibility =  if(!DateFormatter.isSameDay(date ,  previousDate)){ View.VISIBLE }
-                    else{ View.GONE }
-
+                    dateHeader?.visible =  !DateFormatter.isSameDay(date ,  previousDate)
                 }
                 else{
-
-                    dateHeader.visibility = View.VISIBLE
-
+                    dateHeader?.show()
                 }
-
-                dateHeader.setPadding(20,80,20,80)
+                dateHeader?.setPadding(20,80,20,80)
 
 
 
@@ -1175,11 +1314,12 @@ class MessageActivity : AppCompatActivity() {
 
 
                 if(searchFilterItemPosition.contains(position) ){
-                    utils.highlightTextView(messageTextView, searchQuery, Color.parseColor("#51C1EE"))
+                    // when searched
+                    messageTextView?.let { utils.highlightTextView(it, searchQuery, Color.parseColor("#51C1EE")) }
 
                     if(selectedPosition == position) {
                         val fadeAnim = ObjectAnimator.ofObject(messageLayout, "backgroundColor",
-                            ArgbEvaluator(),Color.parseColor("#51C1EE"), Color.WHITE)
+                            ArgbEvaluator(),Color.parseColor("#51C1EE"), Color.TRANSPARENT)
                         fadeAnim.duration = 2000
                         fadeAnim.start()
                         selectedPosition = -1
@@ -1187,7 +1327,7 @@ class MessageActivity : AppCompatActivity() {
                 }
                 else{
 
-                    messageTextView.text = if(model.isFile || model.messageType == utils.constants.FILE_TYPE_LOCATION)
+                    messageTextView?.text = if(model.isFile || model.messageType == utils.constants.FILE_TYPE_LOCATION)
                         model.caption else model.message
                 }
 
@@ -1219,6 +1359,7 @@ class MessageActivity : AppCompatActivity() {
                         model.messageType == utils.constants.FILE_TYPE_LOCATION -> TYPE_MY_MAP
                         model.messageType == utils.constants.FILE_TYPE_IMAGE -> TYPE_MY_IMAGE
                         model.messageType == utils.constants.FILE_TYPE_VIDEO -> TYPE_MY_VIDEO
+                        model.messageType == utils.constants.FILE_TYPE_AUDIO -> TYPE_MY_AUDIO
                         else -> TYPE_MINE
                     }
                 } else{
@@ -1226,6 +1367,7 @@ class MessageActivity : AppCompatActivity() {
                         model.messageType == utils.constants.FILE_TYPE_LOCATION -> TYPE_TARGET_MAP
                         model.messageType == utils.constants.FILE_TYPE_IMAGE -> TYPE_TARGET_IMAGE
                         model.messageType == utils.constants.FILE_TYPE_VIDEO -> TYPE_TARGET_VIDEO
+                        model.messageType == utils.constants.FILE_TYPE_AUDIO -> TYPE_TARGET_AUDIO
                         else -> TYPE_TARGET
                     }
 
@@ -1246,11 +1388,11 @@ class MessageActivity : AppCompatActivity() {
 
        adapter.startListening()
 
-//       findIndexOfFirstUnreadMessage()
 
 
 
     }
+
 
 
     private fun setObserver(){
@@ -1295,7 +1437,7 @@ class MessageActivity : AppCompatActivity() {
         messageInputField.setInputListener {
 
             if(isBlockedByMe || isBlockedByUser) {
-                return@setInputListener true
+                return@setInputListener false
             }
 
             val message = messageInputField.inputEditText.text.toString()
@@ -1323,7 +1465,6 @@ class MessageActivity : AppCompatActivity() {
         caption: String, fileType:String){
 
 
-        Log.d("MessageActivity", "setTapToRetryBtn: caption ")
 
         tapToRetry.visibility = View.GONE
 
@@ -1341,7 +1482,6 @@ class MessageActivity : AppCompatActivity() {
                     if(isUploading[messageID] == true)
                         tapToRetry.visibility = View.GONE
 
-                    Log.d("MessageActivity", "onDataChange: tap to retry changed to : visible = "+(tapToRetry.visibility == View.VISIBLE))
 
                 }
 
@@ -1375,7 +1515,7 @@ class MessageActivity : AppCompatActivity() {
                 getMapAsync { googleMap ->
 
 
-                    googleMap!!.addMarker(
+                    googleMap?.addMarker(
                         MarkerOptions()
                             .position(latLng).title("")
                             .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
@@ -1383,8 +1523,8 @@ class MessageActivity : AppCompatActivity() {
                     )
 
 
-                    googleMap.uiSettings.setAllGesturesEnabled(false)
-                    googleMap.moveCamera(
+                    googleMap?.uiSettings?.setAllGesturesEnabled(false)
+                    googleMap?.moveCamera(
                         CameraUpdateFactory.newLatLngZoom(
                             latLng,
                             12F
@@ -1523,6 +1663,14 @@ class MessageActivity : AppCompatActivity() {
 
         Log.d("MessageActivity", "fileUpload: dir = "+file.path)
 
+        val fileSizeInMB = (file.length()/(1024* 1024))
+
+        Log.d("MessageActivity", "uploadFile: file size = $fileSizeInMB")
+
+        if(fileSizeInMB > 16){
+            utils.longToast(context, "File size exceeded by 16 MB, Please choose a smaller file")
+            return
+        }
 
         val originalPath = file.path
 
@@ -1545,7 +1693,6 @@ class MessageActivity : AppCompatActivity() {
 
             utils.constants.FILE_TYPE_IMAGE -> {
 
-                Log.d("MessageActivity", "uploadFile: image")
                 //image compressor
                 Luban.compress(context, File(file.path))
                     .putGear(Luban.THIRD_GEAR)
@@ -1615,24 +1762,17 @@ class MessageActivity : AppCompatActivity() {
             //for video upload
             utils.constants.FILE_TYPE_VIDEO -> {
 
-
-                //for video file check
-                val fileSizeInMB = (file.length()/(1024* 1024))
-
-                Log.d("MessageActivity", "uploadFile: file size = $fileSizeInMB")
-
-                if(fileSizeInMB > 16){
-                    utils.longToast(context, "File size exceeded by 16 MB, Please choose a smaller file")
-                    return
-                }
-
-
-                Log.d("MessageActivity", "uploadFile: video")
                 fileUpload(messageID, file, originalPath, caption, messageType)
 
                 addMessageToMyNode(messageID, messageModel)
 
 
+            }
+
+            // for audio Upload
+            utils.constants.FILE_TYPE_AUDIO -> {
+                fileUpload(messageID, file, originalPath, caption, messageType)
+                addMessageToMyNode(messageID, messageModel)
             }
 
 
@@ -1654,21 +1794,23 @@ class MessageActivity : AppCompatActivity() {
     ) {
 
 
+        Log.d("MessageActivity", "fileUpload: path = ${file.path}")
+
         val ref =  FirebaseStorage.getInstance()
             .reference.child(messageType).child(messageID)
 
         val uploadTask = ref.putFile(utils.getUriFromFile(context, file))
 
 
-
+        val progressBar = try { CircularProgressBarsAt[messageID] } catch (e:Exception){ null }
+        val mediaControl = try { mediaControlImageViewAt[messageID] } catch (e:Exception){ null }
         //setting initial value
-        if(CircularProgressBarsAt.containsKey(messageID)){
-                CircularProgressBarsAt[messageID]?.progress = 0f
-                CircularProgressBarsAt[messageID]?.enableIndeterminateMode(true)
 
-        }
+        progressBar?.progress = 0f
+        progressBar?.enableIndeterminateMode(true)
 
 
+        val position = adapter.snapshots.indexOfFirst { it.file_local_path == file.path }
 
 
         uploadTask.addOnProgressListener { taskSnapshot ->
@@ -1694,35 +1836,25 @@ class MessageActivity : AppCompatActivity() {
 
 
             //setting cancel button value
-            if(mediaControlImageViewAt.containsKey(messageID)){
-
-                if(mediaControlImageViewAt[messageID]!=null){
-
-                    val btnView = mediaControlImageViewAt[messageID]
-                    btnView!!.visibility = View.VISIBLE
+            mediaControl?.show()
+            mediaControl?.setOnClickListener {
 
 
-                    btnView.setOnClickListener {
-
-
-                        if(percentage >= 100)
-                            return@setOnClickListener
+                if(percentage >= 100)
+                    return@setOnClickListener
 
 
 
-                        Log.d("MessageActivity", "fileUpload: cancel clicked")
-                        if(BuildConfig.DEBUG)
-                            utils.toast(context, "Upload cancelled")
+                if(BuildConfig.DEBUG)
+                    utils.toast(context, "Upload cancelled")
 
 
-                        uploadTask.cancel()
-                        mediaControlImageViewAt[messageID]?.setImageResource(R.drawable.ic_play_white)
-                        adapter.notifyDataSetChanged()
-                    }
-                }
+                uploadTask.cancel()
+                mediaControl.setImageResource(R.drawable.ic_play_white)
+
+                try { adapter.notifyItemChanged(position) }
+                catch (e:Exception){ e.printStackTrace(); adapter.notifyDataSetChanged() }
             }
-
-
 
 
              }
@@ -1733,13 +1865,13 @@ class MessageActivity : AppCompatActivity() {
                     }
                 }
 
-//                FirebaseUtils.storeFileMetaData(messageID, task.result!!.metadata!!)
                 return@Continuation ref.downloadUrl
             })
             .addOnCanceledListener {
                 isUploading[messageID] = false
-                if(CircularProgressBarsAt[messageID]!=null)
-                    CircularProgressBarsAt[messageID]!!.visibility = View.GONE
+                    progressBar?.hide()
+                if(position in 0 until adapter.itemCount)
+                    adapter.notifyItemChanged(position)
 
                 Log.d("MessageActivity", "fileUpload: upload cancelled")
 
@@ -1747,12 +1879,8 @@ class MessageActivity : AppCompatActivity() {
             .addOnCompleteListener { task ->
 
                 isUploading[messageID] = false
-                if(mediaControlImageViewAt.containsKey(messageID)) {
-                    if (mediaControlImageViewAt[messageID] != null) {
-                        val btnView = mediaControlImageViewAt[messageID]
-                        btnView!!.visibility = View.GONE
-                    }
-                }
+
+                mediaControl?.hide()
 
 
                 if (task.isSuccessful) {
@@ -1769,6 +1897,7 @@ class MessageActivity : AppCompatActivity() {
 
                     if (BuildConfig.DEBUG)
                         utils.toast(context, "Uploaded")
+                    progressBar?.progress = 0f
 
 
                     if(isGroup) addMessageToGroupMembers(messageID, targetModel)
@@ -1798,12 +1927,8 @@ class MessageActivity : AppCompatActivity() {
 
 
                 } else {
-
-                      //  utils.longToast(context, "Upload failed. Your daily upload/download limit might have been exceeded. Please try again tomorrow")
-
-
-                    Log.e("MessageActivity", "fileUpload: error in upload : "+task.exception!!.toString())
-                    task.exception!!.printStackTrace()
+                    toast("Failed to upload. File might not be found.")
+                    task.exception?.printStackTrace()
                 }
             }
 
@@ -1816,20 +1941,21 @@ class MessageActivity : AppCompatActivity() {
     //downloading video and saving to file in the form of file
     private fun downloadVideo(model: Models.MessageModel, messageID: String){
 
+        val itemHolder = messagesList.findViewHolderForAdapterPosition(adapter.snapshots.indexOf(model))
 
-        val progressBar = CircularProgressBarsAt[messageID]
+        val myHolder = itemHolder  as? Holders.MyVideoMsgHolder
+        val targetHolder = itemHolder as? Holders.TargetVideoMsgHolder
 
-        progressBar?.visibility = View.VISIBLE
+        val progressBar = myHolder?.progressBar?:targetHolder?.progressBar
+
+        progressBar?.show()
         progressBar?.progress =0f
+
 
         val storageRef =
             FirebaseStorage.getInstance().getReferenceFromUrl(model.message)
-//            FirebaseStorage.getInstance().reference
-//            .child(utils.constants.FILE_TYPE_VIDEO).child(messageID)
 
-
-
-            val videoFile = utils.getVideoFile(context, messageID)
+            val videoFile = utils.getVideoFile(messageID, model.from == myUID)
 
         Log.d("MessageActivity", "downloadVideo: downloading video to location = ${videoFile.path}")
 
@@ -1840,23 +1966,21 @@ class MessageActivity : AppCompatActivity() {
 
                 }
                 .addOnCompleteListener{
-                    progressBar?.visibility = View.GONE
-                    try {
-                       // adapter.notifyDataSetChanged()
-                    }
-                    catch (e:Exception){}
+                    progressBar?.hide()
                 }
                 .addOnCanceledListener {
-                    progressBar?.visibility = View.GONE
+                    progressBar?.hide()
                 }
                 .addOnSuccessListener {
 
-                    utils.addVideoToMediaStore(context, messageID, videoFile)
+                    utils.addMediaToMediaStore(context, messageID, videoFile)
+
+                    val children = mapOf(FirebaseUtils.KEY_FILE_LOCAL_PATH to videoFile.path)
 
                     FirebaseUtils.ref.getChatRef(myUID,targetUid)
                         .child(messageID)
-                        .child(FirebaseUtils.KEY_FILE_LOCAL_PATH)
-                        .setValue(videoFile.path)
+                        .updateChildren(children)
+
                 }
 
 
@@ -1866,10 +1990,65 @@ class MessageActivity : AppCompatActivity() {
     }
 
 
+    //downloading audio and saving to file in the form of file
+    private fun downloadAudio(model: Models.MessageModel, messageID: String){
+
+
+        if(model.message.isEmpty() || File(model.file_local_path).exists()) return
+
+        val itemHolder = messagesList.findViewHolderForAdapterPosition(adapter.snapshots.indexOf(model))
+
+        val myHolder = itemHolder  as? Holders.MyAudioHolder
+        val targetHolder = itemHolder as? Holders.TargetAudioHolder
+
+        val progressBar = myHolder?.audioProgressBar?:targetHolder?.audioProgressBar
+
+        progressBar?.show()
+        progressBar?.progress =0f
+
+
+        val storageRef =
+            FirebaseStorage.getInstance().getReferenceFromUrl(model.message)
+
+        val audioFile = utils.getAudioFile(messageID, model.from == myUID)
+
+        Log.d("MessageActivity", "downloadVideo: downloading audio to location = ${audioFile.path}")
+
+        storageRef.getFile(audioFile)
+            .addOnProgressListener {
+                val percentage:Double = (100.0 * it.bytesTransferred) / it.totalByteCount
+                Log.d("MessageActivity", "downloadAudio: progress = $percentage")
+                progressBar?.progress = percentage.toFloat()
+
+            }
+            .addOnCompleteListener{
+                progressBar?.hide()
+            }
+            .addOnCanceledListener {
+                progressBar?.hide()
+            }
+            .addOnSuccessListener {
+
+                utils.addMediaToMediaStore(context, messageID, audioFile, "audio/mp3")
+
+                val children = mapOf(FirebaseUtils.KEY_FILE_LOCAL_PATH to audioFile.path)
+
+                FirebaseUtils.ref.getChatRef(myUID,targetUid)
+                    .child(messageID)
+                    .updateChildren(children)
+
+            }
+
+
+
+
+
+    }
 
 
     override fun onStart() {
         super.onStart()
+
 
         try {
 
@@ -1890,6 +2069,7 @@ class MessageActivity : AppCompatActivity() {
         try {
 
             adapter.stopListening()
+
 
     } catch (e:Exception){}
 
@@ -1981,6 +2161,8 @@ class MessageActivity : AppCompatActivity() {
         CircularProgressBarsAt[messageID] = holder.progressBar
         mediaControlImageViewAt[messageID] = holder.imageUploadControl
 
+        holder.imageUploadControl.hide()
+
         holder.cardContainer.setCornerEnabled(true,true, model.caption.isEmpty(), false)
 
 
@@ -2006,15 +2188,15 @@ class MessageActivity : AppCompatActivity() {
                 .into(holder.imageView, object: Callback{
 
                     override fun onSuccess() {
-                        holder.progressBar.visibility = if(isUploading[messageID] == true) View.VISIBLE else View.GONE
+                        holder.progressBar.visible = (isUploading[messageID] == true)
 
                     }
 
                     override fun onError(e: Exception?) {
 
-                        holder.progressBar.visibility = View.GONE
+                        holder.progressBar.hide()
 
-                        Log.d("MessageActivity", "onError: img file failed to load : " + e!!.message)
+                        Log.d("MessageActivity", "onError: img file failed to load : " + e?.message)
                     }
 
                 })
@@ -2084,13 +2266,16 @@ class MessageActivity : AppCompatActivity() {
         holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
 
 
-        if(holder.progressBar.visibility == View.VISIBLE)
+        if(holder.progressBar.visible)
             holder.centerImageView.setImageResource(R.drawable.ic_clear_white_24dp)
         else
             holder.centerImageView.setImageResource(R.drawable.ic_play_white)
 
     }
 
+    //setting my audio holder
+    private fun SetMyAudioHolder(){
+    }
 
 
     //setting target Holders
@@ -2148,7 +2333,9 @@ class MessageActivity : AppCompatActivity() {
         holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
         holder.message.text = model.caption
         holder.cardContainer.setCornerEnabled(false,true, model.caption.isEmpty(), model.caption.isEmpty())
+        holder.tap_to_download.hide()
 
+        holder.itemView.delivery_video_status.hide()
 
 
         CircularProgressBarsAt[messageID] = holder.progressBar
@@ -2169,6 +2356,9 @@ class MessageActivity : AppCompatActivity() {
         if(model.file_local_path.isEmpty()){
             downloadVideo(model, messageID)
         }
+        else if(!File(model.file_local_path).exists()){
+            holder.tap_to_download.show()
+        }
     }
 
 
@@ -2187,7 +2377,7 @@ class MessageActivity : AppCompatActivity() {
     private fun setContextualToolbarOnViewHolder(itemView: View, messageID: String, model:Models.MessageModel, position:Int){
 
         selectedDrawable = ColorDrawable(ContextCompat.getColor(context, R.color.transparent_green))
-        unselectedDrawable = ColorDrawable(Color.WHITE)
+        unselectedDrawable = ColorDrawable(Color.TRANSPARENT)
 
 
         if(selectedMessageIDs.contains(messageID))
@@ -2229,7 +2419,8 @@ class MessageActivity : AppCompatActivity() {
                                         else messages + message.message + "\n"
                                     }
                                     val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                    clipboard.primaryClip = (ClipData.newPlainText("Messages ", messages.trim()))
+
+                                    clipboard.setPrimaryClip (ClipData.newPlainText("Messages ", messages.trim()))
                                     utils.toast(context, "Messages copied")
                                 }
 
@@ -2293,10 +2484,10 @@ class MessageActivity : AppCompatActivity() {
                         }
 
                         override fun onDestroyActionMode(p0: ActionMode?) {
-                            for (pos in selectedItemPosition)
-                            {
-                                if(!isTranslatorPressed)
-                                    adapter.notifyItemChanged(pos)
+                            selectedItemPosition.forEach {
+                                if(!isTranslatorPressed) {
+                                    messagesList.findViewHolderForAdapterPosition(it)?.messageLayout?.background = unselectedDrawable
+                                }
                             }
 
                             selectedItemPosition.clear()
@@ -2304,6 +2495,7 @@ class MessageActivity : AppCompatActivity() {
                             selectedMessageModel.clear()
                             isContextMenuActive = false
                             isTranslatorPressed = false
+                            hasLastMessageSelected = false
                         }
 
                     })
@@ -2354,7 +2546,7 @@ class MessageActivity : AppCompatActivity() {
     private fun translateMessage(itemView: View, model: Models.MessageModel):Unit {
 
         isTranslatorPressed = true
-        itemView.background = ColorDrawable(Color.WHITE)
+        itemView.background = ColorDrawable(Color.TRANSPARENT)
 
         var translationHeading = "Identifying Language"
 
@@ -2386,35 +2578,34 @@ class MessageActivity : AppCompatActivity() {
 
                 val firebaseTranslator =  FirebaseNaturalLanguage.getInstance().getTranslator(translatorOptions)
 
-                FirebaseApp.initializeApp(this)?.let { firebaseApp ->
-                    FirebaseTranslateModelManager.getInstance().getAvailableModels(firebaseApp).addOnSuccessListener {
+
+                FirebaseModelManager.getInstance().getDownloadedModels(FirebaseTranslateRemoteModel::class.java).addOnSuccessListener {
 
 
-                        if (it.any { remoteModel -> remoteModel.language == Pref.getDefaultLanguage(context) }) {
-                            // model is available to translate
-                            Log.d("MessageActivity", "translateMessage: Translator Model is available")
-                            onTranslatorDownloaded(itemView, model, firebaseTranslator, languageName)
+                    if (it.any { remoteModel -> remoteModel.language == Pref.getDefaultLanguage(context) }) {
+                        // model is available to translate
+                        Log.d("MessageActivity", "translateMessage: Translator Model is available")
+                        onTranslatorDownloaded(itemView, model, firebaseTranslator, languageName)
+                    }
+
+                    else {
+                        // download translator, and then translate
+                        translationHeading = "Downloading files for $languageName"
+
+                        when (myUID) {
+                            model.from -> itemView.bubble_right_translation.text = translationHeading
+                            else -> itemView.bubble_left_translation.text = translationHeading
                         }
 
-                        else {
-                            // download translator, and then translate
-                            translationHeading = "Downloading files for $languageName"
-
-                            when (myUID) {
-                                model.from -> itemView.bubble_right_translation.text = translationHeading
-                                else -> itemView.bubble_left_translation.text = translationHeading
+                        firebaseTranslator.downloadModelIfNeeded()
+                            .addOnSuccessListener {
+                                Log.d("MessageActivity", "translateMessage: translator downloaded")
+                                onTranslatorDownloaded(itemView, model, firebaseTranslator, languageName)
+                            }
+                            .addOnFailureListener {
+                                toast(it.localizedMessage)
                             }
 
-                            firebaseTranslator.downloadModelIfNeeded()
-                                .addOnSuccessListener {
-                                    Log.d("MessageActivity", "translateMessage: translator downloaded")
-                                    onTranslatorDownloaded(itemView, model, firebaseTranslator, languageName)
-                                }
-                                .addOnFailureListener {
-                                    toast(it.localizedMessage)
-                                }
-
-                        }
                     }
                 }
 
@@ -2493,7 +2684,7 @@ class MessageActivity : AppCompatActivity() {
 
 
         blockItem = menu.findItem(R.id.menu_action_block)
-        blockItem!!.title = if(isBlockedByMe) "Unblock" else "Block"
+        blockItem?.title = if(isBlockedByMe) "Unblock" else "Block"
 
 
         setSearchView(searchView)
@@ -2531,21 +2722,20 @@ class MessageActivity : AppCompatActivity() {
         downBtn.background = null
         downBtn.scaleType= ImageView.ScaleType.FIT_XY
 
-        upBtn.visibility = View.GONE
-        downBtn.visibility = View.GONE
+        upBtn.hide()
+        downBtn.hide()
 
         searchLayout.addView(upBtn)
         searchLayout.addView(downBtn)
 
 
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener{
-            override fun onQueryTextSubmit(p0: String?): Boolean {
+            override fun onQueryTextSubmit(query: String?): Boolean {
 
 
-                if(p0!!.isEmpty())
+                if(query!!.isEmpty())
                     return true
 
-                val query = p0
                 var resultCount = 0
                 searchFilterItemPosition.clear()
                 searchPosition = 0
@@ -2556,13 +2746,13 @@ class MessageActivity : AppCompatActivity() {
 
 
                     if(model.isFile){
-                        if (model.caption.toLowerCase().contains(searchQuery)) {
+                        if (model.caption.contains(searchQuery, true)) {
                             searchFilterItemPosition.add((index))
                             resultCount++
                         }
                     }
                     else {
-                        if (model.message.toLowerCase().contains(query.toString().toLowerCase())) {
+                        if (model.message.contains(query.toString(), true)) {
                             searchFilterItemPosition.add(index)
                             resultCount++
                         }
@@ -2587,8 +2777,9 @@ class MessageActivity : AppCompatActivity() {
 
                 utils.hideSoftKeyboard(this@MessageActivity)
 
-                for(pos in searchFilterItemPosition)
-                adapter.notifyItemChanged(pos)
+                searchFilterItemPosition.forEach { pos ->
+                    adapter.notifyItemChanged(pos)
+                }
 
                 return true
             }
@@ -2600,15 +2791,16 @@ class MessageActivity : AppCompatActivity() {
 
         searchView.setOnCloseListener {
 
-            upBtn.visibility = View.GONE
-            downBtn.visibility = View.GONE
+            upBtn.hide()
+            downBtn.hide()
 
             selectedPosition = -1
             searchQuery = ""
             searchView.onActionViewCollapsed()
-            searchFilterItemPosition.clear()
 
-            adapter.notifyDataSetChanged()
+            searchFilterItemPosition.forEach { adapter.notifyItemChanged(it) }
+
+            searchFilterItemPosition.clear()
 
             true
         }
@@ -2764,16 +2956,15 @@ class MessageActivity : AppCompatActivity() {
 
                 if(newState == RecyclerView.SCROLL_STATE_IDLE || newState == RecyclerView.SCROLL_STATE_SETTLING) {
 
-                    if(dateStickyHeader.visibility == View.VISIBLE && !isRunning) {
-                        isRunning = true
-                        handler.postDelayed({
+                    val runnable = {
                             runOnUiThread {
-                                if (layoutManager.findLastVisibleItemPosition() < adapter.itemCount - 1)
+//                                if (layoutManager.findLastVisibleItemPosition() < adapter.itemCount - 1)
                                     dateStickyHeader.visibility = View.GONE
-                                isRunning = false
                             }
-                        }, 1500)
-                    }
+                        }
+                        handler.removeCallbacks(runnable)
+                        handler.postDelayed(runnable, 1500)
+
                 }
 
                 if(newState == RecyclerView.SCROLL_STATE_DRAGGING){
@@ -2791,14 +2982,13 @@ class MessageActivity : AppCompatActivity() {
                 if(layoutManager.findLastVisibleItemPosition() == adapter.itemCount - 1 )
                 {
                     bottomScrollButton.hide()
-                    //todo hide bottom
-                    smart_reply_root_layout.animate().translationY(0f).withStartAction { smart_reply_root_layout.visibility = View.VISIBLE }
+                    smart_reply_root_layout.animate().translationY(0f).withStartAction { smart_reply_root_layout.show()}
                 }
                 else if(adapter.itemCount > 5)
                 {
                     bottomScrollButton.show()
                     smart_reply_root_layout.animate().translationY(smart_reply_root_layout.height.toFloat())
-                        .withEndAction { smart_reply_root_layout.visibility = View.GONE }
+                        .withEndAction { smart_reply_root_layout.hide() }
 
                 }
 
@@ -2820,25 +3010,80 @@ class MessageActivity : AppCompatActivity() {
             }
 
         })
+
     }
+
+
+
+
+    private val RecyclerView.ViewHolder.messageLayout: View?
+        get() {
+
+
+            return when (this) {
+                is Holders.TargetTextMsgHolder -> messageLayout
+                is Holders.MyTextMsgHolder -> messageLayout
+
+                is Holders.MyImageMsgHolder -> messageLayout
+                is Holders.TargetImageMsgHolder -> messageLayout
+
+                is Holders.MyVideoMsgHolder -> messageLayout
+                is Holders.TargetVideoMsgHolder -> messageLayout
+
+                is Holders.MyMapHolder -> messageLayout
+                is Holders.TargetMapHolder -> messageLayout
+
+                is Holders.MyAudioHolder -> messageLayout
+                is Holders.TargetAudioHolder -> messageLayout
+
+                else -> null
+            }
+        }
+
+    private val RecyclerView.ViewHolder.messageTextView: TextView?
+        get() {
+
+
+            return when (this) {
+                is Holders.TargetTextMsgHolder -> message
+                is Holders.MyTextMsgHolder -> message
+
+                is Holders.MyImageMsgHolder -> message
+                is Holders.TargetImageMsgHolder -> message
+
+                is Holders.MyVideoMsgHolder -> message
+                is Holders.TargetVideoMsgHolder -> message
+
+                is Holders.MyMapHolder -> message
+                is Holders.TargetMapHolder -> message
+
+                else -> null
+            }
+        }
 
 
     private fun deleteSelectedMessages(actionMode: ActionMode?){
 
 
-        Log.d("MessageActivity", "deleteSelectedMessages: $selectedItemPosition , msg ID = $selectedMessageIDs")
-
         AlertDialog.Builder(context)
             .setMessage("Delete selected messages?")
             .setPositiveButton("Yes") { _, _ ->
 
-                for ((index, messageID) in selectedMessageIDs.withIndex()) {
+                val totalMessages = selectedMessageIDs.size
+                //val shouldUpdateLastMessage = selectedItemPosition.contains(adapter.itemCount-1)
+
+                selectedMessageIDs.withIndex().forEach { (index, messageID) ->
                     FirebaseUtils.ref.getChatRef(myUID, targetUid)
                         .child(messageID)
                         .removeValue()
                         .addOnCompleteListener {
-                            if (index == selectedMessageIDs.lastIndex) {
-                                toast("Message deleted")
+                            if (index == totalMessages - 1) {
+                                messageInputField.snackbar("Message deleted")
+
+                                //if last message was deleted
+                                //if(shouldUpdateLastMessage){
+                                    updateLastMessage()
+                                //}
                             }
                         }
                 }
@@ -2851,6 +3096,19 @@ class MessageActivity : AppCompatActivity() {
 
     }
 
+
+    private fun updateLastMessage(){
+        FirebaseUtils.ref.getChatQuery(myUID, targetUid)
+            .limitToLast(1)
+            .onSingleListEvent<Models.MessageModel> { list, _ ->
+                list.forEach {
+                    if(it != null)
+                    FirebaseUtils.ref.lastMessage(myUID, targetUid)
+                        .updateChildren(mapOf("timeInMillis" to it.timeInMillis, "reverseTimeStamp" to it.reverseTimeStamp))
+                }
+            }
+
+    }
 
     //load members if group
     private fun loadGroupMembers(){
@@ -2870,7 +3128,7 @@ class MessageActivity : AppCompatActivity() {
                     var members = ""
 
 
-                    for(post in p0.children){
+                    p0.children.forEach { post ->
                         val member = post.getValue(Models.GroupMember::class.java)!!
                         groupMembers.add(member)
                         members += utils.getNameFromNumber(context, member.phoneNumber) +", "
@@ -2959,37 +3217,25 @@ class MessageActivity : AppCompatActivity() {
                                     }
                                 }
 
-                                smart_reply_layout.visibility = if(it.suggestions.isNotEmpty()) View.VISIBLE else View.GONE
+                                smart_reply_layout.visible = (it.suggestions.isNotEmpty())
 
+                                smart_reply_recycler.setCustomAdapter(context, it.suggestions, R.layout.item_smart_reply){itemView, _,item ->
+                                    val suggestion  = item.text
+                                    itemView.item_text.text = suggestion
 
-                                smart_reply_recycler.adapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>(){
-                                    override fun onCreateViewHolder(p0: ViewGroup, p1: Int): RecyclerView.ViewHolder {
-                                        return object : RecyclerView.ViewHolder(LayoutInflater.from(context)
-                                            .inflate(R.layout.item_smart_reply,p0,false)){}
+                                    itemView.item_text.setOnClickListener {
+                                        messageInputField.inputEditText.setText(suggestion)
+                                        if(Pref.isTapToReply(context))
+                                            messageInputField.button.callOnClick()
                                     }
 
-                                    override fun getItemCount() = it.suggestions.size
-                                    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, p1: Int) {
-                                        val suggestion  = it.suggestions[p1].text
-                                        holder.itemView.item_text.text = suggestion
-
-
-                                        holder.itemView.item_text.setOnClickListener {
-                                            Log.d("MessageActivity", "onBindViewHolder: suggestion text clicked")
-                                            messageInputField.inputEditText.setText(suggestion)
-                                            if(Pref.isTapToReply(context))
+                                    itemView.setOnClickListener {
+                                        messageInputField.inputEditText.setText(suggestion)
+                                        if(Pref.isTapToReply(context))
                                             messageInputField.button.callOnClick()
-                                        }
-
-                                        holder.itemView.setOnClickListener {
-                                            Log.d("MessageActivity", "onBindViewHolder: suggestion clicked")
-                                            messageInputField.inputEditText.setText(suggestion)
-                                            if(Pref.isTapToReply(context))
-                                            messageInputField.button.callOnClick()
-                                        }
                                     }
-
                                 }
+
 
                             }
                     } catch (e: Exception) {
@@ -3015,8 +3261,6 @@ class MessageActivity : AppCompatActivity() {
 
             layout.addView(smartReplyCheckbox)
 
-//            switch.setSwitchTextAppearance(this, R.style.TextViewHeading)
-
             smartReplyCheckbox.isChecked = Pref.isTapToReply(this)
             smartReplyCheckbox.setOnCheckedChangeListener { _, isChecked ->
                 Pref.isTapToReply(context, isChecked)
@@ -3033,77 +3277,39 @@ class MessageActivity : AppCompatActivity() {
 
 
 
-    //stuff for reveal menu
-    var isMenuHidden = true
-    private fun hideRevealView() {
-        if (attachment_menu.visibility == View.VISIBLE) {
-            attachment_menu.visibility = View.GONE
-            isMenuHidden = true
-        }
+    private fun startAudioRecording(){
+
+
+
+        val recorder = FragmentRecording()
+        recorder.dialog?.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        recorder.isCancelable = false
+        recorder.setRecordingListener(object : FragmentRecording.OnRecordingFinished{
+            override fun onRecorded(file: File?) {
+                Log.d("MessageActivity", "onRecorded: ${file?.path}")
+
+                recorder.dismiss()
+                file?.let {
+                    uploadFile("REC_${System.currentTimeMillis()}", it, "", utils.constants.FILE_TYPE_AUDIO, false )
+                }
+            }
+
+            override fun onCancelled() {
+                Log.d("MessageActivity", "onCancelled: ")
+                recorder.dismiss()
+            }
+
+        })
+        recorder.show(supportFragmentManager, "recording")
+
     }
 
 
-    private fun animateAttachmentMenu(){
-        val mRevealView = attachment_menu
-        val cx = (mRevealView.left + mRevealView.right)
-        val cy = mRevealView.top
-        val radius = Math.max(mRevealView.width, mRevealView.height)
+    private fun playAudio(path:String){
 
-        //Below Android LOLIPOP Version
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-            val animator: SupportAnimator =
-                ViewAnimationUtils.createCircularReveal(mRevealView, cx, cy, 0f, radius.toFloat())
-            animator.interpolator = AccelerateDecelerateInterpolator()
-            animator.duration = 700
+        if(!isContextMenuActive)
+            utils.startAudioIntent(context, path)
 
-            val animator_reverse = animator.reverse()
-
-            if (isMenuHidden) {
-                mRevealView.visibility = View.VISIBLE
-                animator.start()
-                isMenuHidden = false
-            } else {
-                animator_reverse.addListener(object  : SupportAnimator.AnimatorListener {
-                    override fun onAnimationRepeat() {
-                    }
-
-                    override fun onAnimationEnd() {
-                        mRevealView.visibility = View.INVISIBLE
-                        isMenuHidden = true
-                    }
-
-                    override fun onAnimationCancel() {
-                    }
-
-                    override fun onAnimationStart() {
-                    }
-
-                })
-                animator_reverse.start()
-            }
-        }
-        // Android LOLIPOP And ABOVE Version
-        else {
-            if (isMenuHidden) {
-                val anim = android.view.ViewAnimationUtils.createCircularReveal(mRevealView, cx, cy, 0F,
-                    radius.toFloat()
-                )
-                mRevealView.visibility = View.VISIBLE
-                anim.start()
-                isMenuHidden = false
-            } else {
-                val anim = android.view.ViewAnimationUtils.createCircularReveal(mRevealView, cx, cy,
-                    radius.toFloat(), 0f)
-                anim.addListener(object : AnimatorListenerAdapter() {
-                    override fun onAnimationEnd( animation: Animator) {
-                        super.onAnimationEnd(animation)
-                        mRevealView.visibility = View.INVISIBLE
-                        isMenuHidden = true
-                    }
-                })
-                anim.start()
-            }
-        }
     }
 
 

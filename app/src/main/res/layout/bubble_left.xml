@@ -37,7 +37,6 @@
 
         <de.hdodenhof.circleimageview.CircleImageView
                 android:layout_width="50dp"
-                app:civ_border_width="0.5dp"
                 app:civ_border_color="@color/colorPrimary"
                 android:layout_marginLeft="2dp"
                 android:id="@+id/circle_sender_text"

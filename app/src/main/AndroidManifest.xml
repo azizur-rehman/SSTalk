@@ -14,6 +14,8 @@
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.VIBRATE"/>
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.CALL_PHONE"/>
 
     <application
@@ -111,17 +113,19 @@
                 android:theme="@style/AppTheme.NoActionBar"
                 android:windowSoftInputMode="adjustPan">
         </activity>
-        <activity android:name=".ContactsActivity">
+        <activity android:name=".ContactsActivity" android:theme="@style/AppTheme.NoActionBar">
         </activity> <!-- Provider for the library -->
+
+
         <provider
                 android:name="androidx.core.content.FileProvider"
-                android:authorities="com.mvc.imagepicker.provider"
+                android:authorities="com.aziz.sstalk.provider"
                 android:exported="false"
                 android:grantUriPermissions="true"
                 tools:replace="android:authorities">
             <meta-data
                     android:name="android.support.FILE_PROVIDER_PATHS"
-                    android:resource="@xml/provider_paths"
+                    android:resource="@xml/file_provider"
                     tools:replace="android:resource"/>
         </provider>
 
@@ -138,7 +142,8 @@
         <activity
                 android:name=".AboutTheDeveloperActivity"
                 android:theme="@style/AppTheme.NoActionBar"/>
-        <activity android:name=".MultiContactChooserActivity"/>
+        <activity android:name=".MultiContactChooserActivity"
+                android:theme="@style/AppTheme.NoActionBar"/>
         <activity android:name=".FeedbackActivity"/>
 
         <service android:name=".firebase.MessagingService">
@@ -161,6 +166,11 @@
                 android:name="com.google.firebase.messaging.default_notification_color"
                 android:resource="@color/colorAccent"/>
 
+        <!-- Sample AdMob App ID: ca-app-pub-3940256099942544~3347511713 -->
+        <meta-data
+                android:name="com.google.android.gms.ads.APPLICATION_ID"
+                android:value="ca-app-pub-3219184867279814~2969943386"/>
+
         <service
                 android:name=".utils.ShareIntentChooserService"
                 android:label="@string/app_name"
@@ -169,6 +179,12 @@
                 <action android:name="android.service.chooser.ChooserTargetService"/>
             </intent-filter>
         </service>
+
+
+        <meta-data
+                android:name="firebase_crashlytics_collection_enabled"
+                android:value="@bool/enable_crashlytics" />
+
     </application>
 
 </manifest>

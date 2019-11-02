@@ -5,6 +5,7 @@
         xmlns:app="http://schemas.android.com/apk/res-auto"
         android:layout_width="match_parent"
         android:orientation="vertical"
+        android:fitsSystemWindows="true"
         android:layout_height="match_parent"
         android:paddingTop="10dp"
         tools:context=".UserProfileActivity">
@@ -128,9 +129,10 @@
 
     <androidx.recyclerview.widget.RecyclerView
             android:layout_width="match_parent"
-            android:layout_height="0dp"
+            android:layout_height="wrap_content"
+            android:fitsSystemWindows="true"
+            android:paddingBottom="@dimen/bottom_navigation_height"
             android:id="@+id/mediaRecyclerView"
-            android:layout_weight="1"
 
     />
 

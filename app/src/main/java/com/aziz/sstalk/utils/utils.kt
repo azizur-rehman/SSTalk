@@ -2,6 +2,7 @@ package com.aziz.sstalk.utils
 
 import android.Manifest
 import android.animation.Animator
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.ActivityManager
 import android.content.ContentValues
@@ -36,6 +37,7 @@ import com.aziz.sstalk.R
 import com.aziz.sstalk.models.Models
 import com.bumptech.glide.Glide
 import com.google.firebase.auth.FirebaseAuth
+import org.jetbrains.anko.toast
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -55,12 +57,14 @@ object utils {
         const val FILE_TYPE_IMAGE = "image"
         const val FILE_TYPE_LOCATION = "location"
         const val FILE_TYPE_VIDEO = "video"
+        const val FILE_TYPE_AUDIO = "audio"
         const val KEY_IMG_PATH = "path"
         const val KEY_CAPTION = "caption"
         const val KEY_LOCAL_PATH = "local_path"
 
         const val KEY_TARGET_TYPE = "target_type"
         const val KEY_NAME_OR_NUMBER = "name_or_number"
+        const val KEY_SELECTED_MSG_ID = "selectedMessageID"
 
         const val KEY_SELECTED = "selected"
         const val KEY_IS_GROUP = "isGroup"
@@ -82,7 +86,7 @@ object utils {
         const val KEY_NAME = "name"
 
         const val IS_FOR_SINGLE_FILE = "isSingleFile"
-        const val URI_AUTHORITY = "com.mvc.imagepicker.provider"
+        const val URI_AUTHORITY = "com.aziz.sstalk.provider"
 
         const val KEY_FILE_TYPE = "type"
         const val debugUserID = "user---2"
@@ -95,6 +99,9 @@ object utils {
         const val APP_SHORT_LINK = "https://goo.gl/TzQgdm"
         const val APP_LINK = "https://play.google.com/store/apps/details?id=${BuildConfig.APPLICATION_ID}"
         const val SHARING_TEXT = "Download SS Talk - A completely free & realtime chat app\n\nClick to Download : $APP_SHORT_LINK"
+
+        const val redmi_note_3_test_device_id = "0E00FA90DF318861D8F4E6656987144C"
+        const val ads_after_items = 4
 
     }
 
@@ -179,6 +186,9 @@ object utils {
     fun hasContactPermission(context: Context) = (ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED)
 
     fun hasCallPermission(context: Context) = (ActivityCompat.checkSelfPermission(context, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED)
+
+    fun hasRecordingPermission(context: Context) = (ActivityCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED)
+
 
     fun hasStoragePermission(context: Context) = (ActivityCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
             && (ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
@@ -360,15 +370,14 @@ object utils {
     }
 
 
-    fun getProfilePicPath(context: Context):String = Environment.getExternalStorageDirectory().toString()+"/"+ context.getString(R.string.app_name).toString()+"" +
-            "/ProfilePics/"
+    val profilePicPath: String
+        get() = "$appFolder/ProfilePics/"
 
-    fun saveBitmapToProfileFolder(context: Context?, bitmap: Bitmap, messageIdForName:String):String{
+    fun saveBitmapToProfileFolder(bitmap: Bitmap, messageIdForName: String):String{
 
         val fileName = "$messageIdForName.jpg"
 
-        val path = Environment.getExternalStorageDirectory().toString()+"/"+ context!!.getString(R.string.app_name).toString()+"" +
-                "/ProfilePics/"
+        val path = "$appFolder/ProfilePics/"
 
         if(!File(path).exists())
             File(path).mkdirs()
@@ -414,12 +423,16 @@ object utils {
         return File(path, fileName)
     }
 
+    val appFolder:String
+    get() = Environment.getExternalStorageDirectory().toString()+"/SS Talk"
 
-    fun getReceivedBitmapFile(context: Context?, messageIdForName:String):File{
+    val sentAudioPath:String
+    get() = "$appFolder/Audio/Sent"
+
+    fun getReceivedBitmapFile(messageIdForName: String):File{
         val fileName = "$messageIdForName.jpg"
 
-        val path = Environment.getExternalStorageDirectory().toString()+"/"+ context!!.getString(R.string.app_name).toString()+"" +
-                "/Images/Received/"
+        val path = "${appFolder}Images/Received/"
 
         if(!File(path).exists())
             File(path).mkdirs()
@@ -430,7 +443,7 @@ object utils {
     fun saveBitmapToReceived(context: Context?, bitmap: Bitmap, messageIdForName:String):String{
 
 
-        val file = getReceivedBitmapFile(context, messageIdForName)
+        val file = getReceivedBitmapFile(messageIdForName)
 
         try {
 
@@ -455,8 +468,8 @@ object utils {
         return file.path
     }
 
-    fun getVideoLength(context: Context?, videoFilePath:String):String{
-        try {
+    fun getAudioVideoLength(context: Context?, videoFilePath:String):String{
+        return try {
 
             val retriever = MediaMetadataRetriever()
             retriever.setDataSource(context, utils.getUriFromFile(context,  File(videoFilePath)))
@@ -465,9 +478,10 @@ object utils {
 
             retriever.release()
 
-            return getDurationString(timeInMillisec)
+            getDurationString(timeInMillisec)
+        } catch (e:Exception){
+            ""
         }
-        catch (e:Exception){return ""}
 
     }
 
@@ -483,6 +497,23 @@ object utils {
         catch (e:Exception){
             utils.toast(context, e.message.toString())
         }
+    }
+
+
+
+    fun startAudioIntent(context: Context, path:String){
+
+        try {
+            val playIntent = Intent(Intent.ACTION_VIEW)
+            playIntent.setDataAndType(utils.getUriFromFile(context, File(path)), "audio/*")
+            playIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            context.startActivity(playIntent)
+        }
+        catch (e:Exception){
+            e.printStackTrace()
+            context.toast("Cannot play this audio")
+        }
+
     }
 
 
@@ -536,20 +567,30 @@ object utils {
     }
 
 
-    fun getVideoFile(context: Context?, messageIdForName: String):File {
+    fun getVideoFile(messageIdForName: String, sentFile:Boolean):File {
 
         val fileName = "$messageIdForName.mp4"
 
-        val path =
-            Environment.getExternalStorageDirectory().toString() + "/" + context!!.getString(R.string.app_name).toString() + "" +
-                    "/Video/Received/"
+        val path = "$appFolder/Video/${if (sentFile) "Sent" else "Received"}/"
 
         if (!File(path).exists())
             File(path).mkdirs()
 
-        val file = File(path, fileName)
-        return file
+        return File(path, fileName)
     }
+
+    fun getAudioFile(messageIdForName: String, sentFile:Boolean):File {
+
+        val fileName = "$messageIdForName.mp3"
+
+        val path = "$appFolder/Audio/${if (sentFile) "Sent" else "Received"}/"
+
+        if (!File(path).exists())
+            File(path).mkdirs()
+
+        return File(path, fileName)
+    }
+
 
     fun saveVideo(context: Context?, fileBytes: ByteArray, messageIdForName:String):String{
 
@@ -570,7 +611,7 @@ object utils {
           //  bitmap.compress(Bitmap.CompressFormat.PNG, 100, fout)
             Log.d("utils", "saveVideo: file saved to ${file.path}")
 
-            addVideoToMediaStore(context, messageIdForName, file)
+            addMediaToMediaStore(context, messageIdForName, file)
         }
         catch (e:Exception){
             Log.d("utils", "saveVideo: File not found")
@@ -580,14 +621,14 @@ object utils {
     }
 
 
-    fun addVideoToMediaStore(context:Context, messageIdForName: String, file: File){
+    fun addMediaToMediaStore(context:Context, messageIdForName: String, file: File, mimeType:String = "video/mp4"){
 
         if(!Pref.isMediaVisible(context))
             return
 
         val values = ContentValues(3)
         values.put(MediaStore.Video.Media.TITLE, messageIdForName)
-        values.put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
+        values.put(MediaStore.Video.Media.MIME_TYPE, mimeType)
         values.put(MediaStore.Video.Media.DATA, file.absolutePath)
 
         //getting video length
@@ -598,8 +639,17 @@ object utils {
 
         retriever.release()
 
-        values.put(MediaStore.Video.Media.DURATION, timeInMillisec )
-        context.contentResolver.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values)
+        if(mimeType.startsWith("video"))
+        {
+            values.put(MediaStore.Video.Media.DURATION, timeInMillisec )
+            context.contentResolver.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values)
+        }
+        else
+        {
+            values.put(MediaStore.Audio.Media.DURATION, timeInMillisec)
+            context.contentResolver.insert(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, values)
+        }
+
 
     }
 
@@ -628,7 +678,7 @@ object utils {
     fun hideSoftKeyboard(activity: Activity) {
         try {
             val inputMethodManager = activity.getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
-            inputMethodManager.hideSoftInputFromWindow(activity.currentFocus.windowToken, 0)
+            inputMethodManager.hideSoftInputFromWindow(activity.currentFocus?.windowToken, 0)
         } catch (e:Exception) {
             e.printStackTrace()
         }
@@ -636,21 +686,29 @@ object utils {
 
 
 
-    fun getUriFromFile(context: Context?, file:File) : Uri {
+    fun getUriFromFile(context: Context?, file:File, authority:String = constants.URI_AUTHORITY) : Uri {
 
-        var uri = Uri.fromFile(file)
         return try {
 
-            if (Build.VERSION.SDK_INT >= 24)
-                uri = FileProvider.getUriForFile(context!!, constants.URI_AUTHORITY, file)
 
-            uri
+            val uri = if (Build.VERSION.SDK_INT >= 24)
+                FileProvider.getUriForFile(context!!, authority, file)
+            else
+                Uri.fromFile(file)
+
+            context?.grantUriPermission(context.packageName, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION )
+            return uri
+
         } catch (e:Exception){
             Log.e("utils", "utils: getUriFromFile = ${e.message}")
-            uri
+            Uri.fromFile(file)
         }
     }
 
+
+
+
+    @SuppressLint("NewApi")
     fun isAppIsInBackground(context: Context):Boolean {
         var isInBackground = true
         val am =  context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
@@ -668,7 +726,7 @@ object utils {
         } else {
             val taskInfo = am.getRunningTasks(1)
             val componentInfo = taskInfo[0].topActivity
-            if (componentInfo.packageName == context.packageName) {
+            if (componentInfo?.packageName == context.packageName) {
                 isInBackground = false
             }
         }

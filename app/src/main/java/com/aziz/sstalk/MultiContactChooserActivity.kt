@@ -6,22 +6,25 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Parcelable
+import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.appcompat.app.AppCompatActivity
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Filter
+import android.widget.Filterable
+import androidx.recyclerview.widget.RecyclerView
 import com.aziz.sstalk.models.Models
-import com.aziz.sstalk.utils.FirebaseUtils
-import com.aziz.sstalk.utils.utils
+import com.aziz.sstalk.utils.*
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
+import com.miguelcatalan.materialsearchview.MaterialSearchView
 import kotlinx.android.synthetic.main.activity_multi_contact_chooser.*
-import kotlinx.android.synthetic.main.contact_screen.*
-import kotlinx.android.synthetic.main.item__forward_contact_list.view.*
-import kotlinx.android.synthetic.main.item_conversation_layout.view.*
+import kotlinx.android.synthetic.main.activity_multi_contact_chooser.searchView
+import kotlinx.android.synthetic.main.item_contact_layout.view.*
 import kotlinx.android.synthetic.main.item_grid_contact_layout.view.*
 import org.jetbrains.anko.*
 import java.util.concurrent.Future
@@ -32,12 +35,11 @@ class MultiContactChooserActivity : AppCompatActivity(){
     var numberList:MutableList<Models.Contact> = mutableListOf()
     var registeredAvailableUser:MutableList<Models.Contact> = mutableListOf()
 
+    var allUsers = registeredAvailableUser
+
     var excludedUIDs:MutableList<String> = ArrayList()
 
     var selectedUsers:MutableList<Models.Contact> = ArrayList()
-
-    private var asyncLoader: Future<Unit>? = null
-
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,11 +47,10 @@ class MultiContactChooserActivity : AppCompatActivity(){
 
         setContentView(R.layout.activity_multi_contact_chooser)
         title = "Choose from contacts"
+        setSupportActionBar(toolbar)
 
-        excludedUIDs = intent.getStringArrayListExtra(utils.constants.KEY_EXCLUDED_LIST)
+        excludedUIDs = intent.getStringArrayListExtra(utils.constants.KEY_EXCLUDED_LIST)?:ArrayList()
 
-        if(excludedUIDs.isNullOrEmpty())
-            excludedUIDs = ArrayList()
 
         contacts_list.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this@MultiContactChooserActivity)
         participant_recyclerview.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(
@@ -57,10 +58,8 @@ class MultiContactChooserActivity : AppCompatActivity(){
             androidx.recyclerview.widget.LinearLayoutManager.HORIZONTAL, false
         )
 
-        asyncLoader = doAsyncResult {
 
-            uiThread {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 
                     if(ActivityCompat.checkSelfPermission(this@MultiContactChooserActivity, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED)
                         requestPermissions(arrayOf(Manifest.permission.READ_CONTACTS), 101)
@@ -68,12 +67,9 @@ class MultiContactChooserActivity : AppCompatActivity(){
                         loadRegisteredUsers()
 
                 }
-                else
-                    loadRegisteredUsers()
-            }
+        else loadRegisteredUsers()
 
-            onComplete { contact_progressbar.visibility = View.GONE  }
-        }
+
 
 
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
@@ -84,10 +80,6 @@ class MultiContactChooserActivity : AppCompatActivity(){
     }
 
 
-    override fun onDestroy() {
-        asyncLoader?.cancel(true)
-        super.onDestroy()
-    }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
 
@@ -108,6 +100,22 @@ class MultiContactChooserActivity : AppCompatActivity(){
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_tick, menu)
+
+        val item = menu?.findItem(R.id.action_search)
+        item?.isVisible = true
+
+        searchView.setMenuItem(item)
+        searchView.setOnQueryTextListener(object : MaterialSearchView.OnQueryTextListener{
+            override fun onQueryTextSubmit(query: String?): Boolean = false
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+
+                (adapter as? Filterable)?.filter?.filter(newText)
+                return true
+            }
+
+        })
+
         return super.onCreateOptionsMenu(menu)
     }
 
@@ -116,63 +124,33 @@ class MultiContactChooserActivity : AppCompatActivity(){
     private fun loadRegisteredUsers(){
 
 
-
-
         numberList = utils.getContactList(this)
 
-        FirebaseUtils.ref.allUser()
-            .addValueEventListener(object : ValueEventListener{
-                override fun onDataChange(p0: DataSnapshot) {
+        loadAvailableUsers {
 
-                    if(!p0.exists()) {
-                        utils.toast(this@MultiContactChooserActivity, "No registered users")
-                        return
-                    }
+            registeredAvailableUser = it
 
-                    registeredAvailableUser.clear()
-
-                    for (post in p0.children){
-                        val userModel = post.getValue(Models.User ::class.java)
-
-                        val number = utils.getFormattedTenDigitNumber(userModel!!.phone)
-                        val uid = userModel.uid
+            registeredAvailableUser.removeAll { excludedUIDs.contains(it.uid) }
 
 
-                        for((index, item) in numberList.withIndex()) {
-                            if (item.number == number || item.number.contains(number)) {
-                                numberList[index].uid = uid
-                                if(uid!=FirebaseUtils.getUid() && !registeredAvailableUser.contains(numberList[index])) {
-                                    if(excludedUIDs.isEmpty() || !excludedUIDs.contains(uid))
-                                        registeredAvailableUser.add(numberList[index])
-                                }
-                            }
 
-                        }
+            contacts_list.adapter = adapter
+            participant_recyclerview.adapter = horizontalAdapter
 
-                    }
+            allUsers = registeredAvailableUser
+
+            if(registeredAvailableUser.isEmpty())
+                utils.longToast(this@MultiContactChooserActivity, "No contacts available")
+
+        }
 
 
-                    contacts_list.adapter = adapter
-                    participant_recyclerview.adapter = horizontalAdapter
-
-                    if(registeredAvailableUser.isEmpty())
-                        utils.longToast(this@MultiContactChooserActivity, "No contacts available")
-
-                    contact_progressbar.visibility = View.GONE
-
-
-                }
-
-                override fun onCancelled(p0: DatabaseError) {
-                }
-
-            })
     }
 
 
-    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
 
-        if(item?.itemId == R.id.action_confirm)
+        if(item.itemId == R.id.action_confirm)
         {
             if(selectedUsers.isEmpty()){
                 setResult(Activity.RESULT_CANCELED)
@@ -187,16 +165,32 @@ class MultiContactChooserActivity : AppCompatActivity(){
                 selectedUsers as java.util.ArrayList<out Parcelable>))
             finish()
         }
-        else
-        finish()
+        else if(item.itemId == android.R.id.home)
+            finish()
         return super.onOptionsItemSelected(item)
     }
 
 
-    val adapter = object : androidx.recyclerview.widget.RecyclerView.Adapter<ViewHolder>() {
+    val adapter: RecyclerView.Adapter<ViewHolder> = object : RecyclerView.Adapter<ViewHolder>(), Filterable {
+        override fun getFilter(): Filter {
+            return object : Filter(){
+                override fun performFiltering(p0: CharSequence?): FilterResults {
+
+                    val query = p0?.toString().orEmpty()
+                    registeredAvailableUser = allUsers.filter { it.name.contains(query, true) || it.number.contains(query)}.toMutableList()
+                    return FilterResults().apply { values = registeredAvailableUser }
+                }
+
+                override fun publishResults(p0: CharSequence?, p1: FilterResults?) {
+                    registeredAvailableUser = p1?.values as MutableList<Models.Contact>
+                    notifyDataSetChanged()
+                }
+
+            }
+        }
 
         override fun onCreateViewHolder(p0: ViewGroup, p1: Int): ViewHolder
-                = ViewHolder(layoutInflater.inflate(R.layout.item__forward_contact_list, p0, false))
+                = ViewHolder(layoutInflater.inflate(R.layout.item_contact_layout, p0, false))
 
         override fun getItemCount(): Int = registeredAvailableUser.size
 
@@ -204,21 +198,25 @@ class MultiContactChooserActivity : AppCompatActivity(){
 
             holder.name.text = registeredAvailableUser[position].name
 
-            holder.pic.borderWidth = holder.pic.borderWidth
 
-            val uid = registeredAvailableUser.get(index = position).uid
+            val user = registeredAvailableUser[holder.adapterPosition]
+            val uid = user.uid
 
             FirebaseUtils.loadProfilePic(this@MultiContactChooserActivity, uid, holder.pic)
 
+            holder.checkBox.setChecked( selectedUsers.contains(user), false)
+            holder.checkBox.visible = holder.checkBox.isChecked
+
+
             holder.itemView.setOnClickListener {
 
-                holder.checkBox.isChecked = !holder.checkBox.isChecked
 
-                val user = registeredAvailableUser[holder.adapterPosition]
+                holder.checkBox.setChecked(!holder.checkBox.isChecked, true)
+                holder.checkBox.isChecked = !holder.checkBox.isChecked
 
                 if(holder.checkBox.isChecked) {
                     selectedUsers.add(user)
-                    horizontalAdapter.notifyItemInserted(selectedUsers.indexOf(user))
+                    horizontalAdapter.notifyItemInserted(selectedUsers.lastIndex)
 
                 }else {
                     val index = selectedUsers.indexOf(user)
@@ -227,8 +225,14 @@ class MultiContactChooserActivity : AppCompatActivity(){
 
                 }
 
+
                 if(selectedUsers.isNotEmpty())
-                participant_recyclerview.smoothScrollToPosition(selectedUsers.lastIndex)
+                {
+                    if(!participant_recyclerview.visible) participant_recyclerview.show()
+                    participant_recyclerview.smoothScrollToPosition(selectedUsers.lastIndex)
+                }
+
+
 
             }
 
@@ -240,7 +244,7 @@ class MultiContactChooserActivity : AppCompatActivity(){
 
     }
 
-    val horizontalAdapter = object : androidx.recyclerview.widget.RecyclerView.Adapter<ParticipantHolder>() {
+    val horizontalAdapter = object : RecyclerView.Adapter<ParticipantHolder>() {
         override fun onCreateViewHolder(p0: ViewGroup, p1: Int): ParticipantHolder {
             return ParticipantHolder(layoutInflater.inflate(R.layout.item_grid_contact_layout, p0, false))
         }
@@ -248,14 +252,15 @@ class MultiContactChooserActivity : AppCompatActivity(){
         override fun getItemCount(): Int = selectedUsers.size
 
         override fun onBindViewHolder(p0: ParticipantHolder, p1: Int) {
+
+            val user = selectedUsers[p0.adapterPosition]
+
             p0.name.text = utils.getNameFromNumber(this@MultiContactChooserActivity,
-                selectedUsers[p1].number)
+                user.number).trim().split(" ")[0]
 
-            if(p0.name.text.isNotEmpty() && p0.name.text.contains(" ")){
-                p0.name.text = p0.name.text.substring(0,p0.name.text.indexOf(" "))
-            }
+            Log.d("MultiContactChooserActivity", "onBindViewHolder: $user")
 
-            FirebaseUtils.loadProfileThumbnail(this@MultiContactChooserActivity, selectedUsers[p1].uid,
+            FirebaseUtils.loadProfileThumbnail(this@MultiContactChooserActivity, user.uid,
                 p0.pic)
 
         }
@@ -265,15 +270,21 @@ class MultiContactChooserActivity : AppCompatActivity(){
 
 
 
-    class ViewHolder(itemView: View) : androidx.recyclerview.widget.RecyclerView.ViewHolder(itemView){
+    class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
                 val name = itemView.name
                 val pic = itemView.pic
                 val checkBox = itemView.checkbox
+
+                init {
+                    checkBox.isEnabled = false
+                }
+
             }
 
-    class ParticipantHolder(itemView: View): androidx.recyclerview.widget.RecyclerView.ViewHolder(itemView){
+    class ParticipantHolder(itemView: View): RecyclerView.ViewHolder(itemView){
         val name = itemView.grid_name!!
         val pic = itemView.grid_pic!!
+
         init {
             itemView.grid_cancel_btn.visibility = View.GONE
         }

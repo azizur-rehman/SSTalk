@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.gms.ads.formats.UnifiedNativeAdView xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+        android:id="@+id/conversation_native_ad"
+              xmlns:app="http://schemas.android.com/apk/res-auto"
+              android:orientation="vertical">
+
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            tools:layout_editor_absoluteX="10dp"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            tools:layout_editor_absoluteY="10dp">
+
+
+        <TextView
+                android:id="@+id/textView2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Sponsored Link"
+                android:textSize="12sp"
+                app:layout_constraintBottom_toTopOf="@+id/ad_name"
+                app:layout_constraintEnd_toEndOf="@+id/ad_name"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+        <androidx.appcompat.widget.AppCompatRatingBar
+                android:id="@+id/ad_rating"
+                style="@android:style/Widget.DeviceDefault.RatingBar.Small"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_marginLeft="12dp"
+                android:isIndicator="true"
+                app:layout_constraintBottom_toBottomOf="@+id/ad_side_text"
+                app:layout_constraintStart_toEndOf="@+id/ad_side_text"
+                app:layout_constraintTop_toTopOf="@+id/ad_side_text"
+                app:layout_constraintVertical_bias="0.0" />
+
+        <TextView
+                android:id="@+id/ad_side_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="@font/roboto_thin"
+                android:text="Sample subtitle"
+                android:textSize="10sp"
+                app:layout_constraintBottom_toBottomOf="@+id/ad_pic"
+                app:layout_constraintEnd_toStartOf="@+id/ad_call_to_action"
+                app:layout_constraintHorizontal_bias="0.0"
+                app:layout_constraintStart_toStartOf="@+id/ad_name"
+                app:layout_constraintTop_toBottomOf="@+id/ad_pic"
+                app:layout_constraintVertical_bias="0.0" />
+
+        <TextView
+                android:id="@+id/ad_call_to_action"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp"
+                android:background="@drawable/button_round_with_transparency"
+                android:paddingLeft="10dp"
+                android:paddingTop="5dp"
+                android:paddingRight="10dp"
+                android:paddingBottom="5dp"
+                android:text="Learn more"
+                android:textColor="@color/white"
+                app:layout_constraintBottom_toTopOf="@+id/ad_subtitle"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/ad_name"
+                app:layout_constraintVertical_bias="0.0" />
+
+        <TextView
+                android:id="@+id/ad_name"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginLeft="16dp"
+                android:fontFamily="@font/roboto_regular"
+                android:text="@string/single_line_string"
+                android:textAllCaps="false"
+                android:textColor="@color/black"
+
+                android:textSize="14sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@+id/ad_pic"
+                app:layout_constraintTop_toTopOf="@+id/ad_pic" />
+
+        <de.hdodenhof.circleimageview.CircleImageView
+                android:id="@+id/ad_pic"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_marginStart="4dp"
+                android:layout_marginLeft="4dp"
+                android:layout_marginTop="8dp"
+                app:civ_border_color="@color/colorAccent"
+                app:civ_circle_background_color="@color/colorAccent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/textView2" />
+
+
+        <TextView
+                android:id="@+id/ad_subtitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="2dp"
+                android:layout_marginBottom="8dp"
+                android:ellipsize="end"
+                android:fontFamily="@font/roboto_light"
+                android:text="@string/single_line_string"
+                android:textSize="12sp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.0"
+                app:layout_constraintStart_toStartOf="@+id/ad_side_text"
+                app:layout_constraintTop_toBottomOf="@+id/ad_side_text" />
+
+
+        <View
+                android:id="@+id/view2"
+                android:layout_width="0dp"
+                android:layout_height="0.01dp"
+                android:background="@color/gray_dark"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="@+id/ad_subtitle" />
+
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+
+
+
+</com.google.android.gms.ads.formats.UnifiedNativeAdView>
