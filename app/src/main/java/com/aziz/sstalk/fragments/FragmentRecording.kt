@@ -8,8 +8,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import cafe.adriel.androidaudiorecorder.model.AudioSampleRate
 import com.aziz.sstalk.R
+import com.aziz.sstalk.utils.hide
 import com.aziz.sstalk.utils.max_file_size
 import com.aziz.sstalk.utils.show
 import com.aziz.sstalk.utils.utils
@@ -43,7 +43,7 @@ class FragmentRecording: BottomSheetDialogFragment() {
                     setAudioSource(MediaRecorder.AudioSource.MIC)
                     setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
                     setAudioEncoder(MediaRecorder.AudioEncoder.AMR_WB)
-                    setAudioSamplingRate(AudioSampleRate.HZ_16000.sampleRate)
+                    setAudioSamplingRate(16000)
                     setOutputFile(filePath)
                     setMaxFileSize(max_file_size)
                 }
@@ -71,11 +71,10 @@ class FragmentRecording: BottomSheetDialogFragment() {
 
             if(isRecording)
                 stopRecording()
-            else
-                onFinished?.onRecorded(File(filePath).takeIf { it.exists() })
 
-            (it as ImageView).setImageResource(R.drawable.ic_done_tick_white_24dp)
             view.cancel.show()
+            view.accept.show()
+            it.hide()
         }
 
         view.cancel.setOnClickListener {
@@ -84,6 +83,10 @@ class FragmentRecording: BottomSheetDialogFragment() {
 
             File(filePath).delete()
             onFinished?.onCancelled()
+        }
+
+        view.accept.setOnClickListener {
+            onFinished?.onRecorded(File(filePath).takeIf { it.exists() })
         }
 
     }
@@ -95,8 +98,13 @@ class FragmentRecording: BottomSheetDialogFragment() {
         initRecorder()
 
         try {
+            rootView.cancel.hide()
+            rootView.accept.hide()
+
             mediaRecorder.prepare()
             mediaRecorder.start()
+
+            rootView.pulse_layout.startRippleAnimation()
 
             timer.schedule(timerTask {
 
@@ -133,6 +141,7 @@ class FragmentRecording: BottomSheetDialogFragment() {
 
         if(!isRecording) return
 
+        rootView.pulse_layout.stopRippleAnimation()
         timer.cancel()
         try {
             mediaRecorder.stop()

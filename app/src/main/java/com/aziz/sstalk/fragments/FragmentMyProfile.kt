@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -13,6 +14,7 @@ import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.aziz.sstalk.HomeActivity
 import com.aziz.sstalk.R
@@ -64,6 +66,9 @@ class FragmentMyProfile : Fragment() {
 
 
         isOnAccountCreated = arguments?.getBoolean(utils.constants.KEY_IS_ON_ACCOUNT_CREATION, false)?:false
+
+        profile_name.isEnabled = isOnAccountCreated
+
 
         with(view) {
 
@@ -170,6 +175,12 @@ class FragmentMyProfile : Fragment() {
                         profile_name.setText(p0.value.toString().trim())
                     }
                 })
+
+            edit.setOnClickListener {
+                profile_name.isEnabled = true
+                edit.setColorFilter(ContextCompat.getColor(context, R.color.green))
+            }
+
         }
 
     }

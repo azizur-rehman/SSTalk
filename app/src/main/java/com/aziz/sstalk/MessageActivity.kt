@@ -3282,6 +3282,7 @@ class MessageActivity : AppCompatActivity() {
 
 
         val recorder = FragmentRecording()
+        recorder.dialog?.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         recorder.isCancelable = false
         recorder.setRecordingListener(object : FragmentRecording.OnRecordingFinished{
             override fun onRecorded(file: File?) {

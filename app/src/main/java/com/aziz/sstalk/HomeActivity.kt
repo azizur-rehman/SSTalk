@@ -18,10 +18,13 @@ import android.util.Log
 import android.view.*
 import android.widget.TextView
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProviders
 import com.aurelhubert.ahbottomnavigation.AHBottomNavigationItem
 import com.aziz.sstalk.fragments.FragmentMyProfile
 import com.aziz.sstalk.fragments.FragmentOnlineFriends
 import com.aziz.sstalk.fragments.FragmentSearch
+import com.aziz.sstalk.fragments.OnlineVM
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.*
 import com.firebase.ui.database.FirebaseRecyclerAdapter
@@ -75,7 +78,6 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     var isContextToolbarActive = false
     private var isOnlineFragmentLoaded = false
-    private val fragmentOnline = FragmentOnlineFriends()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -105,7 +107,6 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         toggle.syncState()
 
         show_contacts.setOnClickListener {
-
             startActivity(Intent(context, ContactsActivity::class.java))
         }
 
@@ -113,6 +114,10 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         conversation_progressbar.visibility = View.VISIBLE
         initComponents()
 
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT && BuildConfig.DEBUG) {
+            reportFullyDrawn()
+        }
     }
 
     private fun initComponents(){
@@ -156,8 +161,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     override fun onPause() {
 
-        if(utils.isAppIsInBackground(this))
-            FirebaseUtils.setMeAsOffline()
+        FirebaseUtils.setMeAsOffline()
         super.onPause()
     }
 
@@ -251,6 +255,8 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
 
     private fun setAdapter(){
+
+        loadOnlineUsers()
 
         conversation_progressbar.visibility = View.VISIBLE
 
@@ -629,9 +635,14 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         title = "Recent"
 
         supportFragmentManager.addOnBackStackChangedListener {
-            if(supportFragmentManager.backStackEntryCount == 0) show_contacts.show()
+            if(supportFragmentManager.backStackEntryCount == 0) {
+                show_contacts.show()
+            }
             else show_contacts.hide()
         }
+
+        val fragmentOnline = FragmentOnlineFriends()
+
 
         with(bottom_navigation_home){
             addItem(AHBottomNavigationItem("Recent", R.drawable.ic_chat))
@@ -644,6 +655,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             setOnTabSelectedListener { position, _ ->
 
                 repeat(supportFragmentManager.backStackEntryCount){supportFragmentManager.popBackStackImmediate()}
+
 
                 when(position){
                     0 ->  {
@@ -659,6 +671,10 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                             .addToBackStack(null)
                             .commit()
                         title = "Online contacts"
+                        //set online users
+                        if(onOnlineUsersLoaded == null)
+                        onOnlineUsersLoaded = fragmentOnline.setOnlineListener()
+
                     }
 
                     2 -> {
@@ -680,7 +696,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
 
-    fun setOnlineCount(count:Int) {
+    private fun setOnlineCount(count:Int) {
         try {
             bottom_navigation_home.setNotification(count.toString().takeIf { count > 0 }?:"", 1)
         }
@@ -872,6 +888,27 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         })
 
         return super.onCreateOptionsMenu(menu)
+    }
+
+    var onlineUsers:List<Models.Contact> = listOf()
+    private fun loadOnlineUsers(){
+
+        ViewModelProviders.of(this)[OnlineVM::class.java]
+            .getOnlineUsers(context)
+            .observe(this, Observer { onlineUsers ->
+
+               setOnlineCount(onlineUsers.size)
+                this.onlineUsers = onlineUsers
+                onOnlineUsersLoaded?.onLoaded(onlineUsers)
+
+            })
+
+    }
+
+
+    var onOnlineUsersLoaded:OnlineUsersLoaded? = null
+    interface OnlineUsersLoaded{
+        fun onLoaded(users:List<Models.Contact>)
     }
 
     interface OnSearched{

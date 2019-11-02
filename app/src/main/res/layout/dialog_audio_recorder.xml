@@ -2,9 +2,10 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto"
         xmlns:tools="http://schemas.android.com/tools"
-        android:background="@color/colorPrimary"
-        android:orientation="vertical" android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/rounded_white_background"
+        android:orientation="vertical">
 
 
     <TextView
@@ -15,7 +16,7 @@
             android:fontFamily="sans-serif-thin"
             android:gravity="center"
             android:text="00:00:00"
-            android:textColor="@android:color/white"
+            android:textColor="@color/green_dark"
             android:textSize="60sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -27,47 +28,69 @@
             style="@style/Widget.AppCompat.Button.Borderless"
             android:layout_width="80dp"
             android:layout_height="80dp"
-            android:padding="10dp"
+            android:background="?selectableItemBackground"
+            android:padding="0dp"
             android:scaleType="fitCenter"
-            android:visibility="gone"
-            android:background="@drawable/circle_shape_white"
-            android:src="@drawable/ic_cancel_grey_24dp"
-            android:tint="@color/white"
-            app:layout_constraintBottom_toBottomOf="@+id/stop"
-            app:layout_constraintEnd_toStartOf="@+id/stop"
-            app:layout_constraintStart_toStartOf="@+id/timer"
-            app:layout_constraintTop_toTopOf="@+id/stop" />
-
-    <ImageButton
-            android:id="@+id/stop"
-            style="@style/Widget.AppCompat.Button.Borderless"
-            android:background="@drawable/circle_shape_white"
-            android:layout_width="100dp"
-            android:layout_height="100dp"
-            android:layout_centerHorizontal="true"
-            android:layout_centerVertical="true"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="16dp"
-            android:padding="10dp"
-            android:scaleType="fitCenter"
-            android:src="@drawable/aar_ic_rec"
+            android:src="@drawable/ic_cross_circle"
+            android:tint="@color/red"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="@+id/timer"
-            app:layout_constraintStart_toEndOf="@id/cancel"
+            app:layout_constraintEnd_toStartOf="@+id/pulse_layout"
+            app:layout_constraintStart_toStartOf="@+id/timer"
             app:layout_constraintTop_toBottomOf="@+id/timer" />
 
+
+    <com.gauravbhola.ripplepulsebackground.RipplePulseLayout
+            android:id="@+id/pulse_layout"
+            android:layout_width="180dp"
+            android:layout_height="180dp"
+            android:clipChildren="false"
+            android:visibility="visible"
+            app:duration="1000"
+            app:endRadius="90dp"
+            app:layout_goneMarginTop="40dp"
+            app:layout_goneMarginBottom="40dp"
+
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="@+id/timer"
+            app:layout_constraintStart_toStartOf="@+id/timer"
+            app:layout_constraintTop_toBottomOf="@+id/timer"
+            app:rippleColor="@color/green"
+            app:rippleType="stroke"
+            app:startRadius="42dp"
+            app:strokeWidth="5dp">
+
+
+        <ImageButton
+                android:id="@+id/stop"
+                style="@style/Widget.AppCompat.Button.Borderless"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                android:layout_centerHorizontal="true"
+                android:layout_centerVertical="true"
+                android:background="?selectableItemBackground"
+                android:padding="10dp"
+                android:scaleType="fitXY"
+                android:src="@drawable/aar_ic_rec"
+                android:tint="@color/green" />
+
+
+    </com.gauravbhola.ripplepulsebackground.RipplePulseLayout>
+
+
     <ImageButton
-            android:id="@+id/play"
+            android:id="@+id/accept"
             style="@style/Widget.AppCompat.Button.Borderless"
-            android:layout_width="80dp"
-            android:layout_height="80dp"
-            android:padding="10dp"
-            android:scaleType="fitCenter"
-            android:visibility="gone"
-            android:src="@drawable/aar_ic_play"
-            app:layout_constraintBottom_toBottomOf="@+id/stop"
-            app:layout_constraintStart_toEndOf="@+id/stop"
-            app:layout_constraintTop_toTopOf="@+id/stop" />
+            android:background="?selectableItemBackground"
+            android:layout_width="90dp"
+            android:layout_height="90dp"
+            android:padding="0dp"
+            android:scaleType="fitXY"
+            android:src="@drawable/ic_tick_circle"
+            android:tint="@color/green"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="@+id/timer"
+            app:layout_constraintStart_toEndOf="@+id/pulse_layout"
+            app:layout_constraintTop_toBottomOf="@+id/timer" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -179,6 +179,12 @@
                 <action android:name="android.service.chooser.ChooserTargetService"/>
             </intent-filter>
         </service>
+
+
+        <meta-data
+                android:name="firebase_crashlytics_collection_enabled"
+                android:value="@bool/enable_crashlytics" />
+
     </application>
 
 </manifest>

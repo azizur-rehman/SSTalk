@@ -302,10 +302,10 @@ class ForwardActivity : AppCompatActivity() {
         if(intent.action == Intent.ACTION_SEND){
             when {
                 intent.type == "text/plain" -> {
-                    val text = intent.getStringExtra(Intent.EXTRA_TEXT)
-                    messageModels!!.add(Models.MessageModel(text ))
+                    val text = intent.getStringExtra(Intent.EXTRA_TEXT)?:return
+                    messageModels?.add(Models.MessageModel(text ))
                     isTextFromIntent = true
-                    caption_layout.visibility = View.GONE
+                    caption_layout?.visibility = View.GONE
                 }
                 intent.type?.startsWith( "image/")?:false -> {
 
