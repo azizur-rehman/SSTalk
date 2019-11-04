@@ -32,6 +32,8 @@ import android.view.*
 import android.view.ViewGroup
 import androidx.appcompat.widget.SearchView
 import android.widget.*
+import androidx.core.view.ViewCompat
+import androidx.interpolator.view.animation.LinearOutSlowInInterpolator
 import com.aziz.sstalk.firebase.MessagingService
 import com.aziz.sstalk.fragments.FragmentRecording
 import com.aziz.sstalk.models.Models
@@ -176,6 +178,12 @@ class MessageActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
 
 
+        //enable layout animations
+        try {
+            (findViewById<ViewGroup>(R.id.content_message_layout)).layoutTransition
+                .enableTransitionType(LayoutTransition.CHANGING)
+        }
+        catch (e:Exception){e.printStackTrace()}
 
         targetUid = intent.getStringExtra(FirebaseUtils.KEY_UID).orEmpty()
         val type:String? = intent.getStringExtra(utils.constants.KEY_TARGET_TYPE)
@@ -537,6 +545,12 @@ class MessageActivity : AppCompatActivity() {
                 startAudioRecording()
 
         }
+
+
+
+        messagesList.addOnItemTouchListener(object : RecyclerView.SimpleOnItemTouchListener() {
+            override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent) = attachment_menu.visible
+        })
     }
 
     private fun startCamera(){
@@ -1148,6 +1162,7 @@ class MessageActivity : AppCompatActivity() {
                         dateHeader = holder.dateTextView
                         holder.time.text = utils.getLocalTime(model.timeInMillis)
                         targetSenderTitle = holder.senderTitle
+                        targetSenderIcon = holder.senderIcon
 
                         holder.itemView.item_audio_container.setOnClickListener {
                             if(File(model.file_local_path).exists()) playAudio(model.file_local_path) else downloadAudio(model, messageID)
@@ -2982,13 +2997,20 @@ class MessageActivity : AppCompatActivity() {
                 if(layoutManager.findLastVisibleItemPosition() == adapter.itemCount - 1 )
                 {
                     bottomScrollButton.hide()
-                    smart_reply_root_layout.animate().translationY(0f).withStartAction { smart_reply_root_layout.show()}
+                    //show
+                    smart_reply_root_layout.animate().translationY(0f).setInterpolator(LinearOutSlowInInterpolator())
+                        .withStartAction { smart_reply_root_layout.show()}
                 }
                 else if(adapter.itemCount > 5)
                 {
                     bottomScrollButton.show()
-                    smart_reply_root_layout.animate().translationY(smart_reply_root_layout.height.toFloat())
-                        .withEndAction { smart_reply_root_layout.hide() }
+                    //hide
+//                    smart_reply_root_layout.animate().translationY(smart_reply_root_layout.height.toFloat())
+//                        .setInterpolator(LinearOutSlowInInterpolator())
+//                        .withEndAction {
+                            smart_reply_root_layout.hide()
+                      //  }
+
 
                 }
 

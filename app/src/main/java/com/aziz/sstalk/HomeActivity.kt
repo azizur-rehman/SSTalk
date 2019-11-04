@@ -44,11 +44,13 @@ import com.google.firebase.database.ValueEventListener
 import com.miguelcatalan.materialsearchview.MaterialSearchView
 import de.hdodenhof.circleimageview.CircleImageView
 import kotlinx.android.synthetic.main.activity_home.*
+import kotlinx.android.synthetic.main.activity_message.*
 import kotlinx.android.synthetic.main.app_bar_home.*
 import kotlinx.android.synthetic.main.content_home.*
 import kotlinx.android.synthetic.main.content_home.recycler_back_message
 import kotlinx.android.synthetic.main.item_conversation_ad.view.*
 import kotlinx.android.synthetic.main.item_conversation_layout.view.*
+import kotlinx.android.synthetic.main.layout_attachment_menu.*
 import kotlinx.android.synthetic.main.layout_recycler_view.*
 import org.jetbrains.anko.*
 import org.jetbrains.anko.design.indefiniteSnackbar
@@ -654,7 +656,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             setUseElevation(true)
             setOnTabSelectedListener { position, _ ->
 
-                repeat(supportFragmentManager.backStackEntryCount){supportFragmentManager.popBackStackImmediate()}
+                repeat(supportFragmentManager.backStackEntryCount){supportFragmentManager.popBackStack()}
 
 
                 when(position){

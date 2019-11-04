@@ -32,12 +32,17 @@ inline fun View.show(){
     visibility = View.VISIBLE
 }
 
+
+
 inline fun View.hideOrShow() = if (visibility == View.VISIBLE) hide() else show()
 
 var View.visible:Boolean
     get() { return visibility == View.VISIBLE }
     set(value) = if (value) show() else hide()
 
+var View.invisible:Boolean
+    get() { return visibility == View.INVISIBLE }
+    set(value) = if (value) visibility = View.INVISIBLE else visibility = View.VISIBLE
 
 fun Context.loadAvailableUsers(action:(registeredAvailableUsers:MutableList<Models.Contact>)->Unit){
 
