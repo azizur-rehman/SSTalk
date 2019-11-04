@@ -132,6 +132,7 @@
                                                        android:layout_height="wrap_content"
                                                        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                                                        android:clipToPadding="false"
+                                                        android:layoutAnimation="@anim/layout_anim_recycler"
                                                        android:paddingBottom="10dp"
                                                        android:id="@+id/frequentRecyclerView"
         />
@@ -151,6 +152,7 @@
                                                         android:layout_height="match_parent"
                                                         android:clipToPadding="false"
                                                         android:paddingBottom="100dp"
+                                                        android:layoutAnimation="@anim/layout_anim_recycler"
                                                         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                                                         android:id="@+id/allContactRecyclerView"
         />
