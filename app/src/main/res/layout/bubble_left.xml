@@ -39,7 +39,7 @@
                 android:layout_width="50dp"
                 app:civ_border_color="@color/colorPrimary"
                 android:layout_marginLeft="2dp"
-                android:id="@+id/circle_sender_text"
+                android:id="@+id/senderIcon"
                 android:src="@drawable/contact_placeholder"
                 android:layout_height="50dp"/>
 

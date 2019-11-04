@@ -32,7 +32,7 @@
 
 
        <de.hdodenhof.circleimageview.CircleImageView
-               android:id="@+id/circle_sender_text"
+               android:id="@+id/senderIcon"
                android:layout_width="50dp"
                android:layout_marginStart="2dp"
                android:layout_height="50dp"
@@ -65,8 +65,8 @@
                android:layout_marginLeft="3dp"
                android:orientation="vertical"
                app:layout_constraintBottom_toBottomOf="parent"
-               app:layout_constraintStart_toEndOf="@+id/circle_sender_text"
-               app:layout_constraintTop_toTopOf="@+id/circle_sender_text"
+               app:layout_constraintStart_toEndOf="@+id/senderIcon"
+               app:layout_constraintTop_toTopOf="@+id/senderIcon"
                app:layout_constraintVertical_bias="0.0">
 
 

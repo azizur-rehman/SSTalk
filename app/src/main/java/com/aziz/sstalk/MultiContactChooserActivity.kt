@@ -202,17 +202,17 @@ class MultiContactChooserActivity : AppCompatActivity(){
             val user = registeredAvailableUser[holder.adapterPosition]
             val uid = user.uid
 
-            FirebaseUtils.loadProfilePic(this@MultiContactChooserActivity, uid, holder.pic)
+            FirebaseUtils.loadProfileThumbnail(this@MultiContactChooserActivity, uid, holder.pic)
 
             holder.checkBox.setChecked( selectedUsers.contains(user), false)
-            holder.checkBox.visible = holder.checkBox.isChecked
+            holder.checkBox.invisible = !holder.checkBox.isChecked
 
 
             holder.itemView.setOnClickListener {
 
 
                 holder.checkBox.setChecked(!holder.checkBox.isChecked, true)
-                holder.checkBox.isChecked = !holder.checkBox.isChecked
+                holder.checkBox.invisible = !holder.checkBox.isChecked
 
                 if(holder.checkBox.isChecked) {
                     selectedUsers.add(user)
@@ -258,7 +258,7 @@ class MultiContactChooserActivity : AppCompatActivity(){
             p0.name.text = utils.getNameFromNumber(this@MultiContactChooserActivity,
                 user.number).trim().split(" ")[0]
 
-            Log.d("MultiContactChooserActivity", "onBindViewHolder: $user")
+            Log.d("MultiContactChooser", "onBindViewHolder: $user")
 
             FirebaseUtils.loadProfileThumbnail(this@MultiContactChooserActivity, user.uid,
                 p0.pic)

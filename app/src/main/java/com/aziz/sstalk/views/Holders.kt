@@ -1,9 +1,6 @@
 package com.aziz.sstalk.views
 
-import android.content.res.ColorStateList
 import android.graphics.Color
-import android.graphics.ColorFilter
-import android.os.Build
 import androidx.recyclerview.widget.RecyclerView
 import android.view.View
 import com.aziz.sstalk.R
@@ -15,7 +12,7 @@ import kotlinx.android.synthetic.main.bubble_audio_right.view.time_right
 import kotlinx.android.synthetic.main.bubble_image_left.view.*
 import kotlinx.android.synthetic.main.bubble_image_right.view.*
 import kotlinx.android.synthetic.main.bubble_left.view.*
-import kotlinx.android.synthetic.main.bubble_left.view.circle_sender_text
+import kotlinx.android.synthetic.main.bubble_left.view.senderIcon
 import kotlinx.android.synthetic.main.bubble_left.view.container_left
 import kotlinx.android.synthetic.main.bubble_left.view.header_left
 import kotlinx.android.synthetic.main.bubble_left.view.messageText_sender_left
@@ -41,7 +38,7 @@ object Holders {
         // val imageLayout = itemView.imageFrameLayout!!
         val container = itemView.container_left!!
         val messageLayout = itemView.message_layout_text_left!!
-        val senderIcon = itemView.circle_sender_text!!
+        val senderIcon = itemView.senderIcon!!
         val senderTitle = itemView.messageText_sender_left!!
 
     }
@@ -202,6 +199,7 @@ object Holders {
         val messageLayout = itemView.message_layout_audio_left!!
         val audioIcon = itemView.item_audio_icon!!
         val senderTitle = itemView.sender!!
+        val senderIcon = itemView.senderIcon!!
 
         init {
             itemView.item_audio_container.setBackgroundResource(R.drawable.shape_bubble_left)
