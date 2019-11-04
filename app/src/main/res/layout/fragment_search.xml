@@ -2,6 +2,7 @@
 
 <FrameLayout android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:id="@+id/container_search"
         xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto">
 
@@ -34,6 +35,8 @@
 
                 <androidx.recyclerview.widget.RecyclerView android:layout_width="match_parent"
                                                        android:layout_height="wrap_content"
+                                                       android:layoutAnimation="@anim/layout_anim_recycler"
+
                                                        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                                                        android:clipToPadding="false"
                                                        android:id="@+id/contactRecyclerView" />
@@ -53,6 +56,7 @@
                 <androidx.recyclerview.widget.RecyclerView android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:clipToPadding="false"
+                        android:layoutAnimation="@anim/layout_anim_recycler"
                         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                         android:id="@+id/groupsRecyclerView"
                         />
@@ -72,6 +76,7 @@
                                                         android:layout_height="match_parent"
                                                         android:clipToPadding="false"
                                                         android:paddingBottom="10dp"
+                                                        android:layoutAnimation="@anim/layout_anim_recycler"
                                                         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                                                         android:id="@+id/messagesRecyclerView"
         />

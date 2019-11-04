@@ -1,5 +1,6 @@
 package com.aziz.sstalk.fragments
 
+import android.animation.LayoutTransition
 import android.content.Context
 import android.os.Bundle
 import android.os.Handler
@@ -66,6 +67,12 @@ class FragmentSearch : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         rootView = view
+
+        try {
+            (activity?.findViewById<ViewGroup>(R.id.container_search))?.layoutTransition
+                ?.enableTransitionType(LayoutTransition.CHANGING)
+        }
+        catch (e:Exception){e.printStackTrace()}
 
         view.loadData()
 

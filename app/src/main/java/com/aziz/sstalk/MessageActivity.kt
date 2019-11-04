@@ -40,6 +40,7 @@ import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.*
 import com.aziz.sstalk.views.ColorGenerator
 import com.aziz.sstalk.views.Holders
+import com.firebase.ui.common.ChangeEventType
 import com.firebase.ui.database.FirebaseRecyclerAdapter
 import com.firebase.ui.database.FirebaseRecyclerOptions
 import com.google.android.gms.maps.*
@@ -770,6 +771,7 @@ class MessageActivity : AppCompatActivity() {
     }
 
 
+    val conversation:MutableList<FirebaseTextMessage> = ArrayList()
 
    private fun setRecyclerAdapter(){
 
@@ -807,8 +809,8 @@ class MessageActivity : AppCompatActivity() {
 
         val options = FirebaseRecyclerOptions.Builder<Models.MessageModel>()
             .setQuery(FirebaseUtils.ref.getChatQuery(myUID, targetUid)
-               // .limitToLast(20)
                 ,Models.MessageModel::class.java)
+            .setLifecycleOwner(this)
             .build()
 
 
@@ -870,9 +872,66 @@ class MessageActivity : AppCompatActivity() {
                  return super.getItemCount()
              }
 
+             private val handler = Handler(Looper.getMainLooper()); lateinit var runnable: Runnable
+             var hasSearchedItemFocused = false
+
+             override fun onChildChanged(
+                 type: ChangeEventType,
+                 snapshot: DataSnapshot,
+                 newIndex: Int,
+                 oldIndex: Int
+             ) {
+                 super.onChildChanged(type, snapshot, newIndex, oldIndex)
+
+                 val message = snapshot.getValue(Models.MessageModel::class.java)
+                 val textMessage = message?.let { message.message.takeIf { message.messageType == "message" }?:message.messageType }?:return
+
+                 val target = FirebaseTextMessage.createForRemoteUser(textMessage,
+                     System.currentTimeMillis(), targetUid)
+                 val me = FirebaseTextMessage.createForLocalUser(textMessage,
+                     System.currentTimeMillis())
+
+                 when (type) {
+                     ChangeEventType.ADDED -> {
+                         if(message.from == targetUid)
+                             conversation.add(target)
+                         else
+                             conversation.add(me)
+
+                     }
+
+                     ChangeEventType.REMOVED -> {
+                         if(message.from == targetUid)
+                             conversation.remove(target)
+                         else
+                             conversation.remove(me)
+
+                     }
+
+
+                     ChangeEventType.CHANGED -> {
+                         if(message.from == targetUid)
+                             conversation[newIndex] = target
+                         else
+                             conversation[newIndex] = me
+
+                     }
+
+                     else -> Unit
+                 }
+
+                 runnable = Runnable { generateSmartReply() }
+                 handler.removeCallbacks(runnable)
+                 handler.postDelayed(runnable, 1000)
+
+             }
+
              override fun onDataChanged() {
 
                  super.onDataChanged()
+
+                 if(hasSearchedItemFocused) return
+
                  val focusedMessage = intent.getSerializableExtra(utils.constants.KEY_MSG_MODEL) as? Models.MessageModel
                      ?: return
 
@@ -880,6 +939,8 @@ class MessageActivity : AppCompatActivity() {
                  messagesList.scrollToPosition(selectedPosition)
                  searchFilterItemPosition.add(selectedPosition)
                  notifyItemChanged(selectedPosition)
+
+                 hasSearchedItemFocused = true
 
              }
 
@@ -964,7 +1025,8 @@ class MessageActivity : AppCompatActivity() {
 
                 }
                 catch (e:Exception){
-                    Log.d("MessageActivity", "onBindViewHolder: ${e.message}")}
+                    Log.d("MessageActivity", "onBindViewHolder: ${e.message}")
+                }
 
                 if(model.messageType == utils.constants.FILE_TYPE_LOCATION){
 
@@ -1546,7 +1608,6 @@ class MessageActivity : AppCompatActivity() {
                         )
                     )
 
-                    Log.d("MessageActivity", "onMapReady: ")
                 }
             }
         }
@@ -2032,7 +2093,6 @@ class MessageActivity : AppCompatActivity() {
         storageRef.getFile(audioFile)
             .addOnProgressListener {
                 val percentage:Double = (100.0 * it.bytesTransferred) / it.totalByteCount
-                Log.d("MessageActivity", "downloadAudio: progress = $percentage")
                 progressBar?.progress = percentage.toFloat()
 
             }
@@ -2072,6 +2132,10 @@ class MessageActivity : AppCompatActivity() {
         } catch (e:Exception){}
     }
 
+    override fun onStop() {
+        super.onStop()
+        adapter.stopListening()
+    }
 
     override fun onDestroy() {
         super.onDestroy()
@@ -2456,7 +2520,6 @@ class MessageActivity : AppCompatActivity() {
 
                                 R.id.action_translate -> {
 
-                                    Log.d("MessageActivity", "onActionItemClicked: ${Pref.getSettingFile(context).all}")
 
                                     if(Pref.getSettingFile(context).contains(Pref.KEY_DEFAULT_TRANSLATION_LANG))
                                         translateMessage(itemView, model)
@@ -3156,7 +3219,6 @@ class MessageActivity : AppCompatActivity() {
                         members += utils.getNameFromNumber(context, member.phoneNumber) +", "
 
                         if(member.uid == myUID) {
-                            Log.d("MessageActivity", "onDataChange: ${post.value}")
                             isMeRemoved = member.removed
                         }
                     }
@@ -3168,7 +3230,6 @@ class MessageActivity : AppCompatActivity() {
                         if (!isMeRemoved) {
                             members = members.trim().substring(0, members.lastIndex - 1)
                             user_online_status.text = members
-                            Log.d("MessageActivity", "onDataChange: member name = $members")
                         }
                         else user_online_status.visibility = View.GONE
                     }
@@ -3189,83 +3250,6 @@ class MessageActivity : AppCompatActivity() {
 
 
         smart_reply_layout.visibility = View.GONE
-
-        FirebaseUtils.ref.getChatRef(myUID, targetUid)
-            .addValueEventListener(object : ValueEventListener{
-                override fun onCancelled(p0: DatabaseError) {}
-
-                override fun onDataChange(p0: DataSnapshot) {
-
-                    val conversation:MutableList<FirebaseTextMessage> = ArrayList()
-                    var isLastMessageMine = false
-                    p0.children.forEachIndexed { index, dataSnapshot ->
-                        val message = dataSnapshot.getValue(Models.MessageModel::class.java)
-                        message?.let {
-                            val textMessage = message.message.takeIf { message.messageType == "message" }?:message.messageType
-
-                            if(it.from == targetUid)
-                            conversation.add(FirebaseTextMessage.createForRemoteUser(textMessage,
-                                System.currentTimeMillis(), targetUid))
-                            else
-                                conversation.add(FirebaseTextMessage.createForLocalUser(textMessage,
-                                System.currentTimeMillis()))
-
-
-                            if(index == p0.childrenCount.toInt() - 1){
-                                isLastMessageMine = it.from == myUID
-                            }
-                        }
-                    }
-
-                    //generate smart reply
-                    try {
-
-
-                        if(conversation.isEmpty()) return
-
-                        FirebaseNaturalLanguage.getInstance().smartReply
-                            .suggestReplies(conversation)
-                            .addOnSuccessListener {
-                                when(it.status){
-                                    SmartReplySuggestionResult.STATUS_SUCCESS -> {
-
-
-                                    }
-                                    SmartReplySuggestionResult.STATUS_NO_REPLY -> {
-                                        Log.d("MessageActivity", "ML Translation: no reply")
-                                    }
-                                    SmartReplySuggestionResult.STATUS_NOT_SUPPORTED_LANGUAGE -> {
-                                        Log.d("MessageActivity", "ML Translation: language not supported ")
-                                    }
-                                }
-
-                                smart_reply_layout.visible = (it.suggestions.isNotEmpty())
-
-                                smart_reply_recycler.setCustomAdapter(context, it.suggestions, R.layout.item_smart_reply){itemView, _,item ->
-                                    val suggestion  = item.text
-                                    itemView.item_text.text = suggestion
-
-                                    itemView.item_text.setOnClickListener {
-                                        messageInputField.inputEditText.setText(suggestion)
-                                        if(Pref.isTapToReply(context))
-                                            messageInputField.button.callOnClick()
-                                    }
-
-                                    itemView.setOnClickListener {
-                                        messageInputField.inputEditText.setText(suggestion)
-                                        if(Pref.isTapToReply(context))
-                                            messageInputField.button.callOnClick()
-                                    }
-                                }
-
-
-                            }
-                    } catch (e: Exception) {
-                        Log.e("MessageActivity", "onDataChange: error on smart suggestion : ",e)
-                    }
-                }
-            })
-
 
         smart_reply_setting.setOnClickListener {
 
@@ -3297,6 +3281,58 @@ class MessageActivity : AppCompatActivity() {
 
     }
 
+
+    private fun generateSmartReply(){
+
+        //generate smart reply
+        try {
+
+
+            if(conversation.isEmpty()) return
+
+            FirebaseNaturalLanguage.getInstance().smartReply
+                .suggestReplies(conversation)
+                .addOnSuccessListener {
+                    when(it.status){
+                        SmartReplySuggestionResult.STATUS_SUCCESS -> {
+
+
+                        }
+                        SmartReplySuggestionResult.STATUS_NO_REPLY -> {
+                            Log.d("MessageActivity", "ML Translation: no reply")
+                        }
+                        SmartReplySuggestionResult.STATUS_NOT_SUPPORTED_LANGUAGE -> {
+                            Log.d("MessageActivity", "ML Translation: language not supported ")
+                        }
+                    }
+
+                    smart_reply_layout.visible = (it.suggestions.isNotEmpty())
+
+                    smart_reply_recycler.setCustomAdapter(context, it.suggestions, R.layout.item_smart_reply){itemView, _,item ->
+                        val suggestion  = item.text
+                        itemView.item_text.text = suggestion
+
+                        itemView.item_text.setOnClickListener {
+                            messageInputField.inputEditText.setText(suggestion)
+                            if(Pref.isTapToReply(context))
+                                messageInputField.button.callOnClick()
+                        }
+
+                        itemView.setOnClickListener {
+                            messageInputField.inputEditText.setText(suggestion)
+                            if(Pref.isTapToReply(context))
+                                messageInputField.button.callOnClick()
+                        }
+                    }
+
+
+                }
+        } catch (e: Exception) {
+            Log.e("MessageActivity", "onDataChange: error on smart suggestion : ",e)
+        }
+
+
+    }
 
 
     private fun startAudioRecording(){

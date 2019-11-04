@@ -10,6 +10,8 @@
         <item name="android:textAppearance">@style/TextBaseFontStyle</item>
         <item name="android:fontFamily">@font/segoeui</item>
         <!--<item name="searchViewStyle">@style/MySearchViewStyle</item>-->
+        <item name="bottomSheetDialogTheme">@style/AppBottomSheetDialogTheme</item>
+
 
     </style>
 
@@ -142,6 +144,18 @@
         <!--<item name="commitIcon">...</item>-->
         <!-- Layout for query suggestion rows -->
         <!--<item name="suggestionRowLayout">...</item>-->
+    </style>
+
+
+    <style name="AppBottomSheetDialogTheme"
+            parent="Theme.Design.Light.BottomSheetDialog">
+        <item name="colorAccent">@color/colorAccent</item>
+        <item name="bottomSheetStyle">@style/AppModalStyle</item>
+    </style>
+
+    <style name="AppModalStyle"
+            parent="Widget.Design.BottomSheet.Modal">
+        <item name="android:background">@drawable/rounded_top</item>
     </style>
 
 </resources>

@@ -1,6 +1,7 @@
 package com.aziz.sstalk
 
 import android.Manifest
+import android.animation.LayoutTransition
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -92,6 +93,14 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             finish()
             return
         }
+
+
+        try {
+            (findViewById<ViewGroup>(R.id.app_bar_layout)).layoutTransition
+                .enableTransitionType(LayoutTransition.CHANGING)
+        }
+        catch (e:Exception){e.printStackTrace()}
+
 
         MobileAds.initialize(this, getString(R.string.admob_id))
         loadRewardedAd()
