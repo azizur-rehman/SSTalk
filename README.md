@@ -8,16 +8,15 @@ https://play.google.com/store/apps/details?id=com.aziz.sstalk
 ### Features
 
 
-- Single Chat
+-  Single Chat
 -  Group Chat
--  Text Messages
--  Image Messages
--  Video Messages
--  Send Location
+-  Messages - Image, Audio, Video, Location, Recording
 -  Push Notifications
 -  Last seen feature
 -  Realtime user presence system
 -  Blocking feature
+-  Message Translation
+-  Smart Reply
 -  Phone signing with OTP verification
 
 <br />
