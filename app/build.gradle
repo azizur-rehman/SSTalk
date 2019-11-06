@@ -108,4 +108,7 @@ dependencies {
 
     implementation 'androidx.lifecycle:lifecycle-extensions:2.1.0'
 
+    implementation "android.arch.work:work-runtime-ktx:1.0.1"
+
+    implementation 'com.squareup.retrofit2:converter-gson:2.6.1'
 }

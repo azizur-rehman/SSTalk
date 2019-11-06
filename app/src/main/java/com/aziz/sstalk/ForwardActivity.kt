@@ -199,7 +199,7 @@ class ForwardActivity : AppCompatActivity() {
             val positionInMainList = allFrequentUIDs.indexOf(it)
 
 
-        for (model in messageModels!!) {
+        messageModels?.forEach {model ->
             model.from = myUID
             model.timeInMillis = System.currentTimeMillis()
             model.reverseTimeStamp = model.timeInMillis * -1

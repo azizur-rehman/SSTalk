@@ -8,7 +8,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.RecyclerView
 import com.aziz.sstalk.HomeActivity
@@ -19,7 +18,6 @@ import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.utils
 import com.aziz.sstalk.utils.visible
 import kotlinx.android.synthetic.main.item_contact_layout.view.*
-import kotlinx.android.synthetic.main.layout_recycler_view.*
 import kotlinx.android.synthetic.main.layout_recycler_view.view.*
 
 class FragmentOnlineFriends : Fragment() {
@@ -45,7 +43,7 @@ class FragmentOnlineFriends : Fragment() {
             .getOnlineUsers(context)
             .observe(it, Observer { contacts ->
                 Log.d("FragmentOnlineFriends", "onCreateView: $contacts")
-                setOnlineAdapter(contacts, view)
+                view.setOnlineAdapter(contacts)
             })
 
     }
@@ -59,13 +57,12 @@ class FragmentOnlineFriends : Fragment() {
 
 
 
-    private fun setOnlineAdapter(onlineUsers: List<Models.Contact>, view:View){
+    private fun View.setOnlineAdapter(onlineUsers: List<Models.Contact>){
 
 
-        Log.e("FragmentOnlineFriends", "setOnlineAdapter: root view is null = ${view == null}, list size = ${onlineUsers.size}")
 
 
-        view.recycler_back_message?.visible =onlineUsers.isEmpty()
+        recycler_back_message?.visible =onlineUsers.isEmpty()
 
         class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
             val name = itemView.name
@@ -73,25 +70,32 @@ class FragmentOnlineFriends : Fragment() {
 
         }
 
-        view.recyclerView?.adapter = object : RecyclerView.Adapter<ViewHolder>() {
+        recyclerView?.adapter = object : RecyclerView.Adapter<ViewHolder>() {
             override fun onCreateViewHolder(p0: ViewGroup, p1: Int): ViewHolder {
-                return ViewHolder(layoutInflater.inflate(R.layout.item_layout_online,
+                return ViewHolder(
+                    layoutInflater.inflate(R.layout.item_layout_online,
                     p0, false))
             }
 
             override fun getItemCount(): Int = onlineUsers.size
 
             override fun onBindViewHolder(p0: ViewHolder, p1: Int) {
-                p0.name.text = utils.getNameFromNumber(context!!, onlineUsers[p1].number)
-                FirebaseUtils.loadProfileThumbnail(context!!, onlineUsers[p1].uid, p0.pic)
+                p0.name.text = utils.getNameFromNumber(this@FragmentOnlineFriends.context!!, onlineUsers[p1].number)
+                FirebaseUtils.loadProfileThumbnail(this@FragmentOnlineFriends.context!!, onlineUsers[p1].uid, p0.pic)
 
                 p0.itemView.setOnClickListener {
                     startActivity(
-                        Intent(context, MessageActivity::class.java)
+                        Intent(this@FragmentOnlineFriends.context, MessageActivity::class.java)
                             .apply {
                                 putExtra(FirebaseUtils.KEY_UID, onlineUsers[p1].uid)
-                                putExtra(utils.constants.KEY_TARGET_TYPE, FirebaseUtils.KEY_CONVERSATION_SINGLE)
-                                putExtra(utils.constants.KEY_NAME_OR_NUMBER, onlineUsers[p1].number)
+                                putExtra(
+                                    utils.constants.KEY_TARGET_TYPE,
+                                    FirebaseUtils.KEY_CONVERSATION_SINGLE
+                                )
+                                putExtra(
+                                    utils.constants.KEY_NAME_OR_NUMBER,
+                                    onlineUsers[p1].number
+                                )
                             })
                 }
             }
