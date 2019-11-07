@@ -34,7 +34,11 @@ import androidx.appcompat.widget.SearchView
 import android.widget.*
 import androidx.core.view.ViewCompat
 import androidx.interpolator.view.animation.LinearOutSlowInInterpolator
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.aziz.sstalk.firebase.MessagingService
+import com.aziz.sstalk.firebase.UploadWorker
 import com.aziz.sstalk.fragments.FragmentRecording
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.*
@@ -230,8 +234,16 @@ class MessageActivity : AppCompatActivity() {
         }
 
 
-        
-        
+
+        val model = Models.MessageModel(from = myUID, to = targetUid, isFile = true, messageType = utils.constants.FILE_TYPE_IMAGE,
+            file_local_path = "/storage/emulated/0/SS Talk/ProfilePics/GRP1562672080893.jpg")
+
+        val uploadRequest = OneTimeWorkRequestBuilder<UploadWorker>()
+            .setInputData(workDataOf())
+            .setInputData(workDataOf(utils.constants.KEY_MSG_ID to "MSG${System.currentTimeMillis()}"))
+            .build()
+
+
     }
 
 
@@ -1859,6 +1871,13 @@ class MessageActivity : AppCompatActivity() {
 
     }
 
+
+    private fun uploadUsingWorker(messageID: String,
+                                  file: File,
+                                  originalFinalPath: String,
+                                  caption: String,
+                                  messageType: String){
+    }
 
 
     private fun fileUpload(

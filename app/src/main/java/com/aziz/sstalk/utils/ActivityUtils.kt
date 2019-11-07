@@ -225,6 +225,15 @@ inline fun Any.convertToJsonString():String{
 
 
 const val max_file_size:Long = 16 * 1024 * 1024
+const val url = "url"
+const val exception = "exception"
+const val progress = "progress"
+const val selected_uids = "selected_uids"
+const val target_uid = "target_uid"
+const val nameOrNumber = "nameOrNumber"
+const val msg_model = "msg_model"
+const val msg_id = "msg_id"
+
 
 inline fun Dialog.makeRound(width:Int = WindowManager.LayoutParams.MATCH_PARENT, height:Int = WindowManager.LayoutParams.WRAP_CONTENT) {
     val insetDrawable = InsetDrawable(ContextCompat.getDrawable(this.context, R.drawable.rounded_white_background), 30)

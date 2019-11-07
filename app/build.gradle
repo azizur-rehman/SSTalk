@@ -111,4 +111,6 @@ dependencies {
     implementation "android.arch.work:work-runtime-ktx:1.0.1"
 
     implementation 'com.squareup.retrofit2:converter-gson:2.6.1'
+
+    implementation 'com.github.halysongoncalves:pugnotification:1.8.1'
 }
