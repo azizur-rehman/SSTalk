@@ -1,44 +1,30 @@
 package com.aziz.sstalk.firebase
 
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import android.util.Log
-import android.view.View
-import androidx.core.content.ContextCompat.startActivity
-import androidx.work.Data
 import androidx.work.Worker
 import androidx.work.WorkerParameters
-import androidx.work.workDataOf
-import com.aziz.sstalk.BuildConfig
-import com.aziz.sstalk.HomeActivity
-import com.aziz.sstalk.R
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.*
-import com.google.android.gms.tasks.Continuation
-import com.google.android.gms.tasks.Task
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
-import com.google.firebase.storage.FirebaseStorage
-import com.google.firebase.storage.UploadTask
-import com.vincent.filepicker.Constant
-import kotlinx.android.synthetic.main.activity_forward.*
-import org.jetbrains.anko.collections.forEachWithIndex
 import org.jetbrains.anko.toast
-import java.io.File
 import java.lang.Exception
 
 
 class ForwardWorker(private val context: Context, private val workerParameters: WorkerParameters)
     :Worker(context, workerParameters){
 
+    var alsoSendToMe = true
 
     override fun doWork(): Result {
 
         val messageData = workerParameters.inputData.getString(msg_model)
         val newMessageID = workerParameters.inputData.getString(msg_id)
         val nameOrNumber = workerParameters.inputData.getString(nameOrNumber)
+
+        alsoSendToMe = workerParameters.inputData.getBoolean(also_send_to_me,true)
 
 
         val message = messageData?.toModel<Models.MessageModel>()
@@ -69,7 +55,7 @@ class ForwardWorker(private val context: Context, private val workerParameters: 
         val conversationType = if(utils.isGroupID(targetUID)) FirebaseUtils.KEY_CONVERSATION_GROUP else FirebaseUtils.KEY_CONVERSATION_SINGLE
 
         //send to my node
-         FirebaseUtils.ref.getChatRef(FirebaseUtils.getUid(), targetUID)
+    /*     FirebaseUtils.ref.getChatRef(FirebaseUtils.getUid(), targetUID)
                     .child(messageID)
                     .setValue(model)
                     .addOnSuccessListener {
@@ -81,7 +67,10 @@ class ForwardWorker(private val context: Context, private val workerParameters: 
                             .setValue(Models.LastMessageDetail(nameOrNumber =  nameOrNumber ,
                                 type = conversationType))
 
-                    }
+                    }*/
+
+        if(alsoSendToMe)
+            sendToMe(messageID, targetUID, nameOrNumber, model)
 
                 model.file_local_path = ""
 
@@ -121,6 +110,28 @@ class ForwardWorker(private val context: Context, private val workerParameters: 
                 }
 
 }
+
+    private fun sendToMe(messageID:String, targetUID:String, nameOrNumber:String, model:Models.MessageModel){
+
+        val myUID = FirebaseUtils.getUid()
+        val conversationType = if(utils.isGroupID(targetUID)) FirebaseUtils.KEY_CONVERSATION_GROUP else FirebaseUtils.KEY_CONVERSATION_SINGLE
+
+        //send to my node
+        FirebaseUtils.ref.getChatRef(FirebaseUtils.getUid(), targetUID)
+            .child(messageID)
+            .setValue(model)
+            .addOnSuccessListener {
+                FirebaseUtils.setMessageStatusToDB(messageID, myUID, targetUID, true, isRead = true,
+                    groupNameIf = nameOrNumber)
+
+                FirebaseUtils.ref.lastMessage(myUID)
+                    .child(targetUID)
+                    .setValue(Models.LastMessageDetail(nameOrNumber =  nameOrNumber ,
+                        type = conversationType))
+
+            }
+
+    }
 
     //for group members
     private fun addMessageToGroupMembers(messageID: String , messageModel: Models.MessageModel, groupId:String

@@ -48,6 +48,14 @@ class UploadWorker(private val context: Context,private val workerParameters: Wo
             message?.let {
                 if (messageID != null) {
 
+                    users?.split(",")?.forEachWithIndex {i, targetUID ->
+
+                        // to key
+                        message.to = targetUID
+                        message.message = ""
+                        sendToMe(messageID, targetUID, _nameOrNumber?.split(",")?.getOrNull(i)!!, message )
+
+                    }
                     uploadFile{ data ->
                         if(data.getString(exception).isNullOrEmpty())
                             Result.success(data)
@@ -131,7 +139,6 @@ class UploadWorker(private val context: Context,private val workerParameters: Wo
                         nameOrNumber to _nameOrNumber?.split(",")?.getOrNull(i)
                     )
 
-                    Log.d("UploadWorker", "uploadFile: ${inputData.keyValueMap}")
 
                     val request = OneTimeWorkRequestBuilder<ForwardWorker>()
                         .setInputData(inputData).build()
@@ -150,6 +157,28 @@ class UploadWorker(private val context: Context,private val workerParameters: Wo
             }
 
 
+
+    }
+
+    private fun sendToMe(messageID:String, targetUID:String, nameOrNumber:String, model:Models.MessageModel){
+
+        val myUID = FirebaseUtils.getUid()
+        val conversationType = if(utils.isGroupID(targetUID)) FirebaseUtils.KEY_CONVERSATION_GROUP else FirebaseUtils.KEY_CONVERSATION_SINGLE
+
+        //send to my node
+        FirebaseUtils.ref.getChatRef(FirebaseUtils.getUid(), targetUID)
+            .child(messageID)
+            .setValue(model)
+            .addOnSuccessListener {
+                FirebaseUtils.setMessageStatusToDB(messageID, myUID, targetUID, true, isRead = true,
+                    groupNameIf = nameOrNumber)
+
+                FirebaseUtils.ref.lastMessage(myUID)
+                    .child(targetUID)
+                    .setValue(Models.LastMessageDetail(nameOrNumber =  nameOrNumber ,
+                        type = conversationType))
+
+            }
 
     }
 

@@ -233,6 +233,7 @@ const val target_uid = "target_uid"
 const val nameOrNumber = "nameOrNumber"
 const val msg_model = "msg_model"
 const val msg_id = "msg_id"
+const val also_send_to_me = "also_send_to_me"
 
 
 inline fun Dialog.makeRound(width:Int = WindowManager.LayoutParams.MATCH_PARENT, height:Int = WindowManager.LayoutParams.WRAP_CONTENT) {
