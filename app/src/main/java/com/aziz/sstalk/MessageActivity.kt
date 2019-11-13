@@ -34,6 +34,7 @@ import androidx.appcompat.widget.SearchView
 import android.widget.*
 import androidx.core.view.ViewCompat
 import androidx.interpolator.view.animation.LinearOutSlowInInterpolator
+import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
@@ -235,13 +236,6 @@ class MessageActivity : AppCompatActivity() {
 
 
 
-        val model = Models.MessageModel(from = myUID, to = targetUid, isFile = true, messageType = utils.constants.FILE_TYPE_IMAGE,
-            file_local_path = "/storage/emulated/0/SS Talk/ProfilePics/GRP1562672080893.jpg")
-
-        val uploadRequest = OneTimeWorkRequestBuilder<UploadWorker>()
-            .setInputData(workDataOf())
-            .setInputData(workDataOf(utils.constants.KEY_MSG_ID to "MSG${System.currentTimeMillis()}"))
-            .build()
 
 
     }
@@ -1890,6 +1884,36 @@ class MessageActivity : AppCompatActivity() {
 
 
         Log.d("MessageActivity", "fileUpload: path = ${file.path}")
+/*        val model = Models.MessageModel(
+            "",
+            myUID, targetUid,
+            isFile = true, caption = caption, messageType = messageType,
+            file_size_in_bytes = file.length(),
+            timeInMillis = System.currentTimeMillis()
+        )
+        val uploadRequest = OneTimeWorkRequestBuilder<UploadWorker>()
+            .setInputData(workDataOf(msg_id to messageID,
+                msg_model to model.convertToJsonString(),
+                selected_uids to targetUid,
+                key_nameOrNumber to nameOrNumber)).build()
+
+        WorkManager.getInstance()
+            .enqueue(uploadRequest)
+
+        WorkManager.getInstance().getWorkInfoByIdLiveData(uploadRequest.id)
+            .observe(this, androidx.lifecycle.Observer {
+                Log.d("MessageActivity", "fileUpload: $it")
+                    val percentage = it.outputData.getString(progress)
+                    val error = it.outputData.getString(exception)
+                    val uploadedURL = it.outputData.getString(url)
+                    Log.d("MessageActivity", "fileUpload: percentage =  $percentage")
+                    Log.d("MessageActivity", "fileUpload: error =  $error")
+                    Log.d("MessageActivity", "fileUpload: url = $uploadedURL")
+
+            })
+
+        if(true)
+            return*/
 
         val ref =  FirebaseStorage.getInstance()
             .reference.child(messageType).child(messageID)
@@ -2046,6 +2070,7 @@ class MessageActivity : AppCompatActivity() {
         progressBar?.show()
         progressBar?.progress =0f
 
+        if(model.message.isEmpty()) return
 
         val storageRef =
             FirebaseStorage.getInstance().getReferenceFromUrl(model.message)

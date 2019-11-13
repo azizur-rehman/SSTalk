@@ -24,6 +24,18 @@
                                             <option name="values">
                                               <map>
                                                 <entry key="color" value="000000" />
+                                                <entry key="opacityPercent" value="80" />
+                                              </map>
+                                            </option>
+                                          </PersistentState>
+                                        </value>
+                                      </entry>
+                                      <entry key="clipartAsset">
+                                        <value>
+                                          <PersistentState>
+                                            <option name="values">
+                                              <map>
+                                                <entry key="url" value="jar:file:/home/aziz/android-studio/plugins/android/lib/android.jar!/images/material_design_icons/file/ic_file_upload_black_24dp.xml" />
                                               </map>
                                             </option>
                                           </PersistentState>
@@ -35,6 +47,7 @@
                                             <option name="values">
                                               <map>
                                                 <entry key="color" value="000000" />
+                                                <entry key="opacityPercent" value="80" />
                                                 <entry key="paddingPercent" value="-10" />
                                               </map>
                                             </option>
@@ -45,11 +58,10 @@
                                   </option>
                                   <option name="values">
                                     <map>
-                                      <entry key="assetType" value="IMAGE" />
                                       <entry key="imageAsset" value="$USER_HOME$/Pictures/ic_mute_light_2.png" />
-                                      <entry key="outputName" value="ic_mute_green" />
+                                      <entry key="outputName" value="ic_upload_white_png" />
                                       <entry key="theme" value="CUSTOM" />
-                                      <entry key="themeColor" value="38be55" />
+                                      <entry key="themeColor" value="ffffff" />
                                     </map>
                                   </option>
                                 </PersistentState>

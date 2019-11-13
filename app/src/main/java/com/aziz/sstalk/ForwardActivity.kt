@@ -228,7 +228,7 @@ class ForwardActivity : AppCompatActivity() {
                 msg_id to messageID,
                 msg_model to model.convertToJsonString(),
                 target_uid to targetUID,
-                nameOrNumber to selectedNumbers.getOrNull(i)
+                key_nameOrNumber to selectedNumbers.getOrNull(i)
             )
             val request = OneTimeWorkRequestBuilder<ForwardWorker>()
                 .setInputData(inputData)
@@ -348,7 +348,7 @@ class ForwardActivity : AppCompatActivity() {
                 msg_id to messageID,
                 msg_model to model.convertToJsonString(),
                 selected_uids to selectedUIDs.joinToString(","),
-                nameOrNumber to selectedNumbers.joinToString(",")
+                key_nameOrNumber to selectedNumbers.joinToString(",")
                 ))
             .build()
 

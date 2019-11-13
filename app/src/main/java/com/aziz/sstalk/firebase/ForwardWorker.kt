@@ -22,7 +22,7 @@ class ForwardWorker(private val context: Context, private val workerParameters: 
 
         val messageData = workerParameters.inputData.getString(msg_model)
         val newMessageID = workerParameters.inputData.getString(msg_id)
-        val nameOrNumber = workerParameters.inputData.getString(nameOrNumber)
+        val nameOrNumber = workerParameters.inputData.getString(key_nameOrNumber)
 
         alsoSendToMe = workerParameters.inputData.getBoolean(also_send_to_me,true)
 

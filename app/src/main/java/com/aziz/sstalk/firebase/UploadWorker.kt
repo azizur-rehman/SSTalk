@@ -31,7 +31,7 @@ class UploadWorker(private val context: Context,private val workerParameters: Wo
     private val messageData = workerParameters.inputData.getString(msg_model)
     private val messageID = workerParameters.inputData.getString(msg_id)
     private val users = workerParameters.inputData.getString(selected_uids)
-    private val _nameOrNumber = workerParameters.inputData.getString(nameOrNumber)
+    private val _nameOrNumber = workerParameters.inputData.getString(key_nameOrNumber)
 
     val message = messageData?.toModel<Models.MessageModel>()?.apply {
         from  = FirebaseUtils.getUid()
@@ -57,10 +57,10 @@ class UploadWorker(private val context: Context,private val workerParameters: Wo
 
                     }
                     uploadFile{ data ->
-                        if(data.getString(exception).isNullOrEmpty())
-                            Result.success(data)
-                        else
+                        if(!data.getString(exception).isNullOrEmpty())
                             Result.failure(data)
+                        else
+                            Result.success(data)
                     }
                 }
             }
@@ -91,6 +91,8 @@ class UploadWorker(private val context: Context,private val workerParameters: Wo
                 val percentage:Double = (100.0 * it.bytesTransferred) / it.totalByteCount
                 val percent = String.format("%.2f",percentage)
                 Log.d("UploadWorker", "uploadFile: $percent")
+
+                //progressing
                 onUploaded(workDataOf(progress to percent))
 
                 showNotification(progress = percentage.toInt())
@@ -99,7 +101,9 @@ class UploadWorker(private val context: Context,private val workerParameters: Wo
             .continueWithTask(Continuation<UploadTask.TaskSnapshot, Task<Uri>> { task ->
                 if (!task.isSuccessful) {
                     task.exception?.let {
-                        throw it
+                        it.printStackTrace()
+                        context.toast(it.message?:"Failed to upload")
+                        Log.e("UploadWorker", "uploadFile: uploadFile : "+it.message )
                     }
 
                 }
@@ -136,7 +140,7 @@ class UploadWorker(private val context: Context,private val workerParameters: Wo
                         msg_id to messageID,
                         msg_model to message.convertToJsonString(),
                         target_uid to it,
-                        nameOrNumber to _nameOrNumber?.split(",")?.getOrNull(i)
+                        key_nameOrNumber to _nameOrNumber?.split(",")?.getOrNull(i)
                     )
 
 
@@ -191,7 +195,7 @@ class UploadWorker(private val context: Context,private val workerParameters: Wo
             PugNotification.with(context)
                 .load()
                 .identifier(101)
-                .smallIcon(R.drawable.ic_file_upload_white_24dp)
+                .smallIcon(R.drawable.ic_upload_white_png)
                 .progress()
                 .update(101, progress,100, false)
                 .build()
