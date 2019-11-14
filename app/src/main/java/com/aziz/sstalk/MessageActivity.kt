@@ -1889,26 +1889,31 @@ class MessageActivity : AppCompatActivity() {
             myUID, targetUid,
             isFile = true, caption = caption, messageType = messageType,
             file_size_in_bytes = file.length(),
-            timeInMillis = System.currentTimeMillis()
+            timeInMillis = System.currentTimeMillis(),
+            file_local_path = file.path
         )
         val uploadRequest = OneTimeWorkRequestBuilder<UploadWorker>()
             .setInputData(workDataOf(msg_id to messageID,
                 msg_model to model.convertToJsonString(),
                 selected_uids to targetUid,
-                key_nameOrNumber to nameOrNumber)).build()
+                key_nameOrNumber to nameOrNumber))
+            .addTag(messageID)
+            .build()
 
         WorkManager.getInstance()
-            .enqueue(uploadRequest)
+            .enqueueUniqueWork(messageID, ExistingWorkPolicy.KEEP, uploadRequest)
 
-        WorkManager.getInstance().getWorkInfoByIdLiveData(uploadRequest.id)
-            .observe(this, androidx.lifecycle.Observer {
-                Log.d("MessageActivity", "fileUpload: $it")
+        WorkManager.getInstance().getWorkInfosByTagLiveData(messageID)
+            .observe(this, androidx.lifecycle.Observer { works ->
+                works.forEach {
+                    Log.d("MessageActivity", "fileUpload: $it")
                     val percentage = it.outputData.getString(progress)
                     val error = it.outputData.getString(exception)
                     val uploadedURL = it.outputData.getString(url)
                     Log.d("MessageActivity", "fileUpload: percentage =  $percentage")
                     Log.d("MessageActivity", "fileUpload: error =  $error")
                     Log.d("MessageActivity", "fileUpload: url = $uploadedURL")
+                }
 
             })
 
@@ -3063,6 +3068,7 @@ class MessageActivity : AppCompatActivity() {
         textView.text = "Sample text"
 
         val handler = Handler()
+        var runnable:Runnable
         var isRunning = false
 
         bottomScrollButton.setOnClickListener {
@@ -3078,12 +3084,7 @@ class MessageActivity : AppCompatActivity() {
 
                 if(newState == RecyclerView.SCROLL_STATE_IDLE || newState == RecyclerView.SCROLL_STATE_SETTLING) {
 
-                    val runnable = {
-                            runOnUiThread {
-//                                if (layoutManager.findLastVisibleItemPosition() < adapter.itemCount - 1)
-                                    dateStickyHeader.visibility = View.GONE
-                            }
-                        }
+                    runnable = Runnable{ dateStickyHeader.visibility = View.GONE }
                         handler.removeCallbacks(runnable)
                         handler.postDelayed(runnable, 1500)
 
@@ -3346,7 +3347,7 @@ class MessageActivity : AppCompatActivity() {
                             Log.d("MessageActivity", "ML Translation: no reply")
                         }
                         SmartReplySuggestionResult.STATUS_NOT_SUPPORTED_LANGUAGE -> {
-                            Log.d("MessageActivity", "ML Translation: language not supported ")
+//                            Log.d("MessageActivity", "ML Translation: language not supported ")
                         }
                     }
 
