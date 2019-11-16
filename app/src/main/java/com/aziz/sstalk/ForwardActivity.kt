@@ -350,9 +350,11 @@ class ForwardActivity : AppCompatActivity() {
                 selected_uids to selectedUIDs.joinToString(","),
                 key_nameOrNumber to selectedNumbers.joinToString(",")
                 ))
+            .addTag(messageID)
             .build()
 
-        WorkManager.getInstance().enqueue(uploadRequest)
+
+        WorkManager.getInstance().enqueueUniqueWork(messageID, ExistingWorkPolicy.KEEP, uploadRequest)
 
         WorkManager.getInstance().getWorkInfosForUniqueWorkLiveData("forward")
             .observe(this, androidx.lifecycle.Observer {

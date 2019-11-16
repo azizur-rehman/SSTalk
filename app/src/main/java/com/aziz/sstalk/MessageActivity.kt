@@ -1046,6 +1046,10 @@ class MessageActivity : AppCompatActivity() {
                 }
 
 
+                //track if uploading
+                trackIfFileIsUploading(messageID)
+
+
 
                 when (holder) {
                     is Holders.TargetTextMsgHolder -> {
@@ -1862,6 +1866,22 @@ class MessageActivity : AppCompatActivity() {
 
 
 
+
+    }
+
+
+    private fun trackIfFileIsUploading(messageID: String){
+
+        WorkManager.getInstance().getWorkInfosForUniqueWorkLiveData(messageID)
+            .observe(this, androidx.lifecycle.Observer {
+                it.forEach {
+                    Log.d("MessageActivity", "trackIfFileIsUploading: $it")
+                    Log.d("MessageActivity", "trackIfFileIsUploading: map = ${it.outputData.keyValueMap}")
+                    it.outputData.keyValueMap.forEach {
+                        Log.d("MessageActivity", "trackIfFileIsUploading: ${it.key} -> ${it.value}")
+                    }
+                }
+            })
 
     }
 
