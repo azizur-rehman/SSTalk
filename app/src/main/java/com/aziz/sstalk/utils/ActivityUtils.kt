@@ -23,6 +23,8 @@ import com.google.firebase.database.Query
 import com.google.firebase.database.ValueEventListener
 
 import com.aziz.sstalk.R
+import com.google.gson.Gson
+import org.json.JSONObject
 
 inline fun View.hide(){
     visibility = View.GONE
@@ -203,8 +205,36 @@ inline fun <reified T> Query.onRealtimeEvent(crossinline onLoaded:(snapshot:T?) 
     })
 }
 
+inline fun <reified T> JSONObject.toModel(): T? = this.run {
+    try {
+        Gson().fromJson<T>(this.toString(), T::class.java)
+    }
+    catch (e:java.lang.Exception){ e.printStackTrace(); null }
+}
+inline fun <reified T> String.toModel(): T? = this.run {
+    try {
+        JSONObject(this).toModel<T>()
+    }
+    catch (e:java.lang.Exception){  null }
+}
+
+
+inline fun Any.convertToJsonString():String{
+    return Gson().toJson(this)?:""
+}
+
 
 const val max_file_size:Long = 16 * 1024 * 1024
+const val url = "url"
+const val exception = "exception"
+const val progress = "progress"
+const val selected_uids = "selected_uids"
+const val target_uid = "target_uid"
+const val key_nameOrNumber = "nameOrNumber"
+const val msg_model = "msg_model"
+const val msg_id = "msg_id"
+const val also_send_to_me = "also_send_to_me"
+
 
 inline fun Dialog.makeRound(width:Int = WindowManager.LayoutParams.MATCH_PARENT, height:Int = WindowManager.LayoutParams.WRAP_CONTENT) {
     val insetDrawable = InsetDrawable(ContextCompat.getDrawable(this.context, R.drawable.rounded_white_background), 30)

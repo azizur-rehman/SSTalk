@@ -34,7 +34,12 @@ import androidx.appcompat.widget.SearchView
 import android.widget.*
 import androidx.core.view.ViewCompat
 import androidx.interpolator.view.animation.LinearOutSlowInInterpolator
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.aziz.sstalk.firebase.MessagingService
+import com.aziz.sstalk.firebase.UploadWorker
 import com.aziz.sstalk.fragments.FragmentRecording
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.*
@@ -230,8 +235,9 @@ class MessageActivity : AppCompatActivity() {
         }
 
 
-        
-        
+
+
+
     }
 
 
@@ -1038,6 +1044,10 @@ class MessageActivity : AppCompatActivity() {
                     catch (e :Exception){}
 
                 }
+
+
+                //track if uploading
+                trackIfFileIsUploading(messageID)
 
 
 
@@ -1860,6 +1870,29 @@ class MessageActivity : AppCompatActivity() {
     }
 
 
+    private fun trackIfFileIsUploading(messageID: String){
+
+        WorkManager.getInstance().getWorkInfosForUniqueWorkLiveData(messageID)
+            .observe(this, androidx.lifecycle.Observer {
+                it.forEach {
+                    Log.d("MessageActivity", "trackIfFileIsUploading: $it")
+                    Log.d("MessageActivity", "trackIfFileIsUploading: map = ${it.outputData.keyValueMap}")
+                    it.outputData.keyValueMap.forEach {
+                        Log.d("MessageActivity", "trackIfFileIsUploading: ${it.key} -> ${it.value}")
+                    }
+                }
+            })
+
+    }
+
+
+    private fun uploadUsingWorker(messageID: String,
+                                  file: File,
+                                  originalFinalPath: String,
+                                  caption: String,
+                                  messageType: String){
+    }
+
 
     private fun fileUpload(
         messageID: String,
@@ -1871,6 +1904,41 @@ class MessageActivity : AppCompatActivity() {
 
 
         Log.d("MessageActivity", "fileUpload: path = ${file.path}")
+/*        val model = Models.MessageModel(
+            "",
+            myUID, targetUid,
+            isFile = true, caption = caption, messageType = messageType,
+            file_size_in_bytes = file.length(),
+            timeInMillis = System.currentTimeMillis(),
+            file_local_path = file.path
+        )
+        val uploadRequest = OneTimeWorkRequestBuilder<UploadWorker>()
+            .setInputData(workDataOf(msg_id to messageID,
+                msg_model to model.convertToJsonString(),
+                selected_uids to targetUid,
+                key_nameOrNumber to nameOrNumber))
+            .addTag(messageID)
+            .build()
+
+        WorkManager.getInstance()
+            .enqueueUniqueWork(messageID, ExistingWorkPolicy.KEEP, uploadRequest)
+
+        WorkManager.getInstance().getWorkInfosByTagLiveData(messageID)
+            .observe(this, androidx.lifecycle.Observer { works ->
+                works.forEach {
+                    Log.d("MessageActivity", "fileUpload: $it")
+                    val percentage = it.outputData.getString(progress)
+                    val error = it.outputData.getString(exception)
+                    val uploadedURL = it.outputData.getString(url)
+                    Log.d("MessageActivity", "fileUpload: percentage =  $percentage")
+                    Log.d("MessageActivity", "fileUpload: error =  $error")
+                    Log.d("MessageActivity", "fileUpload: url = $uploadedURL")
+                }
+
+            })
+
+        if(true)
+            return*/
 
         val ref =  FirebaseStorage.getInstance()
             .reference.child(messageType).child(messageID)
@@ -2027,6 +2095,7 @@ class MessageActivity : AppCompatActivity() {
         progressBar?.show()
         progressBar?.progress =0f
 
+        if(model.message.isEmpty()) return
 
         val storageRef =
             FirebaseStorage.getInstance().getReferenceFromUrl(model.message)
@@ -3019,6 +3088,7 @@ class MessageActivity : AppCompatActivity() {
         textView.text = "Sample text"
 
         val handler = Handler()
+        var runnable:Runnable
         var isRunning = false
 
         bottomScrollButton.setOnClickListener {
@@ -3034,12 +3104,7 @@ class MessageActivity : AppCompatActivity() {
 
                 if(newState == RecyclerView.SCROLL_STATE_IDLE || newState == RecyclerView.SCROLL_STATE_SETTLING) {
 
-                    val runnable = {
-                            runOnUiThread {
-//                                if (layoutManager.findLastVisibleItemPosition() < adapter.itemCount - 1)
-                                    dateStickyHeader.visibility = View.GONE
-                            }
-                        }
+                    runnable = Runnable{ dateStickyHeader.visibility = View.GONE }
                         handler.removeCallbacks(runnable)
                         handler.postDelayed(runnable, 1500)
 
@@ -3302,7 +3367,7 @@ class MessageActivity : AppCompatActivity() {
                             Log.d("MessageActivity", "ML Translation: no reply")
                         }
                         SmartReplySuggestionResult.STATUS_NOT_SUPPORTED_LANGUAGE -> {
-                            Log.d("MessageActivity", "ML Translation: language not supported ")
+//                            Log.d("MessageActivity", "ML Translation: language not supported ")
                         }
                     }
 

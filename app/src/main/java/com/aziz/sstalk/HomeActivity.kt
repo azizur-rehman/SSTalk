@@ -21,7 +21,11 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.aurelhubert.ahbottomnavigation.AHBottomNavigationItem
+import com.aziz.sstalk.firebase.UploadWorker
 import com.aziz.sstalk.fragments.FragmentMyProfile
 import com.aziz.sstalk.fragments.FragmentOnlineFriends
 import com.aziz.sstalk.fragments.FragmentSearch

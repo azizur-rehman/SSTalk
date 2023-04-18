@@ -78,6 +78,8 @@ object utils {
 
 
         const val KEY_MSG_MODEL = "msg_model"
+        const val MSG_MODELS = "msg_models"
+        const val KEY_MSG_ID = "msg_id"
 
         const val KEY_LATITUDE = "lat"
         const val KEY_LONGITUDE = "lng"
