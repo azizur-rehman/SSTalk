@@ -10,7 +10,7 @@
         tools:context=".UploadPreviewActivity">
 
 
-    <android.support.v7.widget.Toolbar
+    <androidx.appcompat.widget.Toolbar
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@color/black"
@@ -23,7 +23,7 @@
                  android:layout_height="0dp"
     android:layout_weight="1"
     >
-    <android.support.v4.view.ViewPager
+    <androidx.viewpager.widget.ViewPager
       android:layout_width="match_parent"
       android:layout_height="match_parent"
     android:id="@+id/viewPager"
@@ -37,7 +37,7 @@
                   android:layout_height="wrap_content">
 
 
-        <android.support.design.widget.FloatingActionButton
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
                 android:layout_width="wrap_content"
                 android:id="@+id/sendBtn"
                  android:layout_height="wrap_content"

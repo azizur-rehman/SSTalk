@@ -8,11 +8,11 @@ import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.provider.ContactsContract
-import android.support.v4.app.ActivityCompat
-import android.support.v4.content.ContextCompat
-import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.RecyclerView
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import android.util.Log
 import android.view.MenuItem
 import android.view.View
@@ -48,7 +48,8 @@ class ContactsActivity : AppCompatActivity(){
 
         title = "My Contacts"
 
-        contacts_list.layoutManager = LinearLayoutManager(this@ContactsActivity)
+        contacts_list.layoutManager =
+            LinearLayoutManager(this@ContactsActivity)
 
         isForSelection = intent.getBooleanExtra(utils.constants.KEY_IS_FOR_SELECTION, false)
 
@@ -159,7 +160,7 @@ class ContactsActivity : AppCompatActivity(){
     }
 
 
-    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
         finish()
         return super.onOptionsItemSelected(item)
     }

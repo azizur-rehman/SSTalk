@@ -10,11 +10,11 @@ import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Bundle
 import android.provider.ContactsContract
-import android.support.v4.content.ContextCompat
-import android.support.v7.app.AlertDialog
-import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.GridLayoutManager
-import android.support.v7.widget.RecyclerView
+import androidx.core.content.ContextCompat
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import android.util.Log
 import android.view.*
 import com.aziz.sstalk.models.Models
@@ -75,8 +75,8 @@ class UserProfileActivity : AppCompatActivity() {
 
         myUID = FirebaseUtils.getUid()
 
-        targetUID = intent.getStringExtra(FirebaseUtils.KEY_UID)
-        name = intent.getStringExtra(FirebaseUtils.KEY_NAME)
+        targetUID = intent.getStringExtra(FirebaseUtils.KEY_UID).toString()
+        name = intent.getStringExtra(FirebaseUtils.KEY_NAME).toString()
 
         isGroup = intent.getBooleanExtra(utils.constants.KEY_IS_GROUP, false)
 
@@ -112,7 +112,8 @@ class UserProfileActivity : AppCompatActivity() {
 
         }
 
-        val layoutManager = GridLayoutManager(this, 4)
+        val layoutManager =
+            GridLayoutManager(this, 4)
         mediaRecyclerView.addItemDecoration(DividerGridItemDecoration(this))
         mediaRecyclerView.isNestedScrollingEnabled = true
 
@@ -330,7 +331,7 @@ class UserProfileActivity : AppCompatActivity() {
         return super.onCreateOptionsMenu(menu)
     }
 
-    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
 
         when(item!!.itemId){
             android.R.id.home -> finish()
@@ -505,7 +506,8 @@ class UserProfileActivity : AppCompatActivity() {
                 .apply { putStringArrayListExtra(utils.constants.KEY_EXCLUDED_LIST, excludedUIDs as ArrayList<String>) }, 101)
         }
 
-        class memberHolder(itemView: View):RecyclerView.ViewHolder(itemView){
+        class memberHolder(itemView: View):
+            RecyclerView.ViewHolder(itemView){
             var name = itemView.name!!
             var profilePic = itemView.pic!!
             var admin = itemView.admin_textview!!

@@ -1,6 +1,6 @@
 package com.aziz.sstalk
 
-import android.support.v7.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import com.aziz.sstalk.fragments.FragmentOTP

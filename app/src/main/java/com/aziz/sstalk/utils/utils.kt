@@ -2,7 +2,6 @@ package com.aziz.sstalk.utils
 
 import android.Manifest
 import android.animation.Animator
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.ActivityManager
 import android.content.ContentValues
@@ -12,23 +11,16 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.database.Cursor
 import android.graphics.*
-import android.graphics.drawable.Drawable
-import android.graphics.drawable.GradientDrawable
-import android.inputmethodservice.InputMethodService
 import android.media.MediaMetadataRetriever
-import android.media.ThumbnailUtils
 import android.net.Uri
-import android.os.*
+import android.os.Build
+import android.os.Environment
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.provider.ContactsContract
 import android.provider.MediaStore
-import android.support.design.widget.FloatingActionButton
-import android.support.v4.app.ActivityCompat
-import android.support.v4.content.ContextCompat
-import android.support.v4.content.FileProvider
-import android.telephony.PhoneNumberUtils
 import android.text.SpannableString
 import android.text.style.BackgroundColorSpan
-import android.text.style.ForegroundColorSpan
 import android.util.Log
 import android.view.View
 import android.view.ViewAnimationUtils
@@ -36,25 +28,22 @@ import android.view.WindowManager
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.TranslateAnimation
 import android.view.inputmethod.InputMethodManager
-import android.webkit.MimeTypeMap
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.app.ActivityCompat
+import androidx.core.content.FileProvider
 import com.aziz.sstalk.BuildConfig
 import com.aziz.sstalk.R
 import com.aziz.sstalk.models.Models
-import com.aziz.sstalk.utils.utils.toast
 import com.bumptech.glide.Glide
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.auth.FirebaseAuth
-import com.squareup.picasso.Picasso
-import io.michaelrocks.libphonenumber.android.PhoneNumberUtil
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
-import java.lang.Exception
 import java.text.SimpleDateFormat
 import java.util.*
-import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 
 
@@ -145,10 +134,10 @@ object utils {
 
         while(cursor!!.moveToNext()){
 
-            var name = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME))
-            var number = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER))
+            var name = cursor.getString(cursor.run { getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME) })
+            var number = cursor.getString(cursor.run { getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER) })
 
-            var pic = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.PHOTO_THUMBNAIL_URI))
+            var pic = cursor.getString(cursor.run { getColumnIndex(ContactsContract.CommonDataKinds.Phone.PHOTO_THUMBNAIL_URI) })
 
             number = utils.getFormattedTenDigitNumber(number)
 
@@ -283,18 +272,18 @@ object utils {
         animator.duration = 300
 
         animator.addListener(object : Animator.AnimatorListener{
-            override fun onAnimationRepeat(animation: Animator?) {
+            override fun onAnimationRepeat(animation: Animator) {
             }
 
-            override fun onAnimationEnd(animation: Animator?) {
+            override fun onAnimationEnd(animation: Animator) {
             }
 
-            override fun onAnimationCancel(animation: Animator?) {
+            override fun onAnimationCancel(animation: Animator) {
                 activity.window.setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
                     WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE)
             }
 
-            override fun onAnimationStart(animation: Animator?) {
+            override fun onAnimationStart(animation: Animator) {
                 view.visibility = View.VISIBLE
                 activity.window.clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE)
             }
@@ -328,17 +317,17 @@ object utils {
         animator.duration = 400
 
         animator.addListener(object : Animator.AnimatorListener{
-            override fun onAnimationRepeat(animation: Animator?) {
+            override fun onAnimationRepeat(animation: Animator) {
             }
 
-            override fun onAnimationEnd(animation: Animator?) {
+            override fun onAnimationEnd(animation: Animator) {
                 view.visibility = View.GONE
             }
 
-            override fun onAnimationCancel(animation: Animator?) {
+            override fun onAnimationCancel(animation: Animator) {
             }
 
-            override fun onAnimationStart(animation: Animator?) {
+            override fun onAnimationStart(animation: Animator) {
             }
 
         })
@@ -472,7 +461,7 @@ object utils {
             val retriever = MediaMetadataRetriever()
             retriever.setDataSource(context, utils.getUriFromFile(context,  File(videoFilePath)))
             val time = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
-            val timeInMillisec = time.toLong()
+            val timeInMillisec = time!!.toLong()
 
             retriever.release()
 
@@ -593,7 +582,7 @@ object utils {
         val retriever = MediaMetadataRetriever()
         retriever.setDataSource(context, utils.getUriFromFile(context, file))
         val time = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
-        val timeInMillisec = time.toLong()
+        val timeInMillisec = time!!.toLong()
 
         retriever.release()
 
@@ -627,7 +616,7 @@ object utils {
     fun hideSoftKeyboard(activity: Activity) {
         try {
             val inputMethodManager = activity.getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
-            inputMethodManager.hideSoftInputFromWindow(activity.currentFocus.windowToken, 0)
+            inputMethodManager.hideSoftInputFromWindow(activity.currentFocus!!.windowToken, 0)
         } catch (e:Exception) {
             e.printStackTrace()
         }
@@ -667,7 +656,7 @@ object utils {
         } else {
             val taskInfo = am.getRunningTasks(1)
             val componentInfo = taskInfo[0].topActivity
-            if (componentInfo.packageName == context.packageName) {
+            if (componentInfo?.packageName == context.packageName) {
                 isInBackground = false
             }
         }
@@ -712,13 +701,13 @@ object utils {
 }
 
 
-    fun hideFabs(vararg fabs:FloatingActionButton){
+    fun hideFabs(vararg fabs: FloatingActionButton){
         fabs.forEach {
             it.hide()
         }
     }
 
-    fun showFabs(vararg fabs:FloatingActionButton){
+    fun showFabs(vararg fabs: FloatingActionButton){
         fabs.forEach {
             it.show()
         }

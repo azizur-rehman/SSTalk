@@ -10,15 +10,15 @@ apply plugin: 'com.google.gms.google-services'
 android {
     signingConfigs {
     }
-    compileSdkVersion 28
+    compileSdkVersion 33
     flavorDimensions "versionCode"
     defaultConfig {
         applicationId "com.aziz.sstalk"
         minSdkVersion 16
-        targetSdkVersion 28
+        targetSdkVersion 33
         versionCode 1
         versionName "1.0"
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
         multiDexEnabled true
     }
     buildTypes {
@@ -32,15 +32,23 @@ android {
     androidExtensions {
         experimental = true
     }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+
+    kotlinOptions {
+        jvmTarget = "11"
+    }
 }
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.0"
     //noinspection GradleCompatible
-    implementation 'com.android.support:appcompat-v7:28.0.0'
-    implementation 'com.android.support:design:28.0.0'
-    implementation 'com.android.support.constraint:constraint-layout:1.1.3'
+    implementation 'androidx.appcompat:appcompat:1.0.0'
+    implementation 'com.google.android.material:material:1.0.0'
+    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
     implementation 'com.google.firebase:firebase-core:16.0.7'
     implementation 'com.github.stfalcon:chatkit:0.3.3'
     implementation 'com.google.firebase:firebase-messaging:17.4.0'
@@ -50,7 +58,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-storage:16.1.0'
     // FirebaseUI for Firebase Realtime Database
     implementation 'com.firebaseui:firebase-ui-database:4.3.0'
-    implementation 'com.android.support:multidex:1.0.3'
+    implementation 'androidx.multidex:multidex:2.0.0'
     implementation 'com.chaos.view:pinview:1.4.2'
     implementation 'com.vincent.filepicker:MultiTypeFilePicker:1.0.8'
     implementation 'de.hdodenhof:circleimageview:3.0.0'
@@ -68,7 +76,7 @@ dependencies {
         transitive = true
     }
     implementation 'com.mikhaellopez:circularprogressbar:2.0.0'
-    implementation 'com.android.support:support-emoji-bundled:28.0.0'
+    implementation 'androidx.emoji:emoji-bundled:1.0.0'
     implementation 'com.github.lguipeng:AnimCheckBox:1.0.1'
     implementation 'com.skyline.widget:round-corner-layout:1.0.1'
     implementation 'com.hbb20:ccp:2.2.4'

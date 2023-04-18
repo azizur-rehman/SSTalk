@@ -4,7 +4,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.location.Address
 import android.location.Geocoder
-import android.support.v7.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import com.aziz.sstalk.utils.utils
 import com.google.android.gms.location.LocationServices
@@ -148,7 +148,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     fun getAddress(latitude:Double, longitude:Double): Address?{
 
         return Geocoder(this@MapsActivity, Locale.getDefault())
-            .getFromLocation(latitude,longitude,1)[0]
+            .getFromLocation(latitude,longitude,1)?.get(0)
     }
 
 

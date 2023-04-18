@@ -18,22 +18,22 @@ import android.net.Uri
 import android.os.*
 import android.os.Environment.DIRECTORY_DCIM
 import android.provider.MediaStore
-import android.support.design.widget.Snackbar
-import android.support.text.emoji.EmojiCompat
-import android.support.text.emoji.bundled.BundledEmojiCompatConfig
-import android.support.v4.app.ActivityCompat
-import android.support.v4.content.ContextCompat
-import android.support.v7.app.AlertDialog
-import android.support.v7.app.AppCompatActivity
-import android.support.v7.view.ActionMode
-import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.RecyclerView
+import com.google.android.material.snackbar.Snackbar
+import androidx.emoji.text.EmojiCompat
+import androidx.emoji.bundled.BundledEmojiCompatConfig
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.view.ActionMode
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.*
 import android.view.ViewGroup
-import android.support.v7.widget.SearchView
+import androidx.appcompat.widget.SearchView
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.*
 import com.aziz.sstalk.firebase.MessagingService
@@ -168,12 +168,12 @@ class MessageActivity : AppCompatActivity() {
 
 
 
-        targetUid = intent.getStringExtra(FirebaseUtils.KEY_UID)
+        targetUid = intent.getStringExtra(FirebaseUtils.KEY_UID).toString()
         val type:String? = intent.getStringExtra(utils.constants.KEY_TARGET_TYPE)
 
 
         nameOrNumber = try {
-            intent.getStringExtra(utils.constants.KEY_NAME_OR_NUMBER)
+            intent.getStringExtra(utils.constants.KEY_NAME_OR_NUMBER).toString()
         } catch (e:Exception){
             ""
         }
@@ -518,7 +518,7 @@ class MessageActivity : AppCompatActivity() {
 
 
         if(resultCode == Activity.RESULT_CANCELED && requestCode == RQ_CAMERA){
-            contentResolver.delete(cameraImageUri, null,null)
+            cameraImageUri?.let { contentResolver.delete(it, null,null) }
         }
 
 
@@ -536,8 +536,10 @@ class MessageActivity : AppCompatActivity() {
 
 
 
-            if(filePaths.isEmpty())
-                return
+            if (filePaths != null) {
+                if(filePaths.isEmpty())
+                    return
+            }
 
 
             startActivityForResult(Intent(context, UploadPreviewActivity::class.java)
@@ -572,7 +574,7 @@ class MessageActivity : AppCompatActivity() {
                 targetUid,
                 System.currentTimeMillis(),
                 isFile = false,
-                caption = address,
+                caption = address?:"",
                 messageType = utils.constants.FILE_TYPE_LOCATION))
         }
 
@@ -614,18 +616,18 @@ class MessageActivity : AppCompatActivity() {
             val caption = data!!.getStringArrayListExtra(utils.constants.KEY_CAPTION)
             val imgPaths = data.getStringArrayListExtra(utils.constants.KEY_IMG_PATH)
 
-            if (imgPaths.isNotEmpty()) {
+            if (imgPaths.isNullOrEmpty().not()) {
 
                 Log.d("MessageActivity", "onActivityResult: Uploading Image")
 
 
-                for((index, path) in imgPaths.withIndex()) {
+                for((index, path) in imgPaths!!.withIndex()) {
                     messageID = "MSG" +System.currentTimeMillis()
 
                     uploadFile(
                         messageID, File(path.toString()),
-                        caption[index],
-                        data.getStringExtra(utils.constants.KEY_FILE_TYPE),
+                        caption?.get(index) ?: "",
+                        data.getStringExtra(utils.constants.KEY_FILE_TYPE)!!,
                         true
                     )
                 }
@@ -667,7 +669,8 @@ class MessageActivity : AppCompatActivity() {
        messagesList.isDrawingCacheEnabled = true;
        messagesList.drawingCacheQuality = View.DRAWING_CACHE_QUALITY_HIGH
 
-       val linearLayoutManager = LinearLayoutManager(this)
+       val linearLayoutManager =
+           LinearLayoutManager(this)
         linearLayoutManager.stackFromEnd = true
         messagesList.layoutManager = linearLayoutManager
 
@@ -1925,7 +1928,7 @@ class MessageActivity : AppCompatActivity() {
 }
 
 
-    var blockedSnackbar:Snackbar? = null
+    var blockedSnackbar: Snackbar? = null
 
     private fun checkIfBlocked(targetUID:String) {
 
@@ -2271,7 +2274,7 @@ class MessageActivity : AppCompatActivity() {
                                         else messages + message.message + "\n"
                                     }
                                     val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                    clipboard.primaryClip = (ClipData.newPlainText("Messages ", messages.trim()))
+                                    clipboard.setPrimaryClip((ClipData.newPlainText("Messages ", messages.trim())))
                                     utils.toast(context, "Messages copied")
                                 }
 
@@ -2572,7 +2575,7 @@ class MessageActivity : AppCompatActivity() {
     }
 
 
-    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
 
         when(item!!.itemId){
             R.id.menu_action_block -> {

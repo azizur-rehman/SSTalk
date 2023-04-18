@@ -8,10 +8,10 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Parcelable
-import android.support.v4.app.ActivityCompat
-import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.RecyclerView
+import androidx.core.app.ActivityCompat
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
@@ -54,14 +54,19 @@ class MultiContactChooserActivity : AppCompatActivity(){
         setContentView(R.layout.activity_multi_contact_chooser)
         title = "Choose from contacts"
 
-        excludedUIDs = intent.getStringArrayListExtra(utils.constants.KEY_EXCLUDED_LIST)
+        excludedUIDs = intent.getStringArrayListExtra(utils.constants.KEY_EXCLUDED_LIST)!!
 
         if(excludedUIDs.isNullOrEmpty())
             excludedUIDs = ArrayList()
 
-        contacts_list.layoutManager = LinearLayoutManager(this@MultiContactChooserActivity)
-        participant_recyclerview.layoutManager = LinearLayoutManager(this@MultiContactChooserActivity,
-            LinearLayoutManager.HORIZONTAL, false)
+        contacts_list.layoutManager =
+            LinearLayoutManager(this@MultiContactChooserActivity)
+        participant_recyclerview.layoutManager =
+            LinearLayoutManager(
+                this@MultiContactChooserActivity,
+                LinearLayoutManager.HORIZONTAL,
+                false
+            )
 
         asyncLoader = doAsyncResult {
 
@@ -176,7 +181,7 @@ class MultiContactChooserActivity : AppCompatActivity(){
     }
 
 
-    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
 
         if(item?.itemId == R.id.action_confirm)
         {
@@ -277,7 +282,8 @@ class MultiContactChooserActivity : AppCompatActivity(){
                 val checkBox = itemView.checkbox
             }
 
-    class ParticipantHolder(itemView: View):RecyclerView.ViewHolder(itemView){
+    class ParticipantHolder(itemView: View):
+        RecyclerView.ViewHolder(itemView){
         val name = itemView.grid_name!!
         val pic = itemView.grid_pic!!
         init {

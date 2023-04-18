@@ -1,7 +1,7 @@
 package com.aziz.sstalk
 
 import android.app.Activity
-import android.support.v7.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.MenuItem
 import com.aziz.sstalk.adapters.ViewPagerImageAdapter
@@ -31,7 +31,9 @@ class UploadPreviewActivity : AppCompatActivity() {
 
         if(isForSingleFile){
             val cameraImagePath = intent.getStringExtra(utils.constants.KEY_IMG_PATH)
-            imagePaths.add(cameraImagePath)
+            if (cameraImagePath != null) {
+                imagePaths.add(cameraImagePath)
+            }
         }
         else {
 
@@ -39,16 +41,20 @@ class UploadPreviewActivity : AppCompatActivity() {
             if (intent.getStringExtra(utils.constants.KEY_FILE_TYPE) == utils.constants.FILE_TYPE_VIDEO) {
                 val videoPaths = intent.getParcelableArrayListExtra<VideoFile>(utils.constants.KEY_IMG_PATH)
 
-                for (item in videoPaths) {
-                    imageCaptions.add("")
-                    imagePaths.add(item.path.toString())
+                if (videoPaths != null) {
+                    for (item in videoPaths) {
+                        imageCaptions.add("")
+                        imagePaths.add(item.path.toString())
+                    }
                 }
             } else {
                 val imgFilePaths = intent.getParcelableArrayListExtra<ImageFile>(utils.constants.KEY_IMG_PATH)
 
-                for (item in imgFilePaths) {
-                    imageCaptions.add("")
-                    imagePaths.add(item.path.toString())
+                if (imgFilePaths != null) {
+                    for (item in imgFilePaths) {
+                        imageCaptions.add("")
+                        imagePaths.add(item.path.toString())
+                    }
                 }
             }
         }
@@ -60,7 +66,11 @@ class UploadPreviewActivity : AppCompatActivity() {
             utils.longToast(this, "Failed to load image")
         }
 
-        val adapter = ViewPagerImageAdapter(layoutInflater, imagePaths as java.util.ArrayList<String>, intent.getStringExtra(utils.constants.KEY_FILE_TYPE))
+        val adapter = intent.getStringExtra(utils.constants.KEY_FILE_TYPE)?.let {
+            ViewPagerImageAdapter(layoutInflater, imagePaths as java.util.ArrayList<String>,
+                it
+            )
+        }
         viewPager.adapter = adapter
 
 
@@ -77,7 +87,7 @@ class UploadPreviewActivity : AppCompatActivity() {
             }
             else {
 
-                imageCaptions = adapter.getImageCaptions()
+                imageCaptions = adapter!!.getImageCaptions()
 
 
 

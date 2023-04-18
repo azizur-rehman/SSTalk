@@ -54,10 +54,10 @@
     />
 
 
-    <android.support.v7.widget.RecyclerView android:layout_width="match_parent"
+    <androidx.recyclerview.widget.RecyclerView android:layout_width="match_parent"
                                             android:paddingLeft="15dp"
                                             android:paddingBottom="5dp"
-                                            app:layoutManager="android.support.v7.widget.LinearLayoutManager"
+                                            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                                             android:id="@+id/group_member_recycler_view"
                                             android:clipToPadding="false"
                                             android:layout_height="wrap_content"/>
@@ -126,7 +126,7 @@
               android:text="Media"
     />
 
-    <android.support.v7.widget.RecyclerView
+    <androidx.recyclerview.widget.RecyclerView
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:id="@+id/mediaRecyclerView"

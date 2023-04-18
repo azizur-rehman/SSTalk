@@ -6,13 +6,13 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.net.Uri
-import android.support.v7.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Parcelable
 import android.provider.MediaStore
-import android.support.design.widget.Snackbar
-import android.support.v7.widget.DividerItemDecoration
-import android.support.v7.widget.RecyclerView
+import com.google.android.material.snackbar.Snackbar
+import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.RecyclerView
 import android.util.Log
 import android.view.MenuItem
 import android.view.View
@@ -63,12 +63,12 @@ class ForwardActivity : AppCompatActivity() {
 
     var nameOfRecipient :String = ""
 
-    private var allContactAdapter:RecyclerView.Adapter<ViewHolder>? = null
+    private var allContactAdapter: RecyclerView.Adapter<ViewHolder>? = null
 
     val context = this@ForwardActivity
     private var myUID: String = ""
 
-    var fwd_snackbar:Snackbar? = null
+    var fwd_snackbar: Snackbar? = null
 
     var messageModels: MutableList<Models.MessageModel>? = ArrayList()
 
@@ -292,7 +292,9 @@ class ForwardActivity : AppCompatActivity() {
             when {
                 intent.type == "text/plain" -> {
                     val text = intent.getStringExtra(Intent.EXTRA_TEXT)
-                    messageModels!!.add(Models.MessageModel(text ))
+                    text?.let {
+                        messageModels!!.add(Models.MessageModel(text ))
+                    }
                     isTextFromIntent = true
                 }
                 intent.type!!.startsWith( "image/") -> {
@@ -670,7 +672,7 @@ class ForwardActivity : AppCompatActivity() {
 
 
 
-    class ViewHolder(view:View):RecyclerView.ViewHolder(view){
+    class ViewHolder(view:View): RecyclerView.ViewHolder(view){
          val title = view.name!!
          val pic = view.pic!!
          val checkBox = view.checkbox!!
@@ -679,7 +681,7 @@ class ForwardActivity : AppCompatActivity() {
 
 
 
-    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
         finish()
         return super.onOptionsItemSelected(item)
     }

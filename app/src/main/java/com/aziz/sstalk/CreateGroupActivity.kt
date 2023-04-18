@@ -6,11 +6,11 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
-import android.support.v7.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.support.v4.content.ContextCompat
-import android.support.v7.widget.GridLayoutManager
-import android.support.v7.widget.RecyclerView
+import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
@@ -80,7 +80,8 @@ class CreateGroupActivity : AppCompatActivity() {
 
     private fun setGridAdapter(selectedUsers:ArrayList<Models.Contact>?) {
 
-        participant_recyclerview.layoutManager = GridLayoutManager(this, 4)
+        participant_recyclerview.layoutManager =
+            GridLayoutManager(this, 4)
         participant_recyclerview.setHasFixedSize(true)
 
         val horizontalAdapter = object : RecyclerView.Adapter<ParticipantHolder>() {
@@ -191,7 +192,7 @@ class CreateGroupActivity : AppCompatActivity() {
     }
 
 
-    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
 
         if(item!!.itemId == android.R.id.home){
             finish()
