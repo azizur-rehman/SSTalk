@@ -1,10 +1,7 @@
 package com.aziz.sstalk
 
 import android.Manifest
-import android.animation.Animator
-import android.animation.AnimatorListenerAdapter
-import android.animation.ArgbEvaluator
-import android.animation.ObjectAnimator
+import android.animation.*
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.NotificationManager
@@ -55,6 +52,9 @@ import com.google.android.gms.tasks.Task
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.ml.naturallanguage.FirebaseNaturalLanguage
+import com.google.firebase.ml.naturallanguage.smartreply.FirebaseTextMessage
+import com.google.firebase.ml.naturallanguage.smartreply.SmartReplySuggestionResult
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.UploadTask
 import com.mikhaellopez.circularprogressbar.CircularProgressBar
@@ -70,7 +70,7 @@ import com.vincent.filepicker.filter.entity.VideoFile
 import io.codetail.animation.SupportAnimator
 import io.codetail.animation.ViewAnimationUtils
 import kotlinx.android.synthetic.main.activity_message.*
-import kotlinx.android.synthetic.main.content_user_profile.*
+import kotlinx.android.synthetic.main.item_smart_reply.view.*
 import kotlinx.android.synthetic.main.layout_attachment_menu.*
 import kotlinx.android.synthetic.main.layout_include_message_activity_toolbar.*
 import kotlinx.android.synthetic.main.text_header.view.*
@@ -139,6 +139,7 @@ class MessageActivity : AppCompatActivity() {
     var loadedPosition:HashMap<Int,Boolean> = HashMap()
 
     var selectedMessageModel:MutableList<Models.MessageModel> = ArrayList()
+    var selectedMessageIDs:MutableList<String> = ArrayList()
     val selectedItemPosition:MutableList<Int> = ArrayList()
 
     var searchFilterItemPosition:MutableList<Int> = ArrayList()
@@ -214,6 +215,8 @@ class MessageActivity : AppCompatActivity() {
 
 
     private fun initComponents(){
+
+
 
         if(isGroup) {
             target_name_textview.text = nameOrNumber
@@ -308,13 +311,19 @@ class MessageActivity : AppCompatActivity() {
 
             if(attachment_menu.visibility != View.VISIBLE) {
                 utils.setEnterRevealEffect(this, attachment_menu)
+                
             }
             else {
                 utils.setExitRevealEffect(attachment_menu)
+                
             }
 
 
+
         }
+
+
+        bindSmartReply()
     }
 
 
@@ -372,6 +381,8 @@ class MessageActivity : AppCompatActivity() {
             else{
                 startCamera()
             }
+
+            
         }
 
 
@@ -400,6 +411,7 @@ class MessageActivity : AppCompatActivity() {
             else{
                 startActivityForResult(galleryIntent, RQ_GALLERY)
             }
+            
         }
 
 
@@ -419,6 +431,7 @@ class MessageActivity : AppCompatActivity() {
             else{
                 startActivityForResult(Intent(context, MapsActivity::class.java), RQ_LOCATION)
             }
+            
         }
 
 
@@ -447,6 +460,7 @@ class MessageActivity : AppCompatActivity() {
             else{
                 startActivityForResult(videoIntent, RQ_VIDEO)
             }
+            
 
         }
 
@@ -1131,7 +1145,7 @@ class MessageActivity : AppCompatActivity() {
                 if(thumbnail != null){
 
                     if(model.file_local_path.isNotEmpty() && File(model.file_local_path).exists()){
-                        videoLengthTextView!!.text = utils.getVideoLength(context, model.file_local_path)
+                        videoLengthTextView?.text = utils.getVideoLength(context, model.file_local_path)
 
                         utils.loadVideoThumbnailFromLocalAsync(context, thumbnail, model.file_local_path)
 
@@ -1140,13 +1154,14 @@ class MessageActivity : AppCompatActivity() {
                     else{
 
                         utils.setVideoThumbnailFromWebAsync(context, model.message, thumbnail)
+                        videoLengthTextView?.text = utils.getFileSize(model.file_size_in_bytes)
 
                         Log.d("MessageActivity", "onBindViewHolder: $messageID file not found")
 
-                            tapToDownload!!.visibility = View.VISIBLE
+                            tapToDownload?.visibility = View.VISIBLE
 
 
-                            tapToDownload.setOnClickListener {
+                            tapToDownload?.setOnClickListener {
 
                                 if(isContextMenuActive)
                                     return@setOnClickListener
@@ -2236,7 +2251,7 @@ class MessageActivity : AppCompatActivity() {
         unselectedDrawable = ColorDrawable(Color.WHITE)
 
 
-        if(selectedItemPosition.contains(position))
+        if(selectedMessageIDs.contains(messageID))
             itemView.background = selectedDrawable
         else
             itemView.background = unselectedDrawable
@@ -2249,15 +2264,16 @@ class MessageActivity : AppCompatActivity() {
 
             if(!isContextMenuActive) {
 
-                if (!selectedItemPosition.contains(position)) {
+                if (!selectedMessageIDs.contains(messageID)) {
                     selectedItemPosition.add(position)
                     selectedMessageModel.add(model)
+                    selectedMessageIDs.add(messageID)
                 }
 
 
                 actionMode = startSupportActionMode(object : ActionMode.Callback {
                         override fun onActionItemClicked(p0: ActionMode?, p1: MenuItem?): Boolean {
-                            when (p1!!.itemId) {
+                            when (p1?.itemId) {
 
                                 R.id.action_delete -> {
 
@@ -2292,17 +2308,22 @@ class MessageActivity : AppCompatActivity() {
                                             )
                                     )
                                 }
+
+                                R.id.action_translate -> {
+                                    translateMessage(itemView, model)
+                                }
+
                             }
 
-                            if (p1.itemId != R.id.action_delete)
-                                p0!!.finish()
+                            if (p1?.itemId != R.id.action_delete)
+                                p0?.finish()
 
                             return true
 
                         }
 
                         override fun onCreateActionMode(p0: ActionMode?, p1: Menu?): Boolean {
-                            p0!!.menuInflater.inflate(R.menu.chat_actions_menu, p1!!)
+                            p0?.menuInflater?.inflate(R.menu.chat_actions_menu, p1!!)
                             isContextMenuActive = true
                             return true
                         }
@@ -2312,6 +2333,9 @@ class MessageActivity : AppCompatActivity() {
                             val isContainsFile = models.any {
                                 it.isFile
                             }
+
+
+                                p1?.findItem(R.id.action_translate)?.isVisible = (models.size == 1)
 
                             p1?.findItem(R.id.action_copy)?.isVisible = !isContainsFile
                             p0?.title = selectedItemPosition.size.toString()
@@ -2324,12 +2348,13 @@ class MessageActivity : AppCompatActivity() {
                                 adapter.notifyItemChanged(pos)
 
                             selectedItemPosition.clear()
+                            selectedMessageIDs.clear()
                             isContextMenuActive = false
                         }
 
                     })
 
-                actionMode!!.title = selectedItemPosition.size.toString()
+                actionMode?.title = selectedItemPosition.size.toString()
 
 
                 itemView.background = selectedDrawable
@@ -2345,23 +2370,25 @@ class MessageActivity : AppCompatActivity() {
 
             if(isContextMenuActive) {
 
-                if(selectedItemPosition.contains(position)){
+                if(selectedMessageIDs.contains(messageID)){
                     itemView.background = unselectedDrawable
                     selectedItemPosition.remove(position)
                     selectedMessageModel.remove(model)
+                    selectedMessageIDs.remove(messageID)
 
                 }
                 else{
                     itemView.background = selectedDrawable
                     selectedItemPosition.add(position)
                     selectedMessageModel.add(model)
+                    selectedMessageIDs.add(messageID)
                 }
 
-                actionMode!!.title = selectedItemPosition.size.toString()
+                actionMode?.title = selectedItemPosition.size.toString()
                 actionMode?.invalidate()
 
                 if(selectedItemPosition.isEmpty()){
-                        actionMode!!.finish()
+                        actionMode?.finish()
                 }
 
 
@@ -2370,7 +2397,10 @@ class MessageActivity : AppCompatActivity() {
         }
     }
 
+    private fun translateMessage(itemView: View, model: Models.MessageModel) {
 
+
+    }
 
 
     var isContextMenuActive = false
@@ -2724,16 +2754,18 @@ class MessageActivity : AppCompatActivity() {
     private fun deleteSelectedMessages(actionMode: ActionMode?){
 
 
+        Log.d("MessageActivity", "deleteSelectedMessages: $selectedItemPosition , msg ID = $selectedMessageIDs")
+
         AlertDialog.Builder(context)
             .setMessage("Delete selected messages?")
             .setPositiveButton("Yes") { _, _ ->
-                Log.d("MessageActivity", "deleteSelectedMessages: $selectedItemPosition")
-                for ((index, itemPosition) in selectedItemPosition.withIndex()) {
+
+                for ((index, messageID) in selectedMessageIDs.withIndex()) {
                     FirebaseUtils.ref.getChatRef(myUID, targetUid)
-                        .child(adapter.getRef(itemPosition).key.toString())
+                        .child(messageID)
                         .removeValue()
                         .addOnCompleteListener {
-                            if (index == selectedItemPosition.lastIndex) {
+                            if (index == selectedMessageIDs.lastIndex) {
                                 toast("Message deleted")
                             }
                         }
@@ -2799,6 +2831,100 @@ class MessageActivity : AppCompatActivity() {
             })
     }
 
+
+
+    private fun bindSmartReply(){
+
+        FirebaseUtils.ref.getChatRef(myUID, targetUid)
+            .addValueEventListener(object : ValueEventListener{
+                override fun onCancelled(p0: DatabaseError) {}
+
+                override fun onDataChange(p0: DataSnapshot) {
+
+                    val conversation:MutableList<FirebaseTextMessage> = ArrayList()
+                    var isLastMessageMine = false
+                    p0.children.forEachIndexed { index, dataSnapshot ->
+                        val message = dataSnapshot.getValue(Models.MessageModel::class.java)
+                        message?.let {
+                            val textMessage = message.message.takeIf { message.messageType == "message" }?:message.messageType
+
+                            conversation.add(FirebaseTextMessage.createForRemoteUser(textMessage,
+                                System.currentTimeMillis(), targetUid))
+
+                            if(index == p0.childrenCount.toInt() - 1){
+                                isLastMessageMine = it.from == myUID
+                            }
+                        }
+                    }
+
+
+                    smart_reply_recycler.visibility = if(isLastMessageMine)  View.GONE else View.VISIBLE
+
+
+                    //generate smart reply
+                    try {
+
+
+
+//                        smart_reply_recycler.visibility = if(isLastMessageMine) View.GONE else View.VISIBLE
+
+
+                        if(conversation.isEmpty()) return
+
+                        FirebaseNaturalLanguage.getInstance().smartReply
+                            .suggestReplies(conversation)
+                            .addOnSuccessListener {
+                                when(it.status){
+                                    SmartReplySuggestionResult.STATUS_SUCCESS -> {
+
+
+                                    }
+                                    SmartReplySuggestionResult.STATUS_NO_REPLY -> {
+                                        Log.d("MessageActivity", "onChildAdded: no reply")
+                                    }
+                                    SmartReplySuggestionResult.STATUS_NOT_SUPPORTED_LANGUAGE -> {
+                                        Log.d("MessageActivity", "onChildAdded: language not supported ")
+                                    }
+                                }
+
+
+
+                                smart_reply_recycler.adapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>(){
+                                    override fun onCreateViewHolder(p0: ViewGroup, p1: Int): RecyclerView.ViewHolder {
+                                        return object : RecyclerView.ViewHolder(LayoutInflater.from(context)
+                                            .inflate(R.layout.item_smart_reply,p0,false)){}
+                                    }
+
+                                    override fun getItemCount() = it.suggestions.size
+                                    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, p1: Int) {
+                                        val suggestion  = it.suggestions[p1].text
+                                        holder.itemView.item_text.text = suggestion
+
+
+                                        holder.itemView.item_text.setOnClickListener {
+                                            Log.d("MessageActivity", "onBindViewHolder: suggestion text clicked")
+                                            messageInputField.inputEditText.setText(suggestion)
+                                            messageInputField.button.callOnClick()
+                                        }
+
+                                        holder.itemView.setOnClickListener {
+                                            Log.d("MessageActivity", "onBindViewHolder: suggestion clicked")
+                                            messageInputField.inputEditText.setText(suggestion)
+                                            messageInputField.button.callOnClick()
+                                        }
+                                    }
+
+                                }
+
+                            }
+                    } catch (e: Exception) {
+                        Log.e("MessageActivity", "onDataChange: error on smart suggestion : ",e)
+                    }
+                }
+            })
+
+
+    }
 
 
 

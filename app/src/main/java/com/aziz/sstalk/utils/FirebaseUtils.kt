@@ -170,7 +170,7 @@ object FirebaseUtils {
 
             fun allMessageStatusRootRef():DatabaseReference =
                     root().child(NODE_MESSAGE_STATUS)
-                        .child(FirebaseUtils.getUid())
+                        .child(getUid())
                     //.child("vHv8TSqbS2YBHZJXS5X5Saz4acC2")
 
             fun messageStatus(uid: String, targetUID: String, messageID: String):DatabaseReference =
@@ -185,14 +185,14 @@ object FirebaseUtils {
             //this will return a boolean snapshot
             fun notificationMute(uid: String):DatabaseReference =
                     root().child(NODE_INDIVIDUAL_NOTIFICATION_SETTING)
-                        .child(FirebaseUtils.getUid())
+                        .child(getUid())
                         .child(uid)
                         .child(KEY_ENABLED)
 
             //this will return a snapshot array
             fun getNotificationMuteRootRef():DatabaseReference =
                 root().child(NODE_INDIVIDUAL_NOTIFICATION_SETTING)
-                    .child(FirebaseUtils.getUid())
+                    .child(getUid())
 
             fun groupInfo(groupID:String):DatabaseReference =
                     FirebaseUtils.ref.root().child(NODE_GROUP_INFO).child(groupID)
@@ -207,7 +207,7 @@ object FirebaseUtils {
         }
 
 
-    fun loadProfilePic(context: Context, uid: String, imageView: ImageView){
+    fun loadProfilePic(context: Context, uid: String, imageView: ImageView, onHasPicture:(() -> Unit)? = null){
 
         try{
             imageView.setImageResource(R.drawable.contact_placeholder)
@@ -228,6 +228,9 @@ object FirebaseUtils {
                 Log.d("FirebaseUtils", "loadProfilePic: exists of $uid")
                 Picasso.get().load(file)
                     .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE).into(imageView)
+
+                onHasPicture?.invoke()
+
                 imageView.setOnClickListener {
                     context.startActivity(Intent(context, ImagePreviewActivity::class.java)
                         .putExtra(utils.constants.KEY_LOCAL_PATH, file.path))
@@ -277,6 +280,9 @@ object FirebaseUtils {
                                         Picasso.get().load(file)
                                             .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
                                             .into(imageView)
+
+                                        onHasPicture?.invoke()
+
                                         imageView.setOnClickListener {
                                             context.startActivity(Intent(context, ImagePreviewActivity::class.java)
                                                 .putExtra(utils.constants.KEY_LOCAL_PATH, file.path))
@@ -335,7 +341,7 @@ object FirebaseUtils {
         }
 
     //for group
-    fun loadGroupPic(context: Context, groupId: String, imageView: ImageView){
+    fun loadGroupPic(context: Context, groupId: String, imageView: ImageView, onHasPicture:(() -> Unit)? = null){
 
         try{
             imageView.setImageResource(R.drawable.ic_group_white_24dp)
@@ -357,6 +363,9 @@ object FirebaseUtils {
 
                 Picasso.get().load(file)
                     .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE).into(imageView)
+
+                onHasPicture?.invoke()
+
                 imageView.setOnClickListener {
                     context.startActivity(Intent(context, ImagePreviewActivity::class.java)
                         .putExtra(utils.constants.KEY_LOCAL_PATH, file.path))
@@ -401,6 +410,7 @@ object FirebaseUtils {
 
                             val file= File(utils.getProfilePicPath(context)+groupId+".jpg")
                             if(file.exists()){
+                                onHasPicture?.invoke()
                                 Picasso.get().load(file)
                                     .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE).into(imageView)
                                 imageView.setOnClickListener {
@@ -760,7 +770,7 @@ object FirebaseUtils {
                         textView.visibility = View.VISIBLE
 
 
-                        if(messageModel.from == FirebaseUtils.getUid()){
+                        if(messageModel.from == getUid()){
                             messageStatusImageView.visibility = View.VISIBLE
                             setDeliveryStatusTick(targetUID, messageID, messageStatusImageView)
                         }
@@ -789,7 +799,7 @@ object FirebaseUtils {
             initialTypeface = boldTextViews[0].typeface
 
 
-        allMessageStatus(FirebaseUtils.getUid(), targetUID)
+        allMessageStatus(getUid(), targetUID)
             .orderByChild("delivered")
             .equalTo(false)
             .addListenerForSingleValueEvent(object : ValueEventListener {
@@ -803,7 +813,7 @@ object FirebaseUtils {
                 }
             })
 
-        allMessageStatus(FirebaseUtils.getUid(), targetUID)
+        allMessageStatus(getUid(), targetUID)
             .orderByChild("read")
             .equalTo(false)
             .addValueEventListener(object : ValueEventListener {
@@ -834,17 +844,17 @@ object FirebaseUtils {
     }
 
     fun setMeAsOnline(){
-        FirebaseUtils.ref.userStatus(FirebaseUtils.getUid())
+        FirebaseUtils.ref.userStatus(getUid())
             .setValue(Models.UserActivityStatus(FirebaseUtils.VAL_ONLINE, System.currentTimeMillis()))
     }
 
     fun setMeAsOffline(){
-        FirebaseUtils.ref.userStatus(FirebaseUtils.getUid())
-            .setValue(Models.UserActivityStatus(FirebaseUtils.VAL_OFFLINE, System.currentTimeMillis()))
+        FirebaseUtils.ref.userStatus(getUid())
+            .setValue(Models.UserActivityStatus(VAL_OFFLINE, System.currentTimeMillis()))
     }
 
     fun setMeAsTyping(targetUID:String){
-        FirebaseUtils.ref.userStatus(FirebaseUtils.getUid())
+        FirebaseUtils.ref.userStatus(getUid())
             .setValue(Models.UserActivityStatus(FirebaseUtils.VAL_TYPING+" - $targetUID", System.currentTimeMillis()))
     }
 
@@ -861,7 +871,7 @@ object FirebaseUtils {
         }
 
 
-        ref.messageStatus(targetUID,FirebaseUtils.getUid(), messageID)
+        ref.messageStatus(targetUID,getUid(), messageID)
             .addValueEventListener(object : ValueEventListener{
                 override fun onCancelled(p0: DatabaseError) {
 
@@ -902,7 +912,7 @@ object FirebaseUtils {
         Log.d("FirebaseUtils", "setMessageStatusToDB: group name = $groupNameIf")
 
         ref.messageStatus(uid,targetUID,messageID)
-            .setValue(Models.MessageStatus(FirebaseUtils.getUid(), isRead, isDelivered, messageID,
+            .setValue(Models.MessageStatus(getUid(), isRead, isDelivered, messageID,
                 if(FirebaseUtils.isLoggedIn()) FirebaseAuth.getInstance().currentUser!!.phoneNumber!! else "1234567890",
                 if(FirebaseUtils.isLoggedIn()) FirebaseAuth.getInstance().currentUser!!.photoUrl.toString() else "",
                 groupNameIf))
@@ -920,11 +930,11 @@ object FirebaseUtils {
                   "setReadStatusToMessage: setting read status to  -> $targetUID as  $messageID " +
                           "after 1 sec delay"
               )
-              ref.messageStatus(FirebaseUtils.getUid(), targetUID, messageID)
+              ref.messageStatus(getUid(), targetUID, messageID)
                   .child("read")
                   .setValue(true)
 
-              ref.messageStatus(FirebaseUtils.getUid(), targetUID, messageID)
+              ref.messageStatus(getUid(), targetUID, messageID)
                   .child("delivered")
                   .setValue(true)
           },1000)
@@ -1033,7 +1043,7 @@ object FirebaseUtils {
                  if(!it.isSuccessful)
                      return@addOnCompleteListener
 
-                    ref.FCMToken(FirebaseUtils.getUid()).child(it.result!!.id)
+                    ref.FCMToken(getUid()).child(it.result!!.id)
                         .setValue(it.result!!.token)
             }
     }
@@ -1046,7 +1056,7 @@ object FirebaseUtils {
                 if(!it.isSuccessful)
                     return@addOnCompleteListener
 
-                ref.FCMToken(FirebaseUtils.getUid()).child(it.result!!.id)
+                ref.FCMToken(getUid()).child(it.result!!.id)
                     .removeValue().addOnSuccessListener {
                         Log.d("FirebaseUtils", "deleteCurrentToken: token removed")
                     }
@@ -1306,7 +1316,7 @@ object FirebaseUtils {
                                     }
 
                                     // add event to myself
-                                    removedMemberEvent(FirebaseUtils.getUid(), groupID, phoneNumber)
+                                    removedMemberEvent(getUid(), groupID, phoneNumber)
                                 }
                         }
                             noButton{}
@@ -1359,8 +1369,8 @@ object FirebaseUtils {
 
      fun setonDisconnectListener(){
 
-        FirebaseUtils.ref.userStatus(FirebaseUtils.getUid())
+        FirebaseUtils.ref.userStatus(getUid())
             .onDisconnect()
-            .setValue(Models.UserActivityStatus(FirebaseUtils.VAL_OFFLINE, System.currentTimeMillis()))
+            .setValue(Models.UserActivityStatus(VAL_OFFLINE, System.currentTimeMillis()))
     }
 }

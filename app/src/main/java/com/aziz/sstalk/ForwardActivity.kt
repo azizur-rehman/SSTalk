@@ -138,8 +138,8 @@ class ForwardActivity : AppCompatActivity() {
                                 }
 
                                 override fun onStart() {
-                                    progressDialog!!.setMessage("Please wait...")
-                                    progressDialog!!.show()
+                                    progressDialog?.setMessage("Please wait...")
+                                    progressDialog?.show()
                                 }
 
                             })
@@ -156,8 +156,8 @@ class ForwardActivity : AppCompatActivity() {
 
                     if(currentVideoFile!=null){
                         val messageID = "MSG${System.currentTimeMillis()}"
-                        progressDialog!!.setMessage("Please wait...")
-                        progressDialog!!.show()
+                        progressDialog?.setMessage("Please wait...")
+                        progressDialog?.show()
                         uploadAndForward(messageID, currentVideoFile!!, currentVideoFile!!,
                             utils.constants.FILE_TYPE_VIDEO)
                     }

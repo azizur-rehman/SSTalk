@@ -43,6 +43,7 @@
                 <View android:layout_height="match_parent"
                       android:layout_width="match_parent"
                       android:background="@drawable/image_background_bottom_gradient"
+                      android:id="@+id/gradient_background"
                 />
 
                 <TextView android:layout_width="wrap_content"
