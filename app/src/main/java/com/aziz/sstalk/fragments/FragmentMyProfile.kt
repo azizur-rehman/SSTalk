@@ -18,6 +18,7 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.aziz.sstalk.HomeActivity
 import com.aziz.sstalk.R
+import com.aziz.sstalk.databinding.ContentMyProfileBinding
 import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.utils
 import com.google.android.gms.tasks.Continuation
@@ -32,8 +33,6 @@ import com.google.firebase.storage.StorageReference
 import com.google.firebase.storage.UploadTask
 import com.theartofdev.edmodo.cropper.CropImage
 import com.theartofdev.edmodo.cropper.CropImageView
-import kotlinx.android.synthetic.main.content_my_profile.*
-import kotlinx.android.synthetic.main.layout_profile_image_picker.*
 import me.shaohui.advancedluban.Luban
 import me.shaohui.advancedluban.OnCompressListener
 import org.jetbrains.anko.design.snackbar
@@ -52,12 +51,14 @@ class FragmentMyProfile : Fragment() {
 
     var isOnAccountCreated = false
 
+    lateinit var binding:ContentMyProfileBinding
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        return inflater.inflate(R.layout.content_my_profile, container, false)
+        binding = ContentMyProfileBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
 
@@ -67,16 +68,16 @@ class FragmentMyProfile : Fragment() {
 
         isOnAccountCreated = arguments?.getBoolean(utils.constants.KEY_IS_ON_ACCOUNT_CREATION, false)?:false
 
-        profile_name.isEnabled = isOnAccountCreated
+        binding.profileName.isEnabled = isOnAccountCreated
 
 
         with(view) {
 
             myUID = FirebaseUtils.getUid()
 
-            FirebaseUtils.loadProfilePic(context, myUID, profile_circleimageview)
+            FirebaseUtils.loadProfilePic(context, myUID, binding.includeContent.profileCircleimageview)
 
-            profile_pick_btn.setOnClickListener {
+            binding.includeContent.profilePickBtn.setOnClickListener {
 
                 context?.selector(
                     "Edit profile picture",
@@ -109,16 +110,16 @@ class FragmentMyProfile : Fragment() {
                         override fun onDataChange(p0: DataSnapshot) {
                             if (p0.exists()) {
                                 val name = p0.value.toString()
-                                profile_name.setText(name)
+                                binding.profileName.setText(name)
                             }
                         }
                     })
             }
 
-            updateProfileBtn.setOnClickListener {
+            binding.updateProfileBtn.setOnClickListener {
 
-                if (profile_name.text.isEmpty()) {
-                    profile_name.error = "Cannot be empty"
+                if (binding.profileName.text.isEmpty()) {
+                    binding.profileName.error = "Cannot be empty"
                     return@setOnClickListener
                 }
 
@@ -142,13 +143,13 @@ class FragmentMyProfile : Fragment() {
 
                 FirebaseUtils.ref.user(myUID)
                     .child(FirebaseUtils.KEY_NAME)
-                    .setValue(profile_name.text.toString())
+                    .setValue(binding.profileName.text.toString())
 
-                if (profile_name.text.isNotEmpty()) {
+                if (binding.profileName.text.isNotEmpty()) {
                     if (FirebaseUtils.isLoggedIn()) {
                         FirebaseAuth.getInstance().currentUser!!.updateProfile(
                             UserProfileChangeRequest.Builder()
-                                .setDisplayName(profile_name.text.toString().trim()).build()
+                                .setDisplayName(binding.profileName.text.toString().trim()).build()
                         )
                     }
                 }
@@ -172,13 +173,13 @@ class FragmentMyProfile : Fragment() {
                     }
 
                     override fun onDataChange(p0: DataSnapshot) {
-                        profile_name.setText(p0.value.toString().trim())
+                        binding.profileName.setText(p0.value.toString().trim())
                     }
                 })
 
-            edit.setOnClickListener {
-                profile_name.isEnabled = true
-                edit.setColorFilter(ContextCompat.getColor(context, R.color.green))
+            binding.edit.setOnClickListener {
+                binding.profileName.isEnabled = true
+                binding.edit.setColorFilter(ContextCompat.getColor(context, R.color.green))
             }
 
         }
@@ -292,7 +293,7 @@ class FragmentMyProfile : Fragment() {
 
                             bitmap = BitmapFactory.decodeFile(file.path)
 
-                            profile_circleimageview.setImageBitmap(bitmap)
+                            binding.includeContent.profileCircleimageview.setImageBitmap(bitmap)
 
                             isProfileChanged = true
 

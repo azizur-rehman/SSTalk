@@ -16,13 +16,12 @@
             android:padding="20dp"
             android:layout_margin="5dp"
             android:gravity="center"
-            android:drawableLeft="@drawable/shape_line"
-            android:drawableRight="@drawable/shape_line"
             android:id="@+id/header_video_left"
             android:layout_gravity="center"
             android:textColor="@color/black"
             android:text="@string/app_name"
-    />
+            app:drawableRightCompat="@drawable/shape_line"
+            app:drawableLeftCompat="@drawable/shape_line" />
 
 
 
@@ -89,7 +88,7 @@
                         app:topLeftEnabled="false"
                         app:topRightEnabled="true">
 
-                    <include layout="@layout/layout_video_bubble" />
+                    <include android:id="@+id/includeVideoBubble" layout="@layout/layout_video_bubble" />
 
 
                 </com.aziz.sstalk.views.RoundCornerLayout>

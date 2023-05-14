@@ -15,21 +15,21 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Filter
 import android.widget.Filterable
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
+import com.aziz.sstalk.databinding.ActivityContactListBinding
+import com.aziz.sstalk.databinding.ItemConversationLayoutBinding
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.*
 import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.AdLoader
 import com.google.android.gms.ads.AdRequest
-import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.formats.UnifiedNativeAd
 import com.miguelcatalan.materialsearchview.MaterialSearchView
-import kotlinx.android.synthetic.main.activity_contact_list.*
-import kotlinx.android.synthetic.main.item_conversation_ad.view.*
-import kotlinx.android.synthetic.main.item_conversation_layout.view.*
+import de.hdodenhof.circleimageview.CircleImageView
 import org.jetbrains.anko.toast
 import java.util.*
 import java.util.concurrent.Future
@@ -47,18 +47,18 @@ class ContactsActivity : AppCompatActivity(){
 
     val context = this
 
+    lateinit var binding:ActivityContactListBinding
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setContentView(R.layout.activity_contact_list)
+        binding = ActivityContactListBinding.inflate(layoutInflater).apply {  setContentView(root) }
 
-        MobileAds.initialize(this, getString(R.string.admob_id))
-
-        setSupportActionBar(toolbar)
+        setSupportActionBar(binding.toolbar)
         title = "My Contacts"
 
-        contacts_list.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(context)
+        binding.contactsList.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(context)
 
         isForSelection = intent.getBooleanExtra(utils.constants.KEY_IS_FOR_SELECTION, false)
 
@@ -109,7 +109,7 @@ class ContactsActivity : AppCompatActivity(){
         loadAvailableUsers {
             totalAvailableUser = it
 
-            contacts_list.adapter = adapter
+            binding.contactsList.adapter = adapter
 
             if(it.isEmpty()) toast("No Contacts Available")
 
@@ -123,7 +123,7 @@ class ContactsActivity : AppCompatActivity(){
             registeredUser = totalAvailableUser
 
             adapter.notifyDataSetChanged()
-            contact_progressbar.visibility = View.GONE
+            binding.contactProgressbar.visibility = View.GONE
 
         }
 
@@ -139,11 +139,11 @@ class ContactsActivity : AppCompatActivity(){
 
         menuInflater.inflate(R.menu.menu_search, menu)
 
-        menu?.findItem(R.id.action_search)?.let { searchView.setMenuItem(it) }
+        menu?.findItem(R.id.action_search)?.let { binding.searchView.setMenuItem(it) }
 
 
 
-        searchView.setOnQueryTextListener(object : MaterialSearchView.OnQueryTextListener{
+        binding.searchView.setOnQueryTextListener(object : MaterialSearchView.OnQueryTextListener{
             override fun onQueryTextSubmit(query: String?): Boolean {
                 (adapter as? Filterable)?.filter?.filter(query)
                 searchQuery = query?:""
@@ -177,11 +177,11 @@ class ContactsActivity : AppCompatActivity(){
         override fun getFilter(): Filter = object : Filter() {
 
             override fun performFiltering(p0: CharSequence?): FilterResults {
-                val query = p0?.toString()?:"".toLowerCase(Locale.getDefault()).trim()
+                val query = p0?.toString()?: "".lowercase(Locale.getDefault()).trim()
                 registeredUser = totalAvailableUser
 
                 registeredUser = registeredUser.filterIndexed { index, it ->
-                    it.name.toLowerCase(Locale.getDefault()).contains(query) ||
+                    it.name.lowercase(Locale.getDefault()).contains(query) ||
                         it.number.contains(query) ||
                             (!isForSelection && index in listOf(0,1,registeredUser.lastIndex))
                 }
@@ -308,9 +308,9 @@ class ContactsActivity : AppCompatActivity(){
     }
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
-                val name = itemView.name
-                val number = itemView.mobile_number
-                val pic = itemView.pic
+                val name = itemView.findViewById<TextView>(R.id.name)
+                val number = itemView.findViewById<TextView>(R.id.mobile_number)
+                val pic = itemView.findViewById<CircleImageView>(R.id.pic)
 
             }
 
@@ -321,67 +321,63 @@ class ContactsActivity : AppCompatActivity(){
     private fun loadNativeAd(itemView:View, position:Int){
 
 
+        val itemBinding = ItemConversationLayoutBinding.bind(itemView)
+        val adBinding = itemBinding.adLayout
 
-        with(itemView){
-
-            conversation_native_ad.hide()
-
-
-            if(adsLoadedOnce)
-                return
+        adBinding.conversationNativeAd.hide()
 
 
-
-            initAd {
+        if(adsLoadedOnce)
+            return
 
 
 
-                if(position == utils.constants.ads_after_items || position == utils.constants.ads_after_items * 2)
-                    conversation_native_ad.show()
-                else{
-                    conversation_native_ad.hide()
-                    return@initAd
-                }
-                it?.let {
-
-                    conversation_native_ad.iconView = itemView.pic
-
-                    itemView.ad_name.text = it.headline
-                    itemView.ad_side_text.text = it.advertiser
-                    itemView.ad_subtitle.text = it.body
-
-                    if(it.icon != null)
-                        itemView.ad_pic.setImageDrawable(it.icon.drawable)
-
-                    if(it.starRating != null)
-                        itemView.ad_rating.rating = it.starRating.toFloat()
-                    else
-                        itemView.ad_rating.hide()
-
-                    with(itemView){
-                        ad_call_to_action.text = it.callToAction
-
-                        conversation_native_ad.callToActionView = ad_call_to_action
-                        conversation_native_ad.bodyView = ad_subtitle
-                        conversation_native_ad.headlineView = ad_name
-                        conversation_native_ad.advertiserView = ad_side_text
-                        conversation_native_ad.iconView = ad_pic
-                    }
+        initAd {
 
 
-                    it.enableCustomClickGesture()
 
-                    conversation_native_ad.setNativeAd(it)
-
-                    ads[position] = it
-
-                    if(position > utils.constants.ads_after_items && !adsLoadedOnce)
-                        adsLoadedOnce = true
-                }
-                if(it == null)
-                    conversation_native_ad.hide()
-
+            if(position == utils.constants.ads_after_items || position == utils.constants.ads_after_items * 2)
+                adBinding.conversationNativeAd.show()
+            else{
+                adBinding.conversationNativeAd.hide()
+                return@initAd
             }
+            it?.let {
+
+                adBinding.conversationNativeAd.iconView = itemBinding.pic
+
+                adBinding.adName.text = it.headline
+                adBinding.adSideText.text = it.advertiser
+                adBinding.adSubtitle.text = it.body
+
+                if(it.icon != null)
+                    adBinding.adPic.setImageDrawable(it.icon.drawable)
+
+                if(it.starRating != null)
+                    adBinding.adRating.rating = it.starRating.toFloat()
+                else
+                    adBinding.adRating.hide()
+
+                adBinding.adCallToAction.text = it.callToAction
+
+                adBinding.conversationNativeAd.callToActionView = adBinding.adCallToAction
+                adBinding.conversationNativeAd.bodyView = adBinding.adSubtitle
+                adBinding.conversationNativeAd.headlineView = adBinding.adName
+                adBinding.conversationNativeAd.advertiserView = adBinding.adSideText
+                adBinding.conversationNativeAd.iconView = adBinding.adPic
+
+
+                it.enableCustomClickGesture()
+
+//                    adBinding.conversationNativeAd.setNativeAd(it)
+
+                ads[position] = it
+
+                if(position > utils.constants.ads_after_items && !adsLoadedOnce)
+                    adsLoadedOnce = true
+            }
+            if(it == null)
+                adBinding.conversationNativeAd.hide()
 
         }
 
@@ -406,23 +402,18 @@ class ContactsActivity : AppCompatActivity(){
                     super.onAdLoaded()
                 }
 
-                override fun onAdFailedToLoad(p0: Int) {
-                    super.onAdFailedToLoad(p0)
-                    onLoaded?.invoke(null)
-
-                }
             })
             .build()
 
-        adLoader.loadAd(AdRequest.Builder().addTestDevice(utils.constants.redmi_note_3_test_device_id).build())
+        adLoader.loadAd(AdRequest.Builder().build())
 
     }
 
 
     override fun onBackPressed() {
 
-        if(searchView.isSearchOpen)
-            searchView.closeSearch()
+        if(binding.searchView.isSearchOpen)
+            binding.searchView.closeSearch()
         else
             super.onBackPressed()
     }

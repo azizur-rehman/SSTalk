@@ -2,25 +2,25 @@ package com.aziz.sstalk
 
 import android.app.Activity
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import androidx.appcompat.app.AlertDialog
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
+import com.aziz.sstalk.databinding.ActivityBlockListBinding
+import com.aziz.sstalk.databinding.ItemContactLayoutBinding
 import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.utils
 import com.firebase.ui.database.FirebaseListAdapter
 import com.firebase.ui.database.FirebaseListOptions
-import kotlinx.android.synthetic.main.activity_block_list.*
-import kotlinx.android.synthetic.main.item_contact_layout.view.*
 
 class BlockListActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_block_list)
+        val binding = ActivityBlockListBinding.inflate(layoutInflater).apply {   setContentView(this.root) }
 
         title = "Block List"
 
@@ -40,8 +40,9 @@ class BlockListActivity : AppCompatActivity() {
         val adapter = object : FirebaseListAdapter<Any>(options){
             override fun populateView(v: View, model: Any, position: Int) {
 
-                val title = v.name
-                val pic = v.pic
+                val itemBinding = ItemContactLayoutBinding.bind(v)
+                val title = itemBinding.name
+                val pic = itemBinding.pic
                 val uid =  getRef(position).key.toString()
 
 
@@ -55,7 +56,7 @@ class BlockListActivity : AppCompatActivity() {
         }
 
 
-        block_listview.setOnItemClickListener { _, _, position, _ ->
+        binding.blockListview.setOnItemClickListener { _, _, position, _ ->
             val uid = adapter.getRef(position).key.toString()
 
             AlertDialog.Builder(this@BlockListActivity).setMessage("Unblock this user")
@@ -68,12 +69,12 @@ class BlockListActivity : AppCompatActivity() {
 
         }
 
-        block_listview.adapter = adapter
+        binding.blockListview.adapter = adapter
     }
 
 
-    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
-        if(item!!.itemId == android.R.id.home)
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if(item.itemId == android.R.id.home)
         finish()
         else{
             startActivityForResult(Intent(this, ContactsActivity::class.java).apply {
@@ -94,7 +95,7 @@ class BlockListActivity : AppCompatActivity() {
 
         if(requestCode == 111 && resultCode == Activity.RESULT_OK){
 
-            val uid = data!!.getStringExtra(FirebaseUtils.KEY_UID)
+            val uid = data!!.getStringExtra(FirebaseUtils.KEY_UID)!!
             Log.d("BlockListActivity", "onActivityResult: blocking -> $uid")
             FirebaseUtils.ref.blockedUser(FirebaseUtils.getUid(), uid)
                 .setValue(true)

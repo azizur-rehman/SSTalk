@@ -15,13 +15,12 @@
             android:padding="20dp"
             android:layout_margin="5dp"
             android:gravity="center"
-            android:drawableLeft="@drawable/shape_line"
-            android:drawableRight="@drawable/shape_line"
-        android:id="@+id/header_map_right"
+            android:id="@+id/header_map_right"
         android:layout_gravity="center"
         android:textColor="@color/black"
         android:text="@string/app_name"
-        />
+            map:drawableRightCompat="@drawable/shape_line"
+            map:drawableLeftCompat="@drawable/shape_line" />
 
 
 

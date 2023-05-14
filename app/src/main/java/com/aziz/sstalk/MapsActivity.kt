@@ -6,6 +6,7 @@ import android.location.Address
 import android.location.Geocoder
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import com.aziz.sstalk.databinding.ActivityMapsBinding
 import com.aziz.sstalk.utils.utils
 import com.google.android.gms.location.LocationServices
 
@@ -16,7 +17,6 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
-import kotlinx.android.synthetic.main.activity_maps.*
 import java.lang.Exception
 import java.util.*
 
@@ -25,9 +25,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var mMap: GoogleMap
     private lateinit var currentLatLng: LatLng
 
+    lateinit var binding:ActivityMapsBinding
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_maps)
+        binding = ActivityMapsBinding.inflate(layoutInflater)
+
+        setContentView(binding.root)
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
@@ -64,7 +68,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
                         loadLocation(latLng)
 
-                        current_location_btn.setOnClickListener {
+                        binding.currentLocationBtn.setOnClickListener {
                             loadLocation(latLng)
                         }
                     }
@@ -76,7 +80,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
 
         googleMap.setOnMarkerDragListener(object: GoogleMap.OnMarkerDragListener{
-            override fun onMarkerDragEnd(p0: Marker?) {
+            override fun onMarkerDragEnd(p0: Marker) {
 
                 p0!!.title= getAddress(p0.position.latitude, p0.position.longitude)
                     ?.getAddressLine(0)
@@ -86,24 +90,24 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
             }
 
-            override fun onMarkerDragStart(p0: Marker?) {
+            override fun onMarkerDragStart(p0: Marker) {
             }
 
-            override fun onMarkerDrag(p0: Marker?) {
+            override fun onMarkerDrag(p0: Marker) {
             }
 
         })
 
 
 
-        share_location_btn.setOnClickListener {
+        binding.shareLocationBtn.setOnClickListener {
 
             val latitude = currentLatLng.latitude
             val longitude = currentLatLng.longitude
 
             var address = getAddress(latitude, longitude)!!.getAddressLine(0)
 
-            if(!enable_address_checkbox.isChecked)
+            if(!binding.enableAddressCheckbox.isChecked)
                 address = ""
 
 
@@ -146,7 +150,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     fun getAddress(latitude:Double, longitude:Double): Address?{
 
         return Geocoder(this@MapsActivity, Locale.getDefault())
-            .getFromLocation(latitude,longitude,1)[0]
+            .getFromLocation(latitude,longitude,1)?.get(0)
     }
 
 

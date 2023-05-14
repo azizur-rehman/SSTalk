@@ -26,11 +26,11 @@ public class AnimCheckBox extends View implements Checkable {
     private final double mSin63;
     private final int mDuration;
     private final int defaultSize;
-    private Paint mPaint;
+    private final Paint mPaint;
     private int radius;
-    private RectF mRectF;
-    private RectF mInnerRectF;
-    private Path mPath;
+    private final RectF mRectF;
+    private final RectF mInnerRectF;
+    private final Path mPath;
     private float mSweepAngle;
     private float mHookStartY;
     private float mBaseLeftHookOffset;

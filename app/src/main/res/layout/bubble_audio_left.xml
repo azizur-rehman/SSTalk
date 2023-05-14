@@ -16,12 +16,11 @@
             android:padding="20dp"
             android:layout_margin="5dp"
             android:gravity="center"
-            android:drawableLeft="@drawable/shape_line"
-            android:drawableRight="@drawable/shape_line"
             android:id="@+id/header_left"
             android:layout_gravity="center"
             android:textColor="@color/black"
-    />
+            app:drawableRightCompat="@drawable/shape_line"
+            app:drawableLeftCompat="@drawable/shape_line" />
 
 
 
@@ -86,7 +85,7 @@
                    android:gravity="center"
                    android:layout_height="wrap_content">
 
-               <include layout="@layout/layout_item_audio"/>
+               <include android:id="@+id/includeAudioBubble" layout="@layout/layout_item_audio"/>
 
                <com.mikhaellopez.circularprogressbar.CircularProgressBar
                        android:id="@+id/audio_progress_bar"

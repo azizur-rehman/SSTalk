@@ -37,7 +37,6 @@ import com.aziz.sstalk.R
 import com.aziz.sstalk.models.Models
 import com.bumptech.glide.Glide
 import com.google.firebase.auth.FirebaseAuth
-import org.jetbrains.anko.toast
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -143,12 +142,16 @@ object utils {
 
         while(cursor!!.moveToNext()){
 
-            var name = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME))
-            var number = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER))
+            val nameColIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
+            var name = cursor.getString(nameColIndex)
 
-            var pic = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.PHOTO_THUMBNAIL_URI))
+            val numberColIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+            var number = cursor.getString(numberColIndex)
 
-            number = utils.getFormattedTenDigitNumber(number)
+            val picColIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.PHOTO_THUMBNAIL_URI)
+            var pic = cursor.getString(picColIndex)
+
+            number = getFormattedTenDigitNumber(number)
 
             if(pic == null)
                 pic = ""
@@ -203,7 +206,7 @@ object utils {
 
         sdf.timeZone = TimeZone.getDefault()
 
-        return sdf.format(calendar.time).toUpperCase().replace(".","")
+        return sdf.format(calendar.time).uppercase(Locale.getDefault()).replace(".","")
     }
 
     fun getLocalDate(timeInMillis: Long): String{
@@ -284,18 +287,18 @@ object utils {
         animator.duration = 300
 
         animator.addListener(object : Animator.AnimatorListener{
-            override fun onAnimationRepeat(animation: Animator?) {
+            override fun onAnimationRepeat(animation: Animator) {
             }
 
-            override fun onAnimationEnd(animation: Animator?) {
+            override fun onAnimationEnd(animation: Animator) {
             }
 
-            override fun onAnimationCancel(animation: Animator?) {
+            override fun onAnimationCancel(animation: Animator) {
                 activity.window.setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
                     WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE)
             }
 
-            override fun onAnimationStart(animation: Animator?) {
+            override fun onAnimationStart(animation: Animator) {
                 view.visibility = View.VISIBLE
                 activity.window.clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE)
             }
@@ -329,17 +332,17 @@ object utils {
         animator.duration = 400
 
         animator.addListener(object : Animator.AnimatorListener{
-            override fun onAnimationRepeat(animation: Animator?) {
+            override fun onAnimationRepeat(animation: Animator) {
             }
 
-            override fun onAnimationEnd(animation: Animator?) {
+            override fun onAnimationEnd(animation: Animator) {
                 view.visibility = View.GONE
             }
 
-            override fun onAnimationCancel(animation: Animator?) {
+            override fun onAnimationCancel(animation: Animator) {
             }
 
-            override fun onAnimationStart(animation: Animator?) {
+            override fun onAnimationStart(animation: Animator) {
             }
 
         })
@@ -474,9 +477,9 @@ object utils {
         return try {
 
             val retriever = MediaMetadataRetriever()
-            retriever.setDataSource(context, utils.getUriFromFile(context,  File(videoFilePath)))
+            retriever.setDataSource(context, getUriFromFile(context,  File(videoFilePath)))
             val time = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
-            val timeInMillisec = time.toLong()
+            val timeInMillisec = time!!.toLong()
 
             retriever.release()
 
@@ -491,13 +494,13 @@ object utils {
     fun startVideoIntent(context: Context, videoPath: String){
       try{
             val videoIntent = Intent(Intent.ACTION_VIEW)
-            val uri =utils.getUriFromFile(context,  File(videoPath))
+            val uri = getUriFromFile(context,  File(videoPath))
             videoIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             videoIntent.setDataAndType(uri, "video/*")
             context.startActivity(videoIntent)
         }
         catch (e:Exception){
-            utils.toast(context, e.message.toString())
+            toast(context, e.message.toString())
         }
     }
 
@@ -507,7 +510,7 @@ object utils {
 
         try {
             val playIntent = Intent(Intent.ACTION_VIEW)
-            playIntent.setDataAndType(utils.getUriFromFile(context, File(path)), "audio/*")
+            playIntent.setDataAndType(getUriFromFile(context, File(path)), "audio/*")
             playIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             context.startActivity(playIntent)
         }
@@ -635,9 +638,9 @@ object utils {
 
         //getting video length
         val retriever = MediaMetadataRetriever()
-        retriever.setDataSource(context, utils.getUriFromFile(context, file))
+        retriever.setDataSource(context, getUriFromFile(context, file))
         val time = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
-        val timeInMillisec = time.toLong()
+        val timeInMillisec = time!!.toLong()
 
         retriever.release()
 
@@ -659,9 +662,9 @@ object utils {
     fun highlightTextView(textView: TextView, highlightedText:String, color:Int) {
 
         try {
-            val text = textView.text.toString().toLowerCase()
+            val text = textView.text.toString().lowercase(Locale.getDefault())
 
-            val startIndex = text.indexOf(highlightedText.toLowerCase())
+            val startIndex = text.indexOf(highlightedText.lowercase(Locale.getDefault()))
             val endIndex = startIndex + highlightedText.length
 
             val spannableString = SpannableString(text)
@@ -748,10 +751,10 @@ object utils {
                 return "You"
             }
 
-            val list = utils.getContactList(context)
+            val list = getContactList(context)
 
             for (item in list) {
-                val formattedNumber = utils.getFormattedTenDigitNumber(item.number)
+                val formattedNumber = getFormattedTenDigitNumber(item.number)
                 if (getFormattedTenDigitNumber(number) == formattedNumber) {
                     return item.name
                 }

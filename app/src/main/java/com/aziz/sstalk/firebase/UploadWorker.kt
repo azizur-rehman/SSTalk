@@ -17,8 +17,6 @@ import com.google.android.gms.tasks.Continuation
 import com.google.android.gms.tasks.Task
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.UploadTask
-import com.vincent.filepicker.Constant
-import kotlinx.android.synthetic.main.activity_forward.*
 import org.jetbrains.anko.collections.forEachWithIndex
 import org.jetbrains.anko.toast
 import java.io.File

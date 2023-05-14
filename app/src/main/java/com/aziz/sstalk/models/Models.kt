@@ -1,10 +1,8 @@
 package com.aziz.sstalk.models
 
+import android.os.Parcel
 import android.os.Parcelable
-import androidx.versionedparcelable.ParcelField
 import com.aziz.sstalk.utils.FirebaseUtils
-import com.google.firebase.auth.FirebaseAuth
-import kotlinx.android.parcel.Parcelize
 import java.io.Serializable
 
 class Models {
@@ -21,9 +19,37 @@ class Models {
                             var file_size_in_bytes:Long = 0,
                             var message_deleted:Boolean = false) : Serializable
 
-    @Parcelize
     data class Contact(var name:String = "", var number:String = "", var photoURI:String = "" , var uid: String = "") :
-        Parcelable
+        Parcelable {
+        constructor(parcel: Parcel) : this(
+            parcel.readString()!!,
+            parcel.readString()!!,
+            parcel.readString()!!,
+            parcel.readString()!!
+        ) {
+        }
+
+        override fun writeToParcel(parcel: Parcel, flags: Int) {
+            parcel.writeString(name)
+            parcel.writeString(number)
+            parcel.writeString(photoURI)
+            parcel.writeString(uid)
+        }
+
+        override fun describeContents(): Int {
+            return 0
+        }
+
+        companion object CREATOR : Parcelable.Creator<Contact> {
+            override fun createFromParcel(parcel: Parcel): Contact {
+                return Contact(parcel)
+            }
+
+            override fun newArray(size: Int): Array<Contact?> {
+                return arrayOfNulls(size)
+            }
+        }
+    }
 
     data class User(var name:String = "",
                     var createdOn:Long = System.currentTimeMillis(),

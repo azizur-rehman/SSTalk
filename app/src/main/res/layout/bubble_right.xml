@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:layout_width="match_parent"
     android:id="@+id/container_right"
 
     android:orientation="vertical"
@@ -14,13 +15,14 @@
             android:padding="20dp"
             android:layout_margin="5dp"
             android:gravity="center"
-            android:drawableLeft="@drawable/shape_line"
-            android:drawableRight="@drawable/shape_line"
             android:id="@+id/header_right"
             android:layout_gravity="center"
             android:textColor="@color/black"
             android:text="@string/app_name"
-            android:drawableStart="@drawable/shape_line" android:drawableEnd="@drawable/shape_line"/>
+            app:drawableEndCompat="@drawable/shape_line"
+            app:drawableStartCompat="@drawable/shape_line"
+            app:drawableRightCompat="@drawable/shape_line"
+            app:drawableLeftCompat="@drawable/shape_line" />
 
 
     <LinearLayout android:layout_width="match_parent"

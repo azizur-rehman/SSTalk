@@ -14,13 +14,12 @@
             android:padding="20dp"
             android:layout_margin="5dp"
             android:gravity="center"
-            android:drawableLeft="@drawable/shape_line"
-            android:drawableRight="@drawable/shape_line"
-        android:id="@+id/header_image_right"
+            android:id="@+id/header_image_right"
         android:layout_gravity="center"
         android:textColor="@color/black"
         android:text="@string/app_name"
-        />
+            app:drawableRightCompat="@drawable/shape_line"
+            app:drawableLeftCompat="@drawable/shape_line" />
 
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -111,14 +110,14 @@
                             android:layout_gravity="center"
                             android:alpha="0.8"
                             android:background="@drawable/blurred_text_background"
-                            android:drawableLeft="@drawable/ic_file_upload_white_24dp"
                             android:padding="15dp"
                             android:text="Tap to Retry"
                             android:textColor="@color/white"
                             app:layout_constraintBottom_toBottomOf="@+id/imageview_image_right"
                             app:layout_constraintEnd_toEndOf="parent"
                             app:layout_constraintStart_toStartOf="@+id/imageview_image_right"
-                            app:layout_constraintTop_toTopOf="@+id/imageview_image_right" />
+                            app:layout_constraintTop_toTopOf="@+id/imageview_image_right"
+                            app:drawableLeftCompat="@drawable/ic_file_upload_white_24dp" />
 
 
                     <View

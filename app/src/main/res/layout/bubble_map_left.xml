@@ -15,13 +15,12 @@
             android:padding="20dp"
         android:layout_margin="5dp"
           android:gravity="center"
-        android:drawableLeft="@drawable/shape_line"
-        android:drawableRight="@drawable/shape_line"
-        android:id="@+id/header_map_left"
+            android:id="@+id/header_map_left"
         android:layout_gravity="center"
         android:textColor="@color/black"
         android:text="Yesterday"
-        />
+            map:drawableRightCompat="@drawable/shape_line"
+            map:drawableLeftCompat="@drawable/shape_line" />
 
 
     <androidx.constraintlayout.widget.ConstraintLayout android:layout_height="wrap_content"
