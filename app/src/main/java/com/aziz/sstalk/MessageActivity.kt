@@ -38,6 +38,7 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
+import com.aziz.sstalk.databinding.ActivityMessageBinding
 import com.aziz.sstalk.firebase.MessagingService
 import com.aziz.sstalk.firebase.UploadWorker
 import com.aziz.sstalk.fragments.FragmentRecording
@@ -79,15 +80,6 @@ import com.vincent.filepicker.activity.VideoPickActivity
 import com.vincent.filepicker.filter.entity.AudioFile
 import com.vincent.filepicker.filter.entity.ImageFile
 import com.vincent.filepicker.filter.entity.VideoFile
-import kotlinx.android.synthetic.main.activity_message.*
-import kotlinx.android.synthetic.main.bubble_left.view.*
-import kotlinx.android.synthetic.main.bubble_right.view.*
-import kotlinx.android.synthetic.main.item_smart_reply.view.*
-import kotlinx.android.synthetic.main.layout_attachment_menu.*
-import kotlinx.android.synthetic.main.layout_include_message_activity_toolbar.*
-import kotlinx.android.synthetic.main.layout_item_audio.view.*
-import kotlinx.android.synthetic.main.layout_video_bubble.view.*
-import kotlinx.android.synthetic.main.text_header.view.*
 import me.shaohui.advancedluban.Luban
 import me.shaohui.advancedluban.OnCompressListener
 import org.jetbrains.anko.*
@@ -170,18 +162,22 @@ class MessageActivity : AppCompatActivity() {
 
     lateinit var adapter:FirebaseRecyclerAdapter<Models.MessageModel, RecyclerView.ViewHolder>
 
+    lateinit var binding:ActivityMessageBinding
+
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setContentView(R.layout.activity_message)
+        binding = ActivityMessageBinding.inflate(layoutInflater)
+
+        setContentView(binding.root)
 
 
         FirebaseUtils.setonDisconnectListener()
 
 
-        setSupportActionBar(toolbar)
+        setSupportActionBar(binding.includeMessageToolbar.toolbar)
 
 
         //enable layout animations
@@ -216,18 +212,18 @@ class MessageActivity : AppCompatActivity() {
 
         loadGroupMembers()
 
-        blockedSnackbar =   Snackbar.make(messageInputField, "You cannot reply to this conversation anymore", Snackbar.LENGTH_INDEFINITE)
+        blockedSnackbar =   Snackbar.make(binding.messageInputField, "You cannot reply to this conversation anymore", Snackbar.LENGTH_INDEFINITE)
 
 
 
 
         asyncLoader= doAsyncResult {
             uiThread {
-                message_progressbar.visibility = View.VISIBLE
+                binding.messageProgressbar.show()
                 initComponents()
                 
                 onComplete {
-                    message_progressbar.visibility = View.GONE
+                    binding.messageProgressbar.hide()
                 }
             }
 
@@ -243,7 +239,7 @@ class MessageActivity : AppCompatActivity() {
 
     private fun initComponents(){
 
-        with(messagesList){
+        with(binding.messagesList){
             setHasFixedSize(true)
             setItemViewCacheSize(20)
             setDrawingCacheEnabled(true)
@@ -252,7 +248,7 @@ class MessageActivity : AppCompatActivity() {
 
 
         if(isGroup) {
-            target_name_textview.text = nameOrNumber
+            binding.includeMessageToolbar.targetNameTextview.text = nameOrNumber
 
             if(utils.isGroupID(nameOrNumber) || nameOrNumber.isEmpty()){
                 FirebaseUtils.ref.groupInfo(targetUid).child(utils.constants.KEY_NAME)
@@ -261,23 +257,23 @@ class MessageActivity : AppCompatActivity() {
                         override fun onDataChange(p0: DataSnapshot) {
                             if(p0.exists()) {
                                 nameOrNumber = p0.getValue(String::class.java)!!
-                                target_name_textview.text = nameOrNumber
+                                binding.includeMessageToolbar.targetNameTextview.text = nameOrNumber
                             }
                         }
                     })
-//                FirebaseUtils.setGroupName(nameOrNumber, target_name_textview)
+//                FirebaseUtils.setGroupName(nameOrNumber, binding.includeMessageToolbar.targetNameTextview)
             }
 
-            FirebaseUtils.loadGroupPicThumbnail(context, targetUid, profile_circleimageview)
+            FirebaseUtils.loadGroupPicThumbnail(context, targetUid, binding.includeMessageToolbar.profileCircleimageview)
             if(nameOrNumber.isEmpty())
-                FirebaseUtils.setGroupName(targetUid, target_name_textview)
+                FirebaseUtils.setGroupName(targetUid, binding.includeMessageToolbar.targetNameTextview)
 
             monitorGroupNameChanges()
         }
         else {
-            target_name_textview.text = (utils.getNameFromNumber(context, nameOrNumber))
-            FirebaseUtils.loadProfileThumbnail(context, targetUid, profile_circleimageview)
-            FirebaseUtils.setUserOnlineStatus(this, targetUid, user_online_status)
+            binding.includeMessageToolbar.targetNameTextview.text = (utils.getNameFromNumber(context, nameOrNumber))
+            FirebaseUtils.loadProfileThumbnail(context, targetUid, binding.includeMessageToolbar.profileCircleimageview)
+            FirebaseUtils.setUserOnlineStatus(this, targetUid, binding.includeMessageToolbar.userOnlineStatus)
         }
 
         val emojiConfig = androidx.emoji.bundled.BundledEmojiCompatConfig(this)
@@ -290,12 +286,12 @@ class MessageActivity : AppCompatActivity() {
             })
 
 
-        messageInputField.setOnFocusChangeListener { v, hasFocus -> dateStickyHeader.visibility = View.GONE }
+        binding.messageInputField.setOnFocusChangeListener { v, hasFocus -> binding.dateStickyHeader.hide() }
 
 
 
 
-        layout_toolbar_title.setOnClickListener {
+        binding.includeMessageToolbar.layoutToolbarTitle.setOnClickListener {
             /*val thumbnailTransition = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 ActivityOptions.makeThumbnailScaleUpAnimation(it, it.toBitmap, 0,0).toBundle()
             } else null
@@ -315,17 +311,17 @@ class MessageActivity : AppCompatActivity() {
             )
         }
 
-        back_layout_toolbar_message.setOnClickListener {
+        binding.includeMessageToolbar.backLayoutToolbarMessage.setOnClickListener {
             if(intent.getBooleanExtra(utils.constants.KEY_IS_ONCE, false))
                 startActivity(Intent(context, HomeActivity::class.java))
             finish()
         }
 
 
-        messageInputField.setTypingListener(object : MessageInput.TypingListener {
+        binding.messageInputField.setTypingListener(object : MessageInput.TypingListener {
             override fun onStartTyping() {
                 FirebaseUtils.setMeAsTyping(targetUid)
-                dateStickyHeader.visibility = View.GONE
+                binding.dateStickyHeader.hide()
             }
 
             override fun onStopTyping() { FirebaseUtils.setMeAsOnline() }
@@ -341,18 +337,18 @@ class MessageActivity : AppCompatActivity() {
 
 
 
-        smart_reply_layout.visibility = View.GONE
+        binding.smartReplyLayout.hide()
         checkIfBlocked(targetUid){
 
             if(isBlockedByUser || isBlockedByMe) {
-                messageInputField.visibility = View.INVISIBLE
-                smart_reply_layout.visibility = View.GONE
+                binding.messageInputField.visibility = View.INVISIBLE
+                binding.smartReplyLayout.hide()
                 blockedSnackbar?.show()
 
             }
             else {
-                messageInputField.visibility = View.VISIBLE
-                smart_reply_layout.visibility = View.VISIBLE
+                binding.messageInputField.show()
+                binding.smartReplyLayout.show()
                 blockedSnackbar?.dismiss()
                 bindSmartReply()
 
@@ -363,21 +359,21 @@ class MessageActivity : AppCompatActivity() {
 
         setMenuListeners()
 
-        attachment_menu.visibility = View.INVISIBLE
+        binding.includeAttachment.attachmentMenu.visibility = View.INVISIBLE
 
-        messageInputField.setAttachmentsListener {
+        binding.messageInputField.setAttachmentsListener {
 
 
             if(isBlockedByUser || isBlockedByMe)
                 return@setAttachmentsListener
 
 
-            if(attachment_menu.visibility != View.VISIBLE) {
-                utils.setEnterRevealEffect(this, attachment_menu)
+            if(binding.includeAttachment.attachmentMenu.visibility != View.VISIBLE) {
+                utils.setEnterRevealEffect(this, binding.includeAttachment.attachmentMenu)
                 
             }
             else {
-                utils.setExitRevealEffect(attachment_menu)
+                utils.setExitRevealEffect(binding.includeAttachment.attachmentMenu)
                 
             }
 
@@ -399,7 +395,7 @@ class MessageActivity : AppCompatActivity() {
 
                 override fun onDataChange(p0: DataSnapshot) {
                     nameOrNumber = p0.value.toString()
-                    target_name_textview.text = nameOrNumber
+                    binding.includeMessageToolbar.targetNameTextview.text = nameOrNumber
                 }
             })
 
@@ -424,9 +420,9 @@ class MessageActivity : AppCompatActivity() {
             putExtra(AudioPickActivity.IS_NEED_RECORDER, true)
         }
 
-        camera_btn.setOnClickListener {
+        binding.includeAttachment.cameraBtn.setOnClickListener {
 
-            if(attachment_menu.visibility != View.VISIBLE) utils.setEnterRevealEffect(this, attachment_menu) else utils.setExitRevealEffect(attachment_menu)
+            if(binding.includeAttachment.attachmentMenu.visibility != View.VISIBLE) utils.setEnterRevealEffect(this, binding.includeAttachment.attachmentMenu) else utils.setExitRevealEffect(binding.includeAttachment.attachmentMenu)
 
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -454,9 +450,9 @@ class MessageActivity : AppCompatActivity() {
         }
 
 
-        gallery_btn.setOnClickListener {
+        binding.includeAttachment.galleryBtn.setOnClickListener {
 
-            if(!attachment_menu.visible) utils.setEnterRevealEffect(this, attachment_menu) else utils.setExitRevealEffect(attachment_menu)
+            if(!binding.includeAttachment.attachmentMenu.visible) utils.setEnterRevealEffect(this, binding.includeAttachment.attachmentMenu) else utils.setExitRevealEffect(binding.includeAttachment.attachmentMenu)
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 if (ActivityCompat.checkSelfPermission(
@@ -483,9 +479,9 @@ class MessageActivity : AppCompatActivity() {
         }
 
 
-        location_btn.setOnClickListener {
+        binding.includeAttachment.locationBtn.setOnClickListener {
 
-            if(attachment_menu.visibility != View.VISIBLE) utils.setEnterRevealEffect(this, attachment_menu) else utils.setExitRevealEffect(attachment_menu)
+            if(binding.includeAttachment.attachmentMenu.visibility != View.VISIBLE) utils.setEnterRevealEffect(this, binding.includeAttachment.attachmentMenu) else utils.setExitRevealEffect(binding.includeAttachment.attachmentMenu)
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 if (ActivityCompat.checkSelfPermission(
@@ -503,9 +499,9 @@ class MessageActivity : AppCompatActivity() {
         }
 
 
-        video_pick_btn.setOnClickListener {
-            if(attachment_menu.visibility != View.VISIBLE) utils.setEnterRevealEffect(this, attachment_menu)
-            else utils.setExitRevealEffect(attachment_menu)
+        binding.includeAttachment.videoPickBtn.setOnClickListener {
+            if(binding.includeAttachment.attachmentMenu.visibility != View.VISIBLE) utils.setEnterRevealEffect(this, binding.includeAttachment.attachmentMenu)
+            else utils.setExitRevealEffect(binding.includeAttachment.attachmentMenu)
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 if (ActivityCompat.checkSelfPermission(
@@ -532,15 +528,15 @@ class MessageActivity : AppCompatActivity() {
 
         }
 
-        audio_btn.setOnClickListener {
-            if(!attachment_menu.visible) utils.setEnterRevealEffect(this, attachment_menu) else utils.setExitRevealEffect(attachment_menu)
+        binding.includeAttachment.audioBtn.setOnClickListener {
+            if(!binding.includeAttachment.attachmentMenu.visible) utils.setEnterRevealEffect(this, binding.includeAttachment.attachmentMenu) else utils.setExitRevealEffect(binding.includeAttachment.attachmentMenu)
 
             startActivityForResult(audioIntent, RQ_AUDIO)
 
         }
 
-        recording_btn.setOnClickListener {
-            if(!attachment_menu.visible) utils.setEnterRevealEffect(this, attachment_menu) else utils.setExitRevealEffect(attachment_menu)
+        binding.includeAttachment.recordingBtn.setOnClickListener {
+            if(!binding.includeAttachment.attachmentMenu.visible) utils.setEnterRevealEffect(this, binding.includeAttachment.attachmentMenu) else utils.setExitRevealEffect(binding.includeAttachment.attachmentMenu)
             if(!utils.hasRecordingPermission(this)){
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), RP_RECORDING)
@@ -555,8 +551,8 @@ class MessageActivity : AppCompatActivity() {
 
 
 
-        messagesList.addOnItemTouchListener(object : RecyclerView.SimpleOnItemTouchListener() {
-            override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent) = attachment_menu.visible
+        binding.messagesList.addOnItemTouchListener(object : RecyclerView.SimpleOnItemTouchListener() {
+            override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent) = binding.includeAttachment.attachmentMenu.visible
         })
     }
 
@@ -627,6 +623,7 @@ class MessageActivity : AppCompatActivity() {
             }
         }
 
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 
 
@@ -736,8 +733,8 @@ class MessageActivity : AppCompatActivity() {
 
                         uploadFile(
                             messageID, File(path.toString()),
-                            caption[index],
-                            data.getStringExtra(utils.constants.KEY_FILE_TYPE),
+                            caption?.get(index) ?: "",
+                            data.getStringExtra(utils.constants.KEY_FILE_TYPE)!!,
                             true
                         )
                     }
@@ -801,14 +798,14 @@ class MessageActivity : AppCompatActivity() {
 
        unreadMessageCount = intent.getIntExtra(utils.constants.KEY_UNREAD, 0)
 
-       messagesList.setHasFixedSize(true)
-       messagesList.setItemViewCacheSize(20)
-       messagesList.isDrawingCacheEnabled = true
-       messagesList.drawingCacheQuality = View.DRAWING_CACHE_QUALITY_HIGH
+       binding.messagesList.setHasFixedSize(true)
+       binding.messagesList.setItemViewCacheSize(20)
+       binding.messagesList.isDrawingCacheEnabled = true
+       binding.messagesList.drawingCacheQuality = View.DRAWING_CACHE_QUALITY_HIGH
 
        val linearLayoutManager = LinearLayoutManager(this)
         linearLayoutManager.stackFromEnd = true
-        messagesList.layoutManager = linearLayoutManager
+        binding.messagesList.layoutManager = linearLayoutManager
 
        setScrollingListener()
 
@@ -865,15 +862,17 @@ class MessageActivity : AppCompatActivity() {
                        Holders.TargetAudioHolder(LayoutInflater.from(context).inflate(R.layout.bubble_audio_left,p0, false))
 
 
-                   else -> Holders.TargetTextMsgHolder(LayoutInflater.from(this@MessageActivity)
-                           .inflate(R.layout.bubble_left, p0, false))
+                   else -> Holders.TargetTextMsgHolder(
+                       LayoutInflater.from(this@MessageActivity)
+                           .inflate(R.layout.bubble_left, p0, false)
+                   )
                }
             }
 
 
              override fun getItemCount(): Int {
 
-                 message_progressbar.visibility = View.GONE
+                 binding.messageProgressbar.hide()
 
                  return super.getItemCount()
              }
@@ -942,7 +941,7 @@ class MessageActivity : AppCompatActivity() {
                      ?: return
 
                  selectedPosition = snapshots.indexOf(focusedMessage)
-                 messagesList.scrollToPosition(selectedPosition)
+                 binding.messagesList.scrollToPosition(selectedPosition)
                  searchFilterItemPosition.add(selectedPosition)
                  notifyItemChanged(selectedPosition)
 
@@ -991,7 +990,7 @@ class MessageActivity : AppCompatActivity() {
                     }
                     else{
 
-                        textHolder.dateTextView.visibility = View.VISIBLE
+                        textHolder.dateTextView.show()
 
                     }
 
@@ -1059,7 +1058,7 @@ class MessageActivity : AppCompatActivity() {
 
                         dateHeader = holder.headerDateTime
 
-                        holder.itemView.bubble_left_translation.visibility = View.GONE
+                        holder.itemView.findViewById<View>(R.id.bubble_left_translation).hide()
                         targetSenderIcon = holder.senderIcon
 
                         targetSenderTitle = holder.senderTitle
@@ -1072,7 +1071,7 @@ class MessageActivity : AppCompatActivity() {
                         container = holder.container
                         FirebaseUtils.setDeliveryStatusTick(targetUid, messageID, holder.messageStatus)
 
-                        holder.itemView.bubble_right_translation.visibility = View.GONE
+                        holder.itemView.findViewById<View>(R.id.bubble_right_translation).hide()
                         //end of my holder
 
                     }
@@ -1186,7 +1185,7 @@ class MessageActivity : AppCompatActivity() {
                     }
 
                     is Holders.MyAudioHolder -> {
-                        container = holder.itemView.container_right
+                        container = holder.itemView.findViewById(R.id.container_right)
                         dateHeader = holder.dateTextView
                         holder.time.text = utils.getLocalTime(model.timeInMillis)
                         holder.audioProgressBar.progress = 0f
@@ -1196,7 +1195,7 @@ class MessageActivity : AppCompatActivity() {
                         else utils.getFileSize(model.file_size_in_bytes)
 
 
-                        holder.itemView.item_audio_container.setOnClickListener {
+                        holder.itemView.findViewById<View>(R.id.item_audio_container).setOnClickListener {
 
                             if(audioFile.exists()) playAudio(model.file_local_path) else downloadAudio(model, messageID)
 
@@ -1230,13 +1229,13 @@ class MessageActivity : AppCompatActivity() {
                     }
 
                     is Holders.TargetAudioHolder -> {
-                        container = holder.itemView.container_left
+                        container = holder.itemView.findViewById(R.id.container_left)
                         dateHeader = holder.dateTextView
                         holder.time.text = utils.getLocalTime(model.timeInMillis)
                         targetSenderTitle = holder.senderTitle
                         targetSenderIcon = holder.senderIcon
 
-                        holder.itemView.item_audio_container.setOnClickListener {
+                        holder.itemView.findViewById<View>(R.id.item_audio_container).setOnClickListener {
                             if(File(model.file_local_path).exists()) playAudio(model.file_local_path) else downloadAudio(model, messageID)
                         }
                         CircularProgressBarsAt[messageID] = holder.audioProgressBar
@@ -1262,11 +1261,11 @@ class MessageActivity : AppCompatActivity() {
                 targetSenderIcon?.let {
                     if(position==0){
                         FirebaseUtils.loadProfileThumbnail(context, model.from, it)
-                        it.visibility = View.VISIBLE }
+                        it.show() }
                     else{
                         if(model.from == snapshots[position -1 ].from && DateFormatter.isSameDay(Date(model.timeInMillis), Date(snapshots[position-1].timeInMillis))) it.visibility = View.INVISIBLE
                         else {
-                            it.visibility = View.VISIBLE
+                            it.show()
                             FirebaseUtils.loadProfileThumbnail(context, model.from, it)
                         }
                     }
@@ -1305,7 +1304,7 @@ class MessageActivity : AppCompatActivity() {
                     val unreadView = (layoutInflater.inflate(R.layout.text_header, container, false))
                     container.removeView(unreadView)
                     if (unreadMessageCount > 0 && (adapter.itemCount - unreadMessageCount - 1) == position) {
-                        unreadView.header_textView.text = "$unreadMessageCount unread messages"
+                        unreadView.findViewById<TextView>(R.id.header_textView).text = "$unreadMessageCount unread messages"
                         unreadHeaderPosition = position
                         unreadMessageCount = 0
                     }
@@ -1348,7 +1347,7 @@ class MessageActivity : AppCompatActivity() {
                                     return@setOnClickListener
 
                                 downloadVideo(model , messageID)
-                                it.visibility = View.GONE
+                                it.hide()
                             }
 
                     }
@@ -1431,8 +1430,6 @@ class MessageActivity : AppCompatActivity() {
 
                 val model: Models.MessageModel = getItem(position)
 
-                val viewType: Int
-
                 if(model.messageType == FirebaseUtils.EVENT_TYPE_REMOVED ||
                         model.messageType == FirebaseUtils.EVENT_TYPE_LEFT ||
                         model.messageType == FirebaseUtils.EVENT_TYPE_ADDED ||
@@ -1440,21 +1437,21 @@ class MessageActivity : AppCompatActivity() {
                     return TYPE_EVENT
 
 
-                viewType = if(model.from == myUID){
+                val viewType: Int = if(model.from == myUID){
 
-                    when {
-                        model.messageType == utils.constants.FILE_TYPE_LOCATION -> TYPE_MY_MAP
-                        model.messageType == utils.constants.FILE_TYPE_IMAGE -> TYPE_MY_IMAGE
-                        model.messageType == utils.constants.FILE_TYPE_VIDEO -> TYPE_MY_VIDEO
-                        model.messageType == utils.constants.FILE_TYPE_AUDIO -> TYPE_MY_AUDIO
+                    when (model.messageType) {
+                        utils.constants.FILE_TYPE_LOCATION -> TYPE_MY_MAP
+                        utils.constants.FILE_TYPE_IMAGE -> TYPE_MY_IMAGE
+                        utils.constants.FILE_TYPE_VIDEO -> TYPE_MY_VIDEO
+                        utils.constants.FILE_TYPE_AUDIO -> TYPE_MY_AUDIO
                         else -> TYPE_MINE
                     }
                 } else{
-                    when {
-                        model.messageType == utils.constants.FILE_TYPE_LOCATION -> TYPE_TARGET_MAP
-                        model.messageType == utils.constants.FILE_TYPE_IMAGE -> TYPE_TARGET_IMAGE
-                        model.messageType == utils.constants.FILE_TYPE_VIDEO -> TYPE_TARGET_VIDEO
-                        model.messageType == utils.constants.FILE_TYPE_AUDIO -> TYPE_TARGET_AUDIO
+                    when (model.messageType) {
+                        utils.constants.FILE_TYPE_LOCATION -> TYPE_TARGET_MAP
+                        utils.constants.FILE_TYPE_IMAGE -> TYPE_TARGET_IMAGE
+                        utils.constants.FILE_TYPE_VIDEO -> TYPE_TARGET_VIDEO
+                        utils.constants.FILE_TYPE_AUDIO -> TYPE_TARGET_AUDIO
                         else -> TYPE_TARGET
                     }
 
@@ -1468,7 +1465,7 @@ class MessageActivity : AppCompatActivity() {
 
         }
 
-        messagesList.adapter = adapter
+        binding.messagesList.adapter = adapter
 
 
 
@@ -1489,7 +1486,7 @@ class MessageActivity : AppCompatActivity() {
 
                 val model = adapter.snapshots[positionStart]
 
-                val layoutManager = messagesList.layoutManager as LinearLayoutManager
+                val layoutManager = binding.messagesList.layoutManager as LinearLayoutManager
                 val lastVisiblePosition = layoutManager.findLastCompletelyVisibleItemPosition()
 
                 // If the recycler view is initially being loaded or the
@@ -1499,11 +1496,11 @@ class MessageActivity : AppCompatActivity() {
                 if (lastVisiblePosition == -1 ||
                     (positionStart >= (adapter.itemCount - 1) &&
                             lastVisiblePosition == (positionStart - 1))) {
-                        messagesList.scrollToPosition(adapter.itemCount - 1 - unreadMessageCount)
+                        binding.messagesList.scrollToPosition(adapter.itemCount - 1 - unreadMessageCount)
                 }
 
                 if(model.from == myUID)
-                    messagesList.scrollToPosition(adapter.itemCount - 1 - unreadMessageCount)
+                    binding.messagesList.scrollToPosition(adapter.itemCount - 1 - unreadMessageCount)
 
 
 
@@ -1521,13 +1518,13 @@ class MessageActivity : AppCompatActivity() {
 
 
 
-        messageInputField.setInputListener {
+        binding.messageInputField.setInputListener {
 
             if(isBlockedByMe || isBlockedByUser) {
                 return@setInputListener false
             }
 
-            val message = messageInputField.inputEditText.text.toString()
+            val message = binding.messageInputField.inputEditText.text.toString()
 
             val messageModel= Models.MessageModel(message.trim() ,
                 myUID, targetUid ,isFile = false)
@@ -1537,7 +1534,7 @@ class MessageActivity : AppCompatActivity() {
             adapter.notifyItemChanged(0)
 
             addMessageToBoth(messageID, messageModel)
-            loadedPosition[messagesList.adapter!!.itemCount ]
+            loadedPosition[binding.messagesList.adapter!!.itemCount ]
 
 
 
@@ -1553,7 +1550,7 @@ class MessageActivity : AppCompatActivity() {
 
 
 
-        tapToRetry.visibility = View.GONE
+        tapToRetry.hide()
 
         FirebaseUtils.ref.getChatRef(myUID, targetUid)
             .child(messageID)
@@ -1567,7 +1564,7 @@ class MessageActivity : AppCompatActivity() {
                     tapToRetry.visibility = if(p0.getValue(String::class.java)!!.isEmpty()) View.VISIBLE else View.GONE
 
                     if(isUploading[messageID] == true)
-                        tapToRetry.visibility = View.GONE
+                        tapToRetry.hide()
 
 
                 }
@@ -1577,8 +1574,8 @@ class MessageActivity : AppCompatActivity() {
             })
 
         tapToRetry.setOnClickListener {
-          progressBar.visibility = View.VISIBLE
-            it.visibility = View.GONE
+          progressBar.show()
+            it.hide()
 
             if(File(filePath).exists())
                 uploadFile(
@@ -1587,7 +1584,7 @@ class MessageActivity : AppCompatActivity() {
                 )
             else{
                 utils.toast(context, "File does not exists on this device")
-                progressBar.visibility = View.GONE
+                progressBar.hide()
             }
         }
     }
@@ -1602,7 +1599,7 @@ class MessageActivity : AppCompatActivity() {
                 getMapAsync { googleMap ->
 
 
-                    googleMap?.addMarker(
+                    googleMap.addMarker(
                         MarkerOptions()
                             .position(latLng).title("")
                             .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
@@ -1610,8 +1607,8 @@ class MessageActivity : AppCompatActivity() {
                     )
 
 
-                    googleMap?.uiSettings?.setAllGesturesEnabled(false)
-                    googleMap?.moveCamera(
+                    googleMap.uiSettings?.setAllGesturesEnabled(false)
+                    googleMap.moveCamera(
                         CameraUpdateFactory.newLatLngZoom(
                             latLng,
                             12F
@@ -1725,7 +1722,7 @@ class MessageActivity : AppCompatActivity() {
                         FirebaseUtils.ref.lastMessage(memberID)
                             .child(targetUid)
                             .setValue(Models.LastMessageDetail(type = FirebaseUtils.KEY_CONVERSATION_GROUP,
-                                nameOrNumber = if(nameOrNumber.isNotEmpty()) nameOrNumber else target_name_textview.text.toString() ))
+                                nameOrNumber = if(nameOrNumber.isNotEmpty()) nameOrNumber else binding.includeMessageToolbar.targetNameTextview.text.toString() ))
 
                     }
             }
@@ -2085,7 +2082,7 @@ class MessageActivity : AppCompatActivity() {
     //downloading video and saving to file in the form of file
     private fun downloadVideo(model: Models.MessageModel, messageID: String){
 
-        val itemHolder = messagesList.findViewHolderForAdapterPosition(adapter.snapshots.indexOf(model))
+        val itemHolder = binding.messagesList.findViewHolderForAdapterPosition(adapter.snapshots.indexOf(model))
 
         val myHolder = itemHolder  as? Holders.MyVideoMsgHolder
         val targetHolder = itemHolder as? Holders.TargetVideoMsgHolder
@@ -2103,6 +2100,7 @@ class MessageActivity : AppCompatActivity() {
             val videoFile = utils.getVideoFile(messageID, model.from == myUID)
 
         Log.d("MessageActivity", "downloadVideo: downloading video to location = ${videoFile.path}")
+        Log.d("MessageActivity", "downloadVideo: url = "+model.message)
 
             storageRef.getFile(videoFile)
                 .addOnProgressListener {
@@ -2112,6 +2110,7 @@ class MessageActivity : AppCompatActivity() {
                 }
                 .addOnCompleteListener{
                     progressBar?.hide()
+                    it.exception?.printStackTrace()
                 }
                 .addOnCanceledListener {
                     progressBar?.hide()
@@ -2141,7 +2140,7 @@ class MessageActivity : AppCompatActivity() {
 
         if(model.message.isEmpty() || File(model.file_local_path).exists()) return
 
-        val itemHolder = messagesList.findViewHolderForAdapterPosition(adapter.snapshots.indexOf(model))
+        val itemHolder = binding.messagesList.findViewHolderForAdapterPosition(adapter.snapshots.indexOf(model))
 
         val myHolder = itemHolder  as? Holders.MyAudioHolder
         val targetHolder = itemHolder as? Holders.TargetAudioHolder
@@ -2303,9 +2302,9 @@ class MessageActivity : AppCompatActivity() {
     //setting my Holders
     //setting my holder config
     private fun setMyImageHolder(holder: Holders.MyImageMsgHolder, model: Models.MessageModel, messageID: String){
-        holder.tapToRetry.visibility = View.GONE
+        holder.tapToRetry.hide()
 
-        holder.progressBar.visibility = View.VISIBLE
+        holder.progressBar.show()
         CircularProgressBarsAt[messageID] = holder.progressBar
         mediaControlImageViewAt[messageID] = holder.imageUploadControl
 
@@ -2363,7 +2362,7 @@ class MessageActivity : AppCompatActivity() {
                     .into(holder.imageView, object: Callback{
                         override fun onSuccess() {
 
-                            holder.progressBar.visibility = View.GONE
+                            holder.progressBar.hide()
 
                             saveBitmapFromPicasso(model.message.toString(), messageID, true)
 
@@ -2381,7 +2380,7 @@ class MessageActivity : AppCompatActivity() {
                                 if(isContextMenuActive)
                                     return@setOnClickListener
 
-                                it.visibility = View.GONE
+                                it.hide()
                                 utils.longToast(context, "Image might be deleted.")
                             }
 
@@ -2409,7 +2408,7 @@ class MessageActivity : AppCompatActivity() {
         setTapToRetryBtn(holder.tapToRetry,holder.progressBar,model.file_local_path, messageID,model.caption, model.messageType)
 
 
-        holder.tapToRetry.visibility = View.GONE
+        holder.tapToRetry.hide()
         holder.progressBar.visibility = if(isUploading[messageID] == true) View.VISIBLE else View.GONE
         holder.message.visibility =  if(model.caption.isEmpty()) View.GONE else View.VISIBLE
 
@@ -2483,14 +2482,14 @@ class MessageActivity : AppCompatActivity() {
         holder.cardContainer.setCornerEnabled(false,true, model.caption.isEmpty(), model.caption.isEmpty())
         holder.tap_to_download.hide()
 
-        holder.itemView.delivery_video_status.hide()
+        holder.itemView.findViewById<View>(R.id.delivery_video_status).hide()
 
 
         CircularProgressBarsAt[messageID] = holder.progressBar
         mediaControlImageViewAt[messageID] = holder.centerImageView
 
         //lets hide progressbar for now
-        holder.progressBar.visibility = View.GONE
+        holder.progressBar.hide()
 
 
 
@@ -2549,8 +2548,8 @@ class MessageActivity : AppCompatActivity() {
 
 
                 actionMode = startSupportActionMode(object : ActionMode.Callback {
-                        override fun onActionItemClicked(p0: ActionMode?, p1: MenuItem?): Boolean {
-                            when (p1?.itemId) {
+                        override fun onActionItemClicked(p0: ActionMode?, p1: MenuItem): Boolean {
+                            when (p1.itemId) {
 
                                 R.id.action_delete -> {
 
@@ -2602,7 +2601,7 @@ class MessageActivity : AppCompatActivity() {
 
                             }
 
-                            if (p1?.itemId != R.id.action_delete)
+                            if (p1.itemId != R.id.action_delete)
                                 p0?.finish()
 
                             return true
@@ -2633,7 +2632,7 @@ class MessageActivity : AppCompatActivity() {
                         override fun onDestroyActionMode(p0: ActionMode?) {
                             selectedItemPosition.forEach {
                                 if(!isTranslatorPressed) {
-                                    messagesList.findViewHolderForAdapterPosition(it)?.messageLayout?.background = unselectedDrawable
+                                    binding.messagesList.findViewHolderForAdapterPosition(it)?.messageLayout?.background = unselectedDrawable
                                 }
                             }
 
@@ -2699,14 +2698,14 @@ class MessageActivity : AppCompatActivity() {
 
         if(model.from == myUID)
         {
-            itemView.bubble_right_translation.text = translationHeading
-            itemView.bubble_right_translation.visibility = View.VISIBLE
+            itemView.findViewById<TextView>(R.id.bubble_right_translation).text = translationHeading
+            itemView.findViewById<TextView>(R.id.bubble_right_translation).show()
 
         }
         else
         {
-            itemView.bubble_left_translation.text = translationHeading
-            itemView.bubble_left_translation.visibility = View.VISIBLE
+            itemView.findViewById<TextView>(R.id.bubble_left_translation).text = translationHeading
+            itemView.findViewById<TextView>(R.id.bubble_left_translation).show()
 
         }
 
@@ -2740,8 +2739,8 @@ class MessageActivity : AppCompatActivity() {
                         translationHeading = "Downloading files for $languageName"
 
                         when (myUID) {
-                            model.from -> itemView.bubble_right_translation.text = translationHeading
-                            else -> itemView.bubble_left_translation.text = translationHeading
+                            model.from -> itemView.findViewById<TextView>(R.id.bubble_right_translation).text = translationHeading
+                            else -> itemView.findViewById<TextView>(R.id.bubble_left_translation).text = translationHeading
                         }
 
                         firebaseTranslator.downloadModelIfNeeded()
@@ -2770,8 +2769,8 @@ class MessageActivity : AppCompatActivity() {
 
 
         when (myUID) {
-            model.from -> itemView.bubble_right_translation.text = translationHeading
-            else -> itemView.bubble_left_translation.text = translationHeading
+            model.from -> itemView.findViewById<TextView>(R.id.bubble_right_translation).text = translationHeading
+            else -> itemView.findViewById<TextView>(R.id.bubble_left_translation).text = translationHeading
         }
 
         firebaseTranslator.translate(model.message)
@@ -2780,12 +2779,12 @@ class MessageActivity : AppCompatActivity() {
                 translationHeading = "Translated to ${Locale(FirebaseTranslateLanguage.languageCodeForLanguage(Pref.getDefaultLanguage(this))).displayName} from $languageName"
                 when (myUID) {
                     model.from -> {
-                        itemView.messageText_right.text = translatedText
-                        itemView.bubble_right_translation.text = translationHeading
+                        itemView.findViewById<TextView>(R.id.messageText_right).text = translatedText
+                        itemView.findViewById<TextView>(R.id.bubble_right_translation).text = translationHeading
                     }
                     else -> {
-                        itemView.messageText_left.text = translatedText
-                        itemView.bubble_left_translation.text = translationHeading
+                        itemView.findViewById<TextView>(R.id.messageText_left).text = translatedText
+                        itemView.findViewById<TextView>(R.id.bubble_left_translation).text = translationHeading
                     }
                 }
             }
@@ -2793,8 +2792,8 @@ class MessageActivity : AppCompatActivity() {
                 Log.d("MessageActivity", "translateMessage: error =  ${it.message}")
                 translationHeading = "Failed to Translate"
                 when (myUID) {
-                    model.from -> itemView.bubble_right_translation.text = translationHeading
-                    else -> itemView.bubble_left_translation.text = translationHeading
+                    model.from -> itemView.findViewById<TextView>(R.id.bubble_right_translation).text = translationHeading
+                    else -> itemView.findViewById<TextView>(R.id.bubble_left_translation).text = translationHeading
                 }
             }
     }
@@ -2804,12 +2803,12 @@ class MessageActivity : AppCompatActivity() {
 
     override fun onBackPressed() {
 
-        if(attachment_menu.visibility == View.VISIBLE)
+        if(binding.includeAttachment.attachmentMenu.visibility == View.VISIBLE)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                utils.setExitRevealEffect(attachment_menu)
+                utils.setExitRevealEffect(binding.includeAttachment.attachmentMenu)
             }
             else
-                attachment_menu.visibility = View.GONE
+                binding.includeAttachment.attachmentMenu.hide()
         else {
             if(intent.getBooleanExtra(utils.constants.KEY_IS_ONCE, false))
                 startActivity(Intent(context, HomeActivity::class.java))
@@ -2887,7 +2886,7 @@ class MessageActivity : AppCompatActivity() {
                 searchFilterItemPosition.clear()
                 searchPosition = 0
                 selectedPosition = -1
-                searchQuery = query.toString().trim().toLowerCase()
+                searchQuery = query.toString().trim().lowercase(Locale.getDefault())
 
                 for((index,model) in adapter.snapshots.withIndex().reversed()){
 
@@ -2909,15 +2908,15 @@ class MessageActivity : AppCompatActivity() {
 
                 if(resultCount>0) {
                     utils.toast(context, "$resultCount results found")
-                    upBtn.visibility = View.VISIBLE
-                    downBtn.visibility = View.VISIBLE
-                    messagesList.scrollToPosition(searchFilterItemPosition[0])
+                    upBtn.show()
+                    downBtn.show()
+                    binding.messagesList.scrollToPosition(searchFilterItemPosition[0])
                     selectedPosition = searchFilterItemPosition[0]
                 }
                 else{
                     utils.toast(context, "No result")
-                    upBtn.visibility = View.GONE
-                    downBtn.visibility = View.GONE
+                    upBtn.hide()
+                    downBtn.hide()
 
                 }
 
@@ -2964,7 +2963,7 @@ class MessageActivity : AppCompatActivity() {
 
             if(searchPosition>=0 && searchPosition<searchFilterItemPosition.count()) {
                 selectedPosition = searchFilterItemPosition[searchPosition]
-                messagesList.scrollToPosition(searchFilterItemPosition[searchPosition])
+                binding.messagesList.scrollToPosition(searchFilterItemPosition[searchPosition])
 
             }
 
@@ -2989,7 +2988,7 @@ class MessageActivity : AppCompatActivity() {
 
             if(searchPosition>=0 && searchPosition<searchFilterItemPosition.count()) {
                 selectedPosition = searchFilterItemPosition[searchPosition]
-                messagesList.scrollToPosition(searchFilterItemPosition[searchPosition])
+                binding.messagesList.scrollToPosition(searchFilterItemPosition[searchPosition])
 
             }
             adapter.notifyDataSetChanged()
@@ -3002,9 +3001,9 @@ class MessageActivity : AppCompatActivity() {
     }
 
 
-    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
 
-        when(item!!.itemId){
+        when(item.itemId){
             R.id.menu_action_block -> {
 
                 AlertDialog.Builder(context).setMessage("${if (isBlockedByMe) "Unblock" else "Block"} this user")
@@ -3072,17 +3071,17 @@ class MessageActivity : AppCompatActivity() {
 
     private fun setScrollingListener(){
 
-        bottomScrollButton.hide()
-        dateStickyHeader.visibility = View.INVISIBLE
+        binding.bottomScrollButton.hide()
+        binding.dateStickyHeader.visibility = View.INVISIBLE
 
         if(unreadMessageCount == 0)
-        unreadCount.visibility = View.GONE
+        binding.unreadCount.hide()
         Handler().postDelayed({
-            FirebaseUtils.setUnreadCount(targetUid, unreadCount)
+            FirebaseUtils.setUnreadCount(targetUid, binding.unreadCount)
         },2000)
 
 
-        val layoutManager = messagesList.layoutManager as LinearLayoutManager
+        val layoutManager = binding.messagesList.layoutManager as LinearLayoutManager
 
         val textView = TextView(this)
         textView.text = "Sample text"
@@ -3091,12 +3090,12 @@ class MessageActivity : AppCompatActivity() {
         var runnable:Runnable
         var isRunning = false
 
-        bottomScrollButton.setOnClickListener {
-            unreadCount.visibility = View.INVISIBLE
-            messagesList.scrollToPosition(adapter.itemCount - 1)
+        binding.bottomScrollButton.setOnClickListener {
+            binding.unreadCount.visibility = View.INVISIBLE
+            binding.messagesList.scrollToPosition(adapter.itemCount - 1)
         }
 
-        messagesList.setOnScrollListener(object : RecyclerView.OnScrollListener() {
+        binding.messagesList.setOnScrollListener(object : RecyclerView.OnScrollListener() {
 
 
             override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
@@ -3104,7 +3103,7 @@ class MessageActivity : AppCompatActivity() {
 
                 if(newState == RecyclerView.SCROLL_STATE_IDLE || newState == RecyclerView.SCROLL_STATE_SETTLING) {
 
-                    runnable = Runnable{ dateStickyHeader.visibility = View.GONE }
+                    runnable = Runnable{ binding.dateStickyHeader.hide() }
                         handler.removeCallbacks(runnable)
                         handler.postDelayed(runnable, 1500)
 
@@ -3112,7 +3111,7 @@ class MessageActivity : AppCompatActivity() {
 
                 if(newState == RecyclerView.SCROLL_STATE_DRAGGING){
                     if(layoutManager.findLastVisibleItemPosition() < adapter.itemCount - 1)
-                        dateStickyHeader.visibility = View.VISIBLE
+                        binding.dateStickyHeader.show()
                 }
 
                 super.onScrollStateChanged(recyclerView, newState)
@@ -3124,19 +3123,19 @@ class MessageActivity : AppCompatActivity() {
 
                 if(layoutManager.findLastVisibleItemPosition() == adapter.itemCount - 1 )
                 {
-                    bottomScrollButton.hide()
+                    binding.bottomScrollButton.hide()
                     //show
-                    smart_reply_root_layout.animate().translationY(0f).setInterpolator(LinearOutSlowInInterpolator())
-                        .withStartAction { smart_reply_root_layout.show()}
+                    binding.smartReplyRootLayout.animate().translationY(0f).setInterpolator(LinearOutSlowInInterpolator())
+                        .withStartAction { binding.smartReplyRootLayout.show()}
                 }
                 else if(adapter.itemCount > 5)
                 {
-                    bottomScrollButton.show()
+                    binding.bottomScrollButton.show()
                     //hide
-//                    smart_reply_root_layout.animate().translationY(smart_reply_root_layout.height.toFloat())
+//                    binding.smartReplyRootLayout.animate().translationY(binding.smartReplyRootLayout.height.toFloat())
 //                        .setInterpolator(LinearOutSlowInInterpolator())
 //                        .withEndAction {
-                            smart_reply_root_layout.hide()
+                            binding.smartReplyRootLayout.hide()
                       //  }
 
 
@@ -3146,11 +3145,11 @@ class MessageActivity : AppCompatActivity() {
 
 
                 if(layoutManager.findFirstVisibleItemPosition() <= 1) {
-                    dateStickyHeader.visibility = View.GONE
+                    binding.dateStickyHeader.hide()
                     return
                 }
 
-                dateStickyHeader.text = utils.getHeaderFormattedDate(adapter.getItem(layoutManager.findFirstVisibleItemPosition())
+                binding.dateStickyHeader.text = utils.getHeaderFormattedDate(adapter.getItem(layoutManager.findFirstVisibleItemPosition())
                     .timeInMillis)
 
 
@@ -3228,7 +3227,7 @@ class MessageActivity : AppCompatActivity() {
                         .removeValue()
                         .addOnCompleteListener {
                             if (index == totalMessages - 1) {
-                                messageInputField.snackbar("Message deleted")
+                                binding.messageInputField.snackbar("Message deleted")
 
                                 //if last message was deleted
                                 //if(shouldUpdateLastMessage){
@@ -3294,12 +3293,12 @@ class MessageActivity : AppCompatActivity() {
                     try {
                         if (!isMeRemoved) {
                             members = members.trim().substring(0, members.lastIndex - 1)
-                            user_online_status.text = members
+                            binding.includeMessageToolbar.userOnlineStatus.text = members
                         }
-                        else user_online_status.visibility = View.GONE
+                        else binding.includeMessageToolbar.userOnlineStatus.hide()
                     }
                     catch (e:Exception){}
-                    val snackbar = Snackbar.make(messageInputField, "You cannot reply to this conversation anymore", Snackbar.LENGTH_INDEFINITE)
+                    val snackbar = Snackbar.make(binding.messageInputField, "You cannot reply to this conversation anymore", Snackbar.LENGTH_INDEFINITE)
 
                     if(isMeRemoved)
                         snackbar.show()
@@ -3314,9 +3313,9 @@ class MessageActivity : AppCompatActivity() {
     private fun bindSmartReply(){
 
 
-        smart_reply_layout.visibility = View.GONE
+        binding.smartReplyLayout.hide()
 
-        smart_reply_setting.setOnClickListener {
+        binding.smartReplySetting.setOnClickListener {
 
             val smartReplyCheckbox = CheckBox(this)
             val params = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
@@ -3371,22 +3370,23 @@ class MessageActivity : AppCompatActivity() {
                         }
                     }
 
-                    smart_reply_layout.visible = (it.suggestions.isNotEmpty())
+                    binding.smartReplyLayout.visible = (it.suggestions.isNotEmpty())
 
-                    smart_reply_recycler.setCustomAdapter(context, it.suggestions, R.layout.item_smart_reply){itemView, _,item ->
+                    binding.smartReplyRecycler.setCustomAdapter(context, it.suggestions, R.layout.item_smart_reply){itemView, _,item ->
                         val suggestion  = item.text
-                        itemView.item_text.text = suggestion
 
-                        itemView.item_text.setOnClickListener {
-                            messageInputField.inputEditText.setText(suggestion)
+                        itemView.findViewById<TextView>(R.id.item_text).text = suggestion
+
+                        itemView.findViewById<View>(R.id.item_text).setOnClickListener {
+                            binding.messageInputField.inputEditText.setText(suggestion)
                             if(Pref.isTapToReply(context))
-                                messageInputField.button.callOnClick()
+                                binding.messageInputField.button.callOnClick()
                         }
 
                         itemView.setOnClickListener {
-                            messageInputField.inputEditText.setText(suggestion)
+                            binding.messageInputField.inputEditText.setText(suggestion)
                             if(Pref.isTapToReply(context))
-                                messageInputField.button.callOnClick()
+                                binding.messageInputField.button.callOnClick()
                         }
                     }
 

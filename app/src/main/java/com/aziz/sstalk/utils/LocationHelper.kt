@@ -49,7 +49,7 @@ class LocationHelper(val context: Context) : GoogleApiClient.ConnectionCallbacks
      fun getAddress(latitude:Double, longitude:Double):Address?{
 
         return Geocoder(context, Locale.getDefault())
-            .getFromLocation(latitude,longitude,1)[0]
+            .getFromLocation(latitude,longitude,1)?.get(0)
     }
 
 

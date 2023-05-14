@@ -32,7 +32,7 @@
                    android:id="@+id/add_group_member_btn"
                    android:background="?selectableItemBackground"
         android:src="@drawable/ic_person_add_white_padded_24dp"
-                   android:tint="@color/colorPrimary"
+                   app:tint="@color/colorPrimary"
         />
 
     </LinearLayout>
@@ -50,9 +50,8 @@
               android:gravity="center_vertical"
               android:drawablePadding="20dp"
               android:layout_marginBottom="5dp"
-              android:drawableLeft="@drawable/ic_phone_green_24dp"
-              android:id="@+id/phone_textview"
-    />
+            android:id="@+id/phone_textview"
+            app:drawableLeftCompat="@drawable/ic_phone_green_24dp" />
 
 
     <androidx.recyclerview.widget.RecyclerView android:layout_width="match_parent"
@@ -104,15 +103,14 @@
               android:layout_height="wrap_content"
     android:textColor="#B10808"
      android:padding="15dp"
-    android:drawableLeft="@drawable/ic_block_red_24dp"
-    android:text="Block this contact"
+            android:text="Block this contact"
               android:id="@+id/block_user"
               android:drawablePadding="15dp"
               android:layout_marginTop="5dp"
               android:layout_marginBottom="5dp"
      android:gravity="center_vertical"
               android:background="?selectableItemBackground"
-    />
+            app:drawableLeftCompat="@drawable/ic_block_red_24dp" />
 
     <View android:layout_width="match_parent"
           android:layout_height="10dp"

@@ -65,7 +65,7 @@
                 android:layout_marginRight="4dp"
                 android:scaleType="fitXY"
                 android:src="@drawable/ic_mute_green"
-                android:tint="@color/colorPrimaryDark"
+                app:tint="@color/colorPrimaryDark"
                 app:layout_constraintBottom_toBottomOf="@+id/mobile_number"
                 app:layout_constraintEnd_toStartOf="@+id/unreadCount"
                 app:layout_constraintTop_toTopOf="@+id/mobile_number"
@@ -171,7 +171,7 @@
 
 
 
-    <include layout="@layout/item_conversation_ad"/>
+    <include android:id="@+id/adLayout" layout="@layout/item_conversation_ad"/>
 
 
 </LinearLayout>

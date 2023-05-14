@@ -1,36 +1,31 @@
 package com.aziz.sstalk.fragments
 
 import android.animation.LayoutTransition
-import android.content.Context
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.text.SpannableString
 import android.text.style.ForegroundColorSpan
-import android.util.Log
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
 import com.aziz.sstalk.HomeActivity
 import com.aziz.sstalk.R
+import com.aziz.sstalk.databinding.FragmentSearchBinding
+import com.aziz.sstalk.databinding.ItemContactLayoutBinding
+import com.aziz.sstalk.databinding.ItemConversationLayoutBinding
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.*
 import com.google.firebase.database.DataSnapshot
-import kotlinx.android.synthetic.main.fragment_search.view.*
-import kotlinx.android.synthetic.main.item_contact_layout.view.name
-import kotlinx.android.synthetic.main.item_contact_layout.view.pic
-import kotlinx.android.synthetic.main.item_conversation_ad.view.*
-import kotlinx.android.synthetic.main.item_conversation_layout.view.*
-import kotlinx.android.synthetic.main.item_conversation_layout.view.messageTime
-import java.lang.Exception
+import java.util.*
 
 class FragmentSearch : Fragment() {
 
 
-    lateinit var rootView:View
+    lateinit var rootView:FragmentSearchBinding
     private val handler = Handler(Looper.getMainLooper()); lateinit var runnable:Runnable
 
     private var registeredUsers:List<Models.Contact> = listOf()
@@ -38,8 +33,11 @@ class FragmentSearch : Fragment() {
     private var messagesMap:MutableMap<String, DataSnapshot?> = mutableMapOf()
     private var messageSnapshot:DataSnapshot? = null
 
+    lateinit var binding:FragmentSearchBinding
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return inflater.inflate(R.layout.fragment_search,container, false)
+        binding = FragmentSearchBinding.inflate(layoutInflater, container, false)
+        return binding.root
     }
 
     fun setSearchAdapter() = object : HomeActivity.OnSearched{
@@ -50,7 +48,7 @@ class FragmentSearch : Fragment() {
 
             val query = newQuery.trim()
 
-            rootView.contactRecyclerView.setContactAdapter(query)
+            binding.contactRecyclerView.setContactAdapter(query)
             rootView.groupsRecyclerView.setGroupAdapter(query)
 
             runnable = Runnable { rootView.messagesRecyclerView.setMessageAdapter(query) }
@@ -66,7 +64,7 @@ class FragmentSearch : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        rootView = view
+        rootView = binding
 
         try {
             (activity?.findViewById<ViewGroup>(R.id.container_search))?.layoutTransition
@@ -74,17 +72,17 @@ class FragmentSearch : Fragment() {
         }
         catch (e:Exception){e.printStackTrace()}
 
-        view.loadData()
+        binding.loadData()
 
     }
 
 
-    private fun View.loadData(){
+    private fun FragmentSearchBinding.loadData(){
 
         // load contacts
         context?.loadAvailableUsers { registeredUsers = it
 
-            contactRecyclerView.setContactAdapter()
+            binding.contactRecyclerView.setContactAdapter()
 
             // load groups
             FirebaseUtils.ref.lastMessage(FirebaseUtils.getUid())
@@ -121,14 +119,15 @@ class FragmentSearch : Fragment() {
            list =  registeredUsers.filter { it.name.contains(query!!, true) || it.number.contains(query) }
         }
 
-        rootView.contactHeading.visible = list.isNotEmpty()
+        binding.contactHeading.visible = list.isNotEmpty()
 
         setCustomAdapter(context, list, R.layout.item_contact_layout){
                 itemView, _, item ->
 
-            with(itemView){
+            val itemBinding = ItemContactLayoutBinding.bind(itemView)
+            with(itemBinding){
                 FirebaseUtils.loadProfileThumbnail(context, item.uid, pic)
-                name.text = item.name.capitalize()
+                name.text = item.name.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
                 setOnClickListener {
                     context.startChat(item.uid, FirebaseUtils.KEY_CONVERSATION_SINGLE, item.number)
                     onItemClicked?.onClicked()
@@ -148,17 +147,18 @@ class FragmentSearch : Fragment() {
             }.toMutableSet()
         }
 
-        rootView.groupHeading.visible = list.isNotEmpty()
+        binding.groupHeading.visible = list.isNotEmpty()
 
         setCustomAdapter(context, list, R.layout.item_contact_layout){
                 itemView, _, item ->
 
+            val itemBinding = ItemContactLayoutBinding.bind(itemView)
             val uid = item.key
 
-            with(itemView){
+            with(itemBinding){
                 val groupName = item.value?.nameOrNumber.orEmpty()
 
-                name.text = groupName.capitalize()
+                name.text = groupName.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
                 FirebaseUtils.loadGroupPicThumbnail(context, uid, pic)
                 setOnClickListener {
                     context.startChat(uid, FirebaseUtils.KEY_CONVERSATION_GROUP,groupName)
@@ -172,9 +172,9 @@ class FragmentSearch : Fragment() {
 
     private fun RecyclerView.setMessageAdapter(query: String? = null){
 
-        rootView.messageHeading.hide()
+        binding.messageHeading.hide()
         messagesMap.clear()
-        messagesRecyclerView.adapter = null
+        binding.messagesRecyclerView.adapter = null
 
         if(query?.length?:0 < 4)
                 return
@@ -192,11 +192,12 @@ class FragmentSearch : Fragment() {
                 }
         }
 
-        rootView.messageHeading.visible = messagesMap.isNotEmpty()
+        binding.messageHeading.visible = messagesMap.isNotEmpty()
 
         setCustomAdapter(context, messagesMap.entries, R.layout.item_conversation_layout ){ itemView, _, item ->
 
-            with(itemView){
+            val itemBinding = ItemConversationLayoutBinding.bind(itemView)
+            with(itemBinding){
 
                 val uid = item.value?.ref?.parent?.key?:""
                 val messageID = item.value?.key
@@ -217,11 +218,11 @@ class FragmentSearch : Fragment() {
                 }
 
                 messageTime.text = message?.timeInMillis?.let { utils.getHeaderFormattedDate(it) }
-                conversation_native_ad.hide()
-                conversation_mute_icon.hide()
-                delivery_status_last_msg.hide()
+                adLayout.conversationNativeAd.hide()
+                conversationMuteIcon.hide()
+                deliveryStatusLastMsg.hide()
 
-                val messageTextView = mobile_number
+                val messageTextView = mobileNumber
                 var messageString = message?.message.orEmpty().trim().replace("\n"," ")
                 var marquee = "... "
 

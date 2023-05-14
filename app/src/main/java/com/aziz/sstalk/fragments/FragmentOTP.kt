@@ -2,7 +2,6 @@ package com.aziz.sstalk.fragments
 
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.app.AlertDialog
 import android.app.ProgressDialog
 import android.content.Context
@@ -16,7 +15,7 @@ import android.view.View
 import android.view.ViewGroup
 import com.aziz.sstalk.EditProfile
 import com.aziz.sstalk.MobileLoginActivity
-import com.aziz.sstalk.R
+import com.aziz.sstalk.databinding.InputOtpBinding
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.utils
@@ -29,12 +28,7 @@ import com.google.firebase.auth.PhoneAuthProvider
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
-import kotlinx.android.synthetic.main.input_otp.*
-import kotlinx.android.synthetic.main.input_otp.view.*
-import java.time.Duration
 import java.util.concurrent.TimeUnit
-
-import org.jetbrains.anko.alert
 
 class FragmentOTP : Fragment() {
 
@@ -50,15 +44,17 @@ class FragmentOTP : Fragment() {
 
     private var rootView:View? = null
 
+    lateinit var binding:InputOtpBinding
+
     private var verificationStateChangedCallbacks = object  : PhoneAuthProvider.OnVerificationStateChangedCallbacks(){
         override fun onVerificationCompleted(p0: PhoneAuthCredential) {
 
-            Log.d("FragmentOTP", "onVerificationCompleted: ${p0.toString()}")
+            Log.d("FragmentOTP", "onVerificationCompleted: $p0")
         }
 
         override fun onVerificationFailed(p0: FirebaseException) {
-            utils.toast(context, "Failed to send OTP. Perhaps you are using an emulator.")
-            Log.e("FragmentOTP", "onVerificationFailed: ${p0?.message.toString()}")
+            toast(context, "Failed to send OTP. Perhaps you are using an emulator.")
+            Log.e("FragmentOTP", "onVerificationFailed: ${p0.message.toString()}")
 
             fragmentManager?.beginTransaction()!!
                 .remove(this@FragmentOTP)
@@ -69,8 +65,8 @@ class FragmentOTP : Fragment() {
         override fun onCodeSent(p0: String, p1: PhoneAuthProvider.ForceResendingToken) {
             super.onCodeSent(p0, p1)
 
-            verificationID = p0!!
-            mResendToken = p1!!
+            verificationID = p0
+            mResendToken = p1
 
             otp_count++
             progressDialog?.dismiss()
@@ -82,9 +78,10 @@ class FragmentOTP : Fragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
 
-       val view = inflater.inflate(R.layout.input_otp,container, false)
+        binding = InputOtpBinding.inflate(layoutInflater)
+        val view = binding.root
         rootView = view
-        bindViews(view)
+        bindViews()
 
         return view
     }
@@ -96,16 +93,16 @@ class FragmentOTP : Fragment() {
     }
 
     @SuppressLint("CommitTransaction")
-    private fun bindViews(view: View){
+    private fun bindViews() {
 
-        mobile_no = arguments!!.getString(MobileLoginActivity.KEY.PHONE)
+        mobile_no = requireArguments().getString(MobileLoginActivity.KEY.PHONE)
         Log.d("FragmentOTP", "bindViews: mob = $mobile_no")
 
         progressDialog = ProgressDialog(context)
 
-        view.pinView.setAnimationEnable(true)
-        view.verify.setOnClickListener{
-            val inputOtp = view.pinView.text.toString()
+        binding.pinView.setAnimationEnable(true)
+        binding.verify.setOnClickListener{
+            val inputOtp = binding.pinView.text.toString()
 
             if(inputOtp.length != 6){
                 return@setOnClickListener
@@ -119,7 +116,7 @@ class FragmentOTP : Fragment() {
 
         }
 
-        view.resendBtn.setOnClickListener {
+        binding.resendBtn.setOnClickListener {
             if(System.currentTimeMillis() - lastGenerated!! > 30000)
             generateOTP()
             else
@@ -129,7 +126,7 @@ class FragmentOTP : Fragment() {
         }
 
 
-        rootView?.changeNumber?.setOnClickListener {
+        binding?.changeNumber?.setOnClickListener {
 
             AlertDialog.Builder(context)
                 .setMessage("Change this number?")
@@ -147,7 +144,7 @@ class FragmentOTP : Fragment() {
 
     private fun generateOTP(){
         lastGenerated = System.currentTimeMillis()
-        mobile_no = arguments!!.getString(MobileLoginActivity.KEY.PHONE)
+        mobile_no = requireArguments().getString(MobileLoginActivity.KEY.PHONE)
 
 
 
@@ -184,9 +181,9 @@ class FragmentOTP : Fragment() {
 
                     userInfoBundle = arguments
 
-                    val countryCode = arguments!!.getString(MobileLoginActivity.KEY.COUNTRY_CODE)!!
-                    val countryName = arguments!!.getString(MobileLoginActivity.KEY.COUNTRY)!!
-                    val countryLocale = arguments!!.getString(MobileLoginActivity.KEY.COUNTRY_LOCALE_CODE)!!
+                    val countryCode = requireArguments().getString(MobileLoginActivity.KEY.COUNTRY_CODE)!!
+                    val countryName = requireArguments().getString(MobileLoginActivity.KEY.COUNTRY)!!
+                    val countryLocale = requireArguments().getString(MobileLoginActivity.KEY.COUNTRY_LOCALE_CODE)!!
 
 
                     val user = it.result!!.user
@@ -240,7 +237,7 @@ class FragmentOTP : Fragment() {
 
                 }
                 else{
-                    utils.toast(context, "Incorrect OTP")
+                    toast(context, "Incorrect OTP")
                 }
             }
     }
@@ -249,7 +246,7 @@ class FragmentOTP : Fragment() {
         val valueAnimator = ValueAnimator.ofInt( (duration/1000).toInt(),0)
         valueAnimator.duration = duration
 
-        val resendText = rootView?.resendBtn
+        val resendText = binding?.resendBtn
 
         valueAnimator.addUpdateListener {
             resendText?.text = "Resend in ${it.animatedValue}"

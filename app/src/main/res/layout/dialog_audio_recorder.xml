@@ -32,7 +32,7 @@
             android:padding="0dp"
             android:scaleType="fitCenter"
             android:src="@drawable/ic_cross_circle"
-            android:tint="@color/red"
+            app:tint="@color/red"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/pulse_layout"
             app:layout_constraintStart_toStartOf="@+id/timer"
@@ -71,7 +71,7 @@
                 android:padding="10dp"
                 android:scaleType="fitXY"
                 android:src="@drawable/aar_ic_rec"
-                android:tint="@color/green" />
+                app:tint="@color/green" />
 
 
     </com.gauravbhola.ripplepulsebackground.RipplePulseLayout>
@@ -86,7 +86,7 @@
             android:padding="0dp"
             android:scaleType="fitXY"
             android:src="@drawable/ic_tick_circle"
-            android:tint="@color/green"
+            app:tint="@color/green"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="@+id/timer"
             app:layout_constraintStart_toEndOf="@+id/pulse_layout"

@@ -51,14 +51,14 @@
                 android:layout_gravity="center"
                 android:alpha="0.8"
                 android:background="@drawable/blurred_text_background"
-                android:drawableLeft="@drawable/ic_file_download_white_24dp"
                 android:padding="15dp"
                 android:text="Tap to Retry"
                 android:textColor="@color/white"
                 app:layout_constraintBottom_toBottomOf="@+id/video_thumbnail"
                 app:layout_constraintEnd_toEndOf="@+id/video_thumbnail"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="@+id/video_thumbnail" />
+                app:layout_constraintTop_toTopOf="@+id/video_thumbnail"
+                app:drawableLeftCompat="@drawable/ic_file_download_white_24dp" />
 
         <View
                 android:layout_width="match_parent"

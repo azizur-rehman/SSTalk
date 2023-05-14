@@ -58,7 +58,7 @@
                           android:id="@+id/toolbar_subtitle_textView"
                 />
 
-            ></FrameLayout>
+            </FrameLayout>
 
             <androidx.appcompat.widget.Toolbar
                     android:id="@+id/toolbar"
@@ -77,7 +77,7 @@
                                            app:layout_behavior="@string/appbar_scrolling_view_behavior"
                                            android:layout_height="wrap_content">
 
-        <include layout="@layout/content_user_profile"/>
+        <include android:id="@+id/includeContent" layout="@layout/content_user_profile"/>
 
     </androidx.core.widget.NestedScrollView>
 

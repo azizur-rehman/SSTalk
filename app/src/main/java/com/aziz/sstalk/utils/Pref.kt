@@ -114,12 +114,12 @@ object Pref {
 
         Log.d("Pref", "setDefaultLanguage: language set to -> ${FirebaseTranslateLanguage.languageCodeForLanguage(languageCode)}")
 
-        Pref.getSettingFile(context).edit()
+        getSettingFile(context).edit()
             .putInt(KEY_DEFAULT_TRANSLATION_LANG, languageCode).apply()
     }
 
     fun getDefaultLanguage(context: Context, defaultLanguage:Int = -1):Int{
-        return Pref.getSettingFile(context)
+        return getSettingFile(context)
             .getInt(KEY_DEFAULT_TRANSLATION_LANG, defaultLanguage)
     }
 

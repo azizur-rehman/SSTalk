@@ -204,15 +204,15 @@ object FirebaseUtils {
                     .child(getUid())
 
             fun groupInfo(groupID:String):DatabaseReference =
-                    FirebaseUtils.ref.root().child(NODE_GROUP_INFO).child(groupID)
+                    root().child(NODE_GROUP_INFO).child(groupID)
 
             fun groupMembers(groupID:String):DatabaseReference =
-                FirebaseUtils.ref.root().child(NODE_GROUP_MEMBER).child(groupID)
+                root().child(NODE_GROUP_MEMBER).child(groupID)
 
             fun groupMember(groupID:String, uid: String):DatabaseReference =
-                FirebaseUtils.ref.root().child(NODE_GROUP_MEMBER).child(groupID).child(uid)
+                root().child(NODE_GROUP_MEMBER).child(groupID).child(uid)
 
-            fun feedback():DatabaseReference = FirebaseUtils.ref.root().child(NODE_FEEDBACK)
+            fun feedback():DatabaseReference = root().child(NODE_FEEDBACK)
         }
 
 
@@ -251,7 +251,7 @@ object FirebaseUtils {
 
         }
 
-            ref.user(uid)
+            user(uid)
                 .child(KEY_PROFILE_PIC_URL)
                 .addValueEventListener(object : ValueEventListener {
 
@@ -503,7 +503,7 @@ object FirebaseUtils {
 
 
 
-        ref.user(uid)
+        user(uid)
             .child(KEY_PROFILE_PIC_URL)
             .addValueEventListener(object : ValueEventListener {
 
@@ -695,7 +695,7 @@ object FirebaseUtils {
     //below is the id for my mobile number(Shanu)
     fun getUid() : String = if (isLoggedIn())  FirebaseAuth.getInstance().uid.toString() else utils.constants.debugUserID
 
-    fun getPhoneNumber() : String = if(FirebaseUtils.isLoggedIn()) FirebaseAuth.getInstance().currentUser!!.phoneNumber!! else "1234567890"
+    fun getPhoneNumber() : String = if(isLoggedIn()) FirebaseAuth.getInstance().currentUser!!.phoneNumber!! else "1234567890"
 
 
     fun setUserDetailFromUID(context : Context,
@@ -795,7 +795,7 @@ object FirebaseUtils {
                             messageModel?.messageType == utils.constants.FILE_TYPE_IMAGE -> textView.text = ("\uD83D\uDDBC Image")
                             messageModel?.messageType == utils.constants.FILE_TYPE_VIDEO -> textView.text = ("\uD83C\uDFA5 Video")
                             messageModel?.messageType == utils.constants.FILE_TYPE_AUDIO -> textView.text = ("\uD83C\uDFB5 Audio")
-                            messageModel?.messageType == utils.constants.FILE_TYPE_LOCATION -> textView.text = ("\uD83D\uDCCC ${if(messageModel?.caption.isNullOrEmpty()) " Location" else messageModel?.caption}")
+                            messageModel?.messageType == utils.constants.FILE_TYPE_LOCATION -> textView.text = ("\uD83D\uDCCC ${if(messageModel.caption.isNullOrEmpty()) " Location" else messageModel.caption}")
                         }
 
                     }
@@ -858,17 +858,17 @@ object FirebaseUtils {
     }
 
     fun setMeAsOnline(){
-        FirebaseUtils.ref.userStatus(getUid())
+        ref.userStatus(getUid())
             .setValue(Models.UserActivityStatus(VAL_ONLINE, System.currentTimeMillis()))
     }
 
     fun setMeAsOffline(){
-        FirebaseUtils.ref.userStatus(getUid())
+        ref.userStatus(getUid())
             .setValue(Models.UserActivityStatus(VAL_OFFLINE, System.currentTimeMillis()))
     }
 
     fun setMeAsTyping(targetUID:String){
-        FirebaseUtils.ref.userStatus(getUid())
+        ref.userStatus(getUid())
             .setValue(Models.UserActivityStatus(VAL_TYPING +" - $targetUID", System.currentTimeMillis()))
     }
 
@@ -927,8 +927,8 @@ object FirebaseUtils {
 
         ref.messageStatus(uid,targetUID,messageID)
             .setValue(Models.MessageStatus(getUid(), isRead, isDelivered, messageID,
-                if(FirebaseUtils.isLoggedIn()) FirebaseAuth.getInstance().currentUser!!.phoneNumber!! else "1234567890",
-                if(FirebaseUtils.isLoggedIn()) FirebaseAuth.getInstance().currentUser!!.photoUrl.toString() else "",
+                if(isLoggedIn()) FirebaseAuth.getInstance().currentUser!!.phoneNumber!! else "1234567890",
+                if(isLoggedIn()) FirebaseAuth.getInstance().currentUser!!.photoUrl.toString() else "",
                 groupNameIf))
     }
 
@@ -1079,7 +1079,7 @@ object FirebaseUtils {
 
 
     fun storeFileMetaData(file:Models.File){
-        FirebaseUtils.ref.fileRef()
+        ref.fileRef()
             .child(file.fileID)
             .setValue(file)
     }
@@ -1111,37 +1111,37 @@ object FirebaseUtils {
         val key_app_code = "App_Version_Code"
 
         //this will return an int
-        FirebaseDatabase.getInstance().getReference(key_app_code)
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onCancelled(p0: DatabaseError) {
-                }
-
-                override fun onDataChange(p0: DataSnapshot) {
-
-                    val versionCode = p0.getValue(Int::class.java)?:BuildConfig.VERSION_CODE
-                    Log.d("FirebaseUtils", "onDataChange: current version = ${com.aziz.sstalk.BuildConfig.VERSION_CODE}")
-                    Log.d("FirebaseUtils", "onDataChange: available version = $versionCode")
-
-                    if(versionCode > com.aziz.sstalk.BuildConfig.VERSION_CODE){
-                        //show update dialog
-                        context.alert {
-                            positiveButton("Go to PlayStore"){
-                                context.browse(utils.constants.APP_LINK)
-                            }
-                            negativeButton("Cancel"){
-                            }
-                            title = "Update available"
-                            message = "A New update has been available for SS Talk"
-                            isCancelable = false
-                        }
-                            .show()
-                    }
-                    else if(shouldShowToast){
-                        context.toast("No update available")
-                    }
-
-                }
-            })
+//        FirebaseDatabase.getInstance().getReference(key_app_code)
+//            .addListenerForSingleValueEvent(object : ValueEventListener {
+//                override fun onCancelled(p0: DatabaseError) {
+//                }
+//
+//                override fun onDataChange(p0: DataSnapshot) {
+//
+//                    val versionCode = p0.getValue(Int::class.java)?:BuildConfig.VERSION_CODE
+//                    Log.d("FirebaseUtils", "onDataChange: current version = ${com.aziz.sstalk.BuildConfig.VERSION_CODE}")
+//                    Log.d("FirebaseUtils", "onDataChange: available version = $versionCode")
+//
+//                    if(versionCode > com.aziz.sstalk.BuildConfig.VERSION_CODE){
+//                        //show update dialog
+//                        context.alert {
+//                            positiveButton("Go to PlayStore"){
+//                                context.browse(utils.constants.APP_LINK)
+//                            }
+//                            negativeButton("Cancel"){
+//                            }
+//                            title = "Update available"
+//                            message = "A New update has been available for SS Talk"
+//                            isCancelable = false
+//                        }
+//                            .show()
+//                    }
+//                    else if(shouldShowToast){
+//                        context.toast("No update available")
+//                    }
+//
+//                }
+//            })
 
     }
 
@@ -1153,10 +1153,10 @@ object FirebaseUtils {
             "addedMemberEvent: adding $addingMemberPhoneNumber to group $groupID and showing to $uid"
         )
 
-        FirebaseUtils.ref.getChatRef(uid, groupID)
+        ref.getChatRef(uid, groupID)
             .child("MSG${System.currentTimeMillis()}")
             .setValue(Models.MessageModel(addingMemberPhoneNumber,  //"message" will contain number of the one who is added
-                FirebaseUtils.getPhoneNumber(), // "from"  will be phone number of adder
+                getPhoneNumber(), // "from"  will be phone number of adder
                 messageType = EVENT_TYPE_ADDED
                 ))
     }
@@ -1169,10 +1169,10 @@ object FirebaseUtils {
             "createdGroupEvent: adding $addingMemberPhoneNumber to group $groupID and showing to $uid"
         )
 
-        FirebaseUtils.ref.getChatRef(uid, groupID)
+        ref.getChatRef(uid, groupID)
             .child("MSG${System.currentTimeMillis()}")
             .setValue(Models.MessageModel(addingMemberPhoneNumber,  //"message" will contain number of the one who is added
-                FirebaseUtils.getPhoneNumber(), // "from"  will be phone number of adder
+                getPhoneNumber(), // "from"  will be phone number of adder
                 messageType = EVENT_TYPE_CREATED
             ))
     }
@@ -1180,10 +1180,10 @@ object FirebaseUtils {
 
     fun removedMemberEvent(uid:String, groupID: String, removedMemberPhoneNumber:String){
 
-        FirebaseUtils.ref.getChatRef(uid, groupID)
+        ref.getChatRef(uid, groupID)
             .child("MSG${System.currentTimeMillis()}")
             .setValue(Models.MessageModel(removedMemberPhoneNumber,
-                FirebaseUtils.getPhoneNumber(),// this will use as remover
+                getPhoneNumber(),// this will use as remover
                 messageType = EVENT_TYPE_REMOVED
             ))
     }
@@ -1191,10 +1191,11 @@ object FirebaseUtils {
 
     private fun leftMemberEvent(uid: String, groupID: String){
 
-        FirebaseUtils.ref.getChatRef(uid, groupID)
+        ref.getChatRef(uid, groupID)
             .child("MSG${System.currentTimeMillis()}")
-            .setValue(Models.MessageModel(FirebaseUtils.getPhoneNumber(),
-                FirebaseUtils.getPhoneNumber(),// this will use as remover
+            .setValue(Models.MessageModel(
+                getPhoneNumber(),
+                getPhoneNumber(),// this will use as remover
                 messageType = EVENT_TYPE_LEFT
             ))
     }
@@ -1229,17 +1230,17 @@ object FirebaseUtils {
             when (i) {
                 1 -> {
                     context.startActivity(Intent(context, MessageActivity::class.java).apply {
-                        putExtra(FirebaseUtils.KEY_UID, uid)
+                        putExtra(KEY_UID, uid)
                         putExtra(utils.constants.KEY_NAME_OR_NUMBER, phoneNumber)
-                        putExtra(utils.constants.KEY_TARGET_TYPE, FirebaseUtils.KEY_CONVERSATION_SINGLE)
+                        putExtra(utils.constants.KEY_TARGET_TYPE, KEY_CONVERSATION_SINGLE)
                         addFlags( Intent.FLAG_ACTIVITY_CLEAR_TOP)
                     })
                 }
 
                 0 -> {
                     context.startActivity(Intent(context, UserProfileActivity::class.java).apply {
-                        putExtra(FirebaseUtils.KEY_UID, uid)
-                        putExtra(FirebaseUtils.KEY_NAME, phoneNumber)
+                        putExtra(KEY_UID, uid)
+                        putExtra(KEY_NAME, phoneNumber)
                         putExtra(utils.constants.KEY_IS_GROUP, false )
                     })
                 }
@@ -1268,13 +1269,13 @@ object FirebaseUtils {
     fun removeMember(uid: String, groupID: String, phoneNumber: String, groupName: String,
                      isRemovedByOther:Boolean){
         if(isRemovedByOther)
-            FirebaseUtils.removedMemberEvent(uid, groupID, phoneNumber)
+            removedMemberEvent(uid, groupID, phoneNumber)
         else
-            FirebaseUtils.leftMemberEvent(uid, groupID)
+            leftMemberEvent(uid, groupID)
         //update last message node
-        FirebaseUtils.ref.lastMessage(uid)
+        ref.lastMessage(uid)
             .child(groupID)
-            .setValue(Models.LastMessageDetail(type = FirebaseUtils.KEY_CONVERSATION_GROUP,
+            .setValue(Models.LastMessageDetail(type = KEY_CONVERSATION_GROUP,
                 nameOrNumber = groupName))
 
     }
@@ -1305,7 +1306,7 @@ object FirebaseUtils {
                                 message = if(isAdmin) "Dismiss ${utils.getNameFromNumber(context, phoneNumber)} from admin?"
                                 else "Make ${utils.getNameFromNumber(context, phoneNumber)} as Admin?"
                                 yesButton{
-                                    FirebaseUtils.ref.groupMember(groupID, uid)
+                                    ref.groupMember(groupID, uid)
                                         .child("admin").setValue(!isAdmin)
                                 }
                                 noButton{}
@@ -1322,7 +1323,7 @@ object FirebaseUtils {
                         }
 
                         context.alert { yesButton {
-                            FirebaseUtils.ref.groupMember(groupID, uid)
+                            ref.groupMember(groupID, uid)
                                 .child("removed").setValue(true).addOnSuccessListener {
                                     this.ctx.toast("Member removed")
                                     repeat(groupMembers.size) {
@@ -1343,9 +1344,9 @@ object FirebaseUtils {
                     3 -> {
                         //show message activity
                         context.startActivity(Intent(context, MessageActivity::class.java).apply {
-                            putExtra(FirebaseUtils.KEY_UID, uid)
+                            putExtra(KEY_UID, uid)
                             putExtra(utils.constants.KEY_NAME_OR_NUMBER, phoneNumber)
-                            putExtra(utils.constants.KEY_TARGET_TYPE, FirebaseUtils.KEY_CONVERSATION_SINGLE)
+                            putExtra(utils.constants.KEY_TARGET_TYPE, KEY_CONVERSATION_SINGLE)
                             addFlags( Intent.FLAG_ACTIVITY_CLEAR_TOP)
                         })
                     }
@@ -1353,8 +1354,8 @@ object FirebaseUtils {
                     2 -> {
                         //show profile activity
                         context.startActivity(Intent(context, UserProfileActivity::class.java).apply {
-                            putExtra(FirebaseUtils.KEY_UID, uid)
-                            putExtra(FirebaseUtils.KEY_NAME, phoneNumber)
+                            putExtra(KEY_UID, uid)
+                            putExtra(KEY_NAME, phoneNumber)
                             putExtra(utils.constants.KEY_IS_GROUP, false )
                         })
                     }
@@ -1384,7 +1385,7 @@ object FirebaseUtils {
 
      fun setonDisconnectListener(){
 
-        FirebaseUtils.ref.userStatus(getUid())
+        ref.userStatus(getUid())
             .onDisconnect()
             .setValue(Models.UserActivityStatus(VAL_OFFLINE, System.currentTimeMillis()))
     }

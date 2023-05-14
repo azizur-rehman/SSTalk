@@ -2,23 +2,27 @@ apply plugin: 'com.android.application'
 
 apply plugin: 'kotlin-android'
 
-apply plugin: 'kotlin-android-extensions'
+//apply plugin: 'kotlin-android-extensions'
 
 apply plugin: 'com.google.gms.google-services'
-apply plugin: 'io.fabric'
+
+apply plugin: 'com.google.firebase.crashlytics'
+//apply plugin: 'io.fabric'
 
 
 android {
+
     signingConfigs {
     }
-    compileSdkVersion 29
+    
+    compileSdkVersion 33
     flavorDimensions "versionCode"
     defaultConfig {
         applicationId "com.aziz.sstalk"
-        minSdkVersion 16
-        targetSdkVersion 29
-        versionCode 10
-        versionName "1.3.1"
+        minSdk 23
+        targetSdkVersion 33
+        versionCode 11
+        versionName '1.3.2'
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled true
     }
@@ -30,49 +34,63 @@ android {
     }
     productFlavors {
     }
-    androidExtensions {
-        experimental = true
-    }
+//    androidExtensions {
+//        experimental = true
+//    }
     aaptOptions {
         noCompress "tflite"
+    }
+
+    compileOptions {
+        sourceCompatibility "1.8"
+        targetCompatibility "1.8"
+    }
+
+    kotlinOptions{
+        jvmTarget =  JavaVersion.VERSION_1_8.toString()
+    }
+    buildFeatures {
+        viewBinding true
     }
 }
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+//    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.0"
     //noinspection GradleCompatible
-    implementation 'androidx.appcompat:appcompat:1.1.0'
-    implementation 'com.google.android.material:material:1.0.0'
-    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
+    implementation 'androidx.core:core-ktx:1.10.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.8.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'com.github.stfalcon:chatkit:0.3.3'
-    implementation 'com.google.firebase:firebase-messaging:20.0.0'
-    implementation 'com.google.firebase:firebase-auth:19.1.0'
-    implementation 'com.google.firebase:firebase-database:19.2.0'
-    implementation 'com.google.firebase:firebase-storage:19.1.0'
+    implementation 'com.google.firebase:firebase-messaging:23.1.2'
+    implementation 'com.google.firebase:firebase-auth:21.3.0'
+    implementation 'com.google.firebase:firebase-database:20.2.0'
+    implementation 'com.google.firebase:firebase-storage:20.1.0'
     // FirebaseUI for Firebase Realtime Database
     implementation 'com.firebaseui:firebase-ui-database:6.0.2'
     implementation 'androidx.multidex:multidex:2.0.1'
     implementation 'com.chaos.view:pinview:1.4.2'
     implementation 'com.vincent.filepicker:MultiTypeFilePicker:1.0.8'
-    implementation 'de.hdodenhof:circleimageview:3.0.1'
+    implementation 'de.hdodenhof:circleimageview:3.1.0'
     implementation 'com.squareup.picasso:picasso:2.71828'
     // do not update this library or else file picker library will crash
     //noinspection GradleDependency
     implementation 'com.github.bumptech.glide:glide:4.8.0'
+//    implementation 'com.google.android.gms:play-services-ads-lite:22.0.0'
     //noinspection GradleDependency
     annotationProcessor 'com.github.bumptech.glide:compiler:4.8.0'
 
     //for image compression
     implementation 'me.shaohui.advancedluban:library:1.3.5'
-    implementation 'com.nex3z:notification-badge:1.0.2'
-    implementation 'com.google.android.gms:play-services-location:17.0.0'
-    implementation 'com.google.android.gms:play-services-maps:17.0.0'
-    implementation('com.github.ozodrukh:CircularReveal:1.3.1@aar') {
+    implementation 'com.nex3z:notification-badge:1.0.4'
+    implementation 'com.google.android.gms:play-services-location:21.0.1'
+    implementation 'com.google.android.gms:play-services-maps:18.1.0'
+    implementation('com.github.ozodrukh:CircularReveal:2.0.1@aar') {
         transitive = true
     }
     implementation 'com.mikhaellopez:circularprogressbar:2.0.0'
-    implementation 'androidx.emoji:emoji-bundled:1.0.0'
+    implementation 'androidx.emoji:emoji-bundled:1.1.0'
     implementation 'com.github.lguipeng:AnimCheckBox:1.0.1'
     implementation 'com.skyline.widget:round-corner-layout:1.0.1'
     implementation 'com.hbb20:ccp:2.2.4'
@@ -86,32 +104,35 @@ dependencies {
     implementation 'com.aurelhubert:ahbottomnavigation:2.3.4'
 
     //ML
-    implementation 'com.google.firebase:firebase-ml-natural-language:22.0.0'
-    implementation 'com.google.firebase:firebase-ml-natural-language-smart-reply-model:20.0.7'
-    implementation 'com.google.firebase:firebase-ml-natural-language-language-id-model:20.0.7'
-    implementation 'com.google.firebase:firebase-ml-natural-language-translate-model:20.0.7'
+    implementation 'com.google.firebase:firebase-ml-natural-language:22.0.1'
+    implementation 'com.google.firebase:firebase-ml-natural-language-smart-reply-model:20.0.8'
+    implementation 'com.google.firebase:firebase-ml-natural-language-language-id-model:20.0.8'
+    implementation 'com.google.firebase:firebase-ml-natural-language-translate-model:20.0.9'
 
     //Ads
-    implementation 'com.google.android.gms:play-services-ads:18.3.0'
+    implementation 'com.google.android.gms:play-services-ads:22.0.0'
 
     // (Recommended) Add Analytics
-    implementation 'com.google.firebase:firebase-analytics:17.2.1'
+    implementation 'com.google.firebase:firebase-analytics:21.2.2'
 
     // Add dependency
-    implementation 'com.crashlytics.sdk.android:crashlytics:2.10.1'
-
+    implementation 'com.google.firebase:firebase-crashlytics-ktx:18.3.6'
 
     //noinspection GradleDependency
     implementation 'com.miguelcatalan:materialsearchview:1.4.0'
 
     implementation 'com.gauravbhola.ripplepulsebackground:library:1.0.0'
 
-    implementation 'androidx.lifecycle:lifecycle-extensions:2.1.0'
+    implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
 
-    implementation "android.arch.work:work-runtime-ktx:1.0.1"
+    implementation 'androidx.work:work-runtime-ktx:2.8.1'
 
 
-    implementation 'com.google.code.gson:gson:2.8.6'
+
+    implementation 'com.google.code.gson:gson:2.10.1'
 
     implementation 'com.github.halysongoncalves:pugnotification:1.8.1'
+
+
+    implementation 'com.google.firebase:firebase-iid:21.1.0'
 }
