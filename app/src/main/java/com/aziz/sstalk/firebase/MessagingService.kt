@@ -59,7 +59,7 @@ class MessagingService: FirebaseMessagingService() {
         super.onMessageReceived(p0)
 
         Log.d("MessagingService", "onMessageReceived: ${p0.data}")
-        val data: MutableMap<String, String>? = p0.data ?: return
+        val data: MutableMap<String, String>? = p0.data
 
         val sender = data!![KEY_SENDER]!!
         val receiver = data[KEY_RECEIVER]!!
@@ -140,7 +140,7 @@ class MessagingService: FirebaseMessagingService() {
 
     private fun notify(title:String, intent: Intent, remoteMessage: RemoteMessage){
         val pendingIntent: PendingIntent = PendingIntent.getActivity(this@MessagingService, NotificationDetail.SINGLE_ID, intent,
-            PendingIntent.FLAG_UPDATE_CURRENT)
+            PendingIntent.FLAG_IMMUTABLE )
 
         val data = remoteMessage.data
 
@@ -154,7 +154,7 @@ class MessagingService: FirebaseMessagingService() {
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
             .setColor(ContextCompat.getColor(this@MessagingService, R.color.colorPrimary))
             .setLargeIcon((BitmapFactory.decodeResource(resources, R.mipmap.ic_launcher)))
-            .setPriority(android.app.Notification.PRIORITY_MAX)
+            .setPriority(Notification.PRIORITY_MAX)
             .setAutoCancel(true)
 
 
@@ -256,7 +256,7 @@ class MessagingService: FirebaseMessagingService() {
                                             .setSmallIcon(R.mipmap.ic_launcher)
                                             .setColor(ContextCompat.getColor(this@MessagingService, R.color.colorPrimary))
                                             .setLargeIcon((BitmapFactory.decodeResource(resources, R.mipmap.ic_launcher)))
-                                            .setContentIntent(PendingIntent.getActivity(this@MessagingService, NotificationDetail.MUlTIPLE_ID, intent, PendingIntent.FLAG_UPDATE_CURRENT))
+                                            .setContentIntent(PendingIntent.getActivity(this@MessagingService, NotificationDetail.MUlTIPLE_ID, intent, PendingIntent.FLAG_IMMUTABLE))
                                             .setContentTitle(title)
                                             .setChannelId(channelIDMerged)
 
@@ -384,7 +384,7 @@ class MessagingService: FirebaseMessagingService() {
         val token = p0
 
 
-        Pref.storeToken(this, token!!)
+        Pref.storeToken(this, token)
         FirebaseUtils.updateFCMToken()
 
 

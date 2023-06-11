@@ -8,8 +8,16 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.view.View
 import android.view.View.MeasureSpec.UNSPECIFIED
+import android.widget.ImageView
+import com.aziz.sstalk.R
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.load.resource.bitmap.CenterCrop
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
+import com.bumptech.glide.request.RequestOptions
 import org.jetbrains.anko.AlertBuilder
 import org.jetbrains.anko.alert
+import org.jetbrains.anko.dip
 import org.jetbrains.anko.okButton
 
 
@@ -48,3 +56,34 @@ val View.toBitmap: Bitmap
         draw(canvas)
         return bitmap
     }
+
+
+fun ImageView.loadImage(
+    url: Any?,
+    placeholderRes: Int = R.drawable.contact_placeholder,
+    errorRes: Int = placeholderRes
+){
+
+
+    kotlin.runCatching {
+        Glide.with(context)
+            .setDefaultRequestOptions(
+                RequestOptions()
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                    .placeholder(placeholderRes)
+                   .error(errorRes)
+            )
+            .load(url)
+//            .transform(
+//                CenterCrop(),
+//                RoundedCornersTransformation(
+//                    dip(roundRadiusInDp), 0,
+//                    RoundedCornersTransformation.CornerType.ALL
+//                )
+//            )
+            .transition(DrawableTransitionOptions.withCrossFade())
+            .apply(RequestOptions().override(100))
+//           .thumbnail(0.7f)
+            .into(this)
+    }
+}

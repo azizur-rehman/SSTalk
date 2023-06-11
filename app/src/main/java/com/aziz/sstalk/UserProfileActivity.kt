@@ -15,6 +15,9 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import android.util.Log
 import android.view.*
+import android.widget.ImageView
+import android.widget.TextView
+import com.aziz.sstalk.databinding.ActivityUserProfileBinding
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.hide
@@ -31,11 +34,6 @@ import com.theartofdev.edmodo.cropper.CropImage
 import com.theartofdev.edmodo.cropper.CropImageView
 import com.vincent.filepicker.DividerGridItemDecoration
 import com.yarolegovich.lovelydialog.LovelyTextInputDialog
-import kotlinx.android.synthetic.main.activity_user_profile.*
-import kotlinx.android.synthetic.main.content_user_profile.*
-import kotlinx.android.synthetic.main.item_group_member_layout.view.*
-import kotlinx.android.synthetic.main.item_image.view.*
-import kotlinx.android.synthetic.main.item_video.view.*
 import me.shaohui.advancedluban.Luban
 import me.shaohui.advancedluban.OnCompressListener
 import org.jetbrains.anko.*
@@ -56,11 +54,14 @@ class UserProfileActivity : AppCompatActivity() {
 
     private var asyncLoader: Future<Boolean>? = null
 
+    lateinit var binding:ActivityUserProfileBinding
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_user_profile)
-        setSupportActionBar(toolbar)
+        binding = ActivityUserProfileBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        setSupportActionBar(binding.toolbar)
 
         if(supportActionBar!=null) {
             supportActionBar!!.setDisplayHomeAsUpEnabled(true)
@@ -74,25 +75,25 @@ class UserProfileActivity : AppCompatActivity() {
 
         myUID = FirebaseUtils.getUid()
 
-        targetUID = intent.getStringExtra(FirebaseUtils.KEY_UID)
-        name = intent.getStringExtra(FirebaseUtils.KEY_NAME)
+        targetUID = intent.getStringExtra(FirebaseUtils.KEY_UID).toString()
+        name = intent.getStringExtra(FirebaseUtils.KEY_NAME).toString()
 
         isGroup = intent.getBooleanExtra(utils.constants.KEY_IS_GROUP, false)
 
         title = if(isGroup) name else utils.getNameFromNumber(this, name)
 
         utils.printIntentKeyValues(intent)
-        add_group_member_btn.visibility = View.GONE
+        binding.includeContent.addGroupMemberBtn.visibility = View.GONE
 
         if(!isGroup) {
-            phone_textview.text = name
+            binding.includeContent.phoneTextview.text = name
             isPhoneLoaded = true
         }else {
-            phone_textview.visibility = View.GONE
+            binding.includeContent.phoneTextview.visibility = View.GONE
             loadGroupMembers()
         }
 
-        if(phone_textview.text.isEmpty() && !isGroup) {
+        if(binding.includeContent.phoneTextview.text.isEmpty() && !isGroup) {
             // if phone number is not available
             FirebaseUtils.ref.allUser()
                 .child(targetUID)
@@ -102,7 +103,7 @@ class UserProfileActivity : AppCompatActivity() {
                     }
 
                     override fun onDataChange(p0: DataSnapshot) {
-                        phone_textview.text = p0.getValue(String::class.java)
+                        binding.includeContent.phoneTextview.text = p0.getValue(String::class.java)
                         isPhoneLoaded = true
                         invalidateOptionsMenu()
                     }
@@ -112,10 +113,10 @@ class UserProfileActivity : AppCompatActivity() {
         }
 
         val layoutManager = GridLayoutManager(this, 4)
-        mediaRecyclerView.addItemDecoration(DividerGridItemDecoration(this))
-        mediaRecyclerView.isNestedScrollingEnabled = true
+        binding.includeContent.mediaRecyclerView.addItemDecoration(DividerGridItemDecoration(this))
+        binding.includeContent.mediaRecyclerView.isNestedScrollingEnabled = true
 
-        mediaRecyclerView.layoutManager = layoutManager
+        binding.includeContent.mediaRecyclerView.layoutManager = layoutManager
 
 
 
@@ -124,9 +125,9 @@ class UserProfileActivity : AppCompatActivity() {
             uiThread {
 
                 if(!isGroup)
-                    FirebaseUtils.loadProfilePic(context, targetUID, user_profile_imageview)
+                    FirebaseUtils.loadProfilePic(context, targetUID, binding.userProfileImageview)
                 else
-                    FirebaseUtils.loadGroupPic(context, targetUID, user_profile_imageview)
+                    FirebaseUtils.loadGroupPic(context, targetUID, binding.userProfileImageview)
 
                 //loading media recyclerview
                 FirebaseUtils.ref.getChatRef(myUID,targetUID)
@@ -154,11 +155,11 @@ class UserProfileActivity : AppCompatActivity() {
                             if(messageModels.isEmpty())
                                 return
 
-                            if(mediaRecyclerView.adapter != null)
-                                mediaRecyclerView.adapter!!.notifyDataSetChanged()
+                            if(binding.includeContent.mediaRecyclerView.adapter != null)
+                                binding.includeContent.mediaRecyclerView.adapter!!.notifyDataSetChanged()
                             else {
 
-                                mediaRecyclerView.adapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+                                binding.includeContent.mediaRecyclerView.adapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                                     override fun onCreateViewHolder(p0: ViewGroup, p1: Int): RecyclerView.ViewHolder {
                                         //0 for image
                                         //1 for video right now
@@ -239,13 +240,13 @@ class UserProfileActivity : AppCompatActivity() {
 
         }
 
-        phone_textview.setOnClickListener {
-            if(isPhoneLoaded && phone_textview.text.isNotEmpty())
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("tel:${phone_textview.text}")))
+        binding.includeContent.phoneTextview.setOnClickListener {
+            if(isPhoneLoaded && binding.includeContent.phoneTextview.text.isNotEmpty())
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("tel:${binding.includeContent.phoneTextview.text}")))
         }
 
 
-        block_user.setOnClickListener {
+        binding.includeContent.blockUser.setOnClickListener {
 
             if(isGroup){
 
@@ -300,15 +301,15 @@ class UserProfileActivity : AppCompatActivity() {
         if(!isGroup)
         checkIfBlocked()
         else {
-            block_user.text = "Exit from group"
-            block_user.setCompoundDrawablesWithIntrinsicBounds(
+            binding.includeContent.blockUser.text = "Exit from group"
+            binding.includeContent.blockUser.setCompoundDrawablesWithIntrinsicBounds(
                 ContextCompat.getDrawable(this, R.drawable.ic_logout_red)
                 ,null,null, null)
         }
 
 
         //set notification switch enable/disable
-        notification_switch.setOnCheckedChangeListener { _, isChecked ->
+        binding.includeContent.notificationSwitch.setOnCheckedChangeListener { _, isChecked ->
             FirebaseUtils.ref.notificationMute(targetUID)
                 .setValue(isChecked)
         }
@@ -321,10 +322,10 @@ class UserProfileActivity : AppCompatActivity() {
 
                 override fun onDataChange(p0: DataSnapshot) {
                     if(!p0.exists()) {
-                        notification_switch.isChecked = false
+                        binding.includeContent.notificationSwitch.isChecked = false
                         return
                     }
-                        notification_switch.isChecked = p0.getValue(Boolean::class.java)!!
+                        binding.includeContent.notificationSwitch.isChecked = p0.getValue(Boolean::class.java)!!
                 }
             })
     }
@@ -340,20 +341,20 @@ class UserProfileActivity : AppCompatActivity() {
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
 
         if(isGroup) menuInflater.inflate(R.menu.edit_profile_menu, menu)
-        else if(phone_textview.text.toString() == supportActionBar?.title ) {
+        else if(binding.includeContent.phoneTextview.text.toString() == supportActionBar?.title ) {
              menuInflater.inflate(R.menu.user_profile_menu, menu)
         }
 
         return super.onCreateOptionsMenu(menu)
     }
 
-    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
 
-        when(item!!.itemId){
+        when(item.itemId){
             android.R.id.home -> finish()
             R.id.action_contact -> {
                 val contactIntent = Intent(Intent.ACTION_INSERT)
-                contactIntent.putExtra(ContactsContract.Intents.Insert.PHONE, phone_textview.text)
+                contactIntent.putExtra(ContactsContract.Intents.Insert.PHONE, binding.includeContent.phoneTextview.text)
                 contactIntent.type = ContactsContract.RawContacts.CONTENT_TYPE
                 startActivityForResult(contactIntent, 111)
             }
@@ -410,7 +411,7 @@ class UserProfileActivity : AppCompatActivity() {
                     else
                         false
 
-                    block_user.text = "${if(isBlockedByMe) "Unblock" else "Block" } this user"
+                    binding.includeContent.blockUser.text = "${if(isBlockedByMe) "Unblock" else "Block" } this user"
 
                 }
 
@@ -428,7 +429,7 @@ class UserProfileActivity : AppCompatActivity() {
         if(!isGroup)
             return
 
-        profile_heading.text = "Group Participants"
+        binding.includeContent.profileHeading.text = "Group Participants"
 
 
 
@@ -458,7 +459,7 @@ class UserProfileActivity : AppCompatActivity() {
 
                                 Log.d("UserProfileActivity", "onDataChange: $subtitle")
                                 supportActionBar?.subtitle = subtitle
-                                toolbar_subtitle_textView.text = subtitle
+                                binding.toolbarSubtitleTextView.text = subtitle
                             }
                         })
 
@@ -507,29 +508,29 @@ class UserProfileActivity : AppCompatActivity() {
 
 
         if(!groupMembers.any { it.uid == myUID }){
-            group_member_recycler_view.visibility = View.GONE
-            block_user.visibility = View.GONE
+            binding.includeContent.groupMemberRecyclerView.visibility = View.GONE
+            binding.includeContent.blockUser.visibility = View.GONE
             return
         }
 
         groupMembers.forEach { excludedUIDs.add(it.uid) }
 
         if(isAdmin)
-            add_group_member_btn.visibility = View.VISIBLE
+            binding.includeContent.addGroupMemberBtn.visibility = View.VISIBLE
 
-        add_group_member_btn.setOnClickListener {
+        binding.includeContent.addGroupMemberBtn.setOnClickListener {
             startActivityForResult(Intent(this, MultiContactChooserActivity::class.java)
                 .apply { putStringArrayListExtra(utils.constants.KEY_EXCLUDED_LIST, excludedUIDs as ArrayList<String>) }, 101)
         }
 
         class memberHolder(itemView: View): RecyclerView.ViewHolder(itemView){
-            var name = itemView.name!!
-            var profilePic = itemView.pic!!
-            var admin = itemView.admin_textview!!
+            var name = itemView.findViewById<TextView>(R.id.name)
+            var profilePic = itemView.findViewById<ImageView>(R.id.pic)
+            var admin = itemView.findViewById<TextView>(R.id.admin_textview)
 
         }
 
-        group_member_recycler_view.adapter = object : RecyclerView.Adapter<memberHolder>() {
+        binding.includeContent.groupMemberRecyclerView.adapter = object : RecyclerView.Adapter<memberHolder>() {
             override fun onCreateViewHolder(p0: ViewGroup, p1: Int): memberHolder {
                 return memberHolder(layoutInflater.inflate(R.layout.item_group_member_layout, p0, false))
             }
@@ -570,7 +571,7 @@ class UserProfileActivity : AppCompatActivity() {
             utils.printIntentKeyValues(intent)
             //Now add members
             val selectedUsers = data?.getParcelableArrayListExtra<Models.Contact>(utils.constants.KEY_SELECTED)
-                    as java.util.ArrayList<Models.Contact>?
+                    as ArrayList<Models.Contact>?
 
             val progressDialog = ProgressDialog.show(this, "", "Please wait...", true, false)
 
@@ -659,18 +660,18 @@ class UserProfileActivity : AppCompatActivity() {
     }
 
     class imageHolder(itemView:View): RecyclerView.ViewHolder(itemView){
-        val imageView = itemView.iv_thumbnail_image
+        val imageView = itemView.findViewById<ImageView>(R.id.iv_thumbnail_image)
 
     }
 
     class videoHolder(itemView:View): RecyclerView.ViewHolder(itemView){
-        val imageView = itemView.iv_thumbnail_video
-        val length = itemView.txt_duration
-        val thumbnailIcon = itemView.iv_camera_video
-        val layoutDuration = itemView.layout_duration
+        val imageView = itemView.findViewById<ImageView>(R.id.iv_thumbnail_video)
+        val length = itemView.findViewById<TextView>(R.id.txt_duration)
+        val thumbnailIcon = itemView.findViewById<ImageView>(R.id.iv_camera_video)
+        val layoutDuration = itemView.findViewById<View>(R.id.layout_duration)
         init {
             thumbnailIcon.hide()
-            layoutDuration.setBackgroundResource(R.color.vw_ShadowItem)
+            layoutDuration.setBackgroundResource(R.color.md_grey_300)
         }
 
     }

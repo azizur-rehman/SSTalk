@@ -2,16 +2,18 @@
 
 
     <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+    <style name="AppTheme" parent="Theme.Material3.Light">
         <!-- Customize your theme here. -->
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
         <item name="android:textAppearance">@style/TextBaseFontStyle</item>
-        <item name="android:fontFamily">@font/segoeui</item>
+        <item name="android:fontFamily">@font/airbnb_light</item>
         <!--<item name="searchViewStyle">@style/MySearchViewStyle</item>-->
         <item name="bottomSheetDialogTheme">@style/AppBottomSheetDialogTheme</item>
-
+        <item name="android:actionModeBackground">@color/colorPrimary</item>
+        <item name="actionModeBackground">@color/colorPrimary</item>
+        <item name="android:windowBackground">@color/white</item>
 
     </style>
 
@@ -20,6 +22,7 @@
         <item name="windowNoTitle">true</item>
         <item name="actionModeBackground">@color/colorPrimaryDark</item>
         <item name="windowActionModeOverlay">true</item>
+        <item name="android:windowBackground">@color/white</item>
     </style>
 
 

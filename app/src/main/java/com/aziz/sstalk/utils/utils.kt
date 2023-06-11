@@ -1,6 +1,8 @@
 package com.aziz.sstalk.utils
 
 import android.Manifest
+import android.Manifest.permission.READ_EXTERNAL_STORAGE
+import android.Manifest.permission.WRITE_EXTERNAL_STORAGE
 import android.animation.Animator
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -12,14 +14,15 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.database.Cursor
 import android.graphics.*
+import android.graphics.ColorSpace.Model
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.*
+import android.os.Build.VERSION
+import android.os.Build.VERSION.SDK_INT
 import android.provider.ContactsContract
 import android.provider.MediaStore
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import androidx.core.app.ActivityCompat
-import androidx.core.content.FileProvider
+import android.provider.Settings
 import android.text.SpannableString
 import android.text.style.BackgroundColorSpan
 import android.util.Log
@@ -30,18 +33,23 @@ import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.TranslateAnimation
 import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
+import android.widget.RatingBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.app.ActivityCompat
+import androidx.core.app.ActivityCompat.startActivityForResult
+import androidx.core.content.FileProvider
 import com.aziz.sstalk.BuildConfig
 import com.aziz.sstalk.R
 import com.aziz.sstalk.models.Models
 import com.bumptech.glide.Glide
+import com.google.android.gms.ads.nativead.NativeAd
+import com.google.android.gms.ads.nativead.NativeAdView
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.auth.FirebaseAuth
-import org.jetbrains.anko.toast
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
-import java.lang.Exception
 import java.text.DecimalFormat
 import java.text.SimpleDateFormat
 import java.util.*
@@ -78,6 +86,8 @@ object utils {
 
 
         const val KEY_MSG_MODEL = "msg_model"
+        const val MSG_MODELS = "msg_models"
+        const val KEY_MSG_ID = "msg_id"
 
         const val KEY_LATITUDE = "lat"
         const val KEY_LONGITUDE = "lng"
@@ -136,48 +146,45 @@ object utils {
 
     fun getContactList(context: Context?) : MutableList<Models.Contact>{
 
-        val numberList:MutableList<Models.Contact> = mutableListOf()
-        val cursor = context!!.contentResolver.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null , null, null , null)
+        val contacts = mutableListOf<Models.Contact>()
 
-        while(cursor!!.moveToNext()){
+        // Define the columns you want to retrieve from the database
+        val projection = arrayOf(
+            ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+            ContactsContract.CommonDataKinds.Phone.NUMBER,
+            ContactsContract.CommonDataKinds.Phone.PHOTO_URI
+        )
 
-            var name = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME))
-            var number = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER))
+        // Specify the sorting order for the results
+        val sortOrder = "${ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME} ASC"
 
-            var pic = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.PHOTO_THUMBNAIL_URI))
+        // Perform the query
+        val cursor = context?.contentResolver?.query(
+            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+            projection,
+            null,
+            null,
+            sortOrder
+        )
 
-            number = utils.getFormattedTenDigitNumber(number)
+        cursor?.use {
+            val nameColumnIndex = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
+            val phoneNumberColumnIndex = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+            val photoUriColumnIndex = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.PHOTO_URI)
 
-            if(pic == null)
-                pic = ""
+            while (it.moveToNext()) {
+                val name = it.getString(nameColumnIndex)
+                val phoneNumber = it.getString(phoneNumberColumnIndex)
+                val photoUri = it.getString(photoUriColumnIndex)
 
-            if(name == null)
-                name = ""
-
-
-
-            var isDuplicate = false
-            for(item in numberList){
-                if(item.number == number ) {
-                    isDuplicate = true
-                    break
-
-                }
-
+                val contact = Models.Contact(name, phoneNumber, photoUri?:"")
+                if(!contacts.any { it.number == contact.number })
+                    contacts.add(contact)
             }
-
-            if(FirebaseUtils.isLoggedIn()){
-                isDuplicate = FirebaseAuth.getInstance().currentUser!!.phoneNumber == number
-            }
-
-            if(!isDuplicate && !numberList.any { it.number == number })
-                numberList.add(Models.Contact(name, number , pic))
-
-
         }
 
-        cursor.close()
-        return numberList
+        return contacts
+
 
     }
 
@@ -190,8 +197,55 @@ object utils {
     fun hasRecordingPermission(context: Context) = (ActivityCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED)
 
 
-    fun hasStoragePermission(context: Context) = (ActivityCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
-            && (ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
+    fun hasStoragePermission(context: Context): Boolean {
+        return if(false){
+//        if (VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            Environment.isExternalStorageManager();
+        } else {
+            ((ActivityCompat.checkSelfPermission(
+                context,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+            ) == PackageManager.PERMISSION_GRANTED)
+                    && (ActivityCompat.checkSelfPermission(
+                context,
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            ) == PackageManager.PERMISSION_GRANTED))
+        }
+    }
+
+    const val STORAGE_PERMISSION_REQUEST_CODE = 1031
+    fun Activity.requestStoragePermission(rc:Int = STORAGE_PERMISSION_REQUEST_CODE) {
+        showInfoDialog(getString(R.string.app_name) + " requires storage permission to continue. Press Ok to allow"){
+//        if (SDK_INT >= Build.VERSION_CODES.R) {
+            if(false){
+
+            try {
+                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+                intent.addCategory("android.intent.category.DEFAULT")
+                intent.data =
+                    Uri.parse(
+                        java.lang.String.format(
+                            "package:%s",
+                            applicationContext.packageName
+                        )
+                    )
+                startActivityForResult(intent, rc)
+            } catch (e: Exception) {
+                val intent = Intent()
+                intent.action = Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION
+                startActivityForResult(intent, rc)
+            }
+        } else {
+            //below android 11
+            ActivityCompat.requestPermissions(
+                this, arrayOf<String>(
+                    WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE
+                ), rc
+            )
+        }
+        }
+    }
+
 
     fun getLocalTime(timeInMillis: Long): String{
 
@@ -201,7 +255,7 @@ object utils {
 
         sdf.timeZone = TimeZone.getDefault()
 
-        return sdf.format(calendar.time).toUpperCase().replace(".","")
+        return sdf.format(calendar.time).uppercase(Locale.getDefault()).replace(".","")
     }
 
     fun getLocalDate(timeInMillis: Long): String{
@@ -282,18 +336,18 @@ object utils {
         animator.duration = 300
 
         animator.addListener(object : Animator.AnimatorListener{
-            override fun onAnimationRepeat(animation: Animator?) {
+            override fun onAnimationRepeat(animation: Animator) {
             }
 
-            override fun onAnimationEnd(animation: Animator?) {
+            override fun onAnimationEnd(animation: Animator) {
             }
 
-            override fun onAnimationCancel(animation: Animator?) {
+            override fun onAnimationCancel(animation: Animator) {
                 activity.window.setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
                     WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE)
             }
 
-            override fun onAnimationStart(animation: Animator?) {
+            override fun onAnimationStart(animation: Animator) {
                 view.visibility = View.VISIBLE
                 activity.window.clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE)
             }
@@ -327,17 +381,17 @@ object utils {
         animator.duration = 400
 
         animator.addListener(object : Animator.AnimatorListener{
-            override fun onAnimationRepeat(animation: Animator?) {
+            override fun onAnimationRepeat(animation: Animator) {
             }
 
-            override fun onAnimationEnd(animation: Animator?) {
+            override fun onAnimationEnd(animation: Animator) {
                 view.visibility = View.GONE
             }
 
-            override fun onAnimationCancel(animation: Animator?) {
+            override fun onAnimationCancel(animation: Animator) {
             }
 
-            override fun onAnimationStart(animation: Animator?) {
+            override fun onAnimationStart(animation: Animator) {
             }
 
         })
@@ -414,7 +468,7 @@ object utils {
     fun getSentBitmapFile(context: Context?, messageIdForName:String):File{
         val fileName = "$messageIdForName.jpg"
 
-        val path = Environment.getExternalStorageDirectory().toString()+"/"+ context!!.getString(R.string.app_name).toString()+"" +
+        val path = appFolder + context!!.getString(R.string.app_name).toString()+"" +
                 "/Images/Sent/"
 
         if(!File(path).exists())
@@ -424,7 +478,7 @@ object utils {
     }
 
     val appFolder:String
-    get() = Environment.getExternalStorageDirectory().toString()+"/SS Talk"
+    get() = "/storage/emulated/0/Android/media/com.aziz.sstalk/SS Talk/"
 
     val sentAudioPath:String
     get() = "$appFolder/Audio/Sent"
@@ -472,9 +526,9 @@ object utils {
         return try {
 
             val retriever = MediaMetadataRetriever()
-            retriever.setDataSource(context, utils.getUriFromFile(context,  File(videoFilePath)))
+            retriever.setDataSource(context, getUriFromFile(context,  File(videoFilePath)))
             val time = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
-            val timeInMillisec = time.toLong()
+            val timeInMillisec = time!!.toLong()
 
             retriever.release()
 
@@ -489,13 +543,13 @@ object utils {
     fun startVideoIntent(context: Context, videoPath: String){
       try{
             val videoIntent = Intent(Intent.ACTION_VIEW)
-            val uri =utils.getUriFromFile(context,  File(videoPath))
+            val uri = getUriFromFile(context,  File(videoPath))
             videoIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             videoIntent.setDataAndType(uri, "video/*")
             context.startActivity(videoIntent)
         }
         catch (e:Exception){
-            utils.toast(context, e.message.toString())
+            toast(context, e.message.toString())
         }
     }
 
@@ -505,7 +559,7 @@ object utils {
 
         try {
             val playIntent = Intent(Intent.ACTION_VIEW)
-            playIntent.setDataAndType(utils.getUriFromFile(context, File(path)), "audio/*")
+            playIntent.setDataAndType(getUriFromFile(context, File(path)), "audio/*")
             playIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             context.startActivity(playIntent)
         }
@@ -596,7 +650,7 @@ object utils {
 
         val fileName = "$messageIdForName.mp4"
 
-        val path = Environment.getExternalStorageDirectory().toString()+"/"+ context!!.getString(R.string.app_name).toString()+"" +
+        val path = appFolder+"/"+ context!!.getString(R.string.app_name).toString()+"" +
                 "/Video/Received/"
 
         if(!File(path).exists())
@@ -633,9 +687,9 @@ object utils {
 
         //getting video length
         val retriever = MediaMetadataRetriever()
-        retriever.setDataSource(context, utils.getUriFromFile(context, file))
+        retriever.setDataSource(context, getUriFromFile(context, file))
         val time = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
-        val timeInMillisec = time.toLong()
+        val timeInMillisec = time!!.toLong()
 
         retriever.release()
 
@@ -657,9 +711,9 @@ object utils {
     fun highlightTextView(textView: TextView, highlightedText:String, color:Int) {
 
         try {
-            val text = textView.text.toString().toLowerCase()
+            val text = textView.text.toString().lowercase(Locale.getDefault())
 
-            val startIndex = text.indexOf(highlightedText.toLowerCase())
+            val startIndex = text.indexOf(highlightedText.lowercase(Locale.getDefault()))
             val endIndex = startIndex + highlightedText.length
 
             val spannableString = SpannableString(text)
@@ -741,24 +795,27 @@ object utils {
         try {
 
 
-            if(number == getFormattedTenDigitNumber(FirebaseUtils.getPhoneNumber())
-                || number.contains(getFormattedTenDigitNumber(FirebaseUtils.getPhoneNumber()))) {
-                return "You"
+            // Define the URI to query the ContactsContract database
+            val uri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(getFormattedTenDigitNumber(number)))
+
+            // Specify the columns you want to retrieve from the database
+            val projection = arrayOf(ContactsContract.PhoneLookup.DISPLAY_NAME)
+
+            // Perform the query
+            val cursor = context.contentResolver.query(uri, projection, null, null, null)
+
+            // Check if a contact was found
+            if (cursor != null && cursor.moveToFirst()) {
+                val name = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.PhoneLookup.DISPLAY_NAME))
+                cursor.close()
+                return name
             }
 
-            val list = utils.getContactList(context)
-
-            for (item in list) {
-                val formattedNumber = utils.getFormattedTenDigitNumber(item.number)
-                if (getFormattedTenDigitNumber(number) == formattedNumber) {
-                    return item.name
-                }
-            }
+            return number
         }
         catch (e:Exception){
             return number
         }
-        return number
     }
 
 
@@ -905,5 +962,40 @@ object utils {
         animate.duration = 500
         animate.fillAfter = false
         view.startAnimation(animate)
+    }
+
+
+
+    fun populateNativeAdView(nativeAd: NativeAd, adView: NativeAdView) {
+        // Set the media view
+//        val mediaView = adView.findViewById<MediaView>(R.id.ad_media)
+//        adView.mediaView = mediaView
+
+
+        adView.show()
+
+        // Set other ad assets
+        adView.headlineView = adView.findViewById<TextView?>(R.id.ad_name).apply {
+            text = nativeAd.headline
+        }
+        adView.bodyView = adView.findViewById<TextView?>(R.id.ad_subtitle).apply {
+            text = nativeAd.body
+        }
+        adView.callToActionView = adView.findViewById<TextView?>(R.id.ad_call_to_action).apply {
+            text = nativeAd.callToAction
+        }
+        adView.iconView = adView.findViewById<ImageView?>(R.id.ad_pic).apply {
+            setImageDrawable(nativeAd.icon?.drawable)
+        }
+        adView.advertiserView = adView.findViewById<TextView?>(R.id.ad_side_text).apply {
+            text = nativeAd.advertiser
+        }
+//        adView.storeView = adView.findViewById(R.id.ad_store)
+//        adView.priceView = adView.findViewById(R.id.ad_price)
+        adView.starRatingView = adView.findViewById<RatingBar?>(R.id.ad_rating).apply {
+            rating = (nativeAd.starRating?:0.0).toFloat()
+        }
+//        adView.storeRootView = adView.findViewById(R.id.ad_store_root)
+        adView.setNativeAd(nativeAd)
     }
 }

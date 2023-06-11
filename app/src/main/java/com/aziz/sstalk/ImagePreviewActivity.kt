@@ -10,31 +10,29 @@ import android.util.Log
 import android.view.MenuItem
 import android.view.View
 import com.aziz.sstalk.adapters.ViewPagerImageAdapter
+import com.aziz.sstalk.databinding.ActivityImagePreviewBinding
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.utils
 import com.squareup.picasso.NetworkPolicy
 import com.squareup.picasso.Picasso
 import com.squareup.picasso.Target
-import kotlinx.android.synthetic.main.activity_image_preview.*
 import java.io.File
 import java.lang.Exception
 
 class ImagePreviewActivity : AppCompatActivity() {
 
-
+    lateinit var binding:ActivityImagePreviewBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_image_preview)
+        binding = ActivityImagePreviewBinding.inflate(layoutInflater).apply { setContentView(root) }
 
 
-        setSupportActionBar(toolbar)
+        setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            window.statusBarColor = Color.BLACK
-        }
+        window.statusBarColor = Color.BLACK
 
         title = ""
 
@@ -52,7 +50,7 @@ class ImagePreviewActivity : AppCompatActivity() {
                 "Sender"
 
 
-            toolbar.subtitle = utils.getLocalDate(it.timeInMillis) +" "+utils.getLocalTime(it.timeInMillis)
+            binding.toolbar.subtitle = utils.getLocalDate(it.timeInMillis) +" "+utils.getLocalTime(it.timeInMillis)
         }
 
 
@@ -84,15 +82,15 @@ class ImagePreviewActivity : AppCompatActivity() {
             }
 
             override fun onBitmapLoaded(bitmap: Bitmap?, from: Picasso.LoadedFrom?) {
-                preview.setImageBitmap(bitmap)
+                binding.preview.setImageBitmap(bitmap)
                 //utils.toast(this@ImagePreviewActivity, "Loaded")
-                progress_bar.visibility = View.GONE
+                binding.progressBar.visibility = View.GONE
 
             }
 
         }
 
-        preview.tag = target
+        binding.preview.tag = target
 
         if(File(imgLocalPath).exists()){
 
@@ -123,9 +121,9 @@ class ImagePreviewActivity : AppCompatActivity() {
     }
 
 
-    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
 
-        when(item!!.itemId){
+        when(item.itemId){
             android.R.id.home ->{
                 finish()
             }

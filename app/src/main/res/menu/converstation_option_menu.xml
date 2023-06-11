@@ -8,12 +8,14 @@
 
     <item android:title="Mark as read"
           android:id="@+id/action_mark_as_read"
+            app:iconTint="@color/black"
           app:showAsAction="never"
     />
 
     <item android:title="Mute Notifications"
           android:id="@+id/action_mute"
           android:visible="false"
+            app:iconTint="@color/black"
           app:showAsAction="never"/>
 
 </menu>

@@ -85,7 +85,7 @@ class AboutTheDeveloperActivity : AppCompatActivity(){
             .show()
     }
 
-    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
         //just finishing this activity
         finish()
         return super.onOptionsItemSelected(item)

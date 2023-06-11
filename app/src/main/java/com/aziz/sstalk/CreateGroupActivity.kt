@@ -6,16 +6,17 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import androidx.core.content.ContextCompat
-import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.RecyclerView
+import com.aziz.sstalk.databinding.ActivityCreateGroupBinding
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.utils
@@ -24,10 +25,7 @@ import com.google.android.gms.tasks.Task
 import com.google.firebase.storage.UploadTask
 import com.theartofdev.edmodo.cropper.CropImage
 import com.theartofdev.edmodo.cropper.CropImageView
-import kotlinx.android.synthetic.main.activity_create_group.*
-import kotlinx.android.synthetic.main.item_grid_contact_layout.*
-import kotlinx.android.synthetic.main.item_grid_contact_layout.view.*
-import kotlinx.android.synthetic.main.layout_profile_image_picker.*
+import de.hdodenhof.circleimageview.CircleImageView
 import me.shaohui.advancedluban.Luban
 import me.shaohui.advancedluban.OnCompressListener
 import org.jetbrains.anko.toast
@@ -43,16 +41,18 @@ class CreateGroupActivity : AppCompatActivity() {
     lateinit var imageFile:File
     val context = this@CreateGroupActivity
 
+    lateinit var binding: ActivityCreateGroupBinding
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_create_group)
+        binding = ActivityCreateGroupBinding.inflate(layoutInflater).apply {  setContentView(root) }
 
         title = "Create new Group"
 
-        profile_circleimageview.setImageResource(R.drawable.ic_group_white_24dp)
-        profile_circleimageview.circleBackgroundColor = ContextCompat.getColor(this, R.color.colorPrimary)
+        binding.includeImagePicker.profileCircleimageview.setImageResource(R.drawable.ic_group_white_24dp)
+        binding.includeImagePicker.profileCircleimageview.circleBackgroundColor = ContextCompat.getColor(this, R.color.colorPrimary)
 
-        add_participant_btn.setOnClickListener {
+        binding.addParticipantBtn.setOnClickListener {
 
             val excludedUIDs:MutableList<String> = ArrayList()
              participantList.forEach { excludedUIDs.add(it.uid) }
@@ -63,7 +63,7 @@ class CreateGroupActivity : AppCompatActivity() {
 
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        profile_pick_btn.setOnClickListener {
+        binding.includeImagePicker.profilePickBtn.setOnClickListener {
 
             CropImage.activity()
                 .setGuidelines(CropImageView.Guidelines.ON)
@@ -80,10 +80,10 @@ class CreateGroupActivity : AppCompatActivity() {
 
     private fun setGridAdapter(selectedUsers:ArrayList<Models.Contact>?) {
 
-        participant_recyclerview.layoutManager = androidx.recyclerview.widget.GridLayoutManager(this, 4)
-        participant_recyclerview.setHasFixedSize(true)
+        binding.participantRecyclerview.layoutManager = androidx.recyclerview.widget.GridLayoutManager(this, 4)
+        binding.participantRecyclerview.setHasFixedSize(true)
 
-        val horizontalAdapter = object : androidx.recyclerview.widget.RecyclerView.Adapter<ParticipantHolder>() {
+        val horizontalAdapter = object : RecyclerView.Adapter<ParticipantHolder>() {
             override fun onCreateViewHolder(p0: ViewGroup, p1: Int): ParticipantHolder {
                 return ParticipantHolder(
                     layoutInflater.inflate(
@@ -117,7 +117,7 @@ class CreateGroupActivity : AppCompatActivity() {
 
         }
 
-        participant_recyclerview.adapter = horizontalAdapter
+        binding.participantRecyclerview.adapter = horizontalAdapter
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -142,14 +142,14 @@ class CreateGroupActivity : AppCompatActivity() {
 
                         imageFile = file!!
                         bitmap = BitmapFactory.decodeFile(file.path)
-                        profile_circleimageview.setImageBitmap(bitmap)
+                        binding.includeImagePicker.profileCircleimageview.setImageBitmap(bitmap)
                         isProfileChanged = true
 
                     }
 
                     override fun onError(e: Throwable?) {
                         bitmap = BitmapFactory.decodeFile(filePath)
-                        profile_circleimageview.setImageBitmap(bitmap)
+                        binding.includeImagePicker.profileCircleimageview.setImageBitmap(bitmap)
                         isProfileChanged = true
 
                     }
@@ -179,10 +179,11 @@ class CreateGroupActivity : AppCompatActivity() {
     }
 
 
-    class ParticipantHolder(itemView: View): androidx.recyclerview.widget.RecyclerView.ViewHolder(itemView){
-        val name = itemView.grid_name!!
-        val pic = itemView.grid_pic!!
-        val cancelBtn = itemView.grid_cancel_btn!!
+    class ParticipantHolder(itemView: View): RecyclerView.ViewHolder(itemView){
+
+        val name = itemView.findViewById<TextView>(R.id.grid_name)
+        val pic = itemView.findViewById<CircleImageView>(R.id.grid_pic)
+        val cancelBtn = itemView.findViewById<View>(R.id.grid_cancel_btn)
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -191,21 +192,21 @@ class CreateGroupActivity : AppCompatActivity() {
     }
 
 
-    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
 
-        if(item!!.itemId == android.R.id.home){
+        if(item.itemId == android.R.id.home){
             finish()
         }
         else{
             //create group
 
-            if(group_name_edittext.text.isEmpty()){
-                group_name_edittext.error = "Group name cannot be empty"
+            if(binding.groupNameEdittext.text.isEmpty()){
+                binding.groupNameEdittext.error = "Group name cannot be empty"
                 return false
             }
 
-            if(group_name_edittext.text.length <=3){
-                group_name_edittext.error = "Too short for a group name"
+            if(binding.groupNameEdittext.text.length <=3){
+                binding.groupNameEdittext.error = "Too short for a group name"
                 return false
             }
 
@@ -227,7 +228,7 @@ class CreateGroupActivity : AppCompatActivity() {
     private fun createGroup(groupID: String){
 
 
-        val groupName = group_name_edittext.text.toString().trim()
+        val groupName = binding.groupNameEdittext.text.toString().trim()
 
         val groupInfo = Models.Group(groupName,
             createdBy = FirebaseUtils.getUid(),

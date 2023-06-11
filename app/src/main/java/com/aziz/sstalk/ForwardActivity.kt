@@ -6,12 +6,9 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.net.Uri
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Parcelable
 import android.provider.MediaStore
-import com.google.android.material.snackbar.Snackbar
-import androidx.recyclerview.widget.RecyclerView
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
@@ -20,32 +17,31 @@ import android.view.ViewGroup
 import android.widget.Filter
 import android.widget.Filterable
 import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.RecyclerView
+import androidx.work.*
+import com.aziz.sstalk.databinding.ActivityForwardBinding
+import com.aziz.sstalk.databinding.ItemContactLayoutBinding
+import com.aziz.sstalk.firebase.ForwardWorker
+import com.aziz.sstalk.firebase.UploadWorker
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.*
+import com.aziz.sstalk.views.AnimCheckBox
 import com.firebase.ui.database.FirebaseRecyclerAdapter
 import com.firebase.ui.database.FirebaseRecyclerOptions
-import com.google.android.gms.tasks.Continuation
-import com.google.android.gms.tasks.Task
+import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
-import com.google.firebase.storage.FirebaseStorage
-import com.google.firebase.storage.UploadTask
 import com.miguelcatalan.materialsearchview.MaterialSearchView
-import kotlinx.android.synthetic.main.activity_forward.*
-import kotlinx.android.synthetic.main.item_contact_layout.view.*
+import de.hdodenhof.circleimageview.CircleImageView
 import me.shaohui.advancedluban.Luban
 import me.shaohui.advancedluban.OnCompressListener
+import org.jetbrains.anko.*
 import org.jetbrains.anko.collections.forEachWithIndex
-import org.jetbrains.anko.doAsyncResult
-import org.jetbrains.anko.longToast
-import org.jetbrains.anko.onComplete
-import org.jetbrains.anko.uiThread
 import java.io.File
-import java.lang.Exception
 import java.util.*
 import java.util.concurrent.Future
-import kotlin.collections.ArrayList
 
 class ForwardActivity : AppCompatActivity() {
 
@@ -78,19 +74,21 @@ class ForwardActivity : AppCompatActivity() {
 
     var fwd_snackbar: Snackbar? = null
 
-    var messageModels: MutableList<Models.MessageModel>? = ArrayList()
+    var messageModels: MutableList<Models.MessageModel> = mutableListOf()
 
     var progressDialog:ProgressDialog? = null
 
     var currentMessageID = ""
     private var asyncLoader: Future<Unit>? = null
 
+    lateinit var binding:ActivityForwardBinding
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_forward)
+        binding = ActivityForwardBinding.inflate(layoutInflater).apply {  setContentView(root) }
 
-        setSupportActionBar(toolbar)
+        setSupportActionBar(binding.toolbar)
 
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
@@ -101,27 +99,28 @@ class ForwardActivity : AppCompatActivity() {
         }
 
 
-        fwd_snackbar = Snackbar.make(sendBtn, "", Snackbar.LENGTH_INDEFINITE)
+        fwd_snackbar = Snackbar.make(binding.sendBtn, "", Snackbar.LENGTH_INDEFINITE)
 
-        caption_layout.visibility = View.GONE
+        binding.captionLayout.visibility = View.GONE
 
-        recyclerLayout.visibility = View.GONE
-        asyncLoader = doAsyncResult {
-            uiThread { setFrequentAdapter() }
-            onComplete { uiThread { recyclerLayout.visibility = View.VISIBLE } }
+        binding.recyclerLayout.visibility = View.GONE
 
-        }
+        setFrequentAdapter()
+        binding.recyclerLayout.visibility = View.VISIBLE
 
         myUID = FirebaseUtils.getUid()
 
-        messageModels = intent.getSerializableExtra(utils.constants.KEY_MSG_MODEL) as? MutableList<Models.MessageModel>
+        messageModels = intent.getSerializableExtra(utils.constants.KEY_MSG_MODEL) as? MutableList<Models.MessageModel>?: mutableListOf()
 
 
         if(messageModels.isNullOrEmpty())
+        {
+            messageModels = mutableListOf()
             handleIncomingIntents(intent)
+        }
 
 
-        sendBtn?.setOnClickListener {
+        binding.sendBtn?.setOnClickListener {
 
 
 
@@ -129,7 +128,7 @@ class ForwardActivity : AppCompatActivity() {
                     //image is sent via intent
 
                     if(bitmap!=null){
-                        val messageID = "MSG${System.currentTimeMillis()}"
+                        val messageID = "IMG_${System.currentTimeMillis()}"
                         val currentFile = utils.saveBitmapToSent(context, bitmap!!, messageID)
                         Luban.compress(context, File(currentFile))
                             .putGear(Luban.THIRD_GEAR)
@@ -166,7 +165,7 @@ class ForwardActivity : AppCompatActivity() {
                 else if(isVideoFromIntent){
 
                     if(currentVideoFile!=null){
-                        val messageID = "MSG${System.currentTimeMillis()}"
+                        val messageID = "VID_${System.currentTimeMillis()}"
                         progressDialog?.setMessage("Please wait...")
                         progressDialog?.show()
                         uploadAndForward(messageID, currentVideoFile!!, currentVideoFile!!,
@@ -187,100 +186,62 @@ class ForwardActivity : AppCompatActivity() {
     private fun onForwardToSelectedUIDs() {
 
 
-        selectedUIDs.forEachWithIndex { i, it->
 
-            var messageID = "MSG${System.currentTimeMillis()}"
-
-            if(currentMessageID.isNotEmpty())
-                messageID = currentMessageID
-
-            val targetUID = it
-
-            val positionInMainList = allFrequentUIDs.indexOf(it)
+        val forwardRequests:MutableList<OneTimeWorkRequest> = mutableListOf()
 
 
-        for (model in messageModels!!) {
+
+        selectedUIDs.forEachWithIndex { i, targetUID->
+
+            var messageID: String
+
+
+            messageModels.forEach {model ->
+
+                messageID = "MSG${System.currentTimeMillis()}"
+
+            val replacement = when(model.messageType){
+                utils.constants.FILE_TYPE_IMAGE -> "IMG_"
+                utils.constants.FILE_TYPE_VIDEO -> "VID_"
+                utils.constants.FILE_TYPE_AUDIO -> "AUD_"
+
+                utils.constants.FILE_TYPE_LOCATION -> "LOC_"
+                else -> "MSG"
+
+            }
+
+            messageID = messageID.replace("MSG", replacement)
+
             model.from = myUID
             model.timeInMillis = System.currentTimeMillis()
             model.reverseTimeStamp = model.timeInMillis * -1
             model.to = targetUID
-            model.caption = ""
+            model.caption = binding.captionEditText.text.toString()
 
-            if(caption_layout.visibility == View.VISIBLE && captionEditText.text.isNotEmpty())
-                model.caption = captionEditText.text.toString()
-
-            val currentModel = model
-            var nameOrNumber: String
-            var type: String
-
-            if(positionInMainList > -1) {
-                 nameOrNumber = allFrequentConverstation[positionInMainList].nameOrNumber
-                 type = allFrequentConverstation[positionInMainList].type
-            }
-            else{
-                nameOrNumber = registeredAvailableUser.filter { it.uid == targetUID }[0].number
-                type = FirebaseUtils.KEY_CONVERSATION_SINGLE
-            }
+            if(binding.captionLayout.visibility == View.VISIBLE && binding.captionEditText.text.isNotEmpty())
+                model.caption = binding.captionEditText.text.toString()
 
 
-            if(nameOrNumber.isEmpty()){
-                nameOrNumber = if(utils.isGroupID(targetUID)) selectedTitles[i]
-                else selectedNumbers[i]
-            }
+            val inputData = workDataOf(
+                msg_id to messageID,
+                msg_model to model.convertToJsonString(),
+                target_uid to targetUID,
+                key_nameOrNumber to selectedNumbers.getOrNull(i)
+            )
+            val request = OneTimeWorkRequestBuilder<ForwardWorker>()
+                .setInputData(inputData)
+                .build()
 
-            val isGroup = utils.isGroupID(targetUID)
+            forwardRequests.add(request)
 
-            //send to my node
-            FirebaseUtils.ref.getChatRef(myUID, targetUID)
-                .child(messageID)
-                .setValue(currentModel)
-                .addOnSuccessListener {
-                    FirebaseUtils.setMessageStatusToDB(messageID, myUID, targetUID, true, isRead = true,
-                        groupNameIf = nameOrNumber)
+                Log.d("ForwardActivity", "onForwardToSelectedUIDs: ${model.message} $messageID to $targetUID")
 
-                    FirebaseUtils.ref.lastMessage(myUID)
-                        .child(targetUID)
-                        .setValue(Models.LastMessageDetail(nameOrNumber =  nameOrNumber ,
-                            type = type))
-
-                }
-
-            currentModel.file_local_path = ""
-
-
-            if(utils.isGroupID(targetUID)){
-                //send to group members
-                Log.d("ForwardActivity", "onForwardToSelectedUIDs: group id = $targetUID")
-                addMessageToGroupMembers(messageID, currentModel, targetUID, nameOrNumber)
-            }
-            else {
-                //send to target node
-                FirebaseUtils.ref.getChatRef(targetUID, FirebaseUtils.getUid())
-                    .child(messageID)
-                    .setValue(currentModel)
-                    .addOnSuccessListener {
-                        FirebaseUtils.setMessageStatusToDB(messageID, targetUID, myUID, false, isRead = false,groupNameIf = "")
-
-                        FirebaseUtils.ref.lastMessage(targetUID)
-                            .child(myUID)
-                            .setValue(Models.LastMessageDetail(nameOrNumber = FirebaseUtils.getPhoneNumber(), type = type))
-                    }
-            }
         }
     }
 
-//        if(selectedUIDs.size == 1)
-//            startActivities(arrayOf(
-//                Intent(context, HomeActivity::class.java)
-//                    .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP),
-//                Intent(context, MessageActivity::class.java).apply {
-//                    putExtra(FirebaseUtils.KEY_UID, selectedUIDs[0])
-//                    putExtra(utils.constants.KEY_NAME_OR_NUMBER , allFrequentConverstation[0].nameOrNumber)
-//                )
-//                }
-//                )
-//            )
-//        else
+
+
+        WorkManager.getInstance().enqueue(forwardRequests)
 
             startActivity(Intent(context, HomeActivity::class.java)
                 .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP))
@@ -297,15 +258,15 @@ class ForwardActivity : AppCompatActivity() {
         progressDialog = ProgressDialog(this)
         progressDialog?.setCancelable(false)
 
-        caption_layout.visibility = View.VISIBLE
+        binding.captionLayout.visibility = View.VISIBLE
 
         if(intent.action == Intent.ACTION_SEND){
             when {
                 intent.type == "text/plain" -> {
                     val text = intent.getStringExtra(Intent.EXTRA_TEXT)?:return
-                    messageModels?.add(Models.MessageModel(text ))
+                    messageModels.add(Models.MessageModel(text ))
                     isTextFromIntent = true
-                    caption_layout?.visibility = View.GONE
+                    binding.captionLayout?.visibility = View.GONE
                 }
                 intent.type?.startsWith( "image/")?:false -> {
 
@@ -317,9 +278,9 @@ class ForwardActivity : AppCompatActivity() {
                     val imageURI = intent.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as Uri
                     bitmap = MediaStore.Images.Media.getBitmap(contentResolver, imageURI)
                     isImageFromIntent = true
-                    caption_layout.visibility = View.VISIBLE
+                    binding.captionLayout.visibility = View.VISIBLE
 
-                    preview.setImageBitmap(bitmap)
+                    binding.preview.setImageBitmap(bitmap)
 
                 }
                 intent.type?.startsWith("video/")?:false -> {
@@ -329,8 +290,8 @@ class ForwardActivity : AppCompatActivity() {
                         return
                     }
 
-                    play_icon.visibility = View.VISIBLE
-                    videoLength.visibility = View.VISIBLE
+                    binding.playIcon.visibility = View.VISIBLE
+                    binding.videoLength.visibility = View.VISIBLE
 
                     try{
                          val videoUri = intent.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as Uri
@@ -344,11 +305,11 @@ class ForwardActivity : AppCompatActivity() {
                         finish()
                     }
 
-                        videoLength.text = utils.getAudioVideoLength(context, videoFile.path)
+                        binding.videoLength.text = utils.getAudioVideoLength(context, videoFile.path)
 
-                     utils.setVideoThumbnailFromWebAsync(context, videoFile.path, preview)
+                     utils.setVideoThumbnailFromWebAsync(context, videoFile.path, binding.preview)
 
-                    if(videoFile.length() > (16 * 1024 * 1024)){
+                    if(videoFile.length() > max_file_size){
                         utils.toast(context, "Please choose a file smaller than 16 MB")
                         finish()
                     }
@@ -361,7 +322,7 @@ class ForwardActivity : AppCompatActivity() {
                         longToast("Failed to load video")
                         finish()
                     }
-                    caption_layout.visibility = View.VISIBLE
+                    binding.captionLayout.visibility = View.VISIBLE
 
                 }
             }
@@ -376,54 +337,34 @@ class ForwardActivity : AppCompatActivity() {
         fileType: String
     ){
 
+        val model = (Models.MessageModel("", isFile = true,
+            file_local_path = originalFile.path, file_size_in_bytes = file.length(),
+            messageType = fileType, caption = binding.captionEditText.text.toString()))
 
-        currentMessageID = messageID
-
-
-       val ref = FirebaseStorage.getInstance().reference
-           .child(fileType)
-            .child(messageID)
-
-           val uploadTask = ref.putFile(utils.getUriFromFile(context, file))
-
-               uploadTask
-                   .addOnProgressListener {
-                       val percentage:Double = (100.0 * it.bytesTransferred) / it.totalByteCount
-                       val percent = String.format("%.2f",percentage)
-                       progressDialog!!.setMessage("Uploading media $percent%")
-
-                   }
-                   .continueWithTask(Continuation<UploadTask.TaskSnapshot, Task<Uri>> { task ->
-                   if (!task.isSuccessful) {
-                       task.exception?.let {
-                           throw it
-                       }
-
-                   }
-                   return@Continuation ref.downloadUrl
-               })
-
-               .addOnCompleteListener { task->
-                progressDialog!!.dismiss()
-
-                val model = (Models.MessageModel(task.result.toString(), isFile = true,
-                    file_local_path = originalFile.path, file_size_in_bytes = file.length(),
-                    messageType = fileType))
-                   messageModels!!.add(model)
+        val uploadRequest = OneTimeWorkRequestBuilder<UploadWorker>()
+            .setInputData(workDataOf(
+                msg_id to messageID,
+                msg_model to model.convertToJsonString(),
+                selected_uids to selectedUIDs.joinToString(","),
+                key_nameOrNumber to selectedNumbers.joinToString(",")
+                ))
+            .addTag(messageID)
+            .build()
 
 
-                   FirebaseUtils.storeFileMetaData(
-                       Models.File(messageID,
-                           model.timeInMillis, fileType = fileType,
-                           fileSizeInBytes = file.length(),
-                           bucket_path = ref.bucket,
-                           file_url = task.result.toString(),
-                        file_extension = utils.getFileExtension(file)
-                       ))
+        WorkManager.getInstance().enqueueUniqueWork(messageID, ExistingWorkPolicy.KEEP, uploadRequest)
 
-                onForwardToSelectedUIDs()
-            }
+        WorkManager.getInstance().getWorkInfosForUniqueWorkLiveData("forward")
+            .observe(this, androidx.lifecycle.Observer {
+                it.forEach {
+                    Log.d("ForwardActivity", "uploadAndForward: ${it.outputData.keyValueMap}")
+                }
+            })
 
+        startActivity(Intent(context, HomeActivity::class.java)
+            .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP))
+
+        finish()
 
 
     }
@@ -456,7 +397,7 @@ class ForwardActivity : AppCompatActivity() {
 
         }
 
-        frequentRecyclerView.adapter = adapter
+        binding.frequentRecyclerView.adapter = adapter
 
         adapter?.startListening()
 
@@ -485,12 +426,13 @@ class ForwardActivity : AppCompatActivity() {
 
     val recyclerFilter = object : Filter(){
         override fun performFiltering(p0: CharSequence?): FilterResults {
-            val query = p0.toString().toLowerCase(Locale.getDefault()).trim()
+            val query = p0.toString().lowercase(Locale.getDefault()).trim()
 
             registeredAvailableUser = allAvailableUsers
 
-            registeredAvailableUser = registeredAvailableUser.filter { it.name.toLowerCase().contains(query)
-                    ||  it.number.toLowerCase().contains(query)}.toMutableList()
+            registeredAvailableUser = registeredAvailableUser.filter { it.name.lowercase(Locale.getDefault())
+                .contains(query)
+                    ||  it.number.lowercase(Locale.getDefault()).contains(query)}.toMutableList()
 
             return FilterResults().apply { values = registeredAvailableUser; count = registeredAvailableUser.size }
 
@@ -531,7 +473,7 @@ class ForwardActivity : AppCompatActivity() {
             }
 
         }
-        allContactRecyclerView.adapter = allContactAdapter
+        binding.allContactRecyclerView.adapter = allContactAdapter
 
 
 
@@ -539,33 +481,36 @@ class ForwardActivity : AppCompatActivity() {
 
 
     @SuppressLint("RestrictedApi")
-    private fun bindHolder(holder: ViewHolder, uid:String, phone:String, type:String){
+    private fun bindHolder(h: ViewHolder, uid:String, phone:String, type:String){
 
         val isGroup = type == FirebaseUtils.KEY_CONVERSATION_GROUP
 
-        if(forward_progressbar.visibility == View.VISIBLE)
-            forward_progressbar.visibility = View.GONE
+        if(binding.forwardProgressbar.visibility == View.VISIBLE)
+            binding.forwardProgressbar.visibility = View.GONE
 
-        holder.title.text = phone
+        val holder = ItemContactLayoutBinding.bind(h.itemView)
+
+
+        holder.name.text = phone
 
 
 
         if(isGroup) {
             FirebaseUtils.loadGroupPicThumbnail(context, uid, holder.pic)
             if(phone.isEmpty())
-                FirebaseUtils.setGroupName(uid, holder.title)
+                FirebaseUtils.setGroupName(uid, holder.name)
         }
         else {
             FirebaseUtils.loadProfileThumbnail(context, uid, holder.pic)
             if(phone.isNotEmpty()){
-                holder.title.text = utils.getNameFromNumber(context, phone)
+                holder.name.text = utils.getNameFromNumber(context, phone)
             }
             else{
-                FirebaseUtils.setUserDetailFromUID(context, holder.title, uid, true)
+                FirebaseUtils.setUserDetailFromUID(context, holder.name, uid, true)
             }
         }
 
-        holder.title.setTextColor(Color.BLACK)
+        holder.name.setTextColor(Color.BLACK)
 
         if(!isGroup) {
             //check if user is blocked
@@ -573,34 +518,36 @@ class ForwardActivity : AppCompatActivity() {
         }
         else{
             //check if not in group
-            checkIfInGroup(uid, holder)
+            checkIfInGroup(uid, h)
         }
 
-        holder.checkBox.isChecked = selectedUIDs.contains(uid)
-        holder.checkBox.invisible = !holder.checkBox.isChecked
+        holder.checkbox.isChecked = selectedUIDs.contains(uid)
+        holder.checkbox.invisible = !holder.checkbox.isChecked
 
 
-        holder.itemView.setOnClickListener {
-            holder.checkBox.isChecked = !holder.checkBox.isChecked
+        holder.root.setOnClickListener {
+            holder.checkbox.isChecked = !holder.checkbox.isChecked
 
-            holder.checkBox.invisible = !holder.checkBox.isChecked
+            holder.checkbox.invisible = !holder.checkbox.isChecked
 
-            if(holder.checkBox.isChecked) {
+            val nameOrNumber = if (isGroup) holder.name.text else phone
+
+            if(holder.checkbox.isChecked) {
                 selectedUIDs.add(uid)
-                selectedTitles.add(holder.title.text.toString())
-                selectedNumbers.add(phone)
+                selectedTitles.add(holder.name.text.toString())
+                selectedNumbers.add(nameOrNumber.toString())
             }
             else {
                 selectedUIDs.remove(uid)
-                selectedTitles.remove(holder.title.text.toString())
-                selectedNumbers.remove(phone)
+                selectedTitles.remove(holder.name.text.toString())
+                selectedNumbers.remove(nameOrNumber.toString())
             }
 
             nameOfRecipient  = selectedTitles.joinToString(", ")
 
              fwd_snackbar?.setText(">  ${nameOfRecipient.trim()}")
 
-            sendBtn.visibility = if(selectedUIDs.isEmpty()) View.GONE else View.VISIBLE
+            binding.sendBtn.visible = selectedUIDs.isNotEmpty()
 
             if(selectedUIDs.isEmpty()) { fwd_snackbar!!.dismiss(); nameOfRecipient = "" }
             else { if(!fwd_snackbar!!.isShown) fwd_snackbar!!.show() }
@@ -710,10 +657,10 @@ class ForwardActivity : AppCompatActivity() {
 
 
     class ViewHolder(view:View): RecyclerView.ViewHolder(view){
-         val title = view.name!!
-         val pic = view.pic!!
-         val checkBox = view.checkbox!!
-         val lastMessageTime:TextView = view.messageTime
+         val title = view.findViewById<TextView>(R.id.name)!!
+         val pic = view.findViewById<CircleImageView>(R.id.pic)!!
+         val checkBox = view.findViewById<AnimCheckBox>(R.id.checkbox)!!
+         val lastMessageTime:TextView = view.findViewById(R.id.messageTime)
 
         init {
             checkBox.isEnabled = false
@@ -731,8 +678,8 @@ class ForwardActivity : AppCompatActivity() {
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
 
         menuInflater.inflate(R.menu.menu_search, menu)
-         menu?.findItem(R.id.action_search)?.let { searchView.setMenuItem(it) }
-        searchView.setOnQueryTextListener(object : MaterialSearchView.OnQueryTextListener{
+         menu?.findItem(R.id.action_search)?.let { binding.searchView.setMenuItem(it) }
+        binding.searchView.setOnQueryTextListener(object : MaterialSearchView.OnQueryTextListener{
             override fun onQueryTextSubmit(query: String?): Boolean {
 
                 (allContactAdapter as? Filterable)?.filter?.filter(query)
@@ -753,24 +700,23 @@ class ForwardActivity : AppCompatActivity() {
 
 
     override fun onDestroy() {
-        asyncLoader?.cancel(true)
         adapter?.stopListening()
         super.onDestroy()
     }
 
 
-    private fun checkIfBlocked(uid: String, holder: ViewHolder){
+    private fun checkIfBlocked(uid: String, holder: ItemContactLayoutBinding){
         FirebaseUtils.ref.blockedUser(myUID, uid)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onCancelled(p0: DatabaseError) {}
 
                 override fun onDataChange(p0: DataSnapshot) {
-                    holder.itemView.isEnabled = true
+                    holder.root.isEnabled = true
                     if (p0.exists()) {
-                        holder.itemView.isEnabled = !p0.value.toString().toBoolean()
+                        holder.root.isEnabled = !p0.value.toString().toBoolean()
                     }
-                    holder.itemView.isClickable = holder.itemView.isEnabled
-                    holder.title.setTextColor(if (holder.itemView.isEnabled) Color.BLACK else Color.LTGRAY)
+                    holder.root.isClickable = holder.root.isEnabled
+                    holder.name.setTextColor(if (holder.root.isEnabled) Color.BLACK else Color.LTGRAY)
 
 
                 }
@@ -782,12 +728,12 @@ class ForwardActivity : AppCompatActivity() {
                 override fun onCancelled(p0: DatabaseError) {}
 
                 override fun onDataChange(p0: DataSnapshot) {
-                    holder.itemView.isEnabled = true
+                    holder.root.isEnabled = true
                     if (p0.exists()) {
-                        holder.itemView.isEnabled = !p0.value.toString().toBoolean()
+                        holder.root.isEnabled = !p0.value.toString().toBoolean()
                     }
-                    holder.itemView.isClickable = holder.itemView.isEnabled
-                    holder.title.setTextColor(if (holder.itemView.isEnabled) Color.BLACK else Color.LTGRAY)
+                    holder.root.isClickable = holder.root.isEnabled
+                    holder.name.setTextColor(if (holder.root.isEnabled) Color.BLACK else Color.LTGRAY)
 
 
                 }
@@ -838,8 +784,8 @@ class ForwardActivity : AppCompatActivity() {
 
     override fun onBackPressed() {
 
-        if(searchView.isSearchOpen)
-            searchView.closeSearch()
+        if(binding.searchView.isSearchOpen)
+            binding.searchView.closeSearch()
         else
             super.onBackPressed()
     }

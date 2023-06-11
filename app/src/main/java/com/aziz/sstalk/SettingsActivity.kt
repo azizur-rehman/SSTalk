@@ -9,6 +9,9 @@ import android.widget.Switch
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
+import com.aziz.sstalk.databinding.ActivitySettingsBinding
+import com.aziz.sstalk.databinding.DialogListSelectorBinding
+import com.aziz.sstalk.databinding.ItemSelectorBinding
 import com.aziz.sstalk.utils.FirebaseUtils
 import com.aziz.sstalk.utils.Pref
 import com.aziz.sstalk.utils.utils.longToast
@@ -20,9 +23,6 @@ import com.google.firebase.ml.common.modeldownload.FirebaseModelManager
 import com.google.firebase.ml.common.modeldownload.FirebaseRemoteModel
 import com.google.firebase.ml.naturallanguage.translate.FirebaseTranslateLanguage
 import com.google.firebase.ml.naturallanguage.translate.FirebaseTranslateRemoteModel
-import kotlinx.android.synthetic.main.activity_settings.*
-import kotlinx.android.synthetic.main.dialog_list_selector.*
-import kotlinx.android.synthetic.main.item_selector.view.*
 import org.jetbrains.anko.design.snackbar
 import org.jetbrains.anko.toast
 import java.util.*
@@ -33,10 +33,13 @@ class SettingsActivity : AppCompatActivity() {
     val context = this@SettingsActivity
 
     var languageDialog:BottomSheetDialog? = null
+    lateinit var binding:ActivitySettingsBinding
+    
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_settings)
+        binding = ActivitySettingsBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         title = "Settings"
         if(supportActionBar!=null) {
@@ -46,10 +49,10 @@ class SettingsActivity : AppCompatActivity() {
 
 
 
-        val enableSound = setting_nav_view.menu.findItem(R.id.setting_sound_enable).actionView as Switch
-        val enableVibration = setting_nav_view.menu.findItem(R.id.setting_vibration_enable).actionView as Switch
+        val enableSound = binding.settingNavView.menu.findItem(R.id.setting_sound_enable).actionView as Switch
+        val enableVibration = binding.settingNavView.menu.findItem(R.id.setting_vibration_enable).actionView as Switch
 
-        val mediaVisiblity = setting_nav_view.menu.findItem(R.id.setting_media_visibility).actionView as Switch
+        val mediaVisiblity = binding.settingNavView.menu.findItem(R.id.setting_media_visibility).actionView as Switch
 
         mediaVisiblity.isChecked = Pref.isMediaVisible(this)
 
@@ -69,7 +72,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
 
-        with(setting_nav_view.menu){
+        with(binding.settingNavView.menu){
 
 
             val defaultLanguage = Pref.getSettingFile(context)
@@ -93,9 +96,9 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         if(Pref.getDefaultLanguage(this) > -1)
-        setting_nav_view.menu?.findItem(R.id.setting_default_language)?.title = "Default Language (${languages[Pref.getDefaultLanguage(this)]})"
+        binding.settingNavView.menu?.findItem(R.id.setting_default_language)?.title = "Default Language (${languages[Pref.getDefaultLanguage(this)]})"
 
-        setting_nav_view.setNavigationItemSelectedListener {
+        binding.settingNavView.setNavigationItemSelectedListener {
 
             when(it.itemId){
                 R.id.setting_block_list -> {
@@ -113,7 +116,7 @@ class SettingsActivity : AppCompatActivity() {
 
     }
 
-    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
         finish()
         return super.onOptionsItemSelected(item)
     }
@@ -124,41 +127,41 @@ class SettingsActivity : AppCompatActivity() {
         if(languageDialog != null){
             languageDialog?.show()
             if(Pref.getDefaultLanguage(context) > -1)
-                languageDialog?.recyclerView?.scrollToPosition(Pref.getDefaultLanguage(context))
+                languageDialog?.findViewById<RecyclerView>(R.id.recyclerView)?.scrollToPosition(Pref.getDefaultLanguage(context))
             return
         }
 
         val dialog = BottomSheetDialog(context)
         languageDialog = dialog
         with(dialog){
-            setContentView(R.layout.dialog_list_selector)
+            val dialogBinding = DialogListSelectorBinding.inflate(layoutInflater)
+            setContentView(dialogBinding.root)
             dialog.window?.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT)
             show()
-            bindLanguageDialog(languages)
+            bindLanguageDialog(languages, dialogBinding)
         }
 
     }
 
     var selectedPosition = -1
-    private fun BottomSheetDialog.bindLanguageDialog(languages:MutableList<String> ){
+    private fun BottomSheetDialog.bindLanguageDialog(languages:MutableList<String> , dialogBinding: DialogListSelectorBinding ){
 
-
-        save_btn.setOnClickListener {
+        dialogBinding.saveBtn.setOnClickListener {
             dismiss()
             if(selectedPosition > -1)
             {
                 Pref.setDefaultLanguage(context, selectedPosition)
-                this@SettingsActivity.logout_btn.snackbar("Language Changed to ${languages[selectedPosition]}")
-                this@SettingsActivity.setting_nav_view.menu?.findItem(R.id.setting_default_language)?.title = "Default Language (${languages[selectedPosition]})"
+                binding.logoutBtn.snackbar("Language Changed to ${languages[selectedPosition]}")
+                this@SettingsActivity.binding.settingNavView.menu?.findItem(R.id.setting_default_language)?.title = "Default Language (${languages[selectedPosition]})"
             }
 
 
         }
-        cancel_btn.setOnClickListener { dismiss() }
+        dialogBinding.cancelBtn.setOnClickListener { dismiss() }
 
         var lastCheckbox:AnimCheckBox? = null
 
-        recyclerView.adapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>(){
+        dialogBinding.recyclerView.adapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>(){
             override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
                 return object : RecyclerView.ViewHolder(LayoutInflater.from(context)
                     .inflate(R.layout.item_selector,parent, false)){}
@@ -167,28 +170,29 @@ class SettingsActivity : AppCompatActivity() {
             override fun getItemCount(): Int = languages.size
 
             override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-                with(holder.itemView){
-                    item_title.text = languages[position]
-                    item_sub_title.text = ""
+                val itemBinding = ItemSelectorBinding.bind(holder.itemView)
+                with(itemBinding){
+                    itemTitle.text = languages[position]
+                    itemSubTitle.text = ""
 
-                    item_checkbox.isChecked = Pref.getDefaultLanguage(context) == position
-                    if(item_checkbox.isChecked) lastCheckbox = item_checkbox
+                    itemCheckbox.isChecked = Pref.getDefaultLanguage(context) == position
+                    if(itemCheckbox.isChecked) lastCheckbox = itemCheckbox
 
                     FirebaseModelManager.getInstance().getDownloadedModels(FirebaseTranslateRemoteModel::class.java)
                         .addOnSuccessListener {
 
                             if (it.any { it.language == position }){
-                                item_sub_title.text = "Downloaded"
+                                itemSubTitle.text = "Downloaded"
                             }
                         }
-                    item_selector_layout.setOnClickListener {
+                    itemSelectorLayout.setOnClickListener {
                         lastCheckbox?.isChecked = false
-                        item_checkbox.isChecked = true
-                        lastCheckbox = item_checkbox
+                        itemCheckbox.isChecked = true
+                        lastCheckbox = itemCheckbox
                         selectedPosition = position
                     }
 
-                    setOnLongClickListener {
+                    itemBinding.root.setOnLongClickListener {
                         val popupMenu = PopupMenu(context, it)
                         popupMenu.menu.add("Delete")
                         popupMenu.setOnMenuItemClickListener {
@@ -199,9 +203,9 @@ class SettingsActivity : AppCompatActivity() {
                                     toast("Language deleted")
                                     if(position == Pref.getDefaultLanguage(context)){
                                         Pref.getSettingFile(context).edit().remove(Pref.KEY_DEFAULT_TRANSLATION_LANG).apply()
-                                        recyclerView.adapter?.notifyItemChanged(position)
+                                        dialogBinding.recyclerView.adapter?.notifyItemChanged(position)
                                         selectedPosition = -1
-                                        this@SettingsActivity.setting_nav_view.menu?.findItem(R.id.setting_default_language)?.title = "Default Language (Tap to choose)"
+                                        this@SettingsActivity.binding.settingNavView.menu?.findItem(R.id.setting_default_language)?.title = "Default Language (Tap to choose)"
                                     }
                                 }
                             return@setOnMenuItemClickListener true
@@ -215,7 +219,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         if(Pref.getDefaultLanguage(context) > -1)
-            recyclerView.scrollToPosition(Pref.getDefaultLanguage(context))
+            dialogBinding.recyclerView.scrollToPosition(Pref.getDefaultLanguage(context))
 
 
     }

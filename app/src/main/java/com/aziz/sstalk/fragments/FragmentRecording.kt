@@ -9,12 +9,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import com.aziz.sstalk.R
+import com.aziz.sstalk.databinding.DialogAudioRecorderBinding
 import com.aziz.sstalk.utils.hide
 import com.aziz.sstalk.utils.max_file_size
 import com.aziz.sstalk.utils.show
 import com.aziz.sstalk.utils.utils
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import kotlinx.android.synthetic.main.dialog_audio_recorder.view.*
 import org.jetbrains.anko.runOnUiThread
 import org.jetbrains.anko.toast
 import java.io.File
@@ -26,11 +26,12 @@ class FragmentRecording: BottomSheetDialogFragment() {
 
     private val mediaRecorder = MediaRecorder()
     private val timer:Timer = Timer()
-    lateinit var rootView:View
     var seconds = 0
     var onFinished:OnRecordingFinished? = null
     var isRecording = false
     private val filePath = utils.sentAudioPath+"/REC_${System.currentTimeMillis()}.aac"
+
+    lateinit var binding:DialogAudioRecorderBinding
 
     fun setRecordingListener(onRecordingFinished: OnRecordingFinished){
         onFinished = onRecordingFinished
@@ -40,6 +41,7 @@ class FragmentRecording: BottomSheetDialogFragment() {
     private fun initRecorder() {
             with(mediaRecorder){
                 try {
+                    File(utils.sentAudioPath).mkdirs()
                     setAudioSource(MediaRecorder.AudioSource.MIC)
                     setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
                     setAudioEncoder(MediaRecorder.AudioEncoder.AMR_WB)
@@ -58,26 +60,25 @@ class FragmentRecording: BottomSheetDialogFragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        return layoutInflater.inflate(R.layout.dialog_audio_recorder, container, false)
+        binding = DialogAudioRecorderBinding.inflate(layoutInflater, container, false)
+        return binding.root
     }
 
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        rootView = view
-
-        view.stop.setOnClickListener {
+        binding.stop.setOnClickListener {
 
             if(isRecording)
                 stopRecording()
 
-            view.cancel.show()
-            view.accept.show()
-            it.hide()
+            binding.cancel.show()
+            binding.accept.show()
+//            it.hide()
         }
 
-        view.cancel.setOnClickListener {
+        binding.cancel.setOnClickListener {
             if(isRecording)
                 stopRecording()
 
@@ -85,7 +86,7 @@ class FragmentRecording: BottomSheetDialogFragment() {
             onFinished?.onCancelled()
         }
 
-        view.accept.setOnClickListener {
+        binding.accept.setOnClickListener {
             onFinished?.onRecorded(File(filePath).takeIf { it.exists() })
         }
 
@@ -98,18 +99,18 @@ class FragmentRecording: BottomSheetDialogFragment() {
         initRecorder()
 
         try {
-            rootView.cancel.hide()
-            rootView.accept.hide()
+            binding.cancel.hide()
+            binding.accept.hide()
 
             mediaRecorder.prepare()
             mediaRecorder.start()
 
-            rootView.pulse_layout.startRippleAnimation()
+            binding.pulseLayout.startRippleAnimation()
 
             timer.schedule(timerTask {
 
                 context?.runOnUiThread {
-                    rootView.timer.text = utils.getDurationString(((seconds++)*1000).toLong())
+                    binding.timer.text = utils.getDurationString(((seconds++)*1000).toLong())
                 }
 
             },0,1000)
@@ -141,7 +142,7 @@ class FragmentRecording: BottomSheetDialogFragment() {
 
         if(!isRecording) return
 
-        rootView.pulse_layout.stopRippleAnimation()
+        binding.pulseLayout.stopRippleAnimation()
         timer.cancel()
         try {
             mediaRecorder.stop()

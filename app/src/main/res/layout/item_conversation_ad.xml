@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.gms.ads.formats.UnifiedNativeAdView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.gms.ads.nativead.NativeAdView xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
+        android:id="@+id/adLayout"
+        android:visibility="gone"
+        tools:visibility="visible"
               android:layout_height="wrap_content"
-        android:id="@+id/conversation_native_ad"
               xmlns:app="http://schemas.android.com/apk/res-auto"
               android:orientation="vertical">
 
@@ -80,7 +82,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:layout_marginLeft="16dp"
-                android:fontFamily="@font/roboto_regular"
+
                 android:text="@string/single_line_string"
                 android:textAllCaps="false"
                 android:textColor="@color/black"
@@ -137,4 +139,4 @@
 
 
 
-</com.google.android.gms.ads.formats.UnifiedNativeAdView>
+</com.google.android.gms.ads.nativead.NativeAdView>

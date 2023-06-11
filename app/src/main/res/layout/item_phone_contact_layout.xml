@@ -3,6 +3,8 @@
 <LinearLayout xmlns:app="http://schemas.android.com/apk/res-auto"
         android:layout_height="wrap_content"
         android:layout_width="match_parent"
+        xmlns:tools="http://schemas.android.com/tools"
+        xmlns:ads="http://schemas.android.com/apk/res-auto"
         xmlns:android="http://schemas.android.com/apk/res/android"
         android:orientation="vertical">
 
@@ -37,8 +39,8 @@
 
     <de.hdodenhof.circleimageview.CircleImageView
             android:id="@+id/pic"
-            android:layout_width="56dp"
-            android:layout_height="56dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:layout_margin="10dp"
             android:src="@drawable/contact_placeholder"
             app:civ_border_color="@color/colorAccent"
@@ -65,16 +67,38 @@
             android:id="@+id/mobile_number"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
+            android:layout_marginTop="1dp"
             android:text="TextView"
-            app:layout_constraintBottom_toBottomOf="@+id/pic"
             app:layout_constraintStart_toStartOf="@+id/name"
             app:layout_constraintTop_toBottomOf="@+id/name" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
 
 
-<include layout="@layout/item_conversation_ad"/>
+<include android:id="@+id/adLayout" layout="@layout/item_conversation_ad"/>
 
+<!--    <com.google.android.gms.ads.nativead.NativeAdView-->
+<!--            android:id="@+id/native_ad_view"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            ads:ad_unit_id="@string/ad_unit_id"-->
+<!--            ads:layout_constraintTop_toTopOf="parent"-->
+<!--            ads:layout_constraintStart_toStartOf="parent"-->
+<!--            ads:layout_constraintEnd_toEndOf="parent"-->
+<!--            ads:layout_constraintBottom_toBottomOf="parent"-->
+<!--            ads:ad_media_layout="@layout/native_ad_media"-->
+<!--            ads:ad_headline_view="@id/ad_headline"-->
+<!--            ads:ad_body_view="@id/ad_body"-->
+<!--            ads:ad_call_to_action_view="@id/ad_call_to_action"-->
+<!--            ads:ad_icon_view="@id/ad_icon"-->
+<!--            ads:advertiser_view="@id/ad_advertiser"-->
+<!--            ads:ad_store_view="@id/ad_store"-->
+<!--            ads:ad_price_view="@id/ad_price"-->
+<!--            ads:ad_star_rating_view="@id/ad_star_rating"-->
+<!--            ads:ad_store_root_view="@id/ad_store_root"-->
+<!--            ads:ad_attributions="@id/ad_attributions" >-->
+<!--        -->
+<!--        -->
+<!--    </com.google.android.gms.ads.nativead.NativeAdView>-->
 
 </LinearLayout>

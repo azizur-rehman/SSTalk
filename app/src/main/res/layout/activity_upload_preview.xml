@@ -42,7 +42,7 @@
                 android:id="@+id/sendBtn"
                  android:layout_height="wrap_content"
                 android:src="@drawable/ic_send"
-                android:tint="@color/white"
+                app:tint="@color/white"
         />
 
 

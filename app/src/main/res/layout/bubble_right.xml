@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:layout_width="match_parent"
     android:id="@+id/container_right"
 
     android:orientation="vertical"
@@ -14,13 +15,14 @@
             android:padding="20dp"
             android:layout_margin="5dp"
             android:gravity="center"
-            android:drawableLeft="@drawable/shape_line"
-            android:drawableRight="@drawable/shape_line"
             android:id="@+id/header_right"
             android:layout_gravity="center"
             android:textColor="@color/black"
             android:text="@string/app_name"
-            android:drawableStart="@drawable/shape_line" android:drawableEnd="@drawable/shape_line"/>
+            app:drawableEndCompat="@drawable/shape_line"
+            app:drawableStartCompat="@drawable/shape_line"
+            app:drawableRightCompat="@drawable/shape_line"
+            app:drawableLeftCompat="@drawable/shape_line" />
 
 
     <LinearLayout android:layout_width="match_parent"
@@ -48,7 +50,7 @@
                 android:paddingRight="5dp"
                 android:paddingTop="5dp"
                 android:layout_weight="1"
-                android:textSize="16sp"
+                android:textSize="15sp"
                 android:maxWidth="240dp"
                 android:autoLink="all"
                 android:text="@string/large_text"
@@ -59,7 +61,7 @@
         <LinearLayout android:layout_width="wrap_content"
                       android:layout_height="wrap_content"
                       android:gravity="center"
-                      android:paddingTop="2dp"
+                      android:paddingTop="3dp"
                       android:paddingLeft="20dp"
                       android:orientation="horizontal"
                       android:layout_gravity="end">
@@ -75,7 +77,7 @@
                     android:textColor="@color/transparent_white_10"
             />
 
-            <ImageView android:layout_width="12dp"
+            <ImageView android:layout_width="11dp"
                        android:layout_marginLeft="5dp"
                        android:id="@+id/delivery_status"
                        android:src="@drawable/ic_message_pending_gray_24dp"

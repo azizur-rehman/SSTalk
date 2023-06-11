@@ -12,7 +12,7 @@
     <com.google.android.material.appbar.AppBarLayout android:layout_width="match_parent"
                                                      android:layout_height="wrap_content">
 
-       <include layout="@layout/layout_include_message_activity_toolbar"/>
+       <include android:id="@+id/includeMessageToolbar" layout="@layout/layout_include_message_activity_toolbar"/>
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -91,7 +91,7 @@
                 </FrameLayout>
 
 
-                <include layout="@layout/layout_attachment_menu"/>
+                <include android:id="@+id/includeAttachment" layout="@layout/layout_attachment_menu"/>
 
 
             </FrameLayout>
@@ -119,7 +119,7 @@
                             android:layout_marginRight="10dp"
                             android:layout_marginEnd="10dp"
                             android:layout_height="20dp"
-                            android:tint="@color/dark_gray"
+                            app:tint="@color/dark_gray"
                             android:id="@+id/smart_reply_setting"
                             android:src="@drawable/ic_setting_flat_black"
                             android:layout_marginLeft="10dp"/>
@@ -163,7 +163,7 @@
                   android:textColor="@color/white"
                   android:paddingLeft="20dp"
                   android:textSize="14sp"
-                  android:fontFamily="@font/roboto_regular"
+
                   android:paddingRight="20dp"
                   android:paddingTop="5dp"
                   android:paddingBottom="5dp"

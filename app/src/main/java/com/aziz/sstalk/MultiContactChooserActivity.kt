@@ -15,17 +15,18 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Filter
 import android.widget.Filterable
+import android.widget.ImageView
+import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.aziz.sstalk.databinding.ActivityMultiContactChooserBinding
+import com.aziz.sstalk.databinding.ItemContactLayoutBinding
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.*
+import com.aziz.sstalk.views.AnimCheckBox
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.miguelcatalan.materialsearchview.MaterialSearchView
-import kotlinx.android.synthetic.main.activity_multi_contact_chooser.*
-import kotlinx.android.synthetic.main.activity_multi_contact_chooser.searchView
-import kotlinx.android.synthetic.main.item_contact_layout.view.*
-import kotlinx.android.synthetic.main.item_grid_contact_layout.view.*
 import org.jetbrains.anko.*
 import java.util.concurrent.Future
 
@@ -40,20 +41,24 @@ class MultiContactChooserActivity : AppCompatActivity(){
     var excludedUIDs:MutableList<String> = ArrayList()
 
     var selectedUsers:MutableList<Models.Contact> = ArrayList()
+    
+    lateinit var binding: ActivityMultiContactChooserBinding
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setContentView(R.layout.activity_multi_contact_chooser)
+        binding = ActivityMultiContactChooserBinding.inflate(layoutInflater)
+        
+        setContentView(binding.root)
         title = "Choose from contacts"
-        setSupportActionBar(toolbar)
+        setSupportActionBar(binding.toolbar)
 
         excludedUIDs = intent.getStringArrayListExtra(utils.constants.KEY_EXCLUDED_LIST)?:ArrayList()
 
 
-        contacts_list.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this@MultiContactChooserActivity)
-        participant_recyclerview.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(
+        binding.contactsList.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this@MultiContactChooserActivity)
+        binding.participantRecyclerview.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(
             this@MultiContactChooserActivity,
             androidx.recyclerview.widget.LinearLayoutManager.HORIZONTAL, false
         )
@@ -104,8 +109,8 @@ class MultiContactChooserActivity : AppCompatActivity(){
         val item = menu?.findItem(R.id.action_search)
         item?.isVisible = true
 
-        searchView.setMenuItem(item)
-        searchView.setOnQueryTextListener(object : MaterialSearchView.OnQueryTextListener{
+        binding.searchView.setMenuItem(item)
+        binding.searchView.setOnQueryTextListener(object : MaterialSearchView.OnQueryTextListener{
             override fun onQueryTextSubmit(query: String?): Boolean = false
 
             override fun onQueryTextChange(newText: String?): Boolean {
@@ -134,8 +139,8 @@ class MultiContactChooserActivity : AppCompatActivity(){
 
 
 
-            contacts_list.adapter = adapter
-            participant_recyclerview.adapter = horizontalAdapter
+            binding.contactsList.adapter = adapter
+            binding.participantRecyclerview.adapter = horizontalAdapter
 
             allUsers = registeredAvailableUser
 
@@ -194,27 +199,29 @@ class MultiContactChooserActivity : AppCompatActivity(){
 
         override fun getItemCount(): Int = registeredAvailableUser.size
 
-        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        override fun onBindViewHolder(h: ViewHolder, position: Int) {
+
+            val holder = ItemContactLayoutBinding.bind(h.itemView)
 
             holder.name.text = registeredAvailableUser[position].name
 
 
-            val user = registeredAvailableUser[holder.adapterPosition]
+            val user = registeredAvailableUser[h.adapterPosition]
             val uid = user.uid
 
             FirebaseUtils.loadProfileThumbnail(this@MultiContactChooserActivity, uid, holder.pic)
 
-            holder.checkBox.setChecked( selectedUsers.contains(user), false)
-            holder.checkBox.invisible = !holder.checkBox.isChecked
+            holder.checkbox.setChecked( selectedUsers.contains(user), false)
+            holder.checkbox.invisible = !holder.checkbox.isChecked
 
 
-            holder.itemView.setOnClickListener {
+            holder.root.setOnClickListener {
 
 
-                holder.checkBox.setChecked(!holder.checkBox.isChecked, true)
-                holder.checkBox.invisible = !holder.checkBox.isChecked
+                holder.checkbox.setChecked(!holder.checkbox.isChecked, true)
+                holder.checkbox.invisible = !holder.checkbox.isChecked
 
-                if(holder.checkBox.isChecked) {
+                if(holder.checkbox.isChecked) {
                     selectedUsers.add(user)
                     horizontalAdapter.notifyItemInserted(selectedUsers.lastIndex)
 
@@ -228,8 +235,8 @@ class MultiContactChooserActivity : AppCompatActivity(){
 
                 if(selectedUsers.isNotEmpty())
                 {
-                    if(!participant_recyclerview.visible) participant_recyclerview.show()
-                    participant_recyclerview.smoothScrollToPosition(selectedUsers.lastIndex)
+                    if(!binding.participantRecyclerview.visible) binding.participantRecyclerview.show()
+                    binding.participantRecyclerview.smoothScrollToPosition(selectedUsers.lastIndex)
                 }
 
 
@@ -271,22 +278,22 @@ class MultiContactChooserActivity : AppCompatActivity(){
 
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
-                val name = itemView.name
-                val pic = itemView.pic
-                val checkBox = itemView.checkbox
+                val name: TextView = itemView.findViewById<TextView>(R.id.name)
+                val pic: ImageView = itemView.findViewById<ImageView>(R.id.pic)
+                val checkbox = itemView.findViewById<AnimCheckBox>(R.id.checkbox)
 
                 init {
-                    checkBox.isEnabled = false
+                    checkbox.isEnabled = false
                 }
 
             }
 
     class ParticipantHolder(itemView: View): RecyclerView.ViewHolder(itemView){
-        val name = itemView.grid_name!!
-        val pic = itemView.grid_pic!!
+        val name = itemView.findViewById<TextView>(R.id.grid_name!!)
+        val pic = itemView.findViewById<ImageView>(R.id.grid_pic!!)
 
         init {
-            itemView.grid_cancel_btn.visibility = View.GONE
+            itemView.findViewById<View>(R.id.grid_cancel_btn).visibility = View.GONE
         }
     }
 }

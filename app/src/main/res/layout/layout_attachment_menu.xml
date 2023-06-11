@@ -239,6 +239,7 @@
                             android:layout_height="wrap_content"
                             android:src="@drawable/ic_mic_white_24dp"
                             app:backgroundTint="@color/green"
+                            android:clickable="false"
                             app:layout_anchor="@+id/attachment_menu" />
 
                     <TextView

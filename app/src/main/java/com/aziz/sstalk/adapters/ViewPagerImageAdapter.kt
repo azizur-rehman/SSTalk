@@ -9,10 +9,11 @@ import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.LinearLayout
 import com.aziz.sstalk.R
+import com.aziz.sstalk.databinding.LayoutUploadImagePreviewBinding
 import com.aziz.sstalk.utils.utils
-import kotlinx.android.synthetic.main.layout_upload_image_preview.view.*
 import java.io.File
 import java.lang.Exception
 import java.util.ArrayList
@@ -37,22 +38,22 @@ class ViewPagerImageAdapter(
 
     override fun instantiateItem(container: ViewGroup, position: Int): Any {
 
-        val itemView = inflater.inflate(R.layout.layout_upload_image_preview, container, false)
+        val itemView =  LayoutUploadImagePreviewBinding.inflate(inflater)
 
-        val imgView = itemView.image_preview
+        val imgView = itemView.imagePreview
 
         if(type[position] == utils.constants.FILE_TYPE_IMAGE) {
 
             imgView.setImageURI(utils.getUriFromFile(container.context, File(paths[position])))
         }
         else if(type[position] == utils.constants.FILE_TYPE_VIDEO){
-            itemView.image_preview.visibility = View.GONE
+            imgView.visibility = View.GONE
 
             val thumb = ThumbnailUtils.createVideoThumbnail((paths[position]), MediaStore.Video.Thumbnails.MINI_KIND)
-            itemView.video_preview.setImageBitmap(thumb)
+            itemView.videoPreview.setImageBitmap(thumb)
 
 
-            itemView.video_preview.setOnClickListener {
+            itemView.videoPreview.setOnClickListener {
                 try {
                     val videoIntent = Intent(Intent.ACTION_VIEW)
                     val uri =utils.getUriFromFile(container.context,  File(paths[position]))
@@ -67,7 +68,7 @@ class ViewPagerImageAdapter(
         }
 
 
-        itemView.upload_caption_edittext_layout.visibility = if(isForPreview) View.GONE else View.VISIBLE
+        itemView.uploadCaptionEdittextLayout.visibility = if(isForPreview) View.GONE else View.VISIBLE
 
         itemView.captionEditText.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
@@ -82,9 +83,9 @@ class ViewPagerImageAdapter(
 
         })
 
-        container.addView(itemView)
+        container.addView(itemView.root)
 
-        return itemView
+        return itemView.root
     }
 
 

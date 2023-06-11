@@ -7,59 +7,54 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
-import com.google.android.material.navigation.NavigationView
-import androidx.core.view.GravityCompat
+import android.util.Log
+import android.view.*
+import android.widget.TextView
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import android.util.Log
-import android.view.*
-import android.widget.TextView
 import androidx.core.content.ContextCompat
+import androidx.core.view.GravityCompat
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.aurelhubert.ahbottomnavigation.AHBottomNavigationItem
+import com.aziz.sstalk.databinding.ActivityHomeBinding
+import com.aziz.sstalk.databinding.AppBarHomeBinding
+import com.aziz.sstalk.databinding.ItemConversationLayoutBinding
+import com.aziz.sstalk.databinding.ItemPhoneContactLayoutBinding
 import com.aziz.sstalk.fragments.FragmentMyProfile
 import com.aziz.sstalk.fragments.FragmentOnlineFriends
 import com.aziz.sstalk.fragments.FragmentSearch
 import com.aziz.sstalk.fragments.OnlineVM
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.*
+import com.aziz.sstalk.utils.utils.STORAGE_PERMISSION_REQUEST_CODE
+import com.aziz.sstalk.utils.utils.requestStoragePermission
 import com.firebase.ui.database.FirebaseRecyclerAdapter
 import com.firebase.ui.database.FirebaseRecyclerOptions
-import com.google.android.gms.ads.AdListener
-import com.google.android.gms.ads.AdLoader
-import com.google.android.gms.ads.AdRequest
-import com.google.android.gms.ads.MobileAds
+import com.google.android.gms.ads.*
 import com.google.android.gms.ads.formats.UnifiedNativeAd
-import com.google.android.gms.ads.reward.RewardItem
-import com.google.android.gms.ads.reward.RewardedVideoAd
-import com.google.android.gms.ads.reward.RewardedVideoAdListener
+import com.google.android.gms.ads.nativead.NativeAd
+import com.google.android.gms.ads.nativead.NativeAdOptions
+import com.google.android.gms.ads.rewarded.RewardItem
+import com.google.android.gms.ads.rewarded.RewardedAd
+import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
+import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAd
+import com.google.android.material.navigation.NavigationView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.miguelcatalan.materialsearchview.MaterialSearchView
 import de.hdodenhof.circleimageview.CircleImageView
-import kotlinx.android.synthetic.main.activity_home.*
-import kotlinx.android.synthetic.main.activity_message.*
-import kotlinx.android.synthetic.main.app_bar_home.*
-import kotlinx.android.synthetic.main.content_home.*
-import kotlinx.android.synthetic.main.content_home.recycler_back_message
-import kotlinx.android.synthetic.main.item_conversation_ad.view.*
-import kotlinx.android.synthetic.main.item_conversation_layout.view.*
-import kotlinx.android.synthetic.main.layout_attachment_menu.*
-import kotlinx.android.synthetic.main.layout_recycler_view.*
 import org.jetbrains.anko.*
 import org.jetbrains.anko.design.indefiniteSnackbar
 import org.jetbrains.anko.design.snackbar
-import java.lang.Exception
+import java.util.Arrays
 import java.util.concurrent.Executors
-import java.util.concurrent.Future
-import kotlin.collections.ArrayList
 
 class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
@@ -70,7 +65,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     var isAnyMuted = false
     var unreadConversation = 0
     
-    lateinit var rewardedVideoAd:RewardedVideoAd
+    var rewardedAd: RewardedAd? = null
 
     lateinit var adapter:FirebaseRecyclerAdapter<Models.LastMessageDetail, ViewHolder>
 
@@ -82,10 +77,19 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     var isContextToolbarActive = false
     private var isOnlineFragmentLoaded = false
 
+    lateinit var binding:ActivityHomeBinding
+    lateinit var appBarBinding:AppBarHomeBinding
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_home)
-        setSupportActionBar(toolbar)
+        binding = ActivityHomeBinding.inflate(layoutInflater).apply { setContentView(root) }
+        appBarBinding = binding.includeAppBar
+
+        val testDeviceIds = listOf("69BC59B0B1C3FBEB9CB57015F2831F1D")
+        val configuration = RequestConfiguration.Builder().setTestDeviceIds(testDeviceIds).build()
+        MobileAds.setRequestConfiguration(configuration)
+
+        setSupportActionBar(appBarBinding.toolbar)
 
 
         if(!FirebaseUtils.isLoggedIn()){
@@ -102,7 +106,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         catch (e:Exception){e.printStackTrace()}
 
 
-        MobileAds.initialize(this, getString(R.string.admob_id))
+        MobileAds.initialize(this)
         loadRewardedAd()
 
         //storing firebase token, if updated
@@ -112,53 +116,49 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         FirebaseUtils.checkForUpdate(context, false)
 
         val toggle = ActionBarDrawerToggle(
-            this, drawer_layout, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close
+            this, binding.drawerLayout, appBarBinding.toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close
         )
-        drawer_layout.addDrawerListener(toggle)
+        binding.drawerLayout.addDrawerListener(toggle)
         toggle.syncState()
 
-        show_contacts.setOnClickListener {
+        appBarBinding.showContacts.setOnClickListener {
             startActivity(Intent(context, ContactsActivity::class.java))
         }
 
 
-        conversation_progressbar.visibility = View.VISIBLE
+        appBarBinding.includeContentHome.conversationProgressbar.visibility = View.VISIBLE
         initComponents()
 
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT && BuildConfig.DEBUG) {
-            reportFullyDrawn()
-        }
+//        if (true && BuildConfig.DEBUG) {
+//            reportFullyDrawn()
+//        }
     }
 
     private fun initComponents(){
-        conversation_progressbar.visibility = View.GONE
-        nav_view.setNavigationItemSelectedListener(this@HomeActivity )
+        appBarBinding.includeContentHome.conversationProgressbar.visibility = View.GONE
+        binding.navView.setNavigationItemSelectedListener(this )
 
         setBottomNavigationView()
 
-        hasPermission = utils.hasContactPermission(this@HomeActivity) && utils.hasStoragePermission(context)
+        hasPermission = utils.hasContactPermission(this) && utils.hasStoragePermission(context)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if(!hasPermission) {
-                requestPermissions(arrayOf(Manifest.permission.READ_CONTACTS, Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                    Manifest.permission.READ_EXTERNAL_STORAGE), 101)
-            }
-            else
-                setAdapter()
+        if(!utils.hasContactPermission(this)) {
+            requestPermissions(arrayOf(Manifest.permission.READ_CONTACTS), 101)
         }
+        else if(!utils.hasStoragePermission(this))
+            requestStoragePermission()
         else
             setAdapter()
-
 
 
         //setting update navigation drawer
         if(FirebaseUtils.isLoggedIn()) {
 
-            (nav_view.getHeaderView(0).findViewById(R.id.nav_header_title) as TextView).text = FirebaseAuth.getInstance().currentUser!!.displayName
-            (nav_view.getHeaderView(0).findViewById(R.id.nav_header_subtitle) as TextView).text = FirebaseAuth.getInstance().currentUser!!.phoneNumber
-            FirebaseUtils.loadProfileThumbnail(this@HomeActivity, FirebaseUtils.getUid(),
-                nav_view.getHeaderView(0).findViewById<CircleImageView>(R.id.drawer_profile_image_view))
+            (binding.navView.getHeaderView(0).findViewById(R.id.nav_header_title) as TextView).text = FirebaseAuth.getInstance().currentUser!!.displayName
+            (binding.navView.getHeaderView(0).findViewById(R.id.nav_header_subtitle) as TextView).text = FirebaseAuth.getInstance().currentUser!!.phoneNumber
+            FirebaseUtils.loadProfileThumbnail(this, FirebaseUtils.getUid(),
+                binding.navView.getHeaderView(0).findViewById<CircleImageView>(R.id.drawer_profile_image_view))
         }
 
     }
@@ -177,21 +177,20 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+    override fun onRequestPermissionsResult(requestCode:
+                                            Int, permissions: Array<out String>, grantResults: IntArray) {
 
         when(requestCode){
-            101 -> {
+            101, STORAGE_PERMISSION_REQUEST_CODE -> {
                 hasPermission = grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults.isNotEmpty()
 
                 if(hasPermission && utils.hasStoragePermission(context))
                     //reset the adapter
                     setAdapter()
                 else{
-                    show_contacts.indefiniteSnackbar("Permission not granted. Please grant necessary permissions to continue", "Grant"){
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                            requestPermissions(arrayOf(Manifest.permission.READ_CONTACTS, Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                                Manifest.permission.READ_EXTERNAL_STORAGE), 101)
-                        }
+                    appBarBinding.showContacts.indefiniteSnackbar("Permission not granted. Please grant necessary permissions to continue", "Grant"){
+                        requestPermissions(arrayOf(Manifest.permission.READ_CONTACTS, Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                            Manifest.permission.READ_EXTERNAL_STORAGE), 101)
                     }
                 }
             }
@@ -204,19 +203,19 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     override fun onBackPressed() {
         when {
-            drawer_layout.isDrawerOpen(GravityCompat.START) -> drawer_layout.closeDrawer(GravityCompat.START)
+            binding.drawerLayout.isDrawerOpen(GravityCompat.START) -> binding.drawerLayout.closeDrawer(GravityCompat.START)
 
             supportFragmentManager.backStackEntryCount>0 -> {
                 repeat(supportFragmentManager.backStackEntryCount) {
                     supportFragmentManager.popBackStackImmediate()
                 }
-                bottom_navigation_home.setCurrentItem(0, false)
+                appBarBinding.bottomNavigationHome.setCurrentItem(0, false)
                 isOnlineFragmentLoaded = false
                 title = "Recent"
 
             }
 
-            searchView.isSearchOpen -> searchView.closeSearch()
+            appBarBinding.searchView.isSearchOpen -> appBarBinding.searchView.closeSearch()
             else -> finish()
         }
     }
@@ -240,27 +239,28 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             }
 
             R.id.nav_about -> {
-                startActivity(Intent(this@HomeActivity, AboutTheDeveloperActivity::class.java))
+                startActivity(Intent(this, AboutTheDeveloperActivity::class.java))
             }
 
             R.id.nav_support -> {
 
-                if(!rewardedVideoAd.isLoaded)
+                if(rewardedAd == null)
                 {
-                    bottom_navigation_home.snackbar("Ad not available at the moment","Try again"){
-                        loadRewardedAd()
-                    }
+                    appBarBinding.bottomNavigationHome.snackbar("Ad not available at the moment")
+                    loadRewardedAd()
                     return false
                 }
 
                 showConfirmDialog("Support us by watching a short video"){
-                    rewardedVideoAd.show()
+                    rewardedAd?.show(this) {
+
+                    }
                 }
             }
 
         }
 
-        drawer_layout.closeDrawer(GravityCompat.START)
+        binding.drawerLayout.closeDrawer(GravityCompat.START)
         return true
     }
 
@@ -269,14 +269,14 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         loadOnlineUsers()
 
-        conversation_progressbar.visibility = View.VISIBLE
+        appBarBinding.includeContentHome.conversationProgressbar.visibility = View.VISIBLE
 
-        with(conversationRecycler){
-            setHasFixedSize(true)
-            setItemViewCacheSize(20)
-            setDrawingCacheEnabled(true)
-            setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH)
-        }
+//        with(appBarBinding.includeContentHome.conversationRecycler){
+//            setHasFixedSize(true)
+//            setItemViewCacheSize(20)
+//            setDrawingCacheEnabled(true)
+//            setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH)
+//        }
 
 
         val reference = FirebaseUtils.ref.lastMessage(FirebaseUtils.getUid())
@@ -286,7 +286,12 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             .build()
 
          adapter = object : FirebaseRecyclerAdapter<Models.LastMessageDetail, ViewHolder>(options){
-            override fun onCreateViewHolder(p0: ViewGroup, p1: Int): ViewHolder = ViewHolder(layoutInflater.inflate(R.layout.item_conversation_layout, p0, false))
+            override fun onCreateViewHolder(p0: ViewGroup, p1: Int): ViewHolder = ViewHolder(
+                ItemConversationLayoutBinding.bind(
+                layoutInflater.inflate(R.layout.item_conversation_layout, p0, false)
+                )
+
+            )
 
             override fun onBindViewHolder(holder: ViewHolder, position: Int, model: Models.LastMessageDetail) {
 
@@ -334,7 +339,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     holder.checkbox.isChecked = false
                 }
 
-                holder.itemView.item_conversation_layout.setOnClickListener {
+                holder.itemView.findViewById<View>(R.id.item_conversation_layout).setOnClickListener {
 
                     if(isContextToolbarActive){
 
@@ -362,7 +367,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                         return@setOnClickListener
                     }
 
-                    val unreadCount = try { holder.unreadCount.getTextView().text.toString().toInt() }
+                    val unreadCount = try { holder.unreadCount.textView.text.toString().toInt() }
                     catch (e:Exception){ 0 }
 
 
@@ -373,7 +378,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
 
 
-                holder.itemView.item_conversation_layout.setOnLongClickListener {
+                holder.itemView.findViewById<View>(R.id.item_conversation_layout).setOnLongClickListener {
 
                     if(isContextToolbarActive)
                         return@setOnLongClickListener false
@@ -391,9 +396,9 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     holder.checkbox.isChecked = true
 
                     actionMode = startSupportActionMode(object : ActionMode.Callback {
-                        override fun onActionItemClicked(p0: ActionMode?, p1: MenuItem?): Boolean {
+                        override fun onActionItemClicked(p0: ActionMode?, p1: MenuItem): Boolean {
 
-                            when(p1?.itemId){
+                            when(p1.itemId){
                                 R.id.action_delete_conversation -> {
                                     Log.d("HomeActivity", "onActionItemClicked: deleting pos = $selectedItemPosition")
                                     deleteSelectedConversations(selectedItemPosition.toMutableList())
@@ -435,7 +440,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                             Log.d("HomeActivity", "onDestroyActionMode: $selectedItemPosition")
 
                             selectedItemPosition.forEach { pos ->
-                                val vh = conversationRecycler.findViewHolderForAdapterPosition(pos) as? ViewHolder
+                                val vh = appBarBinding.includeContentHome.conversationRecycler.findViewHolderForAdapterPosition(pos) as? ViewHolder
                                 vh?.checkbox?.visibility = View.INVISIBLE
                                 vh?.checkbox?.setChecked(false, true)
                             }
@@ -463,7 +468,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         val unreadConversations:MutableList<String> = ArrayList()
 
-        recycler_back_message.setOnClickListener { startActivity(intentFor<ContactsActivity>()) }
+        appBarBinding.includeContentHome.recyclerBackMessage.setOnClickListener { startActivity(intentFor<ContactsActivity>()) }
 
         reference.addValueEventListener(object : ValueEventListener {
                 override fun onCancelled(p0: DatabaseError) {
@@ -471,7 +476,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
                 override fun onDataChange(p0: DataSnapshot) {
 
-                    conversation_progressbar.visibility = View.GONE
+                    appBarBinding.includeContentHome.conversationProgressbar.visibility = View.GONE
 
                     p0.children.forEach {
                         val uid = it.key?:""
@@ -486,7 +491,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                                     }
                                     else unreadConversations.remove(uid)
 
-                                    bottom_navigation_home.setNotification(unreadConversations.size.toString().takeIf { unreadConversations.size > 0 }?:"", 0)
+                                    appBarBinding.bottomNavigationHome.setNotification(unreadConversations.size.toString().takeIf { unreadConversations.size > 0 }?:"", 0)
 
                                 }
 
@@ -495,19 +500,19 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     }
 
                     if(p0.exists()){
-                        recycler_back_message.visibility = View.GONE
+                        appBarBinding.includeContentHome.recyclerBackMessage.visibility = View.GONE
                     }
                     else
-                        recycler_back_message.visibility = View.VISIBLE
+                        appBarBinding.includeContentHome.recyclerBackMessage.visibility = View.VISIBLE
 
 
                 }
             })
 
 
-        conversationRecycler.layoutManager = LinearLayoutManager(context)
-        conversationRecycler.adapter = adapter
-//        conversationRecycler.addItemDecoration(DividerItemDecoration(this, DividerItemDecoration.VERTICAL))
+        appBarBinding.includeContentHome.conversationRecycler.layoutManager = LinearLayoutManager(context)
+        appBarBinding.includeContentHome.conversationRecycler.adapter = adapter
+//        appBarBinding.includeContentHome.conversationRecycler.addItemDecoration(DividerItemDecoration(this, DividerItemDecoration.VERTICAL))
 
         adapter.startListening()
 
@@ -516,7 +521,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 super.onChanged()
 
                 if(adapter.itemCount > 0){
-                    recyclerView.scrollToPosition(0)
+                    appBarBinding.includeContentHome.conversationRecycler.scrollToPosition(0)
                 }
             }
         })
@@ -525,16 +530,17 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
 
-    class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
+    class ViewHolder(itemView: ItemConversationLayoutBinding) : RecyclerView.ViewHolder(itemView.root){
+
         val name = itemView.name!!
-        val lastMessage = itemView.mobile_number!!
+        val lastMessage = itemView.mobileNumber!!
         val pic = itemView.pic!!
         val time = itemView.messageTime!!
         val unreadCount = itemView.unreadCount!!
-        val onlineStatus = itemView.online_status_imageview!!
-        val checkbox = itemView.contact_checkbox!!
-        val deliveryTick = itemView.delivery_status_last_msg!!
-        val muteIcon = itemView.conversation_mute_icon!!
+        val onlineStatus = itemView.onlineStatusImageview!!
+        val checkbox = itemView.contactCheckbox!!
+        val deliveryTick = itemView.deliveryStatusLastMsg!!
+        val muteIcon = itemView.conversationMuteIcon!!
 
         init {
             onlineStatus.visibility = View.GONE
@@ -550,6 +556,8 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
             adapter.stopListening()
             FirebaseUtils.setMeAsOffline()
+
+            ads.values.forEach { it.destroy() }
         }
         catch (e:Exception) {}
 
@@ -647,15 +655,15 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         supportFragmentManager.addOnBackStackChangedListener {
             if(supportFragmentManager.backStackEntryCount == 0) {
-                show_contacts.show()
+                appBarBinding.showContacts.show()
             }
-            else show_contacts.hide()
+            else appBarBinding.showContacts.hide()
         }
 
         val fragmentOnline = FragmentOnlineFriends()
 
 
-        with(bottom_navigation_home){
+        with(appBarBinding.bottomNavigationHome){
             addItem(AHBottomNavigationItem("Recent", R.drawable.ic_chat))
             addItem(AHBottomNavigationItem("Online", R.drawable.ic_online_small))
             addItem(AHBottomNavigationItem("My Profile", R.drawable.ic_person_outlined))
@@ -678,7 +686,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
                     1 -> {
                         supportFragmentManager.beginTransaction()
-                            .replace(R.id.homeLayoutContainer, fragmentOnline)
+                            .replace(binding.includeAppBar.includeContentHome.homeLayoutContainer.id, fragmentOnline)
                             .addToBackStack(null)
                             .commit()
                         title = "Online contacts"
@@ -690,7 +698,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
                     2 -> {
                         supportFragmentManager.beginTransaction()
-                            .replace(R.id.homeLayoutContainer, FragmentMyProfile())
+                            .replace(binding.includeAppBar.includeContentHome.homeLayoutContainer.id, FragmentMyProfile())
                             .addToBackStack(null).commit()
                         title = "My Profile"
                     }
@@ -709,137 +717,107 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private fun setOnlineCount(count:Int) {
         try {
-            bottom_navigation_home.setNotification(count.toString().takeIf { count > 0 }?:"", 1)
+            appBarBinding.bottomNavigationHome.setNotification(count.toString().takeIf { count > 0 }?:"", 1)
         }
         catch (e:Exception){}
     }
 
+    private val ads:MutableMap< Int, NativeAd> = LinkedHashMap()
     private fun loadNativeAd(itemView:View, position:Int){
 
 
+        val itemBinding = ItemConversationLayoutBinding.bind(itemView)
+        val adLayoutBinding = itemBinding.adLayout
 
-        with(itemView){
+        adLayoutBinding.adLayout.hide()
 
-            conversation_native_ad.hide()
-
-
-            initAd {
-
-                
-                it?.let {
-
-                    when (position) {
-                        utils.constants.ads_after_items, utils.constants.ads_after_items * 2 -> {
-
-                        }
-                        else -> {
-                            conversation_native_ad.hide()
-                            return@initAd
-                        }
-                    }
-
-
-                    conversation_native_ad.iconView = itemView.pic
-
-                    itemView.ad_name.text = it.headline
-                    itemView.ad_side_text.text = it.advertiser
-                    itemView.ad_subtitle.text = it.body
-
-                    if(it.icon != null)
-                    itemView.ad_pic.setImageDrawable(it.icon.drawable)
-
-                    if(it.starRating != null)
-                        itemView.ad_rating.rating = it.starRating.toFloat()
-                    else
-                        itemView.ad_rating.hide()
-
-                    with(itemView){
-                        ad_call_to_action.text = it.callToAction
-
-                        conversation_native_ad.callToActionView = ad_call_to_action
-                        conversation_native_ad.bodyView = ad_subtitle
-                        conversation_native_ad.headlineView = ad_name
-                        conversation_native_ad.advertiserView = ad_side_text
-                        conversation_native_ad.iconView = ad_pic
-                    }
-
-
-                    it.enableCustomClickGesture()
-                    conversation_native_ad.show()
-
-                conversation_native_ad.setNativeAd(it)
-
-                }
+        if(position == utils.constants.ads_after_items || position == utils.constants.ads_after_items * 2) {
+            //show ad
+        }
+        else{
+            adLayoutBinding.adLayout.hide()
+            return
         }
 
-    }
+
+        if(ads.containsKey(position) && ads[position] != null){
+            utils.populateNativeAdView(ads[position]!!, adLayoutBinding.adLayout)
+            return
+        }
 
 
-}
-
-    private lateinit var adLoader:AdLoader
-    private fun initAd(onLoaded: ((unifiedNativeAd:UnifiedNativeAd?) -> Unit)? = null){
-
-        var unifiedNativeAd:UnifiedNativeAd? = null
-
-        adLoader = AdLoader.Builder(this, getString(R.string.native_ad_conversation))
-            .forUnifiedNativeAd {
-                unifiedNativeAd = it
-                onLoaded?.invoke(it)
+        val adLoader = AdLoader.Builder(this, getString(R.string.native_ad_conversation))
+            .forNativeAd { nativeAd ->
+                ads[position] = nativeAd
+                utils.populateNativeAdView(nativeAd, adLayoutBinding.adLayout)
             }
             .withAdListener(object : AdListener() {
-
-                override fun onAdLoaded() {
-                    Log.d("HomeActivity", "onAdLoaded: ")
-                    onLoaded?.invoke(unifiedNativeAd)
-                    super.onAdLoaded()
-                }
-
-                override fun onAdFailedToLoad(p0: Int) {
-                    super.onAdFailedToLoad(p0)
-                    Log.d("HomeActivity", "onAdFailedToLoad: code = $p0")
-                    onLoaded?.invoke(null)
-
+                override fun onAdFailedToLoad(p0: LoadAdError) {
+                    // Handle ad load failure
+                    Log.d("HomeActivity", "onAdFailedToLoad: Native Ad "+p0.message)
                 }
             })
+            .withNativeAdOptions(NativeAdOptions.Builder().build())
             .build()
 
-        adLoader.loadAds(AdRequest.Builder().addTestDevice(utils.constants.redmi_note_3_test_device_id).build(), 5)
+        adLoader.loadAd(AdRequest.Builder().build())
 
     }
-    
+
+
+    private lateinit var adLoader:AdLoader
+
 
     private fun loadRewardedAd(){
 
-        rewardedVideoAd = MobileAds.getRewardedVideoAdInstance(this)
-        rewardedVideoAd.rewardedVideoAdListener = object : RewardedVideoAdListener{
-            override fun onRewardedVideoAdClosed() {}
+//        if(rewardedAd != null)
+//            return
 
-            override fun onRewardedVideoAdLeftApplication() {
+        val adRequest = AdRequest.Builder().build()
+        RewardedAd.load(this,getString(R.string.rewarded_ad_unit), adRequest, object : RewardedAdLoadCallback() {
+            override fun onAdFailedToLoad(adError: LoadAdError) {
+                Log.d("HomeActivity", "onAdFailedToLoad: "+adError.message)
+                rewardedAd = null
             }
 
-            override fun onRewardedVideoAdLoaded() {
-            }
+            override fun onAdLoaded(ad: RewardedAd) {
+                Log.d("HomeActivity", "Ad was loaded.")
+                rewardedAd = ad
+                rewardedAd?.fullScreenContentCallback = object: FullScreenContentCallback() {
+                    override fun onAdClicked() {
+                        // Called when a click is recorded for an ad.
+                        Log.d("HomeActivity", "onAdClicked: ")
+                    }
 
-            override fun onRewardedVideoAdOpened() {
-            }
+                    override fun onAdDismissedFullScreenContent() {
+                        // Called when ad is dismissed.
+                        // Set the ad reference to null so you don't show the ad a second time.
+                        Log.d("HomeActivity", "onAdDismissedFullScreenContent: ")
+                        rewardedAd = null
+                        loadRewardedAd()
+                    }
 
-            override fun onRewardedVideoCompleted() {
-            }
+                    override fun onAdFailedToShowFullScreenContent(p0: AdError) {
+                        // Called when ad fails to show.
+                        Log.d("HomeActivity", "onAdFailedToShowFullScreenContent: ")
+                        rewardedAd = null
+                        loadRewardedAd()
+                    }
 
-            override fun onRewarded(p0: RewardItem?) {
-                bottom_navigation_home.snackbar("Thank you for your support")
-            }
+                    override fun onAdImpression() {
+                        // Called when an impression is recorded for an ad.
+                        Log.d("HomeActivity", "onAdImpression: ")
+                    }
 
-            override fun onRewardedVideoStarted() {
+                    override fun onAdShowedFullScreenContent() {
+                        // Called when ad is shown.
+                        Log.d("HomeActivity", "onAdShowedFullScreenContent: ")
+                    }
+                }
             }
+        })
 
-            override fun onRewardedVideoAdFailedToLoad(p0: Int) {
-            }
 
-        }
-        rewardedVideoAd.loadAd(getString(R.string.rewarded_ad_unit), AdRequest.Builder()
-            .addTestDevice(utils.constants.redmi_note_3_test_device_id).build())
     }
 
 
@@ -848,44 +826,44 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_search, menu)
 
-        searchView.setMenuItem(menu?.findItem(R.id.action_search))
+        appBarBinding.searchView.setMenuItem(menu?.findItem(R.id.action_search))
 
         val searchFragment = FragmentSearch()
         var onSearched:OnSearched? = null
 
         searchFragment.setOnItemClickedListener(object : FragmentSearch.OnItemClicked {
             override fun onClicked() {
-                Handler().postDelayed({ searchView.closeSearch()},500)
+                Handler().postDelayed({ appBarBinding.searchView.closeSearch()},500)
             }
         }
         )
 
 
 
-        searchView.setOnSearchViewListener(object : MaterialSearchView.SearchViewListener{
+        appBarBinding.searchView.setOnSearchViewListener(object : MaterialSearchView.SearchViewListener{
             override fun onSearchViewClosed() {
                 // detach search fragment
                 repeat(supportFragmentManager.backStackEntryCount)
                 {
                     supportFragmentManager.popBackStackImmediate()
                 }
-                bottom_navigation_home.show()
-                show_contacts.show()
+                appBarBinding.bottomNavigationHome.show()
+                appBarBinding.showContacts.show()
 
             }
 
             override fun onSearchViewShown() {
                 // attach search fragment
-                supportFragmentManager.beginTransaction().replace(R.id.homeLayoutContainer, searchFragment).addToBackStack(null).commit()
+                supportFragmentManager.beginTransaction().replace(binding.includeAppBar.includeContentHome.homeLayoutContainer.id, searchFragment).addToBackStack(null).commit()
                 onSearched = searchFragment.setSearchAdapter()
-                bottom_navigation_home.hide()
-                show_contacts.hide()
+                appBarBinding.bottomNavigationHome.hide()
+                appBarBinding.showContacts.hide()
 
             }
 
         })
 
-        searchView.setOnQueryTextListener(object : MaterialSearchView.OnQueryTextListener{
+        appBarBinding.searchView.setOnQueryTextListener(object : MaterialSearchView.OnQueryTextListener{
             override fun onQueryTextSubmit(query: String?): Boolean {
                 onSearched?.onSubmit(query.orEmpty())
                 return false

@@ -15,12 +15,11 @@
             android:padding="20dp"
             android:layout_margin="5dp"
             android:gravity="center"
-            android:drawableLeft="@drawable/shape_line"
-            android:drawableRight="@drawable/shape_line"
             android:id="@+id/header_left"
             android:layout_gravity="center"
             android:textColor="@color/black"
-    />
+            app:drawableRightCompat="@drawable/shape_line"
+            app:drawableLeftCompat="@drawable/shape_line" />
 
 
 
@@ -36,7 +35,7 @@
 
 
         <de.hdodenhof.circleimageview.CircleImageView
-                android:layout_width="50dp"
+                android:layout_width="42dp"
                 app:civ_border_color="@color/colorPrimary"
                 android:layout_marginLeft="2dp"
                 android:id="@+id/senderIcon"
@@ -83,7 +82,7 @@
                         android:paddingTop="3dp"
                         android:paddingBottom="3dp"
                         android:paddingRight="5dp"
-                        android:textSize="16sp"
+                        android:textSize="15sp"
                         android:maxWidth="240dp"
                         android:autoLink="all"
                         android:text="@string/large_text"
