@@ -41,6 +41,7 @@ class FragmentRecording: BottomSheetDialogFragment() {
     private fun initRecorder() {
             with(mediaRecorder){
                 try {
+                    File(utils.sentAudioPath).mkdirs()
                     setAudioSource(MediaRecorder.AudioSource.MIC)
                     setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
                     setAudioEncoder(MediaRecorder.AudioEncoder.AMR_WB)
@@ -74,7 +75,7 @@ class FragmentRecording: BottomSheetDialogFragment() {
 
             binding.cancel.show()
             binding.accept.show()
-            it.hide()
+//            it.hide()
         }
 
         binding.cancel.setOnClickListener {

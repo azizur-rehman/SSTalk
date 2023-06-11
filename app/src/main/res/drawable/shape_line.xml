@@ -9,7 +9,7 @@
           android:height="5dp"/>
 
 
-    <stroke android:width="0.8dp" android:color="@color/colorAccent"/>
+    <stroke android:width="0.1dp" android:color="@color/colorAccent"/>
 
 
 </shape>

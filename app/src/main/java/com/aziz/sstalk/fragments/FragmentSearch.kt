@@ -218,7 +218,7 @@ class FragmentSearch : Fragment() {
                 }
 
                 messageTime.text = message?.timeInMillis?.let { utils.getHeaderFormattedDate(it) }
-                adLayout.conversationNativeAd.hide()
+                adLayout.adLayout.hide()
                 conversationMuteIcon.hide()
                 deliveryStatusLastMsg.hide()
 

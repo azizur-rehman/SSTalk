@@ -4,15 +4,17 @@
         xmlns:android="http://schemas.android.com/apk/res/android">
 
     <solid android:color="@color/colorPrimary"/>
-    <corners android:bottomLeftRadius="35dp"
-             android:topRightRadius="35dp"
-             android:topLeftRadius="35dp"/>
+    <corners android:bottomLeftRadius="40dp"
+             android:topRightRadius="40dp"
+             android:topLeftRadius="40dp"
+
+            />
 
 
-    <gradient android:gradientRadius="225"
-              android:type="radial"
+    <gradient android:gradientRadius="135"
+              android:type="linear"
               android:endColor="@color/colorPrimary"
-              android:startColor="#2EC767"
+              android:startColor="@color/md_purple_300"
               />
 
 

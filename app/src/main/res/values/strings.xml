@@ -210,8 +210,11 @@
 
     <string name="native_ad_conversation">ca-app-pub-3219184867279814/5341504590</string>
     <string name="rewarded_ad_unit">ca-app-pub-3219184867279814/5683574937</string>
+    <string name="test_rewarded_ad">ca-app-pub-3940256099942544/5224354917</string>
 
     <string name="admob_id">ca-app-pub-3219184867279814~2969943386</string>
+
+    <string name="native_advance_test_ad">ca-app-pub-3940256099942544/2247696110</string>
 
     <string name="single_line_string">This is a single line string to test text resources wherever possible</string>
 

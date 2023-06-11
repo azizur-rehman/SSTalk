@@ -44,6 +44,8 @@ import com.aziz.sstalk.firebase.UploadWorker
 import com.aziz.sstalk.fragments.FragmentRecording
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.*
+import com.aziz.sstalk.utils.utils.hasStoragePermission
+import com.aziz.sstalk.utils.utils.requestStoragePermission
 import com.aziz.sstalk.views.ColorGenerator
 import com.aziz.sstalk.views.Holders
 import com.firebase.ui.common.ChangeEventType
@@ -217,18 +219,19 @@ class MessageActivity : AppCompatActivity() {
 
 
 
-        asyncLoader= doAsyncResult {
-            uiThread {
+//        asyncLoader= doAsyncResult {
+//            uiThread {
+
                 binding.messageProgressbar.show()
                 initComponents()
                 
-                onComplete {
+//                onComplete {
                     binding.messageProgressbar.hide()
-                }
-            }
+//                }
+//            }
 
 
-        }
+//        }
 
 
 
@@ -425,28 +428,16 @@ class MessageActivity : AppCompatActivity() {
             if(binding.includeAttachment.attachmentMenu.visibility != View.VISIBLE) utils.setEnterRevealEffect(this, binding.includeAttachment.attachmentMenu) else utils.setExitRevealEffect(binding.includeAttachment.attachmentMenu)
 
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                if (ActivityCompat.checkSelfPermission(
-                        context,
-                        Manifest.permission.READ_EXTERNAL_STORAGE
-                    ) == PackageManager.PERMISSION_GRANTED  && ActivityCompat.checkSelfPermission(
-                        context,
-                        Manifest.permission.WRITE_EXTERNAL_STORAGE
-                    ) == PackageManager.PERMISSION_GRANTED) {
+            if (hasStoragePermission(context)) {
 
-                    startCamera()
-
-                }
-                else {
-                    requestPermissions(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE), RP_STORAGE_CAMERA)
-                }
-
-            }
-            else{
                 startCamera()
+
+            }
+            else {
+                requestStoragePermission(RP_STORAGE_CAMERA)
             }
 
-            
+
         }
 
 
@@ -454,28 +445,18 @@ class MessageActivity : AppCompatActivity() {
 
             if(!binding.includeAttachment.attachmentMenu.visible) utils.setEnterRevealEffect(this, binding.includeAttachment.attachmentMenu) else utils.setExitRevealEffect(binding.includeAttachment.attachmentMenu)
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                if (ActivityCompat.checkSelfPermission(
-                        context,
-                        Manifest.permission.READ_EXTERNAL_STORAGE
-                    ) == PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
-                        context,
-                        Manifest.permission.WRITE_EXTERNAL_STORAGE
-                    ) == PackageManager.PERMISSION_GRANTED){
+            if (hasStoragePermission(context)){
 
-                    startActivityForResult(galleryIntent, RQ_GALLERY)
-
-                }
-
-                else {
-                    requestPermissions(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE), RP_STORAGE_GALLERY)
-                }
-
-            }
-            else{
                 startActivityForResult(galleryIntent, RQ_GALLERY)
+
             }
-            
+
+            else {
+
+                requestStoragePermission(RP_STORAGE_GALLERY)
+
+             }
+
         }
 
 
@@ -483,19 +464,13 @@ class MessageActivity : AppCompatActivity() {
 
             if(binding.includeAttachment.attachmentMenu.visibility != View.VISIBLE) utils.setEnterRevealEffect(this, binding.includeAttachment.attachmentMenu) else utils.setExitRevealEffect(binding.includeAttachment.attachmentMenu)
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                if (ActivityCompat.checkSelfPermission(
-                        context,
-                        Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
-                    startActivityForResult(Intent(context, MapsActivity::class.java), RQ_LOCATION)
-                else
-                    requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), RP_LOCATION)
-
-            }
-            else{
+            if (ActivityCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
                 startActivityForResult(Intent(context, MapsActivity::class.java), RQ_LOCATION)
-            }
-            
+            else
+                requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), RP_LOCATION)
+
         }
 
 
@@ -503,50 +478,52 @@ class MessageActivity : AppCompatActivity() {
             if(binding.includeAttachment.attachmentMenu.visibility != View.VISIBLE) utils.setEnterRevealEffect(this, binding.includeAttachment.attachmentMenu)
             else utils.setExitRevealEffect(binding.includeAttachment.attachmentMenu)
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                if (ActivityCompat.checkSelfPermission(
-                        context,
-                        Manifest.permission.READ_EXTERNAL_STORAGE
-                    ) == PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
-                        context,
-                        Manifest.permission.WRITE_EXTERNAL_STORAGE
-                    ) == PackageManager.PERMISSION_GRANTED){
+            if (hasStoragePermission(context)){
 
-                    startActivityForResult(videoIntent, RQ_VIDEO)
-
-                }
-
-                else {
-                    requestPermissions(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE), RP_STORAGE_GALLERY)
-                }
-
-            }
-            else{
                 startActivityForResult(videoIntent, RQ_VIDEO)
+
             }
-            
+
+            else {
+
+                requestStoragePermission(RP_STORAGE_GALLERY)
+
+            }
+
 
         }
 
         binding.includeAttachment.audioBtn.setOnClickListener {
             if(!binding.includeAttachment.attachmentMenu.visible) utils.setEnterRevealEffect(this, binding.includeAttachment.attachmentMenu) else utils.setExitRevealEffect(binding.includeAttachment.attachmentMenu)
 
-            startActivityForResult(audioIntent, RQ_AUDIO)
+            if (hasStoragePermission(context)){
+
+                startActivityForResult(audioIntent, RQ_AUDIO)
+            }
+
+            else
+                requestStoragePermission(RP_RECORDING)
+
 
         }
 
         binding.includeAttachment.recordingBtn.setOnClickListener {
             if(!binding.includeAttachment.attachmentMenu.visible) utils.setEnterRevealEffect(this, binding.includeAttachment.attachmentMenu) else utils.setExitRevealEffect(binding.includeAttachment.attachmentMenu)
             if(!utils.hasRecordingPermission(this)){
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), RP_RECORDING)
-                }
-                else
-                    startAudioRecording()
+                requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), RP_RECORDING)
             }
             else
                 startAudioRecording()
 
+        }
+
+        with(binding.includeAttachment) {
+            fabAudio.setOnClickListener { audioBtn.callOnClick() }
+            fabCamera.setOnClickListener { cameraBtn.callOnClick() }
+            fabLocation.setOnClickListener { locationBtn.callOnClick() }
+            fabGallery.setOnClickListener { galleryBtn.callOnClick() }
+            fabRecording.setOnClickListener { recordingBtn.callOnClick() }
+            fabVideo.setOnClickListener { videoPickBtn.callOnClick() }
         }
 
 
@@ -1185,7 +1162,7 @@ class MessageActivity : AppCompatActivity() {
                     }
 
                     is Holders.MyAudioHolder -> {
-                        container = holder.itemView.findViewById(R.id.container_right)
+                        container = holder.itemBinding.containerRight
                         dateHeader = holder.dateTextView
                         holder.time.text = utils.getLocalTime(model.timeInMillis)
                         holder.audioProgressBar.progress = 0f
@@ -1195,7 +1172,7 @@ class MessageActivity : AppCompatActivity() {
                         else utils.getFileSize(model.file_size_in_bytes)
 
 
-                        holder.itemView.findViewById<View>(R.id.item_audio_container).setOnClickListener {
+                        holder.itemBinding.includeAudioBubble.itemAudioContainer.setOnClickListener {
 
                             if(audioFile.exists()) playAudio(model.file_local_path) else downloadAudio(model, messageID)
 
@@ -1235,7 +1212,7 @@ class MessageActivity : AppCompatActivity() {
                         targetSenderTitle = holder.senderTitle
                         targetSenderIcon = holder.senderIcon
 
-                        holder.itemView.findViewById<View>(R.id.item_audio_container).setOnClickListener {
+                        holder.binding.itemAudioContainer.setOnClickListener {
                             if(File(model.file_local_path).exists()) playAudio(model.file_local_path) else downloadAudio(model, messageID)
                         }
                         CircularProgressBarsAt[messageID] = holder.audioProgressBar
@@ -1346,7 +1323,10 @@ class MessageActivity : AppCompatActivity() {
                                 if(isContextMenuActive)
                                     return@setOnClickListener
 
-                                downloadVideo(model , messageID)
+                                downloadVideo(model , messageID){
+                                    it.show()
+                                    holder.itemView.snackbar("Failed to download video")
+                                }
                                 it.hide()
                             }
 
@@ -2080,7 +2060,7 @@ class MessageActivity : AppCompatActivity() {
 
 
     //downloading video and saving to file in the form of file
-    private fun downloadVideo(model: Models.MessageModel, messageID: String){
+    private fun downloadVideo(model: Models.MessageModel, messageID: String, onFailed:()->Unit){
 
         val itemHolder = binding.messagesList.findViewHolderForAdapterPosition(adapter.snapshots.indexOf(model))
 
@@ -2111,9 +2091,12 @@ class MessageActivity : AppCompatActivity() {
                 .addOnCompleteListener{
                     progressBar?.hide()
                     it.exception?.printStackTrace()
+                    if(it.isSuccessful.not())
+                        onFailed()
                 }
                 .addOnCanceledListener {
                     progressBar?.hide()
+                    onFailed()
                 }
                 .addOnSuccessListener {
 
@@ -2209,9 +2192,9 @@ class MessageActivity : AppCompatActivity() {
         super.onDestroy()
 
         Pref.setCurrentTargetUID(context, "")
-
-        if(!asyncLoader?.isDone!!)
-            asyncLoader?.cancel(true)
+//
+//        if(!asyncLoader?.isDone!!)
+//            asyncLoader?.cancel(true)
 
         try {
 
@@ -2501,7 +2484,10 @@ class MessageActivity : AppCompatActivity() {
 
 
         if(model.file_local_path.isEmpty()){
-            downloadVideo(model, messageID)
+            downloadVideo(model, messageID){
+                holder.tapToRetry.show()
+                holder.itemView.snackbar("Failed to download video")
+            }
         }
         else if(!File(model.file_local_path).exists()){
             holder.tap_to_download.show()

@@ -668,7 +668,7 @@ class UserProfileActivity : AppCompatActivity() {
         val imageView = itemView.findViewById<ImageView>(R.id.iv_thumbnail_video)
         val length = itemView.findViewById<TextView>(R.id.txt_duration)
         val thumbnailIcon = itemView.findViewById<ImageView>(R.id.iv_camera_video)
-        val layoutDuration = itemView.findViewById<TextView>(R.id.layout_duration)
+        val layoutDuration = itemView.findViewById<View>(R.id.layout_duration)
         init {
             thumbnailIcon.hide()
             layoutDuration.setBackgroundResource(R.color.md_grey_300)

@@ -50,7 +50,7 @@
                 android:paddingRight="5dp"
                 android:paddingTop="5dp"
                 android:layout_weight="1"
-                android:textSize="16sp"
+                android:textSize="15sp"
                 android:maxWidth="240dp"
                 android:autoLink="all"
                 android:text="@string/large_text"
@@ -61,7 +61,7 @@
         <LinearLayout android:layout_width="wrap_content"
                       android:layout_height="wrap_content"
                       android:gravity="center"
-                      android:paddingTop="2dp"
+                      android:paddingTop="3dp"
                       android:paddingLeft="20dp"
                       android:orientation="horizontal"
                       android:layout_gravity="end">
@@ -77,7 +77,7 @@
                     android:textColor="@color/transparent_white_10"
             />
 
-            <ImageView android:layout_width="12dp"
+            <ImageView android:layout_width="11dp"
                        android:layout_marginLeft="5dp"
                        android:id="@+id/delivery_status"
                        android:src="@drawable/ic_message_pending_gray_24dp"

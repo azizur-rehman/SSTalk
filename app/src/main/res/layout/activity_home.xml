@@ -19,8 +19,6 @@
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_gravity="start"
-        app:itemIconTint="@color/colorPrimary"
-        app:itemTextColor="@color/dark_gray"
         app:itemTextAppearance="@style/TextBaseFontStyle"
         android:fitsSystemWindows="true"
         app:headerLayout="@layout/nav_header_home"

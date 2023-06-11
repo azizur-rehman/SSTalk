@@ -21,13 +21,15 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.aziz.sstalk.databinding.ActivityContactListBinding
-import com.aziz.sstalk.databinding.ItemConversationLayoutBinding
+import com.aziz.sstalk.databinding.ItemPhoneContactLayoutBinding
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.*
 import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.AdLoader
 import com.google.android.gms.ads.AdRequest
-import com.google.android.gms.ads.formats.UnifiedNativeAd
+import com.google.android.gms.ads.LoadAdError
+import com.google.android.gms.ads.nativead.NativeAd
+import com.google.android.gms.ads.nativead.NativeAdOptions
 import com.miguelcatalan.materialsearchview.MaterialSearchView
 import de.hdodenhof.circleimageview.CircleImageView
 import org.jetbrains.anko.toast
@@ -275,13 +277,10 @@ class ContactsActivity : AppCompatActivity(){
             holder.pic.circleBackgroundColor = ContextCompat.getColor(context, R.color.colorPrimary)
 
             when(position){
-                0 -> {
-                    holder.pic.setImageResource(R.drawable.ic_person_add_white_padded_24dp)
-                }
+                0 -> holder.pic.setImageResource(R.drawable.ic_person_add_white_padded_24dp)
 
-                1-> {
-                    holder.pic.setImageResource(R.drawable.ic_group_add_white_24dp)
-                }
+                1-> holder.pic.setImageResource(R.drawable.ic_group_add_white_24dp)
+
                 registeredUser.lastIndex -> {
                     holder.pic.setPadding(30,30,30,30)
                     holder.pic.circleBackgroundColor = Color.TRANSPARENT
@@ -315,100 +314,53 @@ class ContactsActivity : AppCompatActivity(){
             }
 
 
-
-    private var adsLoadedOnce = false
-    private val ads:MutableMap< Int, UnifiedNativeAd> = LinkedHashMap()
+    private val ads:MutableMap< Int, NativeAd> = LinkedHashMap()
     private fun loadNativeAd(itemView:View, position:Int){
 
 
-        val itemBinding = ItemConversationLayoutBinding.bind(itemView)
-        val adBinding = itemBinding.adLayout
+        val itemBinding = ItemPhoneContactLayoutBinding.bind(itemView)
+        val adLayoutBinding = itemBinding.adLayout
 
-        adBinding.conversationNativeAd.hide()
+        adLayoutBinding.adLayout.hide()
 
-
-        if(adsLoadedOnce)
-            return
-
-
-
-        initAd {
-
-
-
-            if(position == utils.constants.ads_after_items || position == utils.constants.ads_after_items * 2)
-                adBinding.conversationNativeAd.show()
-            else{
-                adBinding.conversationNativeAd.hide()
-                return@initAd
-            }
-            it?.let {
-
-                adBinding.conversationNativeAd.iconView = itemBinding.pic
-
-                adBinding.adName.text = it.headline
-                adBinding.adSideText.text = it.advertiser
-                adBinding.adSubtitle.text = it.body
-
-                if(it.icon != null)
-                    adBinding.adPic.setImageDrawable(it.icon.drawable)
-
-                if(it.starRating != null)
-                    adBinding.adRating.rating = it.starRating.toFloat()
-                else
-                    adBinding.adRating.hide()
-
-                adBinding.adCallToAction.text = it.callToAction
-
-                adBinding.conversationNativeAd.callToActionView = adBinding.adCallToAction
-                adBinding.conversationNativeAd.bodyView = adBinding.adSubtitle
-                adBinding.conversationNativeAd.headlineView = adBinding.adName
-                adBinding.conversationNativeAd.advertiserView = adBinding.adSideText
-                adBinding.conversationNativeAd.iconView = adBinding.adPic
-
-
-                it.enableCustomClickGesture()
-
-//                    adBinding.conversationNativeAd.setNativeAd(it)
-
-                ads[position] = it
-
-                if(position > utils.constants.ads_after_items && !adsLoadedOnce)
-                    adsLoadedOnce = true
-            }
-            if(it == null)
-                adBinding.conversationNativeAd.hide()
-
+        if(position == utils.constants.ads_after_items || position == utils.constants.ads_after_items * 2) {
+            //show ad
         }
+            else{
+                adLayoutBinding.adLayout.hide()
+                return
+            }
 
 
-    }
+        if(ads.containsKey(position) && ads[position] != null){
+            utils.populateNativeAdView(ads[position]!!, adLayoutBinding.adLayout)
+                return
+            }
 
-    private lateinit var adLoader: AdLoader
-    private fun initAd(onLoaded: ((unifiedNativeAd: UnifiedNativeAd?) -> Unit)? = null){
 
-        var unifiedNativeAd: UnifiedNativeAd? = null
-
-        adLoader = AdLoader.Builder(this, getString(R.string.native_ad_conversation))
-            .forUnifiedNativeAd {
-                unifiedNativeAd = it
-                onLoaded?.invoke(it)
+        val adLoader = AdLoader.Builder(this, getString(R.string.native_ad_conversation))
+            .forNativeAd { nativeAd ->
+                ads[position] = nativeAd
+                utils.populateNativeAdView(nativeAd, adLayoutBinding.adLayout)
             }
             .withAdListener(object : AdListener() {
-
-                override fun onAdLoaded() {
-                    Log.d("ContactsActivity", "onAdLoaded: ")
-                    onLoaded?.invoke(unifiedNativeAd)
-                    super.onAdLoaded()
+                override fun onAdFailedToLoad(p0: LoadAdError) {
+                    // Handle ad load failure
+                    Log.d("ContactsActivity", "onAdFailedToLoad: "+p0.message)
                 }
-
             })
+            .withNativeAdOptions(NativeAdOptions.Builder().build())
             .build()
 
         adLoader.loadAd(AdRequest.Builder().build())
 
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+
+        ads.values.forEach { it.destroy() }
+    }
 
     override fun onBackPressed() {
 

@@ -85,7 +85,7 @@ class ViewPagerImageAdapter(
 
         container.addView(itemView.root)
 
-        return itemView
+        return itemView.root
     }
 
 

@@ -1,12 +1,11 @@
 package com.aziz.sstalk.utils
 
 import android.app.Activity
-import android.app.ActivityOptions
 import android.content.Context
 import android.content.Intent
-import android.graphics.BitmapFactory
 import android.graphics.Typeface
 import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Handler
 import androidx.core.content.ContextCompat
@@ -24,6 +23,14 @@ import com.squareup.picasso.Picasso
 import com.aziz.sstalk.R
 import com.aziz.sstalk.UserProfileActivity
 import com.aziz.sstalk.utils.FirebaseUtils.ref.allMessageStatus
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.RequestOptions
+import com.bumptech.glide.request.target.Target
 import com.google.firebase.iid.FirebaseInstanceId
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
@@ -91,24 +98,6 @@ object FirebaseUtils {
         object ref {
 
             private fun root() : DatabaseReference {
-
-                try{
-                    FirebaseDatabase.getInstance().setPersistenceEnabled(true)
-                    FirebaseDatabase.getInstance().reference
-                        .child(NODE_USER_ACTIVITY_STATUS)
-                        .keepSynced(true)
-                    /*FirebaseDatabase.getInstance().reference
-                        .child(NODE_MESSAGES)
-                        .keepSynced(true)
-
-
-
-
-                    FirebaseDatabase.getInstance().reference
-                        .child(NODE_MESSAGE_STATUS)
-                        .keepSynced(true)*/
-                }
-                catch (e:Exception){ }
 
                 return FirebaseDatabase.getInstance().reference
             }
@@ -215,33 +204,34 @@ object FirebaseUtils {
             fun feedback():DatabaseReference = root().child(NODE_FEEDBACK)
         }
 
-
-    fun loadProfilePic(context: Context, uid: String, imageView: ImageView){
-
+    private fun loadContactPic(context: Context, id: String, imageView: ImageView, isGroup:Boolean = false){
 
 
-        try{
-            imageView.setImageResource(R.drawable.contact_placeholder)
-        }catch (e:Exception){}
+        val placeHolder = if(isGroup) R.drawable.ic_group_white_24dp else R.drawable.contact_placeholder
 
-            if(uid.isEmpty())
-                return
+        imageView.setImageResource(placeHolder)
+
+        if(id.isEmpty())
+            return
 
         var fileExists = false
 
 
         if(utils.hasStoragePermission(context)){
 
-            val file= File(utils.profilePicPath +uid+".jpg")
+            val file= File(utils.profilePicPath +id+".jpg")
 //            val transitionBundle =  ActivityOptions.makeThumbnailScaleUpAnimation(imageView,
 //                BitmapFactory.decodeFile(file.path),0,0).toBundle()
 
             if(file.exists()){
                 fileExists = true
-                Log.d("FirebaseUtils", "loadProfilePic: exists of $uid")
-                Picasso.get().load(file)
+                Log.d("FirebaseUtils", "loadProfilePic: exists of $id")
+//                Picasso.get().load(file)
 //                    .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE).into(imageView)
 
+//                Glide.with(context).load(file).apply(RequestOptions().diskCacheStrategy(
+//                    DiskCacheStrategy.ALL)).into(imageView)
+                imageView.loadImage(file, placeHolder)
 
                 imageView.setOnClickListener {
                     context.startActivity(Intent(context, ImagePreviewActivity::class.java)
@@ -251,179 +241,52 @@ object FirebaseUtils {
 
         }
 
-            user(uid)
-                .child(KEY_PROFILE_PIC_URL)
-                .addValueEventListener(object : ValueEventListener {
-
-                    override fun onDataChange(p0: DataSnapshot) {
-
-                        if(!p0.exists()) {
-                            Log.d("FirebaseUtils", "onDataChange: profile pic not exists for $uid")
-                            imageView.setImageResource(R.drawable.contact_placeholder)
-                            if(utils.hasStoragePermission(context)){
-                                File(utils.profilePicPath +uid+".jpg")
-                                    .delete()
-                            }
-                            return
-                        }
-
-                        if (p0.exists()) {
-                            val link: String? = p0.getValue(String::class.java)
-
-                            if(link!!.isEmpty()) {
-                                Log.d("FirebaseUtils", "onDataChange: profile pic not exists for $uid")
-                                Picasso.get().load(R.drawable.contact_placeholder).into(imageView)
-                                if(utils.hasStoragePermission(context)){
-                                    File(utils.profilePicPath +uid+".jpg")
-                                        .delete()
-                                }
-                                return
-                            }
-
-                            Log.d("FirebaseUtils", "loadProfilePic: loading for  = $uid")
-
-                            if(Pref.Profile.isProfileUrlSame(context, uid, link.toString())
-                                && fileExists){
-
-                                Log.d("FirebaseUtils", "onDataChange: profile exists and is same for $uid")
-
-                                    val file= File(utils.profilePicPath +uid+".jpg")
-                                    if(file.exists()){
-                                        Picasso.get().load(file)
-//                                            .memoryPolicy(MemoryPolicy.NO_CACHE,
-//                                                MemoryPolicy.NO_STORE)
-                                            .into(imageView)
-
-
-                                        imageView.setOnClickListener {
-                                            context.startActivity(Intent(context, ImagePreviewActivity::class.java)
-                                                .putExtra(utils.constants.KEY_LOCAL_PATH, file.path))
-                                        }
-                                        return
-                                    }
-
-                            }
-                            else {
-
-
-
-
-                                Log.d("FirebaseUtils", "onDataChange: profile doesn't exist or changed for $uid")
-
-
-                                Picasso.get().load(link)
-                                        .placeholder(R.drawable.contact_placeholder)
-                                    .error(R.drawable.error_placeholder)
-                                        .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
-                                        .into(imageView, object : Callback {
-                                            override fun onSuccess() {
-                                                if (utils.hasStoragePermission(context)) {
-                                                    Log.d("FirebaseUtils", "onSuccess: saving profile pic")
-                                                    utils.saveBitmapToProfileFolder(
-                                                        (imageView.drawable as BitmapDrawable).bitmap,
-                                                        uid
-                                                    )
-                                                    Pref.Profile.setProfileUrl(context, uid, link.toString())
-                                                }
-                                            }
-
-                                            override fun onError(e: Exception?) {
-                                                Log.d("FirebaseUtils", "onError: error loading image for $uid = ${e?.message}")
-                                            }
-
-
-                                        })
-
-
-                                imageView.setOnClickListener {
-                                    context.startActivity(
-                                        Intent(context, ImagePreviewActivity::class.java)
-                                            .putExtra(utils.constants.KEY_IMG_PATH, link)
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    override fun onCancelled(p0: DatabaseError) {
-
-                    }
-                })
-        }
-
-    //for group
-    fun loadGroupPic(context: Context, groupId: String, imageView: ImageView){
-
-
-        try{
-            imageView.setImageResource(R.drawable.ic_group_white_24dp)
-        }catch (e:Exception){}
-
-
-        if(groupId.isEmpty())
-            return
-
-
-        var fileExists = false
-
-        if(utils.hasStoragePermission(context)){
-
-
-            val file= File(utils.profilePicPath +groupId+".jpg")
-            if(file.exists()){
-                fileExists = true
-
-                Picasso.get().load(file)
-                    .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE).into(imageView)
-
-
-                imageView.setOnClickListener {
-                    context.startActivity(Intent(context, ImagePreviewActivity::class.java)
-                        .putExtra(utils.constants.KEY_LOCAL_PATH, file.path))
-                }
-            }
-
-        }
-
-        ref.groupInfo(groupId)
+        (if(isGroup) ref.groupInfo(id) else user(id))
             .child(KEY_PROFILE_PIC_URL)
             .addValueEventListener(object : ValueEventListener {
 
                 override fun onDataChange(p0: DataSnapshot) {
 
                     if(!p0.exists()) {
-                        Log.d("FirebaseUtils", "onDataChange: group pic(snapshot) not exists for $groupId")
-                        imageView.setImageResource(R.drawable.ic_group_white_24dp)
+                        Log.d("FirebaseUtils", "onDataChange: profile pic not exists for $id")
+
+                        imageView.setImageResource(placeHolder)
+
                         if(utils.hasStoragePermission(context)){
-                            File(utils.profilePicPath +groupId+".jpg")
+                            File(utils.profilePicPath +id+".jpg")
                                 .delete()
                         }
                         return
                     }
 
-
                     if (p0.exists()) {
                         val link: String? = p0.getValue(String::class.java)
 
                         if(link!!.isEmpty()) {
-                            Log.d("FirebaseUtils", "onDataChange: group profile pic not exists for $groupId")
-                            imageView.setImageResource(R.drawable.ic_group_white_24dp)
+                            Log.d("FirebaseUtils", "onDataChange: profile pic not exists for $id")
+
+                            imageView.loadImage(placeHolder)
+
                             if(utils.hasStoragePermission(context)){
-                                File(utils.profilePicPath +groupId+".jpg")
+                                File(utils.profilePicPath +id+".jpg")
                                     .delete()
                             }
                             return
                         }
 
-                        if(Pref.Profile.isProfileUrlSame(context, groupId, link.toString())
+                        Log.d("FirebaseUtils", "loadProfilePic: loading for  = $id")
+
+                        if(Pref.Profile.isProfileUrlSame(context, id, link.toString())
                             && fileExists){
 
+                            Log.d("FirebaseUtils", "onDataChange: profile exists and is same for $id")
 
-                            val file= File(utils.profilePicPath +groupId+".jpg")
+                            val file= File(utils.profilePicPath +id+".jpg")
                             if(file.exists()){
 
-                                Picasso.get().load(file)
-                                    .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE).into(imageView)
+                                imageView.loadImage(file, placeHolder)
+
+
                                 imageView.setOnClickListener {
                                     context.startActivity(Intent(context, ImagePreviewActivity::class.java)
                                         .putExtra(utils.constants.KEY_LOCAL_PATH, file.path))
@@ -435,26 +298,53 @@ object FirebaseUtils {
                         else {
 
 
-                            Picasso.get().load(link)
-                                .placeholder(R.drawable.ic_group_white_24dp)
-                                .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
-                                .into(imageView, object : Callback {
-                                    override fun onSuccess() {
+
+
+                            Log.d("FirebaseUtils", "onDataChange: profile doesn't exist or changed for $id")
+
+
+                            Glide.with(context)
+                                .load(link)
+                                .apply(RequestOptions()
+                                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                                    .placeholder(placeHolder)
+                                    .error(placeHolder)
+                                )
+                                .transition(DrawableTransitionOptions.withCrossFade())
+                                .addListener(object : RequestListener<Drawable>{
+                                    override fun onLoadFailed(
+                                        e: GlideException?,
+                                        model: Any?,
+                                        target: Target<Drawable>?,
+                                        isFirstResource: Boolean
+                                    ): Boolean {
+
+                                        Log.d("FirebaseUtils", "onError: error loading image for $id = ${e?.message}")
+                                        return false
+                                    }
+
+                                    override fun onResourceReady(
+                                        resource: Drawable?,
+                                        model: Any?,
+                                        target: Target<Drawable>?,
+                                        dataSource: DataSource?,
+                                        isFirstResource: Boolean
+                                    ): Boolean {
+
                                         if (utils.hasStoragePermission(context)) {
+                                            Log.d("FirebaseUtils", "onSuccess: saving profile pic")
                                             utils.saveBitmapToProfileFolder(
                                                 (imageView.drawable as BitmapDrawable).bitmap,
-                                                groupId
+                                                id
                                             )
-                                            Pref.Profile.setProfileUrl(context, groupId, link.toString())
+                                            Pref.Profile.setProfileUrl(context, id, link.toString())
                                         }
+                                        return true
                                     }
-
-                                    override fun onError(e: Exception?) {
-
-                                    }
-
 
                                 })
+                                .into(imageView)
+
 
 
                             imageView.setOnClickListener {
@@ -471,6 +361,17 @@ object FirebaseUtils {
 
                 }
             })
+    }
+    fun loadProfilePic(context: Context, uid: String, imageView: ImageView){
+        loadContactPic(context, uid, imageView)
+    }
+
+
+    //for group
+    fun loadGroupPic(context: Context, groupId: String, imageView: ImageView){
+
+        loadContactPic(context, groupId, imageView, isGroup = true)
+
     }
 
     fun loadProfileThumbnail(context: Context, uid:String, imageView: ImageView){
