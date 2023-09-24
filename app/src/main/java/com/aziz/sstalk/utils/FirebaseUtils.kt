@@ -3,6 +3,7 @@ package com.aziz.sstalk.utils
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.Typeface
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
@@ -226,11 +227,6 @@ object FirebaseUtils {
             if(file.exists()){
                 fileExists = true
                 Log.d("FirebaseUtils", "loadProfilePic: exists of $id")
-//                Picasso.get().load(file)
-//                    .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE).into(imageView)
-
-//                Glide.with(context).load(file).apply(RequestOptions().diskCacheStrategy(
-//                    DiskCacheStrategy.ALL)).into(imageView)
                 imageView.loadImage(file, placeHolder)
 
                 imageView.setOnClickListener {
@@ -334,7 +330,7 @@ object FirebaseUtils {
                                         if (utils.hasStoragePermission(context)) {
                                             Log.d("FirebaseUtils", "onSuccess: saving profile pic")
                                             utils.saveBitmapToProfileFolder(
-                                                (imageView.drawable as BitmapDrawable).bitmap,
+                                                (resource as? BitmapDrawable?)?.bitmap,
                                                 id
                                             )
                                             Pref.Profile.setProfileUrl(context, id, link.toString())
@@ -392,11 +388,14 @@ object FirebaseUtils {
             if(file.exists()){
                 Log.d("FirebaseUtils", "loadProfileThumbnail: profile exists")
                 fileExists = true
-                Picasso.get().load(file)
-                    .resize(80,80)
-                    .centerCrop()
-                    .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
-                    .into(imageView)
+
+                Glide.with(context).load(file).into(imageView)
+
+//                Picasso.get().load(file)
+//                    .resize(80,80)
+//                    .centerCrop()
+//                    .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
+//                    .into(imageView)
             }
 
         }
@@ -439,11 +438,12 @@ object FirebaseUtils {
                             && fileExists){
                                 val file= File(utils.profilePicPath +uid+".jpg")
                                 if(file.exists()){
-                                    Picasso.get().load(file)
-                                        .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
-                                        .resize(80,80)
-                                        .centerCrop()
-                                        .into(imageView)
+                                    Glide.with(context).load(file).into(imageView)
+//                                    Picasso.get().load(file)
+//                                        .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
+//                                        .resize(80,80)
+//                                        .centerCrop()
+//                                        .into(imageView)
                                 }
 
                             return
@@ -453,25 +453,51 @@ object FirebaseUtils {
                             Log.d("FirebaseUtils", "onDataChange:,  profile url has changed, loading from web")
 
 
-                            Picasso.get().load(link)
-                                .placeholder(R.drawable.contact_placeholder)
-                                .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
-                                .into(imageView, object : Callback {
-                                    override fun onSuccess() {
-                                        if (utils.hasStoragePermission(context)) {
-                                            utils.saveBitmapToProfileFolder(
-                                                (imageView.drawable as BitmapDrawable).bitmap,
-                                                uid
-                                            )
-                                            Pref.Profile.setProfileUrl(context, uid, link.toString())
-                                        }
+                            Glide.with(context).asBitmap().addListener(object : RequestListener<Bitmap?>{
+                                override fun onLoadFailed(
+                                    e: GlideException?,
+                                    model: Any?,
+                                    target: Target<Bitmap?>?,
+                                    isFirstResource: Boolean
+                                ): Boolean {
+                                    Log.d("FirebaseUtils", "onError: error loading image for $uid = ${e?.message}")
+
+                                    return false
+                                }
+
+                                override fun onResourceReady(
+                                    resource: Bitmap?,
+                                    model: Any?,
+                                    target: Target<Bitmap?>?,
+                                    dataSource: DataSource?,
+                                    isFirstResource: Boolean
+                                ): Boolean {
+
+                                    if (utils.hasStoragePermission(context)) {
+                                        utils.saveBitmapToProfileFolder(
+                                            resource,
+                                            uid
+                                        )
+                                        Pref.Profile.setProfileUrl(context, uid, link.toString())
                                     }
 
-                                    override fun onError(e: Exception?) {
-                                        Log.d("FirebaseUtils", "onError: error loading image for $uid = ${e?.message}")
-                                    }
+                                    return true
+                                }
 
-                                })
+                            }).load(link).into(imageView)
+
+//                            Picasso.get().load(link)
+//                                .placeholder(R.drawable.contact_placeholder)
+//                                .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
+//                                .into(imageView, object : Callback {
+//                                    override fun onSuccess() {
+//
+//                                    }
+//
+//                                    override fun onError(e: Exception?) {
+//                                     }
+//
+//                                })
                         }
                     }
                 }
@@ -499,11 +525,14 @@ object FirebaseUtils {
             val file= File(utils.profilePicPath +groupId+".jpg")
             if(file.exists()){
                 fileExists = true
-                Picasso.get().load(file)
-                    .resize(80,80)
-                    .centerCrop()
-                    .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
-                    .into(imageView)
+
+                Glide.with(context).load(file).into(imageView)
+
+//                Picasso.get().load(file)
+//                    .resize(80,80)
+//                    .centerCrop()
+//                    .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
+//                    .into(imageView)
             }
 
         }
@@ -546,11 +575,15 @@ object FirebaseUtils {
                             && fileExists){
                             val file= File(utils.profilePicPath +groupId+".jpg")
                             if(file.exists()){
-                                Picasso.get().load(file)
-                                    .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
-                                    .resize(80,80)
-                                    .centerCrop()
-                                    .into(imageView)
+
+
+                                Glide.with(context).load(file).into(imageView)
+
+//                                Picasso.get().load(file)
+//                                    .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
+//                                    .resize(80,80)
+//                                    .centerCrop()
+//                                    .into(imageView)
                             }
 
                             return
@@ -559,26 +592,48 @@ object FirebaseUtils {
                             //download profile pic
                             Log.d("FirebaseUtils", "onDataChange:,  profile url has changed, loading from web")
 
+                            Glide.with(context).asBitmap().listener(object : RequestListener<Bitmap?>{
+                                override fun onLoadFailed(
+                                    e: GlideException?,
+                                    model: Any?,
+                                    target: Target<Bitmap?>?,
+                                    isFirstResource: Boolean
+                                ): Boolean  = false
 
-                            Picasso.get().load(link)
-                                .placeholder(R.drawable.ic_group_white_24dp)
-                                .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
-                                .into(imageView, object : Callback {
-                                    override fun onSuccess() {
-                                        if (utils.hasStoragePermission(context)) {
-                                            utils.saveBitmapToProfileFolder(
-                                                (imageView.drawable as BitmapDrawable).bitmap,
-                                                groupId
-                                            )
-                                            Pref.Profile.setProfileUrl(context, groupId, link.toString())
-                                        }
+                                override fun onResourceReady(
+                                    resource: Bitmap?,
+                                    model: Any?,
+                                    target: Target<Bitmap?>?,
+                                    dataSource: DataSource?,
+                                    isFirstResource: Boolean
+                                ): Boolean {
+
+                                    if (utils.hasStoragePermission(context)) {
+                                        utils.saveBitmapToProfileFolder(
+                                            (imageView.drawable as BitmapDrawable).bitmap,
+                                            groupId
+                                        )
+                                        Pref.Profile.setProfileUrl(context, groupId, link.toString())
                                     }
 
-                                    override fun onError(e: Exception?) {
+                                    return true
+                                }
 
-                                    }
+                            }).into(imageView)
 
-                                })
+//                            Picasso.get().load(link)
+//                                .placeholder(R.drawable.ic_group_white_24dp)
+//                                .memoryPolicy(MemoryPolicy.NO_CACHE, MemoryPolicy.NO_STORE)
+//                                .into(imageView, object : Callback {
+//                                    override fun onSuccess() {
+//
+//                                    }
+//
+//                                    override fun onError(e: Exception?) {
+//
+//                                    }
+//
+//                                })
                         }
                     }
                 }

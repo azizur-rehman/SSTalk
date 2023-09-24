@@ -85,7 +85,7 @@
         <activity
                 android:name=".UserProfileActivity"
                 android:label="@string/title_activity_user_profile"
-                android:theme="@style/AppTheme.NoActionBar.Translucent">
+                android:theme="@style/AppTheme.NoActionBar">
         </activity>
         <!--
              The API key for Google Maps-based APIs is defined as a string resource.

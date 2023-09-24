@@ -301,7 +301,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     holder.name.text = model.nameOrNumber.trim()
 
 
-                    FirebaseUtils.loadGroupPic(context, uid, holder.pic)
+                    FirebaseUtils.loadGroupPicThumbnail(context, uid, holder.pic)
 
 
                     if(holder.name.text.isEmpty() || utils.isGroupID(holder.name.text.toString()))
@@ -311,7 +311,7 @@ class HomeActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 }
                 else {
                     holder.name.text = utils.getNameFromNumber(context, model.nameOrNumber)
-                    FirebaseUtils.loadProfilePic(this@HomeActivity, uid, holder.pic)
+                    FirebaseUtils.loadProfileThumbnail(this@HomeActivity, uid, holder.pic)
                     FirebaseUtils.setUserOnlineStatus(uid, holder.onlineStatus)
 
                 }

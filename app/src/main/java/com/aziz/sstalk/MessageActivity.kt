@@ -2155,7 +2155,7 @@ class MessageActivity : AppCompatActivity() {
             }
             .addOnSuccessListener {
 
-                utils.addMediaToMediaStore(context, messageID, audioFile, "audio/mp3")
+                utils.addMediaToMediaStore(context, messageID, audioFile, "audio/mpeg")
 
                 val children = mapOf(FirebaseUtils.KEY_FILE_LOCAL_PATH to audioFile.path)
 
@@ -2185,7 +2185,8 @@ class MessageActivity : AppCompatActivity() {
 
     override fun onStop() {
         super.onStop()
-        adapter.stopListening()
+        if(::adapter.isInitialized)
+            adapter.stopListening()
     }
 
     override fun onDestroy() {

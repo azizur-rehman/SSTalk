@@ -21,8 +21,8 @@ android {
         applicationId "com.aziz.sstalk"
         minSdk 23
         targetSdkVersion 33
-        versionCode 13
-        versionName '2.0.2'
+        versionCode 14
+        versionName '2.0.3'
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled true
     }
@@ -58,15 +58,15 @@ dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
 //    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.0"
     //noinspection GradleCompatible
-    implementation 'androidx.core:core-ktx:1.10.0'
+    implementation 'androidx.core:core-ktx:1.10.1'
     implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'com.google.android.material:material:1.8.0'
+    implementation 'com.google.android.material:material:1.9.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'com.github.stfalcon:chatkit:0.3.3'
-    implementation 'com.google.firebase:firebase-messaging:23.1.2'
-    implementation 'com.google.firebase:firebase-auth:21.3.0'
-    implementation 'com.google.firebase:firebase-database:20.2.0'
-    implementation 'com.google.firebase:firebase-storage:20.1.0'
+    implementation 'com.google.firebase:firebase-messaging:23.2.1'
+    implementation 'com.google.firebase:firebase-auth:22.1.1'
+    implementation 'com.google.firebase:firebase-database:20.2.2'
+    implementation 'com.google.firebase:firebase-storage:20.2.1'
     // FirebaseUI for Firebase Realtime Database
     implementation 'com.firebaseui:firebase-ui-database:6.0.2'
     implementation 'androidx.multidex:multidex:2.0.1'
@@ -110,13 +110,13 @@ dependencies {
     implementation 'com.google.firebase:firebase-ml-natural-language-translate-model:20.0.9'
 
     //Ads
-    implementation 'com.google.android.gms:play-services-ads:22.0.0'
+    implementation 'com.google.android.gms:play-services-ads:22.2.0'
 
     // (Recommended) Add Analytics
-    implementation 'com.google.firebase:firebase-analytics:21.2.2'
+    implementation 'com.google.firebase:firebase-analytics:21.3.0'
 
     // Add dependency
-    implementation 'com.google.firebase:firebase-crashlytics-ktx:18.3.6'
+    implementation 'com.google.firebase:firebase-crashlytics-ktx:18.4.0'
 
     //noinspection GradleDependency
     implementation 'com.miguelcatalan:materialsearchview:1.4.0'

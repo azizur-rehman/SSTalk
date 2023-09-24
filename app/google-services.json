@@ -1,0 +1,105 @@
+{
+  "project_info": {
+    "project_number": "823702378564",
+    "firebase_url": "https://ss-talk.firebaseio.com",
+    "project_id": "ss-talk",
+    "storage_bucket": "ss-talk.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:823702378564:android:e8a71d0f9f922835",
+        "android_client_info": {
+          "package_name": "com.aziz.sstalk"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "823702378564-39qt55rqg3hkqqj5o3m0qg4d3n75kolb.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aziz.sstalk",
+            "certificate_hash": "c581038f734f7c2598f589891efe6fb49d39188d"
+          }
+        },
+        {
+          "client_id": "823702378564-3ib3he2jr8n8siilu7q8rei8n3fvprv3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aziz.sstalk",
+            "certificate_hash": "b079da28d32b6b2c8f107e1fec303551e5e0efa1"
+          }
+        },
+        {
+          "client_id": "823702378564-4kjda9fmlbpl5csqn1s7qco32fruhv6v.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aziz.sstalk",
+            "certificate_hash": "ba4a927c05b16da8753828a625d5684508d93aeb"
+          }
+        },
+        {
+          "client_id": "823702378564-ajq3i6vfpoe1qrm46jmkndp138ijeicf.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aziz.sstalk",
+            "certificate_hash": "c6bb5578f739b8b3bd9395902327f2d836398c46"
+          }
+        },
+        {
+          "client_id": "823702378564-bbcu8q5e08r4h1quhna1ri93qbk1metn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aziz.sstalk",
+            "certificate_hash": "f94df94329790cdd458a54a3ed39f30b0d2f873d"
+          }
+        },
+        {
+          "client_id": "823702378564-i012psb2hcendanmlpo1ve639nfh11sk.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aziz.sstalk",
+            "certificate_hash": "d087f0616fb1139bc19edc18f549f3dd3a1c1eb1"
+          }
+        },
+        {
+          "client_id": "823702378564-mb95re4tpd0u6ht15e5216ia69i3qhjn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aziz.sstalk",
+            "certificate_hash": "7090ca6a68301c35084d95d21af3eb27765af15b"
+          }
+        },
+        {
+          "client_id": "823702378564-rabic6cfebvpoqgcrnhkgvfdp0lrnuen.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aziz.sstalk",
+            "certificate_hash": "c500bd4d9d5763cdcd4c5c974da5c430033123d2"
+          }
+        },
+        {
+          "client_id": "823702378564-ug6c6jgv2op6nmsmbt48j78tghva2r4i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBaZjnZm2myrbhG2fTu5y-iy6ymz1CUOrc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "823702378564-ug6c6jgv2op6nmsmbt48j78tghva2r4i.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      },
+      "admob_app_id": "ca-app-pub-3219184867279814~2969943386"
+    }
+  ],
+  "configuration_version": "1"
+}

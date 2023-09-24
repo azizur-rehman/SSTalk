@@ -200,7 +200,8 @@ object utils {
     fun hasStoragePermission(context: Context): Boolean {
         return if(false){
 //        if (VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            Environment.isExternalStorageManager();
+//            Environment.isExternalStorageManager();
+            true
         } else {
             ((ActivityCompat.checkSelfPermission(
                 context,
@@ -427,8 +428,9 @@ object utils {
     val profilePicPath: String
         get() = "$appFolder/ProfilePics/"
 
-    fun saveBitmapToProfileFolder(bitmap: Bitmap, messageIdForName: String):String{
+    fun saveBitmapToProfileFolder(bitmap: Bitmap?, messageIdForName: String):String{
 
+        bitmap?:return "";
         val fileName = "$messageIdForName.jpg"
 
         val path = "$appFolder/ProfilePics/"

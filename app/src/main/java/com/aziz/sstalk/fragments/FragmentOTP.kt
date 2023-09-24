@@ -18,12 +18,14 @@ import com.aziz.sstalk.MobileLoginActivity
 import com.aziz.sstalk.databinding.InputOtpBinding
 import com.aziz.sstalk.models.Models
 import com.aziz.sstalk.utils.FirebaseUtils
+import com.aziz.sstalk.utils.showInfoDialog
 import com.aziz.sstalk.utils.utils
 import com.aziz.sstalk.utils.utils.longToast
 import com.aziz.sstalk.utils.utils.toast
 import com.google.firebase.FirebaseException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.PhoneAuthCredential
+import com.google.firebase.auth.PhoneAuthOptions
 import com.google.firebase.auth.PhoneAuthProvider
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -53,7 +55,7 @@ class FragmentOTP : Fragment() {
         }
 
         override fun onVerificationFailed(p0: FirebaseException) {
-            toast(context, "Failed to send OTP. Perhaps you are using an emulator.")
+            context?.showInfoDialog("Failed to send OTP. "+p0.message.toString())
             Log.e("FragmentOTP", "onVerificationFailed: ${p0.message.toString()}")
 
             fragmentManager?.beginTransaction()!!
@@ -163,9 +165,22 @@ class FragmentOTP : Fragment() {
         progressDialog?.setCancelable(false)
         progressDialog?.show()
 
+        // Turn off phone auth app verification.
+        FirebaseAuth.getInstance().firebaseAuthSettings
+            .setAppVerificationDisabledForTesting(true);
 
-        PhoneAuthProvider.getInstance()
-            .verifyPhoneNumber(mobile_no.toString(),60, TimeUnit.SECONDS,this.activity!!, verificationStateChangedCallbacks)
+        val options = PhoneAuthOptions.newBuilder(FirebaseAuth.getInstance())
+            .setPhoneNumber(
+                mobile_no.toString()
+            ) // Phone number to verify
+            .setTimeout(60L, TimeUnit.SECONDS) // Timeout and unit
+            .setActivity(requireActivity()) // Activity (for callback binding)
+            .setCallbacks(verificationStateChangedCallbacks) // OnVerificationStateChangedCallbacks
+            .build()
+        PhoneAuthProvider.verifyPhoneNumber(options)
+
+//        PhoneAuthProvider.getInstance()
+//            .verifyPhoneNumber(mobile_no.toString(),60, TimeUnit.SECONDS,this.activity!!, verificationStateChangedCallbacks)
     }
 
 
